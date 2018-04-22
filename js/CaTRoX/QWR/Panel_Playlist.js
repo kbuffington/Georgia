@@ -740,6 +740,7 @@ function Playlist(x, y) {
 
         if (item) {
             if (ctrl_pressed && shift_pressed && _.isInstanceOf(item, Header)) {
+				console.log('here');
                 collapse_handler.toggle_collapse(item);
                 this.mouse_down = false;
             }
@@ -775,7 +776,10 @@ function Playlist(x, y) {
         if (_.isInstanceOf(item, Header)) {
             plman.ExecutePlaylistDefaultAction(cur_playlist_idx, item.rows[0].idx);
         }
-        else {
+        else if (_.isInstanceOf(item, DiscHeader)) {
+			item.toggle_collapse();
+		}
+		else {
             if (g_properties.show_rating && item.rating_trace(x, y)) {
                 item.rating_click(x, y);
                 item.repaint();
@@ -1525,18 +1529,18 @@ function Playlist(x, y) {
         items.forEach(function (item) {
             if (_.isInstanceOf(item, Header) && !item.has_art() && item.rows[0].metadb.Compare(metadb)) {
                 // cache art for first and last row in group
-                ImageCache[item.rows[0].metadb.Path] = image;
-                ImageCache[item.rows[item.rows.length-1].metadb.Path] = image;
-                ImageCacheIndex.push(item.rows[0].metadb.Path);
-                ImageCacheIndex.push(item.rows[item.rows.length-1].metadb.Path);
-                if (ImageCacheIndex.length > 50) {
-                    console.log(ImageCacheIndex.length);
-                    for (i=0;i < 5; i++) {
-                        path = ImageCacheIndex.shift();
-                        delete ImageCache[path];
-                    }
-                    console.log(ImageCacheIndex.length);
-                }
+                // ImageCache[item.rows[0].metadb.Path] = image;
+                // ImageCache[item.rows[item.rows.length-1].metadb.Path] = image;
+                // ImageCacheIndex.push(item.rows[0].metadb.Path);
+                // ImageCacheIndex.push(item.rows[item.rows.length-1].metadb.Path);
+                // if (ImageCacheIndex.length > 50) {
+                //     console.log(ImageCacheIndex.length);
+                //     for (i=0;i < 5; i++) {
+                //         path = ImageCacheIndex.shift();
+                //         delete ImageCache[path];
+                //     }
+                //     console.log(ImageCacheIndex.length);
+                // }
                 item.assign_art(image);
                 item.repaint();
             }
@@ -1696,26 +1700,26 @@ function Playlist(x, y) {
         }
 
 		var rows = [];
-		var disc, lastDisc = '';
-		var tfo = fb.TitleFormat('$ifgreater(%totaldiscs%,1,,false)[' + tf.disc_subtitle + ']');
-		var disc_group = fb.TitleFormat('%album artist% %album% %edition% %discnumber%' + tf.disc_subtitle);
+		// var disc, lastDisc = '';
+		// var tfo = fb.TitleFormat('$ifgreater(%totaldiscs%,1,,false)[' + tf.disc_subtitle + ']');
+		// var disc_group = fb.TitleFormat('%album artist% %album% %edition% %discnumber%' + tf.disc_subtitle);
 
 		for (var i = 0; i < playlist_size; ++i) {
 			discHeader = false;
-			if (tfo.EvalWithMetadb(playlist_items_arr[i]) !== 'false') {
-				disc = disc_group.EvalWithMetadb(playlist_items_arr[i]);
-				if (disc != lastDisc) {
-					discHeader = true;
-					lastDisc = disc;
-				}
-			}
+			// if (tfo.EvalWithMetadb(playlist_items_arr[i]) !== 'false') {
+			// 	disc = disc_group.EvalWithMetadb(playlist_items_arr[i]);
+			// 	if (disc != lastDisc) {
+			// 		discHeader = true;
+			// 		lastDisc = disc;
+			// 	}
+			// }
             rows[i] = new Row(that.list_x, 0, that.list_w, discHeader ? that.row_h * 2 : that.row_h, playlist_items_arr[i], i, cur_playlist_idx, discHeader);
             if (!g_properties.show_header) {
                 rows[i].is_odd = (i + 1) % 2;
 			}
 		}
-		_.dispose(tfo);
-		_.dispose(disc_group);
+		// _.dispose(tfo);
+		// _.dispose(disc_group);
 
         return rows;
     }
@@ -1736,6 +1740,7 @@ function Playlist(x, y) {
             playlist_copy.length = playlist_copy.length - header.rows.length; ///< much faster then _.drop or slice, since it does not create a new array
             playlist_copy.reverse();
 
+            header.init_disc_rows(that);
             headers.push(header);
             ++head_nr;
         }
@@ -1762,11 +1767,11 @@ function Playlist(x, y) {
 
         items.forEach(function (item) {
             if (_.isInstanceOf(item, Header) && !item.has_art()) {
-                if (ImageCache[item.rows[0].metadb.Path]) {
-                    item.assign_art(ImageCache[item.rows[0].metadb.Path]);
-                } else if (ImageCache[item.rows[item.rows.length-1].metadb.Path]) {
-                    item.assign_art(ImageCache[item.rows[item.rows.length-1].metadb.Path]);
-                }
+                // if (ImageCache[item.rows[0].metadb.Path]) {
+                //     item.assign_art(ImageCache[item.rows[0].metadb.Path]);
+                // } else if (ImageCache[item.rows[item.rows.length-1].metadb.Path]) {
+                //     item.assign_art(ImageCache[item.rows[item.rows.length-1].metadb.Path]);
+                // }
             }
         });
 
@@ -2767,7 +2772,7 @@ PlaylistContent = function () {
             throw new LogicError('first_item_to_draw cant be null!');
         }
 
-        return first_item;
+		return first_item;
     }
 
     function generate_all_items_to_draw(wy, wh, first_item) {
@@ -2800,12 +2805,12 @@ PlaylistContent = function () {
                 continue;
             }
 
-            var header_rows = header.rows;
-            var header_row_start_idx = is_first ? (first_item.num_in_header - 1) : 0;
+			var header_rows = header.rows;
+			var header_row_start_idx = is_first ? (first_item.num_in_header - 1) : 0;
 
-            var should_break = false;
+			var should_break = false;
             for (var j = header_row_start_idx; j < header_rows.length; ++j) {
-                var header_row = header_rows[j];
+				var header_row = header_rows[j];
                 if (!is_first) {
                     header_row.set_y(cur_y);
                     items_to_draw.push(header_row);
@@ -2819,12 +2824,16 @@ PlaylistContent = function () {
                 if (cur_y >= wy + wh) {
                     should_break = true;
                     break;
-                }
+				}
+
+				if (_.isInstanceOf(header_row, DiscHeader) && header_row.is_collapsed) {
+					j += header_row.rows.length;
+				}
             }
             if (should_break) {
                 break;
-            }
-        }
+			}
+		}
 
         return items_to_draw;
     }
@@ -3069,7 +3078,7 @@ function Header(x, y, w, h, idx, row_h_arg) {
                 codec = (_.startsWith(metadb.RawPath, '3dydfy:') || _.startsWith(metadb.RawPath, 'fy+')) ? 'yt' : metadb.Path;
             }
 
-            var track_count = this.rows.length;
+            var track_count = this.rows.length - this.num_discs;
             var genre = is_radio ? '' : (grouping_handler.get_query_name() !== 'artist' ? '[%genre% | ]' : '');
             var disc_number = (grouping_handler.show_cd() && _.tf('[%totaldiscs%]', metadb) !== '1') ? _.tf('[ | Disc: %discnumber%/%totaldiscs%]', metadb) : '';
             var info_text = _.tf(genre + codec + disc_number + '[ | %replaygain_album_gain%]', metadb) + (is_radio ? '' : ' | ' + track_count + (track_count === 1 ? ' Track' : ' Tracks'));
@@ -3283,6 +3292,55 @@ function Header(x, y, w, h, idx, row_h_arg) {
         metadb = this.rows[0].metadb;
     };
 
+    this.init_disc_rows = function (that) {
+        var disc, lastDisc = '';
+		var tfo = fb.TitleFormat('$ifgreater(%totaldiscs%,1,,false)[' + tf.disc_subtitle + ']');
+        var disc_group = fb.TitleFormat('%album artist% %album% %edition% %discnumber%' + tf.disc_subtitle);
+        var disc_nr = 0;
+		var startIndex;
+		var disc_header = null;
+		var rows_copy = [];
+
+        for (var i = 0; i < this.rows.length; i++) {
+			if (tfo.EvalWithMetadb(this.rows[i].metadb) !== 'false') {
+				disc = disc_group.EvalWithMetadb(this.rows[i].metadb);
+				if (disc != lastDisc) {
+					if (disc_header) {
+						rows_copy.splice(startIndex, 0, disc_header);
+					} else if (!rows_copy.length) {
+						// only copy if we have to
+						rows_copy = this.rows.slice();
+					}
+					disc_header = new DiscHeader(that.list_x, 0, that.list_w, that.row_h, this.rows[i].metadb, this);
+                    lastDisc = disc;
+					startIndex = i + disc_nr;	// index in header where DiscHeader will be inserted
+					disc_nr++;
+				}
+                this.rows[i].disc = disc_nr - 1;    // already incremented
+                disc_header.rows.push(this.rows[i]);
+			} else {
+				if (disc_header) {
+					// special case with single disc, but discsubtitle only on some tracks
+					rows_copy.splice(startIndex, 0, disc_header);
+					disc_header = null;
+				}
+			}
+		}
+		if (disc_header) {
+			rows_copy.splice(startIndex, 0, disc_header);
+		}
+        if (disc_nr) {
+			this.rows = rows_copy;
+			for (var i = 0; i < this.rows.length; i++) {
+				this.rows[i].num_in_header = i + 1;
+				this.rows[i].is_odd = (i + 1) % 2;
+			}
+		}
+		this.num_discs = disc_nr;
+		_.dispose(tfo);
+		_.dispose(disc_group);
+	}
+
     this.has_selected_items = function () {
         return _.some(that.rows, function (row) {
             return row.is_selected();
@@ -3311,12 +3369,11 @@ function Header(x, y, w, h, idx, row_h_arg) {
     function get_duration() {
         var duration_in_seconds = 0;
 
-        that.rows.forEach(function (item) {
-            var trackLength = parseFloat(_.tf('%length_seconds_fp%', item.metadb));
-            if (trackLength) {
-                duration_in_seconds += trackLength;
-            }
-        });
+        for (var i = 0; i < that.rows.length; ++i) {
+			if (!_.isInstanceOf(that.rows[i], DiscHeader)) {
+				duration_in_seconds += that.rows[i].metadb.Length;
+			}
+		}
 
         if (!duration_in_seconds) {
             return '';
@@ -3329,10 +3386,12 @@ function Header(x, y, w, h, idx, row_h_arg) {
     /** @const {number} */
     this.idx = idx;
 
-    /** @type{Array<Row>} */
+    /** @type{Array<Row|DiscHeader>} */
     this.rows = [];
 
     this.is_collapsed = false;
+
+	this.num_discs = 0;
 
     //private:
     var that = this;
@@ -3424,15 +3483,6 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg, isDiscHeader) {
 
 		var title_y = this.y;
 		var title_h = this.h;
-
-		if (this.is_disc_header) {
-			title_y = this.y + this.h / 2;
-			title_h = this.h / 2;
-
-            var disc_header_text_format = g_string_format.v_align_center | g_string_format.trim_ellipsis_char | g_string_format.no_wrap;
-			var discHeaderString = _.tf('[Disc %discnumber% $if('+ tf.disc_subtitle+', \u2014 ,) ]['+ tf.disc_subtitle +']', this.metadb);
-			gr.DrawString(discHeaderString, title_font, title_color, cur_x, this.y, this.w, this.h / 2, disc_header_text_format);
-		}
 
 		if (_.tf('$ifgreater(%totaldiscs%,1,true,false)', this.metadb) != 'false') {
 			cur_x += 20;
@@ -3577,31 +3627,24 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg, isDiscHeader) {
     };
 
     function initialize_rating() {
-		if (that.is_disc_header) {
-			rating = new Rating(0, that.y, 0, that.h, metadb);
-		} else {
-			rating = new Rating(0, that.y, 0, that.h, metadb);
-		}
-        rating.x = that.x + that.w - rating.w - rating_right_pad;
+		rating = new Rating(0, that.y, 0, that.h, metadb);
+	    rating.x = that.x + that.w - rating.w - rating_right_pad;
     }
 
     //public:
     /** @const {number} */
     this.idx = idx;
     /** @const {IFbMetadbHandle} */
-	this.metadb = metadb;
-	/** @const {number} */
-    this.draw_idx = idx;
+    this.metadb = metadb;
 
     //const after header creation
     this.is_odd = false;
     this.num_in_header = undefined;
-	this.header = undefined;
+    this.header = undefined;
+    this.disc = undefined;
 
     this.queue_idx = undefined;
     this.queue_idx_count = 0;
-
-	this.is_disc_header = isDiscHeader;
 
     //state
     this.is_playing = false;
@@ -4312,7 +4355,7 @@ function CollapseHandler() {
     };
 
     function trigger_callback() {
-        if (that.changed && on_collapse_change_callback) {
+		if (that.changed && on_collapse_change_callback) {
             on_collapse_change_callback();
         }
     }
@@ -5153,4 +5196,4 @@ GroupingHandler.Settings.Group = function (name, description, group_query, title
 Header.grouping_handler = new GroupingHandler();
 
 var playlist = new PlaylistPanel(0,0);
-playlist.initialize();
+// playlist.initialize();
