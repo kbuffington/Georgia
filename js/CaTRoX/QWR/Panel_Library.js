@@ -1,7 +1,7 @@
 ﻿// ==PREPROCESSOR==
 // @name "Library Tree"
 // @author "WilB"
-// @version "1.401"
+// @version "1.4.0.2"
 // ==/PREPROCESSOR==
 
 if (!window.GetProperty("SYSTEM.Chakra Checked", false) && !Date.now) {fb.ShowPopupMessage("Use the 'Chakra' script engine if possible (requires IE9 or later) - it's faster. Select in the JScript panel configuration window (shift + right click)", "Library Tree"); window.SetProperty("SYSTEM.Chakra Checked", true);}
@@ -11,7 +11,7 @@ if (!String.prototype.trim) {String.prototype.trim = function () {return this.re
 
 function userinterface() {
     var WshShell = new ActiveXObject("WScript.Shell"); try {var dpi = WshShell.RegRead("HKCU\\Control Panel\\Desktop\\WindowMetrics\\AppliedDPI");} catch (e) {var dpi = 120;} this.scale = dpi < 121 ? 1 : dpi / 120; this.zoomUpd = window.GetProperty("SYSTEM.Zoom Update", false);
-    var alpha = window.GetProperty(" Cover Opacity (0-100)", 10), autoFill = window.GetProperty(" Cover Auto-Fill", true), blend = "", blurImg = false, custom_col = window.GetProperty("_CUSTOM COLOURS/FONTS: USE", false), cust_icon_font = window.GetProperty("_Custom.Font Icon [Node] (Name,Style[0or1])", "Segoe UI Symbol,0"), g = 0, lightBg = false, icon = window.GetProperty(" Node: Custom Icon: +|- // Examples","| // (+)|(−) | | | | | | | | |").trim(), icon_f_name= "Segoe UI", icon_f_style = 0, iconcol_c = "", iconcol_e = "", iconcol_h = "", image_path_o = "", linecol = window.GetProperty(" Node: Lines: Hide-0 Grey-1 Blend-2 Text-3", 1), mix = 0, noimg = [], orig_font_sz = 16, tcol = "", tcol_h = "", s_col = window.GetProperty(" Search Style: Fade-0 Blend-1 Norm-2 Highlight-3", 0), s_linecol = window.GetProperty(" Search: Line Colour: Grey-0 Blend-1 Text-2", 0), sp = 6, sp1 = 6, sp2 = 6, sum = 0, node_sz = Math.round(11 * this.scale), zoom = 100, zoom_font_sz = 16, zoom_node = 100;
+    var alpha = window.GetProperty(" Cover Opacity (0-100)", 10), autoFill = window.GetProperty(" Cover Auto-Fill", true), blend = "", blurImg = false, custom_col = window.GetProperty("_CUSTOM COLOURS/FONTS: USE", false), cust_icon_font = window.GetProperty("_Custom.Font Icon [Node] (Name,Style[0or1])", "Segoe UI Symbol,0"), k = 0, lightBg = false, icon = window.GetProperty(" Node: Custom Icon: +|- // Examples","| // (+)|(−) | | | | | | | | |").trim(), icon_f_name= "Segoe UI", icon_f_style = 0, iconcol_c = "", iconcol_e = "", iconcol_h = "", image_path_o = "", linecol = window.GetProperty(" Node: Lines: Hide-0 Grey-1 Blend-2 Text-3", 1), mix = 0, noimg = [], orig_font_sz = 16, tcol = "", tcol_h = "", s_col = window.GetProperty(" Search Style: Fade-0 Blend-1 Norm-2 Highlight-3", 0), s_linecol = window.GetProperty(" Search: Line Colour: Grey-0 Blend-1 Text-2", 0), sp = 6, sp1 = 6, sp2 = 6, sum = 0, node_sz = Math.round(11 * this.scale), zoom = 100, zoom_font_sz = 16, zoom_node = 100;
     this.b1 = 0x04ffffff; this.b2 = 0x04000000; this.backcol = ""; this.backcol_h = ""; this.backcolsel = ""; this.backcoltrans = ""; this.bg = false;
     this.blur_blend = window.GetProperty("SYSTEM.Blur Blend Theme", false); this.blur_dark = window.GetProperty("SYSTEM.Blur Dark Theme", false); this.blur_light = window.GetProperty("SYSTEM.Blur Light Theme", false); var blur_tmp = window.GetProperty("ADV.Image Blur Background Level (0-100)", 90), blurAutofill = window.GetProperty("ADV.Image Blur Background Auto-Fill", false); this.blurLevel = this.blur_blend ? 91.05 - Math.max(Math.min(blur_tmp, 90), 1.05) : Math.max(Math.min(blur_tmp * 2, 254), 0); this.blur = this.blur_blend || this.blur_dark || this.blur_light; this.collapse = ""; this.blurAlpha = window.GetProperty("ADV.Image Blur Background Opacity (0-100)", 30); this.blurAlpha = Math.min(Math.max(this.blurAlpha, 0), 100) / 30;
     var changeBrightness = function (r, g, b, percent){return RGB(Math.min(Math.max(r + (256 - r) * percent / 100, 0), 255), Math.min(Math.max(g + (256 - g) * percent / 100, 0), 255), Math.min(Math.max(b + (256 - b) * percent / 100, 0), 255));}
@@ -25,7 +25,7 @@ function userinterface() {
     this.scrollbar_show = window.GetProperty(" Scrollbar Show", true);
     try {this.scr_type = parseFloat(window.GetProperty(" Scrollbar Type Default-0 Styled-1 Themed-2", "0").replace(/\s+/g, "").charAt(0)); if (isNaN(this.scr_type)) this.scr_type = 0;  if (this.scr_type > 2 || this.scr_type < 0) this.scr_type = 0; if (this.scr_type ==2)  window.SetProperty(" Scrollbar Type Default-0 Styled-1 Themed-2", "2 // Scrollbar Settings N/A For Themed"); else window.SetProperty(" Scrollbar Type Default-0 Styled-1 Themed-2", "" + this.scr_type + "");} catch (e) {this.scr_type = 0; window.SetProperty(" Scrollbar Type Default-0 Styled-1 Themed-2", "" + 0 + "");}
     this.scr_col = Math.min(Math.max( window.GetProperty(" Scrollbar Colour Grey-0 Blend-1", 1), 0), 1);
-    if (this.scr_type == 2) {this.theme = window.CreateThemeManager("scrollbar"); var im = gdi.CreateImage(21, 21), g = im.GetGraphics(); try {this.theme.SetPartAndStateId(6, 1); this.theme.DrawThemeBackground(g, 0, 0, 21, 50); for (var i = 0; i < 3; i++) {this.theme.SetPartAndStateId(3, i + 1); this.theme.DrawThemeBackground(g, 0, 0, 21, 50);} for (i = 0; i < 3; i++) {this.theme.SetPartAndStateId(1, i + 1); this.theme.DrawThemeBackground(g, 0, 0, 21, 21);}} catch(e) {this.scr_type = 1; window.SetProperty(" Scrollbar Type Default-0 Styled-1 Themed-2", "" + 1 + "");} im.ReleaseGraphics(g); im.Dispose();}
+    if (this.scr_type == 2) {this.theme = window.CreateThemeManager("scrollbar"); var im = gdi.CreateImage(21, 21), j = im.GetGraphics(); try {this.theme.SetPartAndStateId(6, 1); this.theme.DrawThemeBackground(j, 0, 0, 21, 50); for (var i = 0; i < 3; i++) {this.theme.SetPartAndStateId(3, i + 1); this.theme.DrawThemeBackground(j, 0, 0, 21, 50);} for (i = 0; i < 3; i++) {this.theme.SetPartAndStateId(1, i + 1); this.theme.DrawThemeBackground(j, 0, 0, 21, 21);}} catch(e) {this.scr_type = 1; window.SetProperty(" Scrollbar Type Default-0 Styled-1 Themed-2", "" + 1 + "");} im.ReleaseGraphics(j); im.Dispose();}
     var themed_w = 21; try {themed_w = utils.GetSystemMetrics(2);} catch (e) {}
     var sbw = window.GetProperty(" Scrollbar Size"); if (sbw && sbw.indexOf("GripMinHeight") == -1) window.SetProperty(" Scrollbar Size", sbw + ",GripMinHeight,20");
     var sbar_w = window.GetProperty(" Scrollbar Size", "Bar,11,Arrow,11,Gap(+/-),0,GripMinHeight,20").replace(/\s+/g, "").split(",");
@@ -204,7 +204,7 @@ function userinterface() {
     this.blurReset = function(clear) {if (blurImg) blurImg.Dispose(); blurImg = false; image_path_o = ""; if (clear) on_colours_changed(); this.on_playback_new_track();}
     this.create_images = function() {var cc = StringFormat(1, 1), font1 = gdi.Font("Segoe UI", 270, 1), font2 = gdi.Font("Segoe UI", 120, 1), font3 = gdi.Font("Segoe UI", 200, 1), font4 = gdi.Font("Segoe UI", 90, 1), gb, tcol = !this.blur_dark && !this.blur_light ? this.textcol : this.dui ? window.GetColourDUI(0) : window.GetColourCUI(0); noimg = ["COVER", "SELECTION"]; for (var i = 0; i < noimg.length; i++) {var n = noimg[i]; noimg[i] = gdi.CreateImage(500, 500); gb = noimg[i].GetGraphics(); gb.SetSmoothingMode(2); if (!this.blur_dark && !this.blur_light) {gb.FillSolidRect(0, 0, 500, 500, tcol); gb.FillGradRect(-1, 0, 505, 500, 90, this.backcol & 0xbbffffff, this.backcol, 1.0);} gb.SetTextRenderingHint(3); gb.DrawString("NO", i ? font3 : font1, tcol & 0x25ffffff, 0, 0, 500, 275, cc); gb.DrawString(n, i ? font4 : font2, tcol & 0x20ffffff, 2.5, 175, 500, 275, cc); gb.FillSolidRect(60, 388, 380, 50, tcol & 0x15ffffff); noimg[i].ReleaseGraphics(gb);} this.get = true;}; this.create_images();
     this.draw = function(gr) {try {if (this.bg) gr.FillSolidRect(0, 0, this.w, this.h, this.backcol); if (!this.blur && !this.imgBg) return; this.get_img_fallback(); if (blurImg) gr.DrawImage(blurImg, 0, 0, this.w, this.h, 0, 0, blurImg.Width, blurImg.Height);} catch (e) {}}
-    this.focus_changed = function(ms) {g++; if (g == 1) {this.on_playback_new_track(); {timer.reset(timer.focus, timer.focusi); timer.focus = window.SetTimeout(function() {g = 0; timer.focus = false;}, ms);} return;} else {timer.reset(timer.focus, timer.focusi); timer.focus = window.SetTimeout(function() {ui.on_playback_new_track(); g = 0; timer.focus = false;}, ms);}}
+    this.focus_changed = function(ms) {k++; if (k == 1) {this.on_playback_new_track(); timer.reset(timer.focus, timer.focusi); timer.focus = window.SetTimeout(function() {k = 0; timer.focus = false;}, ms); return;} timer.reset(timer.focus, timer.focusi); timer.focus = window.SetTimeout(function() {ui.on_playback_new_track(); k = 0; timer.focus = false;}, ms);}
     this.get_album_art_done = function(image, image_path) {if (image_path_o == image_path && blurImg && image) return window.Repaint(); image_path_o = image_path; if (!image) image = stub(0); if (!image) {if (blurImg) blurImg.Dispose(); blurImg = false; return;} this.blur_img(image);}
     this.get_img_fallback = function() {if (sbar.draw_timer || !this.get) return; this.grab_f_img(); this.get = false;}
     this.grab_f_img = function(handle) {if (!handle) handle = fb.IsPlaying ? fb.GetNowPlaying() : fb.GetFocusItem(); if (handle) return utils.GetAlbumArtAsync(window.ID, handle, 0); if (fb.IsPlaying) return; image = stub(1); if (!image) {if (blurImg) blurImg.Dispose(); blurImg = false; return;} this.blur_img(image);}
@@ -241,7 +241,7 @@ function scrollbar() {
         this.drag_distance_per_row = this.scrollbar_travel / this.scrollable_lines;
         // panel info
         this.tree_w = ui.w - Math.max(ui.scrollbar_show && this.scrollable_lines > 0 ? ui.sbar_sp + ui.sel : ui.sel, ui.margin);
-        if (ui.alternate) this.stripe_w = ui.scrollbar_show && ui.scr_type && this.scrollable_lines > 0 ? ui.w - ui.sbar_sp : ui.w;
+        if (ui.alternate) this.stripe_w = ui.scrollbar_show && this.scrollable_lines > 0 ? ui.w - ui.sbar_sp : ui.w;
     }
 
     this.draw = function(gr) {if (this.scrollable_lines > 0) {try {
@@ -269,7 +269,7 @@ function scrollbar() {
 
     this.lbtn_up = function(p_x, p_y) {
         var x = p_x - this.x; var y = p_y - this.y;
-        if (this.b_is_dragging) this.b_is_dragging = false; if (!this.hover) this.paint(); else window.RepaintRect(this.x, this.y, this.w, this.h); this.initial_drag_y = 0;
+        if (!this.hover && this.b_is_dragging) this.paint(); else window.RepaintRect(this.x, this.y, this.w, this.h); if (this.b_is_dragging) {this.b_is_dragging = false; but.Dn = false;} this.initial_drag_y = 0;
         if (this.timer_but) {window.ClearTimeout(this.timer_but); this.timer_but = false;}; this.count = -1;
     }
 
@@ -282,14 +282,14 @@ function scrollbar() {
         if (y < this.bar_y || y > this.bar_y + this.bar_ht)
             this.check_scroll(this.nearest(y));
         else { // on bar
-            this.b_is_dragging = true; window.RepaintRect(this.x, this.y, this.w, this.h);
+            this.b_is_dragging = true; but.Dn = true; window.RepaintRect(this.x, this.y, this.w, this.h);
             this.initial_drag_y = y - this.bar_y;
         }
     }
 
     this.move = function(p_x, p_y) {
         var x = p_x - this.x; var y = p_y - this.y;
-        if (x < 0 || x > this.w || y > this.bar_y + this.bar_ht || y < this.bar_y) this.hover = false; else this.hover = true;
+        if (x < 0 || x > this.w || y > this.bar_y + this.bar_ht || y < this.bar_y || but.Dn) this.hover = false; else this.hover = true;
         if (this.hover != this.hover_o && !this.bar_timer) this.paint();
         if (!this.b_is_dragging || this.row_count <= this.rows_drawn) return;
         this.check_scroll(Math.round((y - this.initial_drag_y - this.but_h) / this.drag_distance_per_row) * this.row_h);
@@ -340,7 +340,7 @@ function panel_operations() {
         window.GetProperty(" View Filter 06: Name // Query", "Played Often // %play_count% GREATER 9"),
         window.GetProperty(" View Filter 07: Name // Query", "Recently Added // %added% DURING LAST 2 WEEKS"),
         window.GetProperty(" View Filter 08: Name // Query", "Recently Played // %last_played% DURING LAST 2 WEEKS"),
-        window.GetProperty(" View Filter 09: Name // Query", "Top Rated // rating IS 5")
+        window.GetProperty(" View Filter 09: Name // Query", "Top Rated // %rating% IS 5")
     ];
     var filt_l = filter_ppt.length + 1; for (i = filt_l; i < filt_l + 90; i++) {nm = window.GetProperty(" View Filter " + (i < 10 ? "0" + i : i) + ": Name // Query"); if (nm && nm != " // ") filter_ppt.push(window.GetProperty(" View Filter " + (i < 10 ? "0" + i : i) + ": Name // Query"));}
 
@@ -382,7 +382,7 @@ function panel_operations() {
     }
 
     this.fields = function(view, filter) {
-        this.filt = []; this.folder_view = 10; this.grp = []; this.grp_sort = ""; this.multi_process = false; this.filter_by = filter; this.mv_sort = ""; this.view = ""; this.view_by = view;
+        this.filt = []; this.folder_view = 10; this.grp = []; this.grp_sort = ""; this.multi_process = false; this.multi_swap = false; this.filter_by = filter; this.mv_sort = ""; this.view = ""; this.view_by = view;
         for (i = 0; i < view_ppt.length; i++) {if (view_ppt[i].indexOf("//") != -1) {grps = view_ppt[i].split("//"); this.grp[i] = {name:grps[0].trim(), type:grps[1]}}} grps = [];
         for (i = 0; i < filter_ppt.length; i++) {if (filter_ppt[i].indexOf("//") != -1) {grps = filter_ppt[i].split("//"); this.filt[i] = {name:grps[0].trim(), type:grps[1].trim()}}}
         i = this.grp.length; while (i--) if (!this.grp[i] || this.grp[i].name == "" || this.grp[i].type == "") this.grp.splice(i, 1);
@@ -391,12 +391,21 @@ function panel_operations() {
         this.folder_view = this.grp.length - 1; this.filter_by = Math.min(this.filter_by, this.filt.length - 1); this.view_by = Math.min(this.view_by, this.grp.length - 1);
         if (this.grp[this.view_by].type.indexOf("%<") != -1) this.multi_process = true;
         if (this.view_by != this.folder_view) {
-            if (this.multi_process) this.mv_sort = fb.TitleFormat((this.grp[this.view_by].type.indexOf("album artist") != -1 || this.grp[this.view_by].type.indexOf("%artist%") == -1 && this.grp[this.view_by].type.indexOf("%<artist>%") == -1 && this.grp[this.view_by].type.indexOf("$meta(artist") == -1 ? "%album artist%" : "%artist%") + "|%album%|[[%discnumber%.]%tracknumber%. ][%track artist% - ]%title%");
+            if (this.multi_process) {
+                if (this.grp[this.view_by].type.indexOf("$swapbranchprefix{%<") != -1) this.multi_swap = true;
+                this.mv_sort = fb.TitleFormat((this.grp[this.view_by].type.indexOf("album artist") != -1 || this.grp[this.view_by].type.indexOf("%artist%") == -1 && this.grp[this.view_by].type.indexOf("%<artist>%") == -1 && this.grp[this.view_by].type.indexOf("$meta(artist") == -1 ? "%album artist%" : "%artist%") + "|%album%|[[%discnumber%.]%tracknumber%. ][%track artist% - ]%title%");
+            }
             this.grp_split = this.grp[this.view_by].type.replace(/^\s+/, "").split("|");
             for (i = 0; i < this.grp_split.length; i++) {
                 this.multi_value[i] = this.grp_split[i].indexOf("%<") != -1 ? true : false;
                 if (this.multi_value[i]) {
                     this.grp_split_orig[i] = this.grp_split[i].slice();
+                    if (this.grp_split[i].indexOf("$swapbranchprefix{%<") != -1) {
+                        var ip1 = this.grp_split[i].indexOf("$swapbranchprefix{%<"), ip2 = this.grp_split[i].indexOf(">%}", ip1) + 2;
+                        this.grp_split[i] = replaceAt(this.grp_split[i], ip2, "");
+                        this.grp_split_orig[i] = this.grp_split[i].replace(/\$swapbranchprefix{%</g, "%<");
+                        this.grp_split[i] = this.grp_split[i].replace(/\$swapbranchprefix{%</g, "~%<");
+                    }
                     this.grp_split[i] = this.grp_split[i].replace(/%<album artist>%/i,"$if3(%<#album artist#>%,%<#artist#>%,%<#composer#>%,%<#performer#>%)").replace(/%<album>%/i,"$if2(%<#album#>%,%<#venue#>%)").replace(/%<artist>%/i,"$if3(%<artist>%,%<album artist>%,%<composer>%,%<performer>%)").replace(/<#/g,"<").replace(/#>/g,">");
                     this.grp_split_clone[i] = this.grp_split[i].slice();
                     this.grp_split[i] = this.grp_split_orig[i].replace(/[<>]/g,"");
@@ -410,7 +419,7 @@ function panel_operations() {
             this.view = this.view.slice(0, -1);
             while(this.grp_sort.indexOf("$nodisplay{") != -1) {var ix1 = this.grp_sort.indexOf("$nodisplay{"), ix2 = this.grp_sort.indexOf("}", ix1); this.grp_sort = replaceAt(this.grp_sort, ix2, " "); this.grp_sort = this.grp_sort.replace("$nodisplay{", "");}
         } window.SetProperty("SYSTEM.Filter By", filter); window.SetProperty("SYSTEM.View By", view);
-        this.baseName = this.base == 2 ? this.grp[view].name : "All Music";
+        this.baseName = this.base == 2 ? this.grp[this.view_by].name : "All Music";
         this.f_menu = []; this.menu = []; for (i = 0; i < this.grp.length; i++) this.menu.push(this.grp[i].name);
         for (i = 0; i < this.filt.length; i++) this.f_menu.push(this.filt[i].name);
         this.calc_text();
@@ -456,11 +465,12 @@ var v = new v_keys();
 function library_manager() {
     var exp = [], full_list, full_list_need_sort = false, node = [], node_s = [],  scr = [], sel = [];
     this.allmusic = []; this.init = false; this.list; this.none = ""; this.node = []; this.process = false; this.root = []; this.time = fb.CreateProfiler(); this.upd = 0, this.upd_search = false;
+    var prefix = window.GetProperty("ADV.$swapbranchprefix. Prefixes to Swap (| Separator)", "A|The").split("|");
     this.rememberTree = window.GetProperty(" Tree: Remember State", true) ? 1 : 0;
     if (this.rememberTree) {exp = JSON.parse(window.GetProperty("SYSTEM.Remember.Exp",JSON.stringify(exp))); this.process = window.GetProperty("SYSTEM.Remember.Proc", false); scr = JSON.parse(window.GetProperty("SYSTEM.Remember.Scr",JSON.stringify(scr))); sel = JSON.parse(window.GetProperty("SYSTEM.Remember.Sel",JSON.stringify(sel))); p.s_txt = window.GetProperty("SYSTEM.Remember.Search Text", "");} else {window.SetProperty("SYSTEM.Remember.Exp",JSON.stringify(exp)); window.SetProperty("SYSTEM.Remember.Scr",JSON.stringify(scr)); window.SetProperty("SYSTEM.Remember.Sel",JSON.stringify(sel)); window.SetProperty("SYSTEM.Remember.Search Text", "");}
     var arraysIdentical = function(a, b) {var i = a.length; if (i != b.length) return false; while (i--) if (a[i] !== b[i]) return false; return true;}
     var binaryInsert = function(arr, item) {var min = 0, max = arr.length, index = Math.floor((min + max) / 2); while (max > min) {if (sort(item, arr[index]) < 0) max = index; else min = index + 1; index = Math.floor((min + max) / 2);} return index;}
-    this.checkTree = function() {if (!this.upd && !(this.init && this.rememberTree)) return; this.init = false; timer.reset(timer.update, timer.updatei); this.time.Reset(); this.rootNodes(this.upd == 2 ? 2 : 1, this.process); this.upd = 0;}
+    this.checkTree = function() {if (!this.upd && !(this.init && this.rememberTree)) return; this.init = false; timer.reset(timer.update, timer.updatei); this.time.Reset(); pop.subCounts =  {"standard": {}, "search": {}, "filter": {}}; this.rootNodes(this.upd == 2 ? 2 : 1, this.process); this.upd = 0;}
     this.removed_f = function(handle_list) {var j = handle_list.Count; while (j--) {var i = this.list.Find(handle_list.Item(j)); if (i != -1) {this.list.RemoveById(i); node.splice(i, 1);}}}
     this.removed_s = function(handle_list) {var j = handle_list.Count; while (j--) {var i = p.list.Find(handle_list.Item(j)); if (i != -1) {p.list.RemoveById(i); node_s.splice(i, 1);}}}
     var sort = function (a, b) {return a.toString().replace(/^\?/,"").replace(/(\d+)/g, function (n) {return ('0000' + n).slice(-5)}).localeCompare(b.toString().replace(/^\?/,"").replace(/(\d+)/g, function (n) {return ('0000' + n).slice(-5)}));}
@@ -545,6 +555,16 @@ function library_manager() {
         switch (tree_type) {case 0: var tfo = fb.TitleFormat(p.view), items = tfo.EvalWithMetadbs(li).toArray(); for (i = 0; i < total; i++) arr[i] = items[i].split("|"); tfo.Dispose(); break; case 1: for (i = 0; i < total; i++) arr[i] = fb.GetLibraryRelativePath(li.Item(i)).split("\\"); break;}
     }
 
+    this.prefixes = function(n) {
+        if (n.indexOf("~#!#") == -1) return n;
+        var found = false, j = 0, ln = 0;
+        for (j = 0; j < prefix.length; j++) if (n.indexOf(prefix[j] + " ") != -1) {found = true; break;}
+        if (!found) return n.replace("~#!#", "#!#");
+        var pr1 = n.split("~#!#"), pr2 = pr1[1].split("#!#"), pr = pr2[0].split("@@");
+        for (var i = 0; i < pr.length; i++) for (j = 0; j < prefix.length; j++)  {ln = prefix[j].length + 1; if (pr[i].substr(0, ln) == prefix[j] + " ") pr[i] = pr[i].substr(ln) + ", " + prefix[j];}
+        return pr1[0] + "#!#" + pr.join("@@") + "#!#" + pr2[1];
+    }
+
     this.rootNodes = function(lib_update, process) {
         if (!this.list.Count) return; this.root = []; var i = 0, j = 1, h = 0, l = 0, n = "";
         if (p.s_txt && (this.upd_search || lib_update == 1)) {
@@ -555,8 +575,13 @@ function library_manager() {
         var n_o = "#get_node#", nU = "", total = p.list.Count;
         if (p.base) {this.root[0] = {name:p.baseName, sel:false, child:[], item:[]}; for (l = 0; l < total; l++) this.root[0].item.push(l);}
         else switch (p.multi_process) {
-            case false: if (!p.base) for (l = 0; l < total; l++) {n = this.node[l][0]; nU = n.toUpperCase(); if (nU != n_o) {n_o = nU; this.root[i] = {name:n, sel:false, child:[], item:[]}; this.root[i].item.push(l); i++;} else this.root[i - 1].item.push(l);} break;
-            case true: if (!p.base) for (l = 0; l < total; l++) {n = this.node[l][0]; nU = n.toUpperCase(); if (nU != n_o) {n_o = nU; if (p.multi_process && n == "#!##!#") n = "?"; this.root[i] = {name:n.replace(/#@#.*?#@#/g,""), sel:false, child:[], item:[], srt:n}; this.root[i].item.push(l); i++;} else this.root[i - 1].item.push(l);} break;
+            case false: for (l = 0; l < total; l++) {n = this.node[l][0]; nU = n.toUpperCase(); if (nU != n_o) {n_o = nU; this.root[i] = {name:n, sel:false, child:[], item:[]}; this.root[i].item.push(l); i++;} else this.root[i - 1].item.push(l);} break;
+            case true:
+                switch (p.multi_swap) {
+                    case false: for (l = 0; l < total; l++) {n = this.node[l][0]; nU = n.toUpperCase(); if (nU != n_o) {n_o = nU; n = n.replace(/#!##!#/g, "?"); this.root[i] = {name:n.replace(/#@#.*?#@#/g,""), sel:false, child:[], item:[], srt:n}; this.root[i].item.push(l); i++;} else this.root[i - 1].item.push(l);} break;
+                    case true: for (l = 0; l < total; l++) {n = this.node[l][0]; nU = n.toUpperCase(); if (nU != n_o) {n_o = nU; n = n.replace(/~#!##!#|#!##!#/g, "?"); n = this.prefixes(n); this.root[i] = {name:n.replace(/#@#.*?#@#/g,""), sel:false, child:[], item:[], srt:n}; this.root[i].item.push(l); i++;} else this.root[i - 1].item.push(l);} break;
+                }
+                break;
         }
         if (!lib_update) sbar.reset();
         /* Draw tree -> */ if (!p.base || p.s_txt) pop.buildTree(this.root, 0); if (p.base) pop.branch(this.root[0], true); if (p.pn_h_auto && (p.init || lib_update) && p.pn_h == p.pn_h_min && pop.tree[0]) pop.clear_child(pop.tree[0]); p.init = false; // ui.trace("populated in: " + this.time.Time / 1000 + " seconds");
@@ -672,19 +697,20 @@ function library_manager() {
 var lib = new library_manager();
 
 function populate() {
-    var get_pos = -1, ix_o = 0, last_pressed_coord = {x: undefined, y: undefined}, last_sel = -1, lbtn_dn = false, m_i = -1, m_br = -1, nd= [], row_o = 0, sent = false, tt = "", tooltip = window.GetProperty(" Tooltips", false), tt_c = 0, tt_y = 0, tt_id = -1;
+    var get_pos = -1, handles = null, is_focused = false, ix_o = 0, last_pressed_coord = {x: undefined, y: undefined}, last_sel = -1, lbtn_dn = false, m_i = -1, m_br = -1, nd= [], row_o = 0, sent = false, tt = "", tooltip = window.GetProperty(" Tooltips", false), tt_c = 0, tt_y = 0, tt_id = -1;
     var ap = window.GetProperty(" Playlist: Play On Send From Menu"); ap = ap === false ? false : ap === true ? true : false; var autoplay = window.GetProperty(" Playlist: Play On Enter Or Send From Menu", ap);
     var btn_pl  = window.GetProperty(" Playlist Use: 0 or 1", "General,1,Alt+LeftBtn,1,MiddleBtn,1").replace(/\s+/g, "").split(",");
     if (btn_pl[0] == "LeftBtn") window.SetProperty(" Playlist Use: 0 or 1", "General," + btn_pl[1] + ",Alt+LeftBtn," + btn_pl[3] + ",MiddleBtn," + btn_pl[5]);
     var alt_lbtn_pl = btn_pl[3] == 1 ? true : false, mbtn_pl = btn_pl[5] == 1 ? true : false;
-    var addIX = parseFloat(window.GetProperty(" Hot Key: Add to Playlist: 1-10", "0 // Assign JScript Panel index in keyboard shortcuts")), insertIX = parseFloat(window.GetProperty(" Hot Key: Insert in Playlist: 1-10", "0 // Assign JScript Panel index in keyboard shortcuts"));
+    var hotKeys = window.GetProperty(" Hot Key: 1-10 // Assign JScript Panel index in keyboard shortcuts", "CollapseAll,0,PlaylistAdd,0,PlaylistInsert,0,Search,0,SearchClear,0").replace(/^[,\s]+|[,\s]+$/g, "").split(",");
+    var addIX = parseFloat(hotKeys[3]), collapseAllIX = parseFloat(hotKeys[1]), insertIX = parseFloat(hotKeys[5]), searchClearIX = parseFloat(hotKeys[9]), searchFocusIX = parseFloat(hotKeys[7]);
     var custom_sort = window.GetProperty(" Playlist: Custom Sort", ""); if (custom_sort.length) var tf_cs = fb.TitleFormat(custom_sort);
     var dbl_action = window.GetProperty(" Text Double-Click: ExplorerStyle-0 Play-1 Send-2", 1);
     var lib_playlist = window.GetProperty(" Playlist", "Library View");
     var af = window.GetProperty(" Text Single-Click: AutoFill Playlist"); af = af === false ? false : true; this.autoFill = window.GetProperty(" Playlist: AutoFill", af);
-    var symb = window.CreateThemeManager("TREEVIEW");
+    var selection_holder = fb.AcquireUiSelectionHolder(), symb = window.CreateThemeManager("TREEVIEW");
     var im = gdi.CreateImage(ui.node_sz, ui.node_sz), g = im.GetGraphics(); if (ui.node_win) try {symb.SetPartAndStateId(2, 1); symb.SetPartAndStateId(2, 2); symb.DrawThemeBackground(g, 0, 0, ui.node_sz, ui.node_sz);} catch (e) {ui.node_win = 0;} im.ReleaseGraphics(g); im.Dispose();
-    this.line_l = 0; this.sel_items = []; this.tree = [];
+    this.line_l = 0; this.sel_items = []; this.subCounts =  {"standard": {}, "filter": {}, "search": {}}; this.tree = [];
     if (!window.GetProperty("SYSTEM.Playlist Checked", false)) fb.ShowPopupMessage("Default playlist: Library View.\n\nChange in panel properties if required.", "Library Tree"); window.SetProperty("SYSTEM.Playlist Checked", true);
     var arr_contains = function(arr, item) {for (var i = 0; i < arr.length; i++) if (arr[i] == item) return true; return false;}
     var arr_index = function(arr, item) {var n = -1; for (var i = 0; i < arr.length; i++) if (arr[i] == item) {n = i; break;} return n;}
@@ -703,13 +729,12 @@ function populate() {
     this.expandNodes = function(obj, am) {this.branch(obj, !am ? false : true, true, true); if (obj.child) for (var k = 0; k < obj.child.length; k++) if (!obj.child[k].track) this.expandNodes(obj.child[k]);}
     this.gen_pl = btn_pl[1] == 1 ? true : false;
     this.get_sel_items = function () {p.tree_paint(); var i = 0; this.sel_items = []; for (i = 0; i < this.tree.length; i++) if (this.tree[i].sel) this.sel_items.push.apply(this.sel_items, this.tree[i].item); this.sel_items = uniq(this.sel_items);}
-    this.getHandles = function(n) {if (n) this.get_sel_items(); var handle_list = fb.CreateHandleList(); try {for (i = 0; i < this.sel_items.length; i++) handle_list.Add(p.list.Item(this.sel_items[i]));} catch (e) {} return handle_list;}
-    this.handle_list = null;
+    this.getHandles = function(n) {if (n) this.get_sel_items(); var handle_list = fb.CreateHandleList(); try {for (var i = 0; i < this.sel_items.length; i++) handle_list.Add(p.list.Item(this.sel_items[i]));} catch (e) {} return handle_list;}
     this.leave = function(){if (men.r_up || tt.Text) return; m_br = -1; row_o = 0; m_i = -1; ix_o = 0; p.tree_paint();}
     this.mbtn_up = function(x, y) {this.add(x, y, mbtn_pl);}
     this.on_char = function(code) {if (p.s_search || code != v.copy) return; var handle_list = this.getHandles(true); fb.CopyHandleListToClipboard(handle_list); handle_list.Dispose();}
+    this.on_focus = function(p_is_focused) {is_focused = p_is_focused; if (p_is_focused && handles && handles.Count) selection_holder.SetSelection(handles);}
     this.row = function(y) {return Math.round((y - p.s_h - ui.row_h * 0.5) / ui.row_h);}
-    this.selection_holder = fb.AcquireUiSelectionHolder();
     this.setGetPos = function(pos) {m_i = get_pos = pos;}
 
     this.create_tooltip = function() {
@@ -743,16 +768,33 @@ function populate() {
                 }
                 break;
             case true:
-                var srt = "";
-                for (k = 0; k < br_l; k++) {
-                    pos = br.item[k];
-                    try {
-                        if (base) n = lib.node[pos][l];
-                        if (get) {if (l < lib.node[pos].length - 1) n = lib.node[pos][l]; else n = "#get_track#";}
-                        isTrack = p.show_tracks ? false : l < lib.node[pos].length - 2 ? false : true;
-                        if (n == "#get_track#") {n = lib.node[pos][l]; isTrack = true;} nU = n.toUpperCase();
-                        if (n_o != nU) {n_o = nU; n = n.replace("#!##!#", "?"); srt = n; n = n.replace(/#@#.*?#@#/g,""); br.child[i] = {name:n, sel:false, child:[], track:isTrack, item:[], srt:srt}; br.child[i].item.push(pos); i++;} else br.child[i - 1].item.push(pos);
-                    } catch (e) {}
+                switch (p.multi_swap) {
+                    case false:
+                        var srt = "";
+                        for (k = 0; k < br_l; k++) {
+                            pos = br.item[k];
+                            try {
+                                if (base) n = lib.node[pos][l];
+                                if (get) {if (l < lib.node[pos].length - 1) n = lib.node[pos][l]; else n = "#get_track#";}
+                                isTrack = p.show_tracks ? false : l < lib.node[pos].length - 2 ? false : true;
+                                if (n == "#get_track#") {n = lib.node[pos][l]; isTrack = true;} nU = n.toUpperCase();
+                                if (n_o != nU) {n_o = nU; n = n.replace(/#!##!#/g, "?"); srt = n; n = n.replace(/#@#.*?#@#/g,""); br.child[i] = {name:n, sel:false, child:[], track:isTrack, item:[], srt:srt}; br.child[i].item.push(pos); i++;} else br.child[i - 1].item.push(pos);
+                            } catch (e) {}
+                        }
+                        break;
+                    case true:
+                        var srt = "";
+                        for (k = 0; k < br_l; k++) {
+                            pos = br.item[k];
+                            try {
+                                if (base) n = lib.node[pos][l];
+                                if (get) {if (l < lib.node[pos].length - 1) n = lib.node[pos][l]; else n = "#get_track#";}
+                                isTrack = p.show_tracks ? false : l < lib.node[pos].length - 2 ? false : true;
+                                if (n == "#get_track#") {n = lib.node[pos][l]; isTrack = true;} nU = n.toUpperCase();
+                                if (n_o != nU) {n_o = nU; n = n.replace(/~#!##!#|#!##!#/g, "?"); n = lib.prefixes(n); srt = n; n = n.replace(/#@#.*?#@#/g,""); br.child[i] = {name:n, sel:false, child:[], track:isTrack, item:[], srt:srt}; br.child[i].item.push(pos); i++;} else br.child[i - 1].item.push(pos);
+                            } catch (e) {}
+                        }
+                        break;
                 }
                 break;
         }
@@ -795,24 +837,25 @@ function populate() {
             if (!node || node && !full) br.sort(sort);
             i = br.length; while (i--) {if (i != 0 && br[i].name.toUpperCase() == br[i - 1].name.toUpperCase()) {br[i - 1].item.push.apply(br[i - 1].item, br[i].item.slice()); br.splice(i, 1);}}
         }
-        var folderView = p.view_by == p.folder_view ? true : false, par = this.tree.length - 1; if (tr == 0) this.tree = []; br_l = br.length;
+        var folderView = p.view_by == p.folder_view ? true : false, par = this.tree.length - 1; if (tr == 0) this.tree = []; br_l = br.length; if (p.show_counts == 2) var type = p.s_txt ? "search" : p.filter_by > 0 && p.s_show > 1 ? "filter" : "standard";
         for (i = 0; i < br_l; i++) {
             j = this.tree.length; this.tree[j] = br[i];
             this.tree[j].top = !i ? true : false; this.tree[j].bot = i == br_l - 1 ? true : false;
             if (tr == (p.base ? 1 : 0) && i == br_l - 1) this.line_l = j;
-            this.tree[j].tr = tr; this.tree[j].par = par; this.tree[j].ix = j;
+            this.tree[j].ix = j; this.tree[j].tr = tr; this.tree[j].par = par; if (p.show_counts == 2 && tr > 1) var pr = this.tree[par].par;
             switch (true) {
                 case l != -1 && !p.show_tracks: for (var r = 0; r < this.tree[j].item.length; r++) {if (lib.node[this.tree[j].item[r]].length == l + 1 || lib.node[this.tree[j].item[r]].length == l + 2) {this.tree[j].track = true; break;}} break;
                 case l == 0 && lib.node[this.tree[j].item[0]].length == 1: this.tree[j].track = true; break;
             }
-            this.tree[j].count = !this.tree[j].track || !p.show_tracks  ? (p.show_counts == 1 ? " (" + this.tree[j].item.length + ")" : p.show_counts == 2 ?  " (" + branchCounts(this.tree[j], !p.base || j ? false : true, true, false) + ")" : "") : "";
+            this.tree[j].count = !this.tree[j].track || !p.show_tracks  ? (p.show_counts == 1 ? " (" + this.tree[j].item.length + ")" : p.show_counts == 2 ?  " (" + this.branchCounts(this.tree[j], !p.base || j ? false : true, true, false, tr + (tr > 2 ? this.tree[this.tree[pr].par].name : "") + (tr > 1 ? this.tree[pr].name : "") + (tr > 0 ? this.tree[par].name : "") + this.tree[j].name, type) + ")" : "") : ""; if (!p.show_tracks && this.tree[j].count == " (0)") this.tree[j].count = "";
             if (br[i].child.length > 0) this.buildTree(br[i].child, tr + 1, node, p.base && tr == 0 ? true : false);
         }
         if (!block) {if (p.base && this.tree.length == 1) this.line_l = 0; sbar.set_rows(this.tree.length); p.tree_paint();}
     }
 
-    var branchCounts = function(br, base, node, block) {
-        if (!br) return; var b = []; var br_l = br.item.length, folderView = p.view_by == p.folder_view ? true : false, k = 0, l = base ? 0 : p.base ? br.tr : br.tr + 1, n = "", n_o = "#get_branch#", nU = "", pos = -1; if (folderView) base = false; if (base) node = false; var get = !p.s_txt && !base || p.s_txt;
+    this.branchCounts = function(br, base, node, block, key, type) {
+        if (!br) return; if (this.subCounts[type][key]) return this.subCounts[type][key];
+        var b = []; var br_l = br.item.length, folderView = p.view_by == p.folder_view ? true : false, k = 0, l = base ? 0 : p.base ? br.tr : br.tr + 1, n = "", n_o = "#get_branch#", nU = "", pos = -1; if (folderView) base = false; if (base) node = false; var get = !p.s_txt && !base || p.s_txt;
         switch (p.multi_process) {
             case false:
                 for (k = 0; k < br_l; k++) {
@@ -826,14 +869,29 @@ function populate() {
                 }
                 break;
             case true:
-                for (k = 0; k < br_l; k++) {
-                    pos = br.item[k];
-                    try {
-                        if (base) n = lib.node[pos][l];
-                        if (get) {if (l < lib.node[pos].length - 1) n = lib.node[pos][l]; else n = "#get_track#";}
-                        if (n == "#get_track#") n = lib.node[pos][l]; nU = n.toUpperCase();
-                        if (n_o != nU) {n_o = nU; n = n.replace("#!##!#", "?"); srt = n; n = n.replace(/#@#.*?#@#/g,""); b.push({name:n, srt:srt});}
-                    } catch (e) {}
+                switch (p.multi_swap) {
+                    case false:
+                        for (k = 0; k < br_l; k++) {
+                            pos = br.item[k];
+                            try {
+                                if (base) n = lib.node[pos][l];
+                                if (get) {if (l < lib.node[pos].length - 1) n = lib.node[pos][l]; else n = "#get_track#";}
+                                if (n == "#get_track#") n = lib.node[pos][l]; nU = n.toUpperCase();
+                                if (n_o != nU) {n_o = nU; n = n.replace(/#!##!#/g, "?"); srt = n; n = n.replace(/#@#.*?#@#/g,""); b.push({name:n, srt:srt});}
+                            } catch (e) {}
+                        }
+                        break;
+                    case true:
+                        for (k = 0; k < br_l; k++) {
+                            pos = br.item[k];
+                            try {
+                                if (base) n = lib.node[pos][l];
+                                if (get) {if (l < lib.node[pos].length - 1) n = lib.node[pos][l]; else n = "#get_track#";}
+                                if (n == "#get_track#") n = lib.node[pos][l]; nU = n.toUpperCase();
+                                if (n_o != nU) {n_o = nU; n = n.replace(/~#!##!#|#!##!#/g, "?"); n = lib.prefixes(n); srt = n; n = n.replace(/#@#.*?#@#/g,""); b.push({name:n, srt:srt});}
+                            } catch (e) {}
+                        }
+                        break;
                 }
                 var h = -1, j = 0, multi = [], multi_cond = [], multi_obj = [], multi_rem = [],nm_arr = []; br_l = b.length; n = ""; n_o = "#condense#"; nU = "";
                 for (i = 0; i < br_l; i++) {
@@ -846,13 +904,14 @@ function populate() {
                 i = multi_rem.length; while (i--) b.splice(multi_rem[i], 1); br_l = b.length; multi_obj.sort(sort);
                 i = 0; while (i < multi_obj.length) {n = multi_obj[i].name; nU = n.toUpperCase(); if (n_o != nU) {n_o = nU; multi_cond[j] = {name:n, srt:multi_obj[i].srt}; j++} i++}
                 for (i = 0; i < br_l; i++) {b[i].name = b[i].name.replace(/#!#/g, ""); nm_arr.push(b[i].name);}
+                for (i = 0; i < br_l; i++) {b[i].name = b[i].name.replace(/#!#/g, ""); nm_arr.push(b[i].name); if (b[i].srt) b[i].srt = b[i].srt.replace(/#!#/g, "");}
                 for (i = 0; i < multi_cond.length; i++) {h = arr_index(nm_arr, multi_cond[i].name); if (h != -1) multi_cond.splice(i ,1);}
                 for (i = 0; i < multi_cond.length; i++) b.splice(i + 1, 0, {name:multi_cond[i].name, srt:multi_cond[i].srt});
                 var full = p.base && br.tr == 0 ? true : false; if (!node || node && !full) b.sort(sort);
                 i = b.length; while (i--) {if (i != 0 && b[i].name.toUpperCase() == b[i - 1].name.toUpperCase()) b.splice(i, 1);}
                 break;
         }
-        return b.length
+        this.subCounts[type][key] = b.length; return b.length;
     }
 
     this.create_images = function() {
@@ -869,10 +928,10 @@ function populate() {
         }}
 
     this.tracking = function(list, type) {
-        if (type) {this.handle_list = fb.CreateHandleList(); try {for (var i = 0; i < list.length; i++) this.handle_list.Add(p.list.Item(list[i]));} catch (e) {}}
-        else this.handle_list = list.Clone();
-        if (custom_sort.length) this.handle_list.OrderByFormat(tf_cs, 1);
-        this.selection_holder.SetSelection(this.handle_list);
+        if (type) {handles = fb.CreateHandleList(); try {for (var i = 0; i < list.length; i++) handles.Add(p.list.Item(list[i]));} catch (e) {}}
+        else handles = list.Clone();
+        if (custom_sort.length) handles.OrderByFormat(tf_cs, 1);
+        selection_holder.SetSelection(handles);
     }
 
     this.load = function(list, type, add, send, def_pl, insert) {
@@ -881,8 +940,8 @@ function populate() {
         else var items = list.Clone();
         if (p.multi_process && !custom_sort.length) items.OrderByFormat(p.mv_sort, 1);
         if (custom_sort.length) items.OrderByFormat(tf_cs, 1);
-        this.handle_list = items.Clone();
-        this.selection_holder.SetSelection(this.handle_list);
+        handles = items.Clone();
+        selection_holder.SetSelection(handles);
         if (fb.IsPlaying && !add && fb.GetNowPlaying()) {
             for (i = 0; i < items.Count; i++) if (fb.GetNowPlaying().Compare(items.Item(i))) {np_item = i; break;}
             var pl_chk = true;
@@ -1041,9 +1100,9 @@ function populate() {
 
     this.lbtn_up = function(x, y) {
         last_pressed_coord = {x: undefined, y: undefined}; lbtn_dn = false;
-        if (y < p.s_h) return; var ix = this.get_ix(x, y, true, false); p.pos = ix; if (ix >= this.tree.length || ix < 0)  return this.get_selection(-1);
+        if (y < p.s_h || sent || but.Dn) return; var ix = this.get_ix(x, y, true, false); p.pos = ix; if (ix >= this.tree.length || ix < 0)  return this.get_selection(-1);
         var item = this.tree[ix], mode = x < Math.round(ui.pad * item.tr) + ui.icon_w + ui.margin ? 0 : this.check_ix(item, x, y, false) ? 1 : 2, xp = item.child.length > 0 ? 0 : 1;
-        if (mode != 1 || sent) return;
+        if (mode != 1) return;
         if (v.k(2) && this.autoFill) return this.add(x, y, alt_lbtn_pl);
         if (!v.k(1)) {this.clear(); if (!item.sel) this.get_selection(ix, item.sel);}
         else this.get_selection(ix, item.sel); p.tree_paint();
@@ -1098,6 +1157,7 @@ function populate() {
     }
 
     this.move = function(x, y) {
+        if (but.Dn) return;
         var ix = this.get_ix(x, y, false, false); get_pos = this.check_row(x, y); m_i = -1;
         if (ix != -1) {m_i = ix; if (tooltip) this.activate_tooltip(ix, y);}
         if (m_i == ix_o && m_br == row_o) return;
@@ -1108,7 +1168,7 @@ function populate() {
 
     this.get_ix = function(x, y, simple, type) {
         var ix;
-        if (y > p.s_h && y < p.s_h + p.sp) ix = this.row(y + sbar.scroll); else ix = -1;
+        if (y > p.s_h && y < p.s_h + p.sp) ix = this.row(y + sbar.delta); else ix = -1;
         if (simple) return ix;
         if (this.tree.length > ix && ix >= 0 && x < sbar.tree_w && y > p.s_h && y < p.s_h + p.sp && this.check_ix(this.tree[ix], x, y, type)) return ix;
         else return -1;
@@ -1171,7 +1231,10 @@ function populate() {
 
     this.on_main_menu = function(index) {
         if (index == addIX) {this.get_sel_items(); if (!this.sel_items.length) return; this.load(this.sel_items, true, true, false, this.gen_pl, false);}
+        if (index == collapseAllIX) {this.collapseAll();}
         if (index == insertIX) {this.get_sel_items(); if (!this.sel_items.length) return; this.load(this.sel_items, true, true, false, this.gen_pl, true);}
+        if (index == searchClearIX && p.s_show) {sL.clear();}
+        if (index == searchFocusIX && is_focused && p.s_show) {sL.searchFocus();}
     }
 }
 var pop = new populate();
@@ -1196,7 +1259,7 @@ function searchLibrary() {
     var get_cursor_x = function (pos) {var im = gdi.CreateImage(1, 1), g = im.GetGraphics(), x = 0; if (pos >= offset) x = g.CalcTextWidth(p.s_txt.substr(offset, pos - offset), ui.font); im.ReleaseGraphics(g); im.Dispose(); return x;}
     var get_offset = function (gr) {var t = gr.CalcTextWidth(p.s_txt.substr(offset, cx - offset), ui.font); var j = 0; while (t >= p.s_w2 && j < 500) {j++; offset++; t = gr.CalcTextWidth(p.s_txt.substr(offset, cx - offset), ui.font);}}
     var record = function() {lg.push(p.s_txt); log = []; if (lg.length > 30) lg.shift();}
-    this.clear = function() {lib.time.Reset(); offset = s = f = cx = 0; p.s_cursor = false; p.s_search = false; p.s_txt = ""; p.search_paint(); timer.reset(timer.search_cursor, timer.search_cursori); lib.rootNodes(); if (p.pn_h_auto && p.pn_h == p.pn_h_min && pop.tree[0]) pop.clear_child(pop.tree[0]);}
+    this.clear = function() {lib.time.Reset(); pop.subCounts.search = {}; offset = s = f = cx = 0; p.s_cursor = false; p.s_search = false; p.s_txt = ""; p.search_paint(); timer.reset(timer.search_cursor, timer.search_cursori); lib.rootNodes(); if (p.pn_h_auto && p.pn_h == p.pn_h_min && pop.tree[0]) pop.clear_child(pop.tree[0]);}
     this.on_key_up = function(vkey) {if (!p.s_search) return; if (vkey == v.shift) {shift = false; shift_x = cx;}}
     this.lbtn_up = function(x, y) {if (s != f) timer.reset(timer.search_cursor, timer.search_cursori); lbtn_dn = false;}
     this.move = function(x, y) {if (y > p.s_h || !lbtn_dn) return; var t = get_cursor_pos(x), t_x = get_cursor_x(t); calc_text(); if(t < s) {if (t < f) {if (t_x < p.s_x) if(offset > 0) offset--;} else if (t > f) {if (t_x + p.s_x > p.s_x + p.s_w2) {var l = (txt_w > p.s_w2) ? txt_w - p.s_w2 : 0; if(l > 0) offset++;}} f = t;} else if (t > s) {if(t_x + p.s_x > p.s_x + p.s_w2) {var l = (txt_w > p.s_w2) ? txt_w - p.s_w2 : 0; if(l > 0) offset++;} f = t;} cx = t; p.search_paint();}
@@ -1207,6 +1270,12 @@ function searchLibrary() {
         p.search_paint(); lbtn_dn = p.s_search = (y < p.s_h && x > ui.margin + ui.row_h * 0.6 && x < p.s_x + p.s_w2);
         if (!lbtn_dn) {offset = s = f = cx = 0; timer.reset(timer.search_cursor, timer.search_cursori); return;}
         else {if (shift) {s = cx; f = cx = get_cursor_pos(x);} else {cx = get_cursor_pos(x); s = f = cx;} timer.reset(timer.search_cursor, timer.search_cursori); p.s_cursor = true; timer.search_cursor = window.SetInterval(function() {p.s_cursor = !p.s_cursor; p.search_paint();}, 530);}
+        p.search_paint();
+    }
+
+    this.searchFocus = function() {
+        p.search_paint(); p.s_search = true; shift = false; s = f = cx = p.s_x;
+        timer.reset(timer.search_cursor, timer.search_cursori); p.s_cursor = true; timer.search_cursor = window.SetInterval(function() {p.s_cursor = !p.s_cursor; p.search_paint();}, 530);
         p.search_paint();
     }
 
@@ -1236,7 +1305,7 @@ function searchLibrary() {
         if (code == v.copy || code == v.selAll) return;
         if (!timer.search_cursor) timer.search_cursor = window.SetInterval(function() {p.s_cursor = !p.s_cursor; p.search_paint();}, 530);
         p.search_paint(); lib.upd_search = true; timer.reset(timer.search, timer.searchi);
-        timer.search = window.SetTimeout(function() {lib.time.Reset(); lib.treeState(false, lib.rememberTree); lib.rootNodes(); p.setHeight(true); if (sL.search_auto_expand) {if (!pop.tree.length) return timer.search = false; var count = 0, m = p.base ? 1 : 0; for (m; m < pop.tree.length; m++) count += pop.tree[m].item.length; if (count > expand_limit) return timer.search = false; var n = false; if (p.base && pop.tree.length > 1) n = true; m = pop.tree.length; while (m--) {pop.expandNodes(pop.tree[m], !p.base || m ? false : true); if (n && m == 1) break;} if (p.base && pop.tree.length == 1) pop.line_l = 0; sbar.set_rows(pop.tree.length); p.tree_paint(); lib.treeState(false, lib.rememberTree);} timer.search = false;}, 160);
+        timer.search = window.SetTimeout(function() {lib.time.Reset(); pop.subCounts.search = {}; lib.treeState(false, lib.rememberTree); lib.rootNodes(); p.setHeight(true); if (sL.search_auto_expand) {if (!pop.tree.length) return timer.search = false; var count = 0, m = p.base ? 1 : 0; for (m; m < pop.tree.length; m++) count += pop.tree[m].item.length; if (count > expand_limit) return timer.search = false; var n = false; if (p.base && pop.tree.length > 1) n = true; m = pop.tree.length; while (m--) {pop.expandNodes(pop.tree[m], !p.base || m ? false : true); if (n && m == 1) break;} if (p.base && pop.tree.length == 1) pop.line_l = 0; sbar.set_rows(pop.tree.length); p.tree_paint(); lib.treeState(false, lib.rememberTree);} timer.search = false;}, 160);
     }
 
     this.on_key_down = function(vkey) {
@@ -1335,12 +1404,12 @@ function button_manager() {
     var arrow_sy = window.GetProperty(" Scrollbar Arrow Custom: Icon // Examples", " // ▲  ⮝    ⯅ ⏫ ⏶ ⤊   "), arrow_symb = 0; if (window.GetProperty(" Scrollbar Arrow Custom", false)) try {arrow_symb = arrow_sy.replace(/\s+/g, "").charAt(0);} catch (e) {arrow_symb = 0} if (!arrow_symb.length) arrow_symb = 0;
     var custom_col = window.GetProperty("_CUSTOM COLOURS/FONTS: USE", false), cust_icon_font = window.GetProperty("_Custom.Font Icon [Scroll] (Name,Style[0or1])", "Segoe UI Symbol,0"), icon_f_name= "Segoe UI", icon_f_style = 0, pad = Math.min(Math.max(window.GetProperty(" Scrollbar Arrow Custom: Icon: Vertical Offset %", -24) / 100, -0.5), 0.3);
     if (custom_col) {if (cust_icon_font.length) {cust_icon_font = cust_icon_font.split(","); try {var st = Math.round(parseFloat(cust_icon_font[1])); if (!st) st = 0; var font_test = gdi.Font(cust_icon_font[0], 16, st); icon_f_name = cust_icon_font[0]; icon_f_style = st;} catch (e) {ui.trace("JScript Panel is unable to use your scroll icon font. Using Segoe UI instead");}}}
-    var b_x, but_tt = window.CreateTooltip("Segoe UI", 15 * ui.scale * window.GetProperty(" Zoom Tooltip [Button] (%)", 100) / 100, 0), bx, by, bh, byDn, byUp, fw, hot_o, i, qx, qy, qh, s_img = [], scr = [], scrollBut_x, scrollDn_y, scrollUp_y;
-    this.btns = []; this.b = null;
+    var b_x, b3 = ["scrollUp", "scrollDn"], but_tt = window.CreateTooltip("Segoe UI", 15 * ui.scale * window.GetProperty(" Zoom Tooltip [Button] (%)", 100) / 100, 0), bx, by, bh, byDn, byUp, fw, hot_o, i, qx, qy, qh, s_img = [], scr = [], scrollBut_x, scrollDn_y, scrollUp_y;
+    this.btns = []; this.b = null; this.Dn = false;
     var browser = function(c) {if (!but.run(c)) fb.ShowPopupMessage("Unable to launch your default browser.", "Library Tree");}
     var tooltip = function(n) {if (but_tt.text == n) return; but_tt.text = n; but_tt.activate();}
-    this.lbtn_dn = function(x, y) {if (!this.b) return false; if (ui.scrollbar_show && (this.b == "scrollUp" || this.b == "scrollDn")) {if (this.btns[this.b].trace(x, y)) this.btns[this.b].down = true; this.btns[this.b].changestate("down");} this.btns[this.b].lbtn_dn(x, y); return true;}
-    this.lbtn_up = function(x, y) {if (!this.b) return false; if (ui.scrollbar_show) {this.btns["scrollUp"].down = false; this.btns["scrollDn"].down = false; if (this.b == "scrollUp" || this.b == "scrollDn") this.btns[this.b].changestate(this.btns[this.b].trace(x, y) ? "hover" : "normal");} this.move(x, y); if (!this.b) return false; this.btns[this.b].lbtn_up(x, y); return true;}
+    this.lbtn_dn = function(x, y) {this.move(x, y); if (!this.b) return false; this.Dn = this.b; if (ui.scrollbar_show) for (j = 0; j < b3.length; j++) if (this.b == b3[j]) {if (this.btns[this.b].trace(x, y)) this.btns[this.b].down = true; this.btns[this.b].changestate("down");} this.btns[this.b].lbtn_dn(x, y); return true;}
+    this.lbtn_up = function(x, y) {this.Dn = false; if (ui.scrollbar_show) for (j = 0; j < b3.length; j++) this.btns[b3[j]].down = false; if (!this.b) return false; if (ui.scrollbar_show) for (j = 0; j < b3.length; j++) if (this.b == b3[j]) this.btns[this.b].changestate(this.btns[this.b].trace(x, y) ? "hover" : "normal"); this.move(x, y); if (!this.b) return false; this.btns[this.b].lbtn_up(x, y); return true;}
     this.leave = function() {if (this.b) this.btns[this.b].changestate("normal"); this.b = null; tooltip("");}
     this.on_script_unload = function() {tooltip("");}
     this.run = function(c) {try {var WshShell = new ActiveXObject("WScript.Shell"); WshShell.Run(c); return true;} catch (e) {return false;}}
@@ -1368,19 +1437,20 @@ function button_manager() {
             if (ui.scrollbar_show && sbar.scrollable_lines > 0 && (i == "scrollUp" || i == "scrollDn"))  this.btns[i].draw(gr);
         }} catch (e) {}
     }
-
     this.move = function(x, y) {
-        if (this.b && this.btns[this.b].down == true) return;
+        if (sbar.timer_but) {if ((this.btns["scrollUp"].down || this.btns["scrollDn"].down) && !this.btns["scrollUp"].trace(x, y) && !this.btns["scrollDn"].trace(x, y)) {this.btns["scrollUp"].changestate("normal"); this.btns["scrollDn"].changestate("normal"); window.ClearTimeout(sbar.timer_but); sbar.timer_but = false; sbar.count = -1;}}
+        else for (j = 0; j < b3.length; j++) if (this.b == b3[j] && this.btns[this.b].down) {this.btns[this.b].changestate("down"); this.btns[this.b].l_dn();}
         var b = null, hand = false;
         for (i in this.btns) {
-            if ((p.s_show == 1 || p.s_show > 1 && !p.s_txt) && i == "s_img" && this.btns[i].trace(x, y)) {b = i; hand = true;}
-            if (p.s_show == 1 && i == "cross1" && this.btns[i].trace(x, y)) {b = i; hand = true;}
-            if (p.s_show > 1 && p.s_txt && i == "cross2" && this.btns[i].trace(x, y)) {b = i; hand = true;}
-            if (p.s_show > 1 && i == "filter" && this.btns[i].trace(x, y)) {b = i; hand = true;}
-            if (ui.scrollbar_show && sbar.scrollable_lines > 0 && (i == "scrollUp" || i == "scrollDn") && this.btns[i].trace(x, y)) b = i;
-        } window.SetCursor(hand ? 32649 : y < p.s_h && p.s_show && x > qx + qh ? 32513 : 32512);
+            if ((p.s_show == 1 || p.s_show > 1 && !p.s_txt) && i == "s_img" && (!this.Dn || this.Dn == "s_img") && this.btns[i].trace(x, y)) {b = i; hand = true;}
+            if (p.s_show == 1 && i == "cross1" && (!this.Dn || this.Dn == "cross1") && this.btns[i].trace(x, y)) {b = i; hand = true;}
+            if (p.s_show > 1 && p.s_txt && i == "cross2" && (!this.Dn || this.Dn == "cross2") && this.btns[i].trace(x, y)) {b = i; hand = true;}
+            if (p.s_show > 1 && i == "filter" && (!this.Dn || this.Dn == "filter") && this.btns[i].trace(x, y)) {b = i; hand = true;}
+            if (ui.scrollbar_show && sbar.scrollable_lines > 0) for (j = 0; j < b3.length; j++) if (i == b3[j] && (!this.Dn || this.Dn == b3[j]) && this.btns[i].trace(x, y)) b = i;
+        }
+        window.SetCursor(this.Dn && this.Dn != this.b ? 32512 : hand ? 32649 : y < p.s_h && p.s_show && x > qx + qh ? 32513 : 32512);
         if (this.b == b) return this.b;
-        if (b) this.btns[b].changestate("hover");
+        if (b && (!this.Dn || this.Dn == b)) this.btns[b].changestate("hover");
         if (this.b) this.btns[this.b].changestate("normal");
         this.b = b;
         if (!this.b) tooltip("");
@@ -1403,7 +1473,7 @@ function button_manager() {
 
         this.changestate = function(state) {
             switch (state) {case "hover": this.img = this.img_hover; tooltip(this.tooltext); break; case "down": this.img = this.img_down; break; default: this.img = this.img_normal; break;}
-            window.RepaintRect(this.x, this.y, this.w, this.h);
+            window.RepaintRect(this.x, this.y, this.w + 1, this.h + 1);
         }
         this.x = x; this.y = y; this.w = w; this.h = h; this.l_dn = l_dn; this.l_up = l_up; this.tooltext = tooltext;
         this.img_normal = img_src.normal; this.img_hover = img_src.hover || this.img_normal; this.img_down = img_src.down || this.img_normal; this.img = this.img_normal;
@@ -1428,7 +1498,7 @@ function button_manager() {
             }
         }
         if (p.s_show)  {
-            this.btns.s_img = new btn(qx, qy, qh, qh, 3, "", "", "", {normal: s_img[0], hover: s_img[1]}, false, function() {browser("\"" + fb.FoobarPath + "Query Syntax Help.html");}, "", "Open Query Syntax Help");
+            this.btns.s_img = new btn(qx, qy, qh, qh, 3, "", "", "", {normal: s_img[0], hover: s_img[1]}, false, "", function() {browser("\"" + fb.FoobarPath + "doc\\Query Syntax Help.html");}, "", "Open Query Syntax Help");
             this.btns.cross1 = new btn(bx, by, bh, bh, 4, "", "", "", {normal: "85", hover: "192"}, false, "", function() {sL.clear();}, "Clear Search Text");
             this.btns.cross2 = new btn(qx - bh * 0.2, by, bh, bh, 4, "", "", "", {normal: "85", hover: "192"}, false, "", function() {sL.clear();}, "Clear Search Text");
             this.btns.filter = new btn(p.f_x1 - 12, 0, fw, p.s_sp, 5, p.f_but_ft, "▼", "", {normal: !ui.local ? ui.txt_box & 0x99ffffff : ui.txt_box, hover: ui.txt_box & 0xe4ffffff}, false, "", function() {men.button(p.f_x1, p.s_h); but.refresh(true)}, "Filter");
@@ -1463,7 +1533,7 @@ function menu_object() {
 
     this.button = function(x, y) {
         var menu = window.CreatePopupMenu(), idx, Index = 1; Index = this.FilterMenu(menu, Index); idx = menu.TrackPopupMenu(x, y);
-        if (idx >= 1 && idx <= Index) {i = MenuMap[idx].value;
+        if (idx >= 1 && idx <= Index) {i = MenuMap[idx].value; pop.subCounts.filter = {}; pop.subCounts.search = {};
             switch (i) {
                 case p.f_menu.length + 1: p.reset = !p.reset; if (p.reset) {p.search_paint(); lib.treeState(true, 2);} window.SetProperty("SYSTEM.Reset Tree", p.reset); break;
                 default: p.filter_by = i - 1; p.calc_text(); p.search_paint(); lib.treeState(true, 2); window.SetProperty("SYSTEM.Filter By", p.filter_by); break;
@@ -1496,11 +1566,11 @@ function menu_object() {
 
     this.rbtn_up = function(x, y) {
         this.r_up = true; var Context = fb.CreateContextMenuManager(), FilterMenu = window.CreatePopupMenu(), idx, Index = 1, menu = window.CreatePopupMenu(), new_sel = false, OptionsMenu = window.CreatePopupMenu(), PlaylistMenu = window.CreatePopupMenu(), ThemeMenu = window.CreatePopupMenu(), show_context = false;
-        var ie = pop.get_ix(x, y, true, false), ix = pop.row(y + sbar.delta), item = pop.tree[ix], nm = "", row = -1; xp = false;
-        if (ie < pop.tree.length && ie != -1) xp = pop.tree[ie].item.length > expand_limit || pop.tree[ie].track ? false : true;
-        if (xp && pop.tree.length) {var count = 0, m = 0; for (m = 0; m < pop.tree.length; m++) if (m == ie || pop.tree[m].sel) {if (row == -1 || m < row) {row = m; nm = (pop.tree[m].tr ? pop.tree[pop.tree[m].par].name : "") + pop.tree[m].name; nm = nm.toUpperCase();} count += pop.tree[m].item.length; xp = count <= expand_limit;}}
-        if (y < p.s_h + p.sp && pop.tree.length > ix && ix >= 0 && (x < Math.round(ui.pad * item.tr) + ui.icon_w + ui.margin && (!item.track || p.base && item.tr == 0) || pop.check_ix(item, x, y, true))) {
-            if (!item.sel) {new_sel = true; pop.get_selection(ix, "", true, true);}
+        var ix = pop.get_ix(x, y, true, false), item = pop.tree[ix], nm = "", row = -1; xp = false;
+        if (y < p.s_h + p.sp && pop.tree.length > ix && ix != -1 && (x < Math.round(ui.pad * item.tr) + ui.icon_w + ui.margin && (!item.track || p.base && item.tr == 0) || pop.check_ix(item, x, y, true))) {
+            if (!item.sel) {pop.clear(); item.sel = true;}
+            pop.get_sel_items(); xp = pop.tree[ix].item.length > expand_limit || pop.tree[ix].track ? false : true;
+            if (xp && pop.tree.length) {var count = 0, m = 0; for (m = 0; m < pop.tree.length; m++) if (m == ix || pop.tree[m].sel) {if (row == -1 || m < row) {row = m; nm = (pop.tree[m].tr ? pop.tree[pop.tree[m].par].name : "") + pop.tree[m].name; nm = nm.toUpperCase();} count += pop.tree[m].item.length; xp = count <= expand_limit;}}
             Index = this.PlaylistTypeMenu(menu, Index); menu.AppendMenuSeparator();
             if (utils.IsKeyPressed(0x10)) {Index = this.TagTypeMenu(menu, Index); menu.AppendMenuSeparator();}
             show_context = true;
@@ -1509,8 +1579,8 @@ function menu_object() {
             Index = this.OptionsTypeMenu(OptionsMenu, Index); OptionsMenu.AppendTo(menu, MF_STRING, "Options");
             Index = this.ThemeTypeMenu(ThemeMenu, Index); ThemeMenu.AppendTo(OptionsMenu, MF_STRING, "Theme"); OptionsMenu.AppendMenuSeparator();
             Index = this.ConfigTypeMenu(OptionsMenu, Index);
-            menu.AppendMenuSeparator(); var items = fb.CreateHandleList(); try {for (var l = 0; l < pop.sel_items.length; l++) items.Add(p.list.Item(pop.sel_items[l]));} catch (e)  {}
-            Context.InitContext(items); items.Dispose(); Context.BuildMenu(menu, 5000, -1);
+            menu.AppendMenuSeparator(); var items = pop.getHandles();
+            Context.InitContext(items); Context.BuildMenu(menu, 5000, -1);
         } else {
             Index = this.OptionsTypeMenu(menu, Index);
             Index = this.ThemeTypeMenu(ThemeMenu, Index); ThemeMenu.AppendTo(menu, MF_STRING, "Theme"); menu.AppendMenuSeparator();
@@ -1523,23 +1593,23 @@ function menu_object() {
             switch (MenuMap[idx].type) {
                 case "Playlist":
                     switch (i) {
-                        case 1: if (new_sel) pop.clear(); item.sel = true; pop.get_sel_items(); pop.load(pop.sel_items, true, false, true, false, false); p.tree_paint(); lib.treeState(false, lib.rememberTree); break;
-                        case 4: if (new_sel) pop.clear(); item.sel = true; var handle_list = pop.getHandles(true); fb.CopyHandleListToClipboard(handle_list); handle_list.Dispose(); lib.treeState(false, lib.rememberTree); break;
+                        case 1: pop.load(pop.sel_items, true, false, true, false, false); p.tree_paint(); lib.treeState(false, lib.rememberTree); break;
+                        case 4: fb.CopyHandleListToClipboard(items); lib.treeState(false, lib.rememberTree); break;
                         case 5: pop.collapseAll(); break;
-                        case 6: pop.expand(ie, nm); break;
-                        default:  if (new_sel) pop.clear(); item.sel = true; pop.get_sel_items(); pop.load(pop.sel_items, true, true, false, false, i == 2 ? true : false); lib.treeState(false, lib.rememberTree); break;
+                        case 6: pop.expand(ix, nm); break;
+                        default: pop.load(pop.sel_items, true, true, false, false, i == 2 ? true : false); lib.treeState(false, lib.rememberTree); break;
                     }
                     break;
                 case "Tag":
-                    var r = !p.base ? pop.tree[ie].tr : pop.tree[ie].tr - 1, list = [];
-                    if (p.base && !ie || !r) pop.tree[ie].sel = true;
+                    var r = !p.base ? pop.tree[ix].tr : pop.tree[ix].tr - 1, list = [];
+                    if (p.base && !ix || !r) pop.tree[ix].sel = true;
                     if (p.base && pop.tree[0].sel) for (var j = 0; j < pop.tree.length; j++) if (pop.tree[j].tr == 1) pop.tree[j].sel = true; p.tree_paint();
                     for ( j = 0; j < pop.tree.length; j++) if ((pop.tree[j].tr == (p.base ? 1 : 0)) && pop.tree[j].sel) list.push(pop.tree[j].name);
                     if (!proceed(list.length)) break;
                     p.syncType = 1; for (j = 0; j < list.length; j++) but.run("\"" + fb.FoobarPath + "\\foobar2000.exe\"" + " /m-TAGS \"" + list[j] + "\"");
                     p.syncType = window.GetProperty(" Library Sync: Auto-0, Initialisation Only-1", 0); lib.treeState(false, 2);
                     break;
-                case "Options": lib.time.Reset(); if (p.s_txt) lib.upd_search = true; p.fields(i < p.grp.length + 1 ? i - 1 : p.view_by, i - 1 < p.grp.length ? p.filter_by : i - 1 - p.grp.length); lib.get_library(); lib.rootNodes(); if (p.pn_h_auto && p.pn_h == p.pn_h_min && pop.tree[0]) pop.clear_child(pop.tree[0]); break;
+                case "Options": lib.time.Reset(); if (p.s_txt) lib.upd_search = true; p.fields(i < p.grp.length + 1 ? i - 1 : p.view_by, i - 1 < p.grp.length ? p.filter_by : i - 1 - p.grp.length); pop.subCounts =  {"standard": {}, "search": {}, "filter": {}}; lib.get_library(); lib.rootNodes(); if (p.pn_h_auto && p.pn_h == p.pn_h_min && pop.tree[0]) pop.clear_child(pop.tree[0]); break;
                 case "Theme": if (i < 6) ui.blurChange(i); else window.Reload(); break;
                 case "Config":
                     switch (i) {
@@ -1551,7 +1621,7 @@ function menu_object() {
             }
         }
         if (idx >= 5000 && idx <= 5800) {show_context && Context.ExecuteByID(idx - 5000);}
-        this.r_up = false;
+        if (items) items.Dispose(); this.r_up = false;
         Context.Dispose(); FilterMenu.Dispose(); menu.Dispose(); OptionsMenu.Dispose(); PlaylistMenu.Dispose(); ThemeMenu.Dispose();
     }
 }
@@ -1563,13 +1633,13 @@ function timers() {
     this.reset = function(timer, n) {if (timer) window.ClearTimeout(timer); this[timer_arr[n]] = false;}
     this.lib = function() {window.SetTimeout(function() {if ((ui.w < 1 || !window.IsVisible) && lib.rememberTree) lib.init = true; lib.get_library(); lib.rootNodes(lib.rememberTree ? 1 : 0, lib.process);}, 5);}
     this.tooltip = function() {this.reset(this.tt, this.tti); this.tt = window.SetTimeout(function() {pop.deactivate_tooltip(); timer.tt = false;}, 5000);}
-    this.lib_update = function() {this.reset(this.update, this.updatei); this.update = window.SetTimeout(function() {lib.time.Reset(); lib.rootNodes(2, lib.process); timer.update = false;}, 500);}
+    this.lib_update = function() {this.reset(this.update, this.updatei); this.update = window.SetTimeout(function() {lib.time.Reset(); pop.subCounts =  {"standard": {}, "search": {}, "filter": {}}; lib.rootNodes(2, lib.process); timer.update = false;}, 500);}
 }
 var timer = new timers();
 timer.lib();
 
 function on_char(code) {pop.on_char(code); jS.on_char(code); if (!p.s_show) return; sL.on_char(code);}
-function on_focus(is_focused) {if (is_focused && pop.handle_list && pop.handle_list.Count) pop.selection_holder.SetSelection(pop.handle_list);}
+function on_focus(is_focused) {if (!is_focused) {timer.reset(timer.search_cursor, timer.search_cursori); p.s_cursor = false; p.search_paint();} pop.on_focus(is_focused);}
 function on_get_album_art_done(handle, art_id, image, image_path) {ui.get_album_art_done(image, image_path);}
 function on_metadb_changed() {if (!ui.blur && !ui.imgBg || ui.block()) return; ui.on_playback_new_track();}
 function on_item_focus_change() {if (fb.IsPlaying || !ui.blur && !ui.imgBg) return; if (ui.block()) ui.get = true; else {ui.get = false; ui.focus_changed(250);}}
@@ -1581,7 +1651,7 @@ function on_library_items_changed(handle_list) {if (p.syncType) return; lib.tree
 function on_main_menu(index) {pop.on_main_menu(index);}
 function on_mouse_lbtn_dblclk(x, y) {but.lbtn_dn(x, y); pop.lbtn_dblclk(x, y); }
 function on_mouse_lbtn_down(x, y) {if (p.s_show || ui.scrollbar_show) but.lbtn_dn(x, y); if (p.s_show) sL.lbtn_dn(x, y); pop.lbtn_dn(x, y); sbar.lbtn_dn(x, y);}
-function on_mouse_lbtn_up(x, y) {if (p.s_show) {sL.lbtn_up(); but.lbtn_up(x, y);} pop.lbtn_up(x, y); sbar.lbtn_up(x, y);}
+function on_mouse_lbtn_up(x, y) {pop.lbtn_up(x, y); if (p.s_show) {sL.lbtn_up(); but.lbtn_up(x, y);} sbar.lbtn_up(x, y);}
 function on_mouse_leave() {if (p.s_show || ui.scrollbar_show) but.leave(); sbar.leave(); pop.leave();}
 function on_mouse_mbtn_up(x, y) {pop.mbtn_up(x, y);}
 function on_mouse_move(x, y) {if (p.m_x == x && p.m_y == y) return; if (p.s_show || ui.scrollbar_show) but.move(x, y); if (p.s_show) sL.move(x, y); pop.move(x, y); pop.dragDrop(x, y); sbar.move(x, y); p.m_x = x; p.m_y = y;}
@@ -1602,4 +1672,4 @@ function StringFormat() {
     return (h_align << 28 | v_align << 24 | trimming << 20 | flags);
 }
 
-if (!window.GetProperty("SYSTEM.Software Notice Checked", false)) fb.ShowPopupMessage("THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHORS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.", "Library Tree"); window.SetProperty("SYSTEM.Software Notice Checked", true); window.SetProperty(" Node: Item Counts 0-Hide 1-Tracks 2-Sub-Items", null); window.SetProperty(" Node: Show All Music", null); window.SetProperty(" Playlist: Play On Send From Menu", null); window.SetProperty(" Text Single-Click: AutoFill Playlist", null); window.SetProperty("ADV.Height Auto [Expand/Collapse With All Music]", null); window.SetProperty("SYSTEM.Zoom Update", true);
+if (!window.GetProperty("SYSTEM.Software Notice Checked", false)) fb.ShowPopupMessage("THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHORS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.", "Library Tree"); window.SetProperty("SYSTEM.Software Notice Checked", true); window.SetProperty(" Hot Key: Add to Playlist: 1-10", null); window.SetProperty(" Hot Key: Insert in Playlist: 1-10", null); window.SetProperty(" Node: Item Counts 0-Hide 1-Tracks 2-Sub-Items", null); window.SetProperty(" Node: Show All Music", null); window.SetProperty(" Playlist: Play On Send From Menu", null); window.SetProperty(" Text Single-Click: AutoFill Playlist", null); window.SetProperty("ADV.Height Auto [Expand/Collapse With All Music]", null); window.SetProperty("SYSTEM.Zoom Update", true);

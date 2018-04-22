@@ -26,8 +26,6 @@
     }
 })();
 
-// TODO: Handle full-screen maximize properly: pseudo-caption should be available regardless of border mode
-
 var trace_call = false;
 var trace_on_paint = false;
 var trace_on_move = false;
@@ -106,14 +104,6 @@ var FrameStyle =
         SmallCaption: 1,
         NoCaption:    2,
         NoBorder:     3
-    };
-
-var MoveStyle =
-    {
-        Default: 0,
-        Middle:  1,
-        Left:    2,
-        Both:    3
     };
 
 var mouse_move_suppress = new qwr_utils.MouseMoveSuppress();
@@ -256,11 +246,13 @@ function Menu() {
         this.h = h - pad;
         this.w = w - 2 * pad;
 
-        create_buttons(this.x, this.y, this.w, this.h);
-
-        if (!frame_handler.has_true_caption) {
-            frame_handler.set_caption(left_pad, this.y, right_pad - left_pad, this.h);
+        if (UIHacks.FullScreen && UIHacks.MainWindowState !== WindowState.Maximized) {
+            // Bug workaround: dragging in fullscreen mode will restore window state, while keeping fullscreen flag
+            UIHacks.FullScreen = false;
         }
+
+        create_buttons(that.x, that.y, that.w, that.h);
+        frame_handler.set_caption(left_pad, that.y, right_pad - left_pad, that.h);
     };
 
     this.on_mouse_move = function(x, y, m) {
@@ -305,8 +297,6 @@ function Menu() {
             'Default',
             _.bind(function() {
                 frame_handler.change_style(FrameStyle.Default);
-                frame_handler.toggle_shadow(false);
-                create_buttons(this.x, this.y, this.w, this.h);
             }, this)
         );
 
@@ -314,8 +304,6 @@ function Menu() {
             'Small caption',
             _.bind(function() {
                 frame_handler.change_style(FrameStyle.SmallCaption);
-                frame_handler.toggle_shadow(false);
-                create_buttons(this.x, this.y, this.w, this.h);
             }, this)
         );
 
@@ -323,9 +311,6 @@ function Menu() {
             'No caption',
             _.bind(function() {
                 frame_handler.change_style(FrameStyle.NoCaption);
-                frame_handler.toggle_shadow(false);
-                create_buttons(this.x, this.y, this.w, this.h);
-                frame_handler.set_caption(left_pad, this.y, right_pad - left_pad, this.h);
             }, this)
         );
 
@@ -333,9 +318,6 @@ function Menu() {
             'No border',
             _.bind(function() {
                 frame_handler.change_style(FrameStyle.NoBorder);
-                frame_handler.toggle_shadow(g_properties.show_window_shadow);
-                create_buttons(this.x, this.y, this.w, this.h);
-                frame_handler.set_caption(left_pad, this.y, right_pad - left_pad, this.h);
             }, this)
         );
 
@@ -347,8 +329,7 @@ function Menu() {
             frame.append_item(
                 'Show window shadow',
                 function() {
-                    g_properties.show_window_shadow = !g_properties.show_window_shadow;
-                    frame_handler.toggle_shadow(g_properties.show_window_shadow);
+                    frame_handler.toggle_shadow();
                 },
                 {is_checked: g_properties.show_window_shadow}
             );
@@ -453,13 +434,16 @@ function Menu() {
             fb.RunMainMenuCommand('View/Always on Top');
         }
 
-        frame_handler.toggle_shadow(g_properties.show_window_shadow);
-
         create_button_images();
 
         if (g_properties.show_cpu_usage) {
             cpu_usage_tracker.start();
         }
+    }
+
+    function refresh_buttons() {
+        create_buttons(that.x, that.y, that.w, that.h);
+        frame_handler.set_caption(left_pad, that.y, right_pad - left_pad, that.h);
     }
 
     function create_buttons(x_arg, y_arg, w_arg, h_arg) {
@@ -840,12 +824,13 @@ function Menu() {
     this.h = 0;
 
     // private:
+    var that = this;
 
     // Mouse state
     var mouse_down = false;
 
     // Objects
-    var frame_handler = new FrameStyleHandler();
+    var frame_handler = new FrameStyleHandler(refresh_buttons);
     var mode_handler = new WindowModeHandler();
     var cpu_usage_tracker = new CpuUsageTracker(_.bind(this.repaint, this));
     var buttons = undefined;
@@ -1046,50 +1031,49 @@ function WindowModeHandler() {
 /**
  * @constructor
  */
-function FrameStyleHandler() {
+function FrameStyleHandler(on_style_change_callback_arg) {
     this.change_style = function(style) {
-        switch (style) {
-            case FrameStyle.Default:
-                UIHacks.FrameStyle = FrameStyle.Default;
-                UIHacks.MoveStyle = MoveStyle.Default;
-                this.disable_caption();
-                break;
-            case FrameStyle.SmallCaption:
-                UIHacks.FrameStyle = FrameStyle.SmallCaption;
-                UIHacks.MoveStyle = MoveStyle.Default;
-                this.disable_caption();
-                break;
-            case FrameStyle.NoCaption:
-                UIHacks.FrameStyle = FrameStyle.NoCaption;
-                UIHacks.MoveStyle = MoveStyle.Default;
-                break;
-            case FrameStyle.NoBorder:
-                UIHacks.FrameStyle = FrameStyle.NoBorder;
-                UIHacks.MoveStyle = MoveStyle.Default;
-                break;
-            default:
-                throw new ArgumentError('frame_style', style);
+        UIHacks.FrameStyle = style;
+
+        on_style_change_callback();
+        update_caption_state();
+        update_shadow_state();
+    };
+
+    this.disable_caption = function() {
+        UIHacks.SetPseudoCaption(0, 0, 0, 0);
+    };
+
+    this.set_caption = function(x_arg, y_arg, w_arg, h_arg) {
+        if (x_arg === x && y_arg === y && w_arg === w && h_arg === h) {
+            return;
         }
+
+        x = x_arg;
+        y = y_arg;
+        w = w_arg;
+        h = h_arg;
 
         update_caption_state();
     };
 
-    this.disable_caption = function() {
-        this.set_caption(0, 0, 0, 0);
+    this.toggle_shadow = function() {
+        g_properties.show_window_shadow = !g_properties.show_window_shadow;
+        update_shadow_state();
     };
 
-    this.set_caption = function(x_arg, y_arg, w_arg, h_arg) {
-        if (x_arg !== x || y_arg !== y || w_arg !== w || h_arg !== h) {
-            x = x_arg;
-            y = y_arg;
-            w = w_arg;
-            h = h_arg;
+    function update_caption_state() {
+        that.has_true_caption = (UIHacks.FrameStyle === FrameStyle.Default || UIHacks.FrameStyle === FrameStyle.SmallCaption) && !UIHacks.FullScreen;
+        if (that.has_true_caption) {
+            that.disable_caption();
+        }
+        else {
             UIHacks.SetPseudoCaption(x, y, w, h);
         }
-    };
+    }
 
-    this.toggle_shadow = function(show_window_shadow) {
-        if (show_window_shadow && UIHacks.FrameStyle === FrameStyle.NoBorder) {
+    function update_shadow_state() {
+        if (g_properties.show_window_shadow && UIHacks.FrameStyle === FrameStyle.NoBorder) {
             UIHacks.Aero.Effect = 2;
             UIHacks.Aero.Top = 1;
         }
@@ -1097,15 +1081,13 @@ function FrameStyleHandler() {
             UIHacks.Aero.Effect = 0;
             UIHacks.Aero.Left = UIHacks.Aero.Top = UIHacks.Aero.Right = UIHacks.Aero.Bottom = 0;
         }
-    };
-
-    function update_caption_state() {
-        that.has_true_caption = (UIHacks.FrameStyle === FrameStyle.Default || UIHacks.FrameStyle === FrameStyle.SmallCaption) && !UIHacks.FullScreen;
     }
 
     this.has_true_caption = undefined;
 
     var that = this;
+
+    var on_style_change_callback = on_style_change_callback_arg;
 
     var x;
     var y;
@@ -1113,6 +1095,7 @@ function FrameStyleHandler() {
     var h;
 
     update_caption_state();
+    update_shadow_state();
 }
 
 /**

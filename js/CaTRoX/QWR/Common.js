@@ -3,9 +3,11 @@
 // @author 'TheQwertiest'
 // ==/PREPROCESSOR==
 
+//<editor-fold desc="Global constants">
+
 var g_theme = {};
 g_theme.name = 'CaTRoX (QWR Edition)';
-g_theme.version = '4.2.0b';
+g_theme.version = '4.2.1';
 g_theme.folder_name = 'CaTRoX';
 g_theme.script_folder = 'themes\\' + g_theme.folder_name + '\\Scripts\\';
 
@@ -140,6 +142,10 @@ var g_album_art_id = {
     artist: 4
 };
 
+//</editor-fold>
+
+//<editor-fold desc="Error types">
+
 /**
  * @param {string} msg
  * @constructor
@@ -222,6 +228,12 @@ function ArgumentError(arg_name, arg_value, additional_msg) {
     this.message = err_msg;
 }
 ArgumentError.prototype = Object.create(Error.prototype);
+
+//</editor-fold>
+
+var UIHacks = null;
+    /** @type {IUIHacks} */
+// UIHacks = new ActiveXObject('UIHacks');
 
 var qwr_utils = {
     EnableSizing:         function (m) {
@@ -436,11 +448,58 @@ var qwr_utils = {
 };
 
 /**
- * @param{string} text_id
+ * @constructor
+ */
+function KeyActionHandler() {
+    /**
+     * @param{string} key
+     * @param{function} action_callback
+     */
+    this.register_key_action = function(key, action_callback) {
+        if (!action_callback) {
+            throw new ArgumentError('action_callback', action_callback);
+        }
+
+        if (!_.isNil(actions[key])) {
+            throw new ArgumentError('key', key.toString(), 'This key is already used');
+        }
+
+        actions[key] = action_callback;
+    };
+
+    /**
+     * @param{string} key
+     * @param{object=} [key_modifiers={}] passed to key action callback
+     * @param{boolean=} [key_modifiers.ctrl=false]
+     * @param{boolean=} [key_modifiers.alt=false]
+     * @param{boolean=} [key_modifiers.shift=false]
+     * @return{boolean} true, if key is registered, false - otherwise
+     */
+    this.invoke_key_action = function(key, key_modifiers) {
+        var key_obj = actions[key];
+        if (!key_obj) {
+            return false;
+        }
+
+        var key_action = actions[key];
+        if (!actions[key]) {
+            return false;
+        }
+
+        key_action(key_modifiers ? key_modifiers : {});
+
+        return true;
+    };
+
+    var actions = {};
+}
+
+/**
+ * @param{string} name
  * @param{*} default_value
  * @constructor
  */
-function PanelProperty(text_id, default_value) {
+function PanelProperty(name, default_value) {
     /**
      * @return {*}
      */
@@ -453,46 +512,85 @@ function PanelProperty(text_id, default_value) {
      */
     this.set = function(new_value) {
         if (value !== new_value) {
-            window.SetProperty(this.text_id, new_value);
+            window.SetProperty(this.name, new_value);
             value = new_value;
         }
     };
 
-    this.text_id = text_id;
+    /** @const{string} */
+    this.name = name;
 
-    var value = window.GetProperty(this.text_id, default_value);
+    /** @type{*} */
+    var value = window.GetProperty(this.name, default_value);
 }
 
-var UIHacks = null;
-    /** @type {IUIHacks} */
-// UIHacks = new ActiveXObject('UIHacks');
+/**
+ * @hideconstructor
+ */
+var PanelProperties = (function(){
+    function PanelProperties() {
+        /**
+         * @param {Array} properties Each item in array is an object of the following type { string, [string, any] }
+         */
+        this.add_properties = function (properties) {
+            _.forEach(properties, function (item, i) {
+                validate_property_item(item, i);
+                add_property_item(item, i);
+            });
+        };
 
-function Properties() {
-	this.add_properties = function (properties) {
-        _.forEach(properties, _.bind(function (item, i) {
+        function validate_property_item(item, item_id) {
             if (!_.isArray(item) || item.length !== 2 || !_.isString(item[0])) {
-                throw new TypeError('property', typeof item, '{ string, [string, any] }', 'Usage: add_properties({\n  property_name, [property.string.description, property_default_value]\n})');
+                throw new TypeError('property', typeof item, '{ string, [string, any] }', 'Usage: add_properties({\n  property_id: [property_name, property_default_value]\n})');
             }
-            if (i === 'add_properties') {
-                throw new ArgumentError('property_name', i, 'This name is reserved');
+            if (item_id === 'add_properties') {
+                throw new ArgumentError('property_id', item_id, 'This id is reserved');
             }
-            if (!_.isNil(this[i]) || !_.isNil(this[i + '_internal'])) {
-                throw new ArgumentError('property_name', i, 'This name is already occupied');
+            if (!_.isNil(that[item_id]) || !_.isNil(that[item_id + '_internal'])) {
+                throw new ArgumentError('property_id', item_id, 'This id is already occupied');
             }
+            if (!_.isNil(name_list[item[0]])) {
+                throw new ArgumentError('property_name', item[0], 'This name is already occupied');
+            }
+        }
 
-            this[i + '_internal'] = new PanelProperty(item[0], item[1]);
-            Object.defineProperty(this, i, {
+        function add_property_item(item, item_id) {
+            name_list[item[0]] = 1;
+
+            that[item_id + '_internal'] = new PanelProperty(item[0], item[1]);
+
+            Object.defineProperty(that, item_id, {
                 get: function () {
-                    return this[i + '_internal'].get()
+                    return that[item_id + '_internal'].get()
                 },
                 set: function (new_value) {
-                    this[i + '_internal'].set(new_value)
+                    that[item_id + '_internal'].set(new_value)
                 }
             });
-        }, this));
-    };
-}
+        }
 
-var g_properties = new Properties();
+        var that = this;
+        // Used for collision checks only
+        var name_list = {};
+    }
+
+    var instance = null;
+
+    return {
+        /**
+         * @alias PanelProperties.get_instance
+         * @returns {PanelProperties}
+         */
+        get_instance: function(){
+            if (!instance) {
+                instance = new PanelProperties();
+                delete instance.constructor;
+            }
+            return instance;
+        }
+    };
+})();
+
+var g_properties = PanelProperties.get_instance();
 
 var g_script_list = ['Common.js'];

@@ -29,7 +29,6 @@ g_properties.add_properties(
     g_properties.row_h = Math.max(10, g_properties.row_h);
 })();
 
-
 /**
  * Basic list with a scrollbar.
  * By default each item is a row of a fixed size.
@@ -43,11 +42,6 @@ g_properties.add_properties(
 List = function (x, y, w, h, content) {
 
     // public:
-
-    /** @type {function} */
-    this.throttled_repaint = _.throttle(_.bind(function () {
-        window.RepaintRect(this.x, this.y, this.w, this.h);
-    }, this), 1000 / 60);
 
     /** @type {number} */
     this.x = x;
@@ -67,6 +61,14 @@ List = function (x, y, w, h, content) {
     this.panel_back_color = g_theme.colors.panel_back;
 
     // protected:
+
+    /**
+     * @private
+     * @function
+     */
+    this.throttled_repaint = _.throttle(_.bind(function () {
+        window.RepaintRect(this.x, this.y, this.w, this.h);
+    }, this), 1000 / 60);
 
     /** @protected {number} */
     this.list_x = this.x + g_properties.list_left_pad;
@@ -152,6 +154,7 @@ List.prototype.on_paint = function (gr) {
     }
 };
 
+// TODO: Mordred - override this elsewhere
 List.prototype.on_size = function (w, h, x, y) {
     var w_changed = this.w !== w || this.x !== x;
     var h_changed = this.h !== h || this.y !== y;
@@ -464,9 +467,11 @@ List.prototype.update_list_w_size = function () {
         this.scrollbar.set_x(this.w - g_properties.scrollbar_w - g_properties.scrollbar_right_pad);
     }
 
+	// TODO: Mordred - override this elsewhere
 	this.initialize_scrollbar();
     this.update_scrollbar();
     this.on_content_to_draw_change();
+
     this.cnt.update_items_w_size(this.list_w);
 };
 
@@ -488,7 +493,8 @@ List.prototype.calculate_shift_params = function () {
  */
 List.Item = function (x, y, w, h) {
     /**
-     * @private {function}
+     * @private
+     * @function
      */
     this.throttled_repaint = _.throttle(_.bind(function () {
         window.RepaintRect(this.x, this.y, this.w, this.h);

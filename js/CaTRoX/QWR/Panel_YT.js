@@ -1,7 +1,7 @@
 ﻿// ==PREPROCESSOR==
 // @name "YouTube Track Manager"
 // @author "WilB"
-// @version "3.9.5"
+// @version "3.9.5.2"
 // ==/PREPROCESSOR==
 
 if (!("Version" in utils) || utils.Version < 2100) {fb.ShowPopupMessage("Requires: JScript Panel 2.1.0+", "YouTube Track Manager");}
@@ -90,10 +90,6 @@ function userinterface() {
 }
 var ui = new userinterface();
 
-function on_colours_changed(clear) {ui.reset_colors(); ui.get_colors(); if (ui.blur) p.show_images = true; but.create_images(); but.refresh(); if (p.np_graphic) img.create_images(); if (ui.blur_blend || clear) img.on_size(); t.paint();}
-function on_font_changed() {ui.get_font(); t.paint();}
-function titleformat() {this.a = fb.TitleFormat("%artist%"); this.a0 = fb.TitleFormat("[$meta(artist,0)]"); this.d = fb.TitleFormat("[%length_seconds_fp%]"); this.i = fb.TitleFormat("$info(@REFERENCED_FILE)"); this.l0 = fb.TitleFormat("[$meta(album,0)]"); this.pl = fb.TitleFormat("%artist%|%date%|%album%|%discnumber%|%tracknumber%"); this.popup = fb.TitleFormat("[%video_popup_status%]"); this.r = fb.TitleFormat("$rand()"); this.rg = fb.TitleFormat("[%replaygain_track_gain%]"); this.rp = fb.TitleFormat("[%replaygain_track_peak%]"); this.t = fb.TitleFormat("%title%"); this.t0 = fb.TitleFormat("[$meta(title,0)]");} var tf = new titleformat();
-function v_keys() {this.selAll = 1; this.copy = 3; this.back = 8; this.enter = 13; this.shift = 16; this.paste = 22; this.cut = 24; this.redo = 25; this.undo = 26; this.pgUp = 33; this.pgDn = 34; this.end = 35; this.home = 36; this.left = 37; this.right = 39; this.del = 46;} var v = new v_keys();
 if (!Date.now) {Date.now = function now() {return new Date().getTime();}}
 Number.prototype.padLeft = function(base, chr) {var  len = (String(base || 10).length - String(this).length) + 1; return len > 0 ? new Array(len).join(chr || '0')+this : this;}
 String.prototype.clean = function() {return this.replace(/[\/\\|:]/g, "-").replace(/\*/g, "x").replace(/"/g, "''").replace(/[<>]/g, "_").replace(/\?/g, "").replace(/^\./, "_").replace(/\.+$/, "").replace(/^\s+|[\n\s]+$/g, "");}
@@ -104,6 +100,22 @@ String.prototype.strip_remaster = function() {var n = this.toLowerCase(); if (n.
 String.prototype.tidy = function() {return this.replace(/[\.,\!\?\:;'’"\-_]/g, "").toLowerCase();}
 if (!String.prototype.trim) {String.prototype.trim = function () {return this.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, '');};}
 String.prototype.uuid = function() {return (/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/).test(this);}
+
+function names() {
+    var field = window.GetProperty(" Library: Search (Field Names - No Titleformatting)", "ARTIST FIELD,Artist,ALBUM FIELD,Album,GENRE FIELD,Genre,TITLE FIELD,Title").split(",");
+    this.q_a = field[1] ? field[1].trim() : "Artist"; if (!this.q_a.length) this.q_a = "Artist"; this.q_l = field[3] ? field[3].trim() : "Album"; if (!this.q_l.length) this.q_l = "Album"; this.q_g = field[5] ? field[5].trim() : "Genre"; if (!this.q_g.length) this.q_g = "Genre"; this.q_t = field[7] ? field[7].trim() : "Title"; if (!this.q_t.length) this.q_t = "Title";
+    var a_tf = "$trim(" + window.GetProperty(" Titleformat (Web Search) Artist", "[$if3($meta(artist,0),$meta(album artist,0),$meta(composer,0),$meta(performer,0))]") +")", g_tf = window.GetProperty(" Titleformat (Web Search) Genre", "[$meta(genre,0)]"), t_tf = window.GetProperty(" Titleformat (Web Search) Title", "[$meta(title,0)]");
+    this.artist = function(focus) {return p.eval(a_tf, focus);}
+    this.art = function() {return alb.artist ? alb.artist : this.artist();}
+    this.title = function(focus) {return p.eval(t_tf, focus)}; this.artist_title = function() {return this.artist() && this.title() ? this.artist() + " | " + this.title() : "N/A";}
+    this.genre = function() {var g = p.eval(g_tf); return g ? g : "N/A";}
+}
+var name = new names();
+
+function on_colours_changed(clear) {ui.reset_colors(); ui.get_colors(); if (ui.blur) p.show_images = true; but.create_images(); but.refresh(); if (p.np_graphic) img.create_images(); if (ui.blur_blend || clear) img.on_size(); t.paint();}
+function on_font_changed() {ui.get_font(); t.paint();}
+function titleformat() {this.a = fb.TitleFormat("%" + name.q_a + "%"); this.a0 = fb.TitleFormat("[$meta(" + name.q_a + ",0)]"); this.d = fb.TitleFormat("[%length_seconds_fp%]"); this.i = fb.TitleFormat("$info(@REFERENCED_FILE)"); this.l0 = fb.TitleFormat("[$meta(" + name.q_l + ",0)]"); this.pl = fb.TitleFormat(window.GetProperty(" Load Menu Albums Sort", "%album artist%|%date%|%album%|[[%discnumber%.]%tracknumber%. ][%track artist% - ]%title%")); this.popup = fb.TitleFormat("[%video_popup_status%]"); this.r = fb.TitleFormat("$rand()"); this.rg = fb.TitleFormat("[%replaygain_track_gain%]"); this.rp = fb.TitleFormat("[%replaygain_track_peak%]"); this.t = fb.TitleFormat("%" + name.q_t + "%"); this.t0 = fb.TitleFormat("[$meta(" + name.q_t + ",0)]");} var tf = new titleformat();
+function v_keys() {this.selAll = 1; this.copy = 3; this.back = 8; this.enter = 13; this.shift = 16; this.paste = 22; this.cut = 24; this.redo = 25; this.undo = 26; this.pgUp = 33; this.pgDn = 34; this.end = 35; this.home = 36; this.left = 37; this.right = 39; this.del = 46;} var v = new v_keys();
 
 String.prototype.strip_title = function (n, type) {
     try {if (this == n) return this;
@@ -137,7 +149,7 @@ function panel_operations() {
     this.browser = function(c) {if (!this.run(c)) fb.ShowPopupMessage("Unable to launch your default browser.", "YouTube Track Manager");}
     this.c_sort = function(data) {data.sort(function(a, b) {return parseFloat(b.playcount) - parseFloat(a.playcount)}); return data;}
     this.fs = new ActiveXObject("Scripting.FileSystemObject");
-    this.click = function(x, y) {alb.load(x, y); if (t.clickable(x, y)) if (this.show_images) img.lbtn_dn(x, y); else {rad.text_toggle(); if (this.video_mode && rad.pss) {rad.force_refresh = 2; rad.refreshPSS();} t.paint();}}
+    this.click = function(x, y) {if (x < 0 || y < 0 || x > p.w || y > p.h) return; alb.load(x, y); if (t.clickable(x, y)) if (this.show_images) img.lbtn_up(x, y); else {rad.text_toggle(); if (this.video_mode && rad.pss) {rad.force_refresh = 2; rad.refreshPSS();} t.paint();}}
     this.create = function(fo) {try {if (!this.folder(fo)) this.fs.CreateFolder(fo);} catch (e) {}}
     this.cycle_art_img = window.GetProperty(" Image [Artist] Cycle", true); this.cycle = window.GetProperty(" Image [Artist] Cycle Time (seconds)", 15); this.dbl_click = window.GetProperty(" Mouse Left Button Click: Map To Double-Click", false);
     this.dl_art_img = window.GetProperty(" Image [Artist] Auto-Fetch", false); this.imgArtPth = window.GetProperty(" Image [Artist] Folder Location", defArtPth); if (!this.imgArtPth) this.imgArtPth = defArtPth;
@@ -162,7 +174,7 @@ function panel_operations() {
     var WshShell = new ActiveXObject("WScript.Shell"); this.run = function(c, w) {try {WshShell.Run(c, w); return true;} catch (e) {return false;}}
     this.save = function(n, l, t) {try {return utils.WriteTextFile(n, l, t);} catch (e) {return false;}}
     this.scrollbar_show = window.GetProperty(" Scrollbar Show", true);  if (this.btn_mode) {this.np_graphic = false; this.scrollbar_show = false;} try {this.scr_type = parseFloat(window.GetProperty(" Scrollbar Type Default-0 Styled-1 Themed-2", "0").replace(/\s+/g, "").split("")[0]); if (isNaN(this.scr_type)) this.scr_type = 0;  if (this.scr_type > 2 || this.scr_type < 0) this.scr_type = 0; if (this.scr_type ==2)  window.SetProperty(" Scrollbar Type Default-0 Styled-1 Themed-2", "2 // Scrollbar Settings N/A For Themed"); else window.SetProperty(" Scrollbar Type Default-0 Styled-1 Themed-2", "" + this.scr_type + "");} catch (e) {this.scr_type = 0; window.SetProperty(" Scrollbar Type Default-0 Styled-1 Themed-2", "" + 0 + "");} this.scr_col = Math.min(Math.max( window.GetProperty(" Scrollbar Colour Grey-0 Blend-1", 1), 0), 1);
-    if (this.scr_type == 2) {this.theme = window.CreateThemeManager("scrollbar"); var im = gdi.CreateImage(21, 21), g = im.GetGraphics(); try {this.theme.SetPartAndStateId(6, 1); this.theme.DrawThemeBackground(g, 0, 0, 21, 50); for (var i = 0; i < 3; i++) {this.theme.SetPartAndStateId(3, i + 1); this.theme.DrawThemeBackground(g, 0, 0, 21, 50);} for (i = 0; i < 3; i++) {this.theme.SetPartAndStateId(1, i + 1); this.theme.DrawThemeBackground(g, 0, 0, 21, 21);}} catch (e) {this.scr_type = 1; window.SetProperty(" Scrollbar Type Default-0 Styled-1 Themed-2", "" + 1 + "");} im.ReleaseGraphics(g); im.Dispose();}
+    if (this.scr_type == 2) {this.theme = window.CreateThemeManager("scrollbar"); var im = gdi.CreateImage(21, 21), j = im.GetGraphics(); try {this.theme.SetPartAndStateId(6, 1); this.theme.DrawThemeBackground(j, 0, 0, 21, 50); for (var i = 0; i < 3; i++) {this.theme.SetPartAndStateId(3, i + 1); this.theme.DrawThemeBackground(j, 0, 0, 21, 50);} for (i = 0; i < 3; i++) {this.theme.SetPartAndStateId(1, i + 1); this.theme.DrawThemeBackground(j, 0, 0, 21, 21);}} catch (e) {this.scr_type = 1; window.SetProperty(" Scrollbar Type Default-0 Styled-1 Themed-2", "" + 1 + "");} im.ReleaseGraphics(j); im.Dispose();}
     var themed_w = 21; try {themed_w = utils.GetSystemMetrics(2);} catch (e) {}
     var sbw = window.GetProperty(" Scrollbar Size"); if (sbw && sbw.indexOf("GripMinHeight") == -1) window.SetProperty(" Scrollbar Size", sbw + ",GripMinHeight,12");
     var sbar_w = window.GetProperty(" Scrollbar Size", "Bar,11,Arrow,11,Gap(+/-),0,GripMinHeight,12").replace(/\s+/g, "").split(",");
@@ -232,16 +244,6 @@ function text_format() {
 }
 var t = new text_format();
 
-function names() {
-    this.a_tf = "$trim(" + window.GetProperty(" Titleformat Artist", "[$if3($meta(artist,0),$meta(album artist,0),$meta(composer,0),$meta(performer,0))]") +")";
-    var g_tf = window.GetProperty(" Titleformat Genre", "[$meta(genre,0)]"), t_tf = window.GetProperty(" Titleformat Title", "[$meta(title,0)]");
-    this.artist = function(focus) {return p.eval(this.a_tf, focus);}
-    this.art = function() {return alb.artist ? alb.artist : this.artist();}
-    this.title = function(focus) {return p.eval(t_tf, focus)}; this.artist_title = function() {return this.artist() && this.title() ? this.artist() + " | " + this.title() : "N/A";}
-    this.genre = function() {var g = p.eval(g_tf); return g ? g : "N/A";}
-}
-var name = new names();
-
 function playlists() {
     var def_pl = ["Album", "Loved", "Radio", "RadioTracks", "Top"], pl_name = window.GetProperty(" Playlists", def_pl[0] + "," + def_pl[1] + "," + def_pl[2] + "," + def_pl[3] + "," + def_pl[4]).split(","), rad_tracks = []; if (pl_name.length != 5) {window.SetProperty(" Playlists", def_pl[0] + "," + def_pl[1] + "," + def_pl[2] + "," + def_pl[3] + "," + def_pl[4]); pl_name = window.GetProperty(" Playlists").replace(/\s+/g, "").split(",");} if (!p.v) {this.top50 = Math.min(window.GetProperty(" Load Menu TopTracks Size 1-50", 50), 50); window.SetProperty(" Load Menu TopTracks Size 1+", null);} else {this.top50 = window.GetProperty(" Load Menu TopTracks Size 1+", 50); window.SetProperty(" Load Menu TopTracks Size 1-50", null);}
     this.menu = []; this.alb_yttm = " // YouTube Track Manager";
@@ -288,14 +290,14 @@ function library_manager() {
     this.filter = []; for (var r = 0; r < filter.length; r++) {var fil = p.use_local ? filter[r].replace("%rating%", "%_autorating%").trim() : filter[r].trim(); if (fil.length) this.filter.push(fil);}
     this.filterID = window.GetProperty("SYSTEM.Library Filter All Modes ID", 0); if (this.filterID > this.filter.length - 1) {this.filterID = 0; window.SetProperty("SYSTEM.Library Filter All Modes ID", 0);}
     this.pm_art = core[1] == 1; this.pm_title = core[3] == 1; this.pmt = window.GetProperty("ADV.Partial Match: 0 Fuzzy-1 RegEx-2 Either-3", "Album,1,LfmRadio,3,LibRadio,3,Top50:40,1,TopTracks,3").replace(/\s+/g, "").split(","); this.sel = []; if (this.pmt[6] != "Top" + pl.top50 +":40") {this.pmt[6] = "Top" + pl.top50 +":40"; window.SetProperty("ADV.Partial Match: 0 Fuzzy-1 RegEx-2 Either-3", this.pmt[0] + "," + this.pmt[1] + "," + this.pmt[2] + "," + this.pmt[3] + "," + this.pmt[4] + "," + this.pmt[5] + "," + this.pmt[6] + "," + this.pmt[7] + "," + this.pmt[8] + "," + this.pmt[9])}
-    var fu = parseFloat(pmc[1]), q_alb = "IS ", valid_regex = pmc[3] && pmc[3] != 0 && pmc[3].length, fuz_sel_title = this.pm_title && (this.pmt[5] == 1 || this.pmt[5] == 3), has_sel = false, trc_sel_art =  this.pm_art && (this.pmt[5] == 2 || this.pmt[5] == 3), trc_title = this.pm_title && valid_regex, trc_sel_title = trc_title && (this.pmt[5] == 2 || this.pmt[5] == 3), fuz_alb_title = this.pm_title && (this.pmt[1] == 1 || this.pmt[1] == 3), trc_alb_art = this.pm_art && (this.pmt[1] == 2 || this.pmt[1] == 3), trc_alb_title = this.pm_title && (this.pmt[1] == 2 || this.pmt[1] == 3)  && valid_regex, verbose = pmc[5] == "true"; fu = Math.min(Math.max(fu, 0), 100) / 100; if (this.pm_art && this.pmt[5] != 0) has_sel = true; if (this.pm_art && this.pmt[1] != 0) q_alb = "HAS ";
+    var fu = parseFloat(pmc[1]), q_alb = " IS ", valid_regex = pmc[3] && pmc[3] != 0 && pmc[3].length, fuz_sel_title = this.pm_title && (this.pmt[5] == 1 || this.pmt[5] == 3), has_sel = false, trc_sel_art =  this.pm_art && (this.pmt[5] == 2 || this.pmt[5] == 3), trc_title = this.pm_title && valid_regex, trc_sel_title = trc_title && (this.pmt[5] == 2 || this.pmt[5] == 3), fuz_alb_title = this.pm_title && (this.pmt[1] == 1 || this.pmt[1] == 3), trc_alb_art = this.pm_art && (this.pmt[1] == 2 || this.pmt[1] == 3), trc_alb_title = this.pm_title && (this.pmt[1] == 2 || this.pmt[1] == 3)  && valid_regex, verbose = pmc[5] == "true"; fu = Math.min(Math.max(fu, 0), 100) / 100; if (this.pm_art && this.pmt[5] != 0) has_sel = true; if (this.pm_art && this.pmt[1] != 0) q_alb = " HAS ";
     String.prototype.cut = function() {try {var n = this.split(RegExp(pmc[3], "gi"))[0]; return n.length > 3 ? n : this;} catch (e) {return this}};
     var check_match = function(n, l) {try {return 1 - levenshtein(n, l)/(n.length > l.length ? n.length : l.length) > fu;} catch (e) {return false}} // fu sets match level
     var levenshtein = function(a, b) {if (a.length === 0) return b.length; if (b.length === 0) return a.length; var i, j, prev, row, tmp, val; if (a.length > b.length) {tmp = a; a = b; b = tmp;} row = Array(a.length + 1); for (i = 0; i <= a.length; i++) row[i] = i; for (i = 1; i <= b.length; i++) {prev = i; for (j = 1; j <= a.length; j++) {if (b[i - 1] === a[j - 1]) val = row[j - 1]; else val = Math.min(row[j - 1] + 1, Math.min(prev + 1, row[j] + 1)); row[j - 1] = prev; prev = val;} row[a.length] = prev;} return row[a.length];}
     var load_lib = function(path, id, v, p_ar, p_ti, p_t50) {!p_t50 ? p.add_loc.push({"path":path,"id":id}) : p.t50_loc.push({"path":path,"id":id}); if (verbose) p.trace((!v ? "STANDARD MATCH " : v == 1 ? "FUZZY TITLE MATCH " : "TRUNCATE TITLE MATCH ") + "FOUND :: SEARCH: " + p_ar + " - " + p_ti);}
     var load_lib_sel = function(orig_artist, p_title, path, id, p_lfm_pc) {if (!obj_contains(p.add_loc, id)) p.add_loc.push({"artist":orig_artist,"title":p_title,"path":path,"id":id,"playcount":p_lfm_pc});}
     var obj_contains = function(arr, p_id) {var i = arr.length; while (i--) if (arr[i].id == p_id) return true; return false;}
-    this.alb_playlist = function(a_n) {if (!a_n) return; var n = false, d_l = fb.CreateHandleList(); try {d_l = fb.GetQueryItems(this.get_lib_items(), "artist IS " + a_n)} catch (e) {}; if (d_l.Count) n = true; if (!n) {var d_a = fb.CreateHandleList(); try {d_a = fb.GetQueryItems(db_alb, "artist IS " + a_n)} catch (e) {}; if (d_a.Count) n = true;} if (d_a) d_a.Dispose(); if (d_l) d_l.Dispose(); return n;}
+    this.alb_playlist = function(a_n) {if (!a_n) return; var n = false, d_l = fb.CreateHandleList(); try {d_l = fb.GetQueryItems(this.get_lib_items(), name.q_a + " IS " + a_n)} catch (e) {}; if (d_l.Count) n = true; if (!n) {var d_a = fb.CreateHandleList(); try {d_a = fb.GetQueryItems(db_alb, name.q_a + " IS " + a_n)} catch (e) {}; if (d_a.Count) n = true;} if (d_a) d_a.Dispose(); if (d_l) d_l.Dispose(); return n;}
     this.get_album_artist = function() {var pn = plIX(pl.alb_yttm); if (pn == -1 || !plman.PlaylistItemCount(pn)) return; var db_aa = plman.GetPlaylistItems(pn); this.albumartist = tf.a0.EvalWithMetadb(db_aa.Item(0)); if (db_aa) db_aa.Dispose();}
     this.get_album_metadb = function() {if (db_alb) db_alb.Dispose(); db_alb = plman.GetPlaylistItems(pl.alb_orig);}
     this.get_lib_items = function() {if (!this.update) return db_lib; this.update = false; if (db_lib) db_lib.Dispose(); db_lib = fb.GetLibraryItems(); if (this.filterID) try {db_lib = fb.GetQueryItems(db_lib, this.filter[this.filterID]);} catch (e) {}; return db_lib;}
@@ -310,14 +312,14 @@ function library_manager() {
     }
 
     this.in_library = function(p_artist, p_title, i, p_top50, p_alb_set) {
-        if (!p_artist || !p_title) return false; var q = "IS ";
+        if (!p_artist || !p_title) return false; var q = " IS ";
         var fuzzy = this.pm_title && ((p_top50 && (this.pmt[7] == 1 || this.pmt[7] == 3)) || (p_alb_set && (this.pmt[9] == 1 || this.pmt[9] == 3)) || (!p_top50 && !p_alb_set && (this.pmt[3] == 1 || this.pmt[3] == 3)));
         var trunc_art = this.pm_art && ((p_top50 && (this.pmt[7] == 2 || this.pmt[7] == 3)) || (p_alb_set && (this.pmt[9] == 2 || this.pmt[9] == 3)) || (!p_top50 && !p_alb_set && (this.pmt[3] == 2 || this.pmt[3] == 3)));
         var trunc_title = trc_title && ((p_top50 && (this.pmt[7] == 2 || this.pmt[7] == 3)) || (p_alb_set && (this.pmt[9] == 2 || this.pmt[9] == 3)) || (!p_top50 && !p_alb_set && (this.pmt[3] == 2 || this.pmt[3] == 3)));
         if (trunc_art) p_artist = p_artist.cut().trim();
-        if (this.pm_art && ((p_top50 && this.pmt[7] != 0) || (p_alb_set && this.pmt[9] != 0) || (!p_top50 && !p_alb_set && this.pmt[3] != 0))) q = "HAS ";
-        if (verbose) p.trace("MATCH: ARTIST QUERY: " + q + p_artist);
-        if (p_artist != o_artist || lib_upd.Time - last_time > 2000) {if (db_art) db_art.Dispose(); try {db_art = fb.GetQueryItems(this.get_lib_items(), "(artist " + q + p_artist + ") AND (NOT %path% HAS !!.tags) AND (NOT \"$ext(%path%)\" IS cue)")} catch (e) {db_art = fb.CreateHandleList()}; db_art.OrderByFormat(tf.r, 1); if (!ml.sort_rand) db_art.OrderByFormat(ml.item_sort, ml.dir);}
+        if (this.pm_art && ((p_top50 && this.pmt[7] != 0) || (p_alb_set && this.pmt[9] != 0) || (!p_top50 && !p_alb_set && this.pmt[3] != 0))) q = " HAS ";
+        if (verbose) p.trace("MATCH: ARTIST QUERY:" + q + p_artist);
+        if (p_artist != o_artist || lib_upd.Time - last_time > 2000) {if (db_art) db_art.Dispose(); try {db_art = fb.GetQueryItems(this.get_lib_items(), "(" + name.q_a + q + p_artist + ") AND (NOT %path% HAS !!.tags) AND (NOT \"$ext(%path%)\" IS cue)")} catch (e) {db_art = fb.CreateHandleList()}; db_art.OrderByFormat(tf.r, 1); if (!ml.sort_rand) db_art.OrderByFormat(ml.item_sort, ml.dir);}
         p1[i] = ""; o_artist = p_artist; p_title = p_title.strip(); lib_upd.Reset(); last_time = lib_upd.Time;
         var titles = tf.t0.EvalWithMetadbs(db_art).toArray();
         for (var j = 0; j < db_art.Count; j++) {
@@ -350,10 +352,10 @@ function library_manager() {
 
     this.artist_edit = function(p_album_artist) {
         if (trc_alb_art) p_album_artist = p_album_artist.cut().trim();
-        if (this.pm_art && verbose) p.trace("MATCH ARTIST [ALBUM]: QUERY: " + q_alb + p_album_artist);
+        if (this.pm_art && verbose) p.trace("MATCH ARTIST [ALBUM]: QUERY:" + q_alb + p_album_artist);
         this.art_ed = fb.CreateHandleList(); this.art_ed_tags = fb.CreateHandleList(); if (!p_album_artist) return; var d_lb = this.get_lib_items().Clone();
-        try {this.art_ed = fb.GetQueryItems(d_lb, "(artist " + q_alb + p_album_artist + ") AND (NOT %path% HAS .tags) AND (NOT \"$ext(%path%)\" IS cue)")} catch (e) {}; this.art_ed.OrderByFormat(tf.r, 1); if (!ml.sort_rand) this.art_ed.OrderByFormat(ml.item_sort, ml.dir);
-        try {this.art_ed_tags = fb.GetQueryItems(d_lb, "(artist " + q_alb + p_album_artist + ") AND (%path% HAS .tags) AND (NOT \"$ext(%path%)\" IS cue)")} catch (e) {};
+        try {this.art_ed = fb.GetQueryItems(d_lb, "(" + name.q_a + q_alb + p_album_artist + ") AND (NOT %path% HAS .tags) AND (NOT \"$ext(%path%)\" IS cue)")} catch (e) {}; this.art_ed.OrderByFormat(tf.r, 1); if (!ml.sort_rand) this.art_ed.OrderByFormat(ml.item_sort, ml.dir);
+        try {this.art_ed_tags = fb.GetQueryItems(d_lb, "(" + name.q_a + q_alb + p_album_artist + ") AND (%path% HAS .tags) AND (NOT \"$ext(%path%)\" IS cue)")} catch (e) {};
         this.art_ed_tags.OrderByFormat(tf.r, 1); if (!ml.sort_rand) this.art_ed_tags.OrderByFormat(ml.item_sort, ml.dir); if (d_lb) d_lb.Dispose();
     }
 
@@ -386,8 +388,8 @@ function library_manager() {
 
     this.albums_playlist = function(a_n) {
         var d_li = fb.CreateHandleList(), li_add = fb.CreateHandleList(); remove_playlist(pl.alb_yttm); this.albumartist = a_n; if (!a_n) return;
-        try {d_li = fb.GetQueryItems(this.get_lib_items(), "artist IS " + this.albumartist)} catch (e) {};
-        try {li_add = fb.GetQueryItems(db_alb, "artist IS " + this.albumartist)} catch (e) {}
+        try {d_li = fb.GetQueryItems(this.get_lib_items(), name.q_a + " IS " + this.albumartist)} catch (e) {};
+        try {li_add = fb.GetQueryItems(db_alb, name.q_a + " IS " + this.albumartist)} catch (e) {}
         d_li.AddRange(li_add); d_li.OrderByFormat(tf.pl, 1);
         var pn = plman.FindOrCreatePlaylist("Albums [" + this.albumartist + "]" + pl.alb_yttm, false);
         plman.InsertPlaylistItems(pn, 0, d_li); if (d_li) d_li.Dispose(); if (li_add) li_add.Dispose();
@@ -705,7 +707,7 @@ function lfm_radio_tracks_search(state_callback, on_search_done_callback) {
         if (artistTopTracks) {
             lmt = curr_pop ? 100 : Math.max(200, song_hot);
             if (!curr_pop) {
-                if (!cache) lmt += 5; // ***workarounds: last.fm bug - occasionally list doesn't start at beginning
+                if (!cache) lmt += 5 + Math.floor(Math.random() * 10); // ***workarounds: last.fm bug - occasionally list doesn't start at beginning
                 URL += "&method=" + "artist.getTopTracks" + "&artist=" + encodeURIComponent(rad_source) + "&limit=" + lmt + "&autocorrect=1";
             } else {URL = "https://www.last.fm/music/" + encodeURIComponent(rad_source) + "/+tracks?date_preset=LAST_30_DAYS&page=" + pg; if (!cache) force = true;}
         } else if (rad_type == 1 && !top50) {if (!cache) song_hot = song_hot != 1000 ? song_hot + 5 : song_hot - 5/***/; URL += "&method=" + "tag.getTopTracks" + "&tag=" + encodeURIComponent(rad_source) + "&limit=" + song_hot + "&autocorrect=1";} // ***workaround: last.fm bug - list occasionally too short
@@ -982,7 +984,7 @@ function musicbrainz_artist_id(state_callback, on_search_done_callback) {
 }
 
 function album_names(state_callback, on_search_done_callback) {
-    var ar_mbid = false, attempt = 0, cache = true, f3, fn, initial = true, json_data = [], lfm_cache_f, mode, offset = 0, releases = 0, server = true, sp = "", try_artist = false;
+    var ar_mbid = false, attempt = 0, cache = true, f3, fn, initial = true, json_data = [], lfm_cache_f, lmt = 0, mode, offset = 0, releases = 0, server = true, sp = "", try_artist = false;
     this.xmlhttp = null; this.func = null; this.ready_callback = state_callback; this.on_search_done_callback = on_search_done_callback; this.ie_timer = false;
 
     this.on_state_change = function() {
@@ -1010,8 +1012,8 @@ function album_names(state_callback, on_search_done_callback) {
                         data = []; data = p.json_parse(utils.ReadTextFile(fn));
                         if (data.length > 199 && data[0].ar_mbid == ar_mbid) return this.on_search_done_callback(data.slice(1, 100), ar_mbid, mode);
                     }
-                    var len = 0; if (p.file(fn)) var chk = p.json_parse(utils.ReadTextFile(fn)); if (chk) len = chk.length;
-                    URL += "&method=" + "artist.getTopTracks" + tag + "&limit=" + Math.max(200, len) + "&autocorrect=1"; break;
+                    lmt = 0; if (p.file(fn)) var chk = p.json_parse(utils.ReadTextFile(fn)); if (chk) lmt = chk.length; lmt = Math.max(200, lmt); if (!cache) lmt += 5 + Math.floor(Math.random() * 10); // ***workaround: last.fm bug - occasionally list doesn't start at beginning
+                    URL += "&method=" + "artist.getTopTracks" + tag + "&limit=" + lmt + "&autocorrect=1"; break;
                 case 2:
                     var ar_ti = alb.artist_title.split("|"), ar = !ar_ti[0] ? "" : ar_ti[0].trim(), ti = !ar_ti[1] ? "" : ar_ti[1].trim();
                     sp = ar + " - " + ti; sp = sp.clean(); f3 = rad.f2 + sp.substr(0, 1).toLowerCase() + "\\"; fn = f3 + sp + " [Similar Songs].json"; lfm_cache_f = !p.expired(fn, p.TwentyEight_Days);
@@ -1045,6 +1047,7 @@ function album_names(state_callback, on_search_done_callback) {
                 case 0: data = []; data = p.json_parse(this.xmlhttp.responsetext, "topalbums.album", "name\":"); break;
                 case 1:
                     data = []; var list = p.json_parse(this.xmlhttp.responsetext, "toptracks.track", "name\":"); if (!list) break; var save_list = [];
+                    if (list.length < lmt && cache) {cache = false; return this.Search();}
                     for (i = 0; i < list.length; i++) {data[i] = {title: list[i].name, playcount: list[i].playcount}; save_list[i] = {title: list[i].name, playcount: list[i].playcount}} data.length = Math.min(99, data.length);
                     try {save_list.unshift({artist: list[0].artist.name, ar_mbid: ar_mbid});} catch (e) {save_list.unshift({artist: alb.artist, ar_mbid: "N/A"});} if (save_list.length) {p.create(f3); p.save(fn, JSON.stringify(save_list), true);}
                     break;
@@ -1315,7 +1318,7 @@ function dld_more_album_names(p_callback) {
 function scrollbar() {
     var smoothness = 1 - window.GetProperty("ADV.Scroll: Smooth Scroll Level 0-1", 0.6561); smoothness = Math.max(Math.min(smoothness, 0.99), 0.01); this.bar_timer = false; this.count = -1; this.draw_timer = false; this.hover = false; this.hover_o = false; this.s1 = 0; this.s2 = 0; this.scroll_step = window.GetProperty(" Scroll - Mouse Wheel: Page Scroll", true); this.smooth = window.GetProperty(" Scroll: Smooth Scroll", true); this.timer_but = false;
     this.alpha = !ui.scr_col ? 75 : (!ui.scr_type ? 68 : 51); this.init = true; var alpha1 = this.alpha, alpha2 = !ui.scr_col ? 128 : (!ui.scr_type ? 119 : 85), inStep = ui.scr_type && ui.scr_col ? 12 : 18;
-    this.x = 0; this.y = 0; this.w = 0; this.h = 0; this.bar_ht = 0; this.but_h = 0; this.bar_y = 0; this.row_count = 0; this.scroll = 0; this.delta = 0; this.ratio = 1; this.rows_drawn = 0; this.row_h = 0; this.scrollbar_height = 0; this.scrollable_lines = 0; this.scrollbar_travel = 0; this.text_y = 0; this.text_h = 0;
+    this.x = 0; this.y = 0; this.w = 0; this.h = 0; this.bar_ht = 0; this.but_h = 0; this.bar_y = 0; this.row_count = 0; this.scroll = 0; this.delta = 0; this.ratio = 1; this.rows_drawn = 0; this.row_h = 0; this.scrollbar_height = 0; this.scrollable_lines = 0; this.scrollbar_travel = 0; this.stripe_w = 0; this.text_y = 0; this.text_h = 0;
     this.b_is_dragging = false; this.drag_distance_per_row; this.initial_drag_y = 0; // dragging
     this.leave = function() {if (!alb.show || t.halt()) return; this.hover = !this.hover; this.paint(); this.hover = false; this.hover_o = false;}
     this.nearest = function(y) {y = (y - this.but_h) / this.scrollbar_height * this.scrollable_lines * this.row_h; y = y / this.row_h; y = Math.round(y) * this.row_h; return y;}
@@ -1336,6 +1339,7 @@ function scrollbar() {
         this.ratio = this.row_count / this.scrollable_lines;
         this.bar_y = this.but_h + this.scrollbar_travel * (this.delta * this.ratio) / (this.row_count * this.row_h);
         this.drag_distance_per_row = this.scrollbar_travel / this.scrollable_lines;
+        if (ui.alternate) this.stripe_w = p.scrollbar_show && this.scrollable_lines > 0 ? p.w - p.sbar_sp : p.w;
     }
 
     this.draw = function(gr) {if (this.scrollable_lines > 0) {try {
@@ -1362,7 +1366,7 @@ function scrollbar() {
 
     this.lbtn_up = function(p_x, p_y) {
         var x = p_x - this.x; var y = p_y - this.y;
-        if (this.b_is_dragging) this.b_is_dragging = false; if (!this.hover) this.paint(); else window.RepaintRect(this.x, this.y, this.w, this.h); this.initial_drag_y = 0;
+        if (!this.hover && this.b_is_dragging) this.paint(); else window.RepaintRect(this.x, this.y, this.w, this.h); if (this.b_is_dragging) {this.b_is_dragging = false; but.Dn = false;} this.initial_drag_y = 0;
         if (this.timer_but) {window.ClearTimeout(this.timer_but); this.timer_but = false;}; this.count = -1;
     }
 
@@ -1375,14 +1379,14 @@ function scrollbar() {
         if (y < this.bar_y || y > this.bar_y + this.bar_ht)
             this.check_scroll(this.nearest(y));
         else { // on bar
-            this.b_is_dragging = true; window.RepaintRect(this.x, this.y, this.w, this.h);
+            this.b_is_dragging = true; but.Dn = true; window.RepaintRect(this.x, this.y, this.w, this.h);
             this.initial_drag_y = y - this.bar_y;
         }
     }
 
     this.move = function(p_x, p_y) {
         var x = p_x - this.x; var y = p_y - this.y;
-        if (x < 0 || x > this.w || y > this.bar_y + this.bar_ht || y < this.bar_y) this.hover = false; else this.hover = true;
+        if (x < 0 || x > this.w || y > this.bar_y + this.bar_ht || y < this.bar_y || but.Dn) this.hover = false; else this.hover = true;
         if (this.hover != this.hover_o && !this.bar_timer) this.paint();
         if (!this.b_is_dragging || this.row_count <= this.rows_drawn) return;
         this.check_scroll(Math.round((y - this.initial_drag_y - this.but_h) / this.drag_distance_per_row) * this.row_h);
@@ -1629,7 +1633,7 @@ var index = new new_radio();
 
 function radio_manager() {
     var art_variety = !index.rad_mode ? index.rad_ec_variety : index.rad_type == 2 || index.rad_type == 4 ? index.rad_lfm_variety : "N/A", curr_pop = index.curr_pop, finished = false, list = [], li = fb.CreateHandleList(), li_c = fb.CreateHandleList(), rad_fav, rad_mode = index.rad_mode, rad_query = index.rad_query, rad_source = index.rad_source, rad_type = index.rad_type, radio_timer = false, sim1_set = false, song_hot = index.rad_mode ? index.get_range(rad_type, index.rad_range) : "", text_h = 0, text_y = 0, text_type = window.GetProperty("SYSTEM.Text Type", true), text_o, top_50 = 1, update_fav = true;
-    var f_s = 36, font_h = 44, font_s = f_s, nowp_f = window.GetProperty(" Nowplaying Font (Name,Size,Style[0-4])", "Calibri,36,1").replace(/^[,\s]+|[,\s]+$/g, "").split(","), np_n = "Calibri", np_s = 1, np_sh = window.GetProperty(" Nowplaying Text Shadow Effect", true), part_load = false, rad_id = 0;
+    var f_s = 36, font_h = 44, font_s = f_s, nowp_f = window.GetProperty(" Nowplaying Font (Name,Size,Style[0-4])", "Calibri,36,1").replace(/^[,\s]+|[,\s]+$/g, "").split(","), np_n = "Calibri", np_s = 1, np_text = window.GetProperty(" Titleformat Nowplaying", "[%artist%]$crlf()[%title%]"), np_sh = window.GetProperty(" Nowplaying Text Shadow Effect", true), part_load = false, rad_id = 0;
     try {f_s = Math.round(parseFloat(nowp_f[1])); font_s = f_s; np_n = nowp_f[0]; np_s = Math.round(parseFloat(nowp_f[2])); var  np_f = gdi.Font(np_n, f_s, np_s), np_l = np_f; np_f.Name; np_f.Size; np_f.Style;} catch (e) {np_n = "Segoe UI"; f_s = 16; np_s = 0; np_f = gdi.Font(np_n, f_s, np_s); font_s = f_s; np_l = np_f; p.trace("JScript panel is unable to use your nowplaying font. Using Segoe UI at default size & style instead");}
     var iSelect_timeout = 120000; try {var iS_timeout = window.GetProperty("ADV.Radio Search Timeout (secs >=30)", index.n[2] + ",120").replace(/^[,\s]+|[,\s]+$/g, "").split(","); if (iS_timeout[0] != index.n[2]) window.SetProperty("ADV.Radio Search Timeout (secs >=30)", index.n[2] + "," + iS_timeout[1]); iSelect_timeout = Math.max(iS_timeout[1] * 1000, 30000); if (isNaN(iSelect_timeout)) iSelect_timeout = 120000;} catch (e) {} if (!p.v) {this.limit = Math.min(window.GetProperty(" Radio Playlist Track Limit 2-25", 5), 25); window.SetProperty(" Radio Playlist Track Limit 2+", null);} else {window.SetProperty(" Radio Playlist Track Limit 2-25", null); this.limit = window.GetProperty(" Radio Playlist Track Limit 2+", 5);}
     this.auto = window.GetProperty("SYSTEM.Auto Radio", true); this.bypass_read_file = false; this.force_refresh = 0; this.full = window.GetProperty("SYSTEM.Image Full", false); if (this.full) p.rel_imgs = 1;
@@ -1643,7 +1647,7 @@ function radio_manager() {
     this.filter = []; for (var r = 0; r < filter.length; r++) {var fil = p.use_local ? filter[r].replace("%rating%", "%_autorating%").trim() : filter[r].trim(); if (fil.length) this.filter.push(fil);}
     this.filterID = window.GetProperty("SYSTEM.Library Filter MySelect ID", 0); if (this.filterID > this.filter.length - 1) {this.filterID = 0; window.SetProperty("SYSTEM.Library Filter MySelect ID", 0);}
     this.get_no = function(rad_limit, rad_pl_count) {if (rad_limit && rad_pl_count >= rad_limit) return 0; else return rad_limit ? rad_limit - rad_pl_count : 1;}
-    this.mbtn_dn = function(x, y, n) {if (alb.show || t.halt() || !p.np_graphic) return; var np_txt = n ? n == 1 ? true : false : !but.btns["yt"].trace(x, y); if (np_txt) {this.full = !this.full; p.rel_imgs = this.full ? 1 : window.GetProperty(" Image Size 0-1"); window.SetProperty("SYSTEM.Image Full", this.full); img.on_size(); this.on_size(); if (p.video_mode && this.pss) {this.force_refresh = 2; this.refreshPSS();} but.refresh(true);} else {if (p.f_yt_ok) {p.video_mode = !p.video_mode; video_set_up(); p.set_video(); timer.reset(timer.vid, timer.vidi); if (p.video_mode && !alb.show && p.IsVideo()) timer.video();} video_set_up(); if (ui.blur) img.on_size(); if (img.artistart && p.cycle_art_img) timer.image(); else timer.reset(timer.img, timer.imgi); but.refresh();  if (this.pss) {this.force_refresh = 2; this.refreshPSS();} t.paint(); window.SetProperty("SYSTEM.Nowplaying Prefer Video Mode", p.video_mode);}}
+    this.mbtn_up = function(x, y, n) {if (alb.show || t.halt() || !p.np_graphic || x < 0 || y < 0 || x > p.w || y > p.h) return; var np_txt = n ? n == 1 ? true : false : !but.btns["yt"].trace(x, y); if (np_txt) {this.full = !this.full; p.rel_imgs = this.full ? 1 : window.GetProperty(" Image Size 0-1"); window.SetProperty("SYSTEM.Image Full", this.full); img.on_size(); this.on_size(); if (p.video_mode && this.pss) {this.force_refresh = 2; this.refreshPSS();} but.refresh(true);} else {if (p.f_yt_ok) {p.video_mode = !p.video_mode; video_set_up(); p.set_video(); timer.reset(timer.vid, timer.vidi); if (p.video_mode && !alb.show && p.IsVideo()) timer.video();} video_set_up(); if (ui.blur) img.on_size(); if (img.artistart && p.cycle_art_img) timer.image(); else timer.reset(timer.img, timer.imgi); but.refresh();  if (this.pss) {this.force_refresh = 2; this.refreshPSS();} t.paint(); window.SetProperty("SYSTEM.Nowplaying Prefer Video Mode", p.video_mode);}}
     this.on = function() {return this.auto && plman.ActivePlaylist == pl.rad}
     this.on_playback_new_track = function() {if (!this.auto || plman.PlayingPlaylist != pl.rad || !rad_source) return; this.dld_new_track(); timer.rad_chk = true;}
     this.on_size = function() {font_s = Math.max(Math.min(f_s, f_s / 36 * p.h * (1 - p.rel_imgs) / 3), 1); np_f = gdi.Font(np_n, font_s, np_s); np_l = gdi.Font(np_n, Math.max(Math.min(p.w > 1000 ? 45 * f_s / 38 : 43 * f_s / 38, p.h / 4), 1), np_s); if (!p.np_graphic) return; if (p.text_auto) {text_y = Math.min(p.h * p.rel_imgs, p.h - img.ny); text_h = Math.max(img.ny, p.h * (1 - p.rel_imgs));} else {calc_text(np_f); text_h = Math.max(font_h * 2, 1); Math.max(text_y = p.h - text_h, 0);}}
@@ -1724,11 +1728,11 @@ function radio_manager() {
             if ((!this.search) && this.on()) {
                 if (text_type) {
                     this.text = rad_source ? (plman.PlayingPlaylist == pl.rad ? rad_source + (rad_type == 2 ?  " And Similar Artists" : "")  + "\n" : "Active Playlist" + index.s[4] + rad_source + (rad_type == 2 ?  " And Similar Artists" : "") + "\n") +
-                        (index.n[rad_mode] + index.s[rad_mode] + (index.track_count ? index.s[4] + index.track_count + " Tracks" : "")) : p.eval("[%artist%]$crlf()[%title%]");
+                        (index.n[rad_mode] + index.s[rad_mode] + (index.track_count ? index.s[4] + index.track_count + " Tracks" : "")) : p.eval(np_text);
                 }
-                else {var origT = this.text; this.text = p.eval("[%artist%]$crlf()[%title%]"); if (!this.text && fb.IsPlaying) this.text = origT;}
+                else {var origT = this.text; this.text = p.eval(np_text); if (!this.text && fb.IsPlaying) this.text = origT;}
             } else if (!this.search && text_type) this.text = "Active Playlist" + "\n" + pl.active().replace(pl.alb_yttm,"");
-            else if (!this.search || !this.text) this.text = p.eval("[%artist%]$crlf()[%title%]");
+            else if (!this.search || !this.text) this.text = p.eval(np_text);
             if (!p.np_graphic) gr.GdiDrawText(this.text, np_l, ui.textcol, 10, 10, p.w - 20, p.h - 20, t.cc);
             if (p.rel_imgs == 1 || !p.np_graphic) return; if (np_sh && (!ui.blur || !timer.transition)) gr.GdiDrawText(this.text, np_f, ui.outline(ui.textcol), 10 + 1, text_y + 1, p.w - 20, text_h, t.cc); gr.GdiDrawText(this.text, np_f, ui.textcol, 10, text_y, p.w - 20, text_h, t.cc);} catch (e) {}
     }
@@ -1836,7 +1840,7 @@ function radio_manager() {
         switch (p_rt) {
             case 0:
                 if (!p_artist.length || !p_title.length) return on_dld_radio_tracks_done(false, "", 0, 0, true);
-                p.c_sort(p_title); var le = Math.min(song_hot, p_title.length), q = "(NOT %path% HAS !!.tags) AND (NOT \"$ext(%path%)\" IS cue) AND (", q_t = "artist IS "; if (lib.pm_art && lib.pmt[5] != 0) q_t = "artist HAS "; q += q_t + p_artist + ")";
+                p.c_sort(p_title); var le = Math.min(song_hot, p_title.length), q = "(NOT %path% HAS !!.tags) AND (NOT \"$ext(%path%)\" IS cue) AND (", q_t = name.q_a + " IS "; if (lib.pm_art && lib.pmt[5] != 0) q_t = name.q_a + " HAS "; q += q_t + p_artist + ")";
                 if (index.refine_iS) {var pool =  index.track(p_title, true, "", 2, false); le = Math.min(pool, le);}
                 try {li = fb.GetQueryItems(lib.get_lib_items(), q)} catch (e) {};
                 lib.get_lib_sel(li); for (var i = 0; i < le; i++) lib.in_library_sel(p_artist, p_title[i].title, 0, p_title[i].playcount); add_loc(rad_source, p_rm, p_rt, false, 2, true, true);
@@ -1844,7 +1848,7 @@ function radio_manager() {
             case 1:
             case 3:
                 if (!p_artist.length) return on_dld_radio_tracks_done(false, "", 0, 0, true);
-                var a = "", a_arr = [], a_o = "", i = 0, j = 0, le = Math.min(song_hot, p_artist.length), q = "(NOT %path% HAS !!.tags) AND (NOT \"$ext(%path%)\" IS cue) AND (", q_t = "artist IS "; if (lib.pm_art && lib.pmt[5] != 0) q_t = "artist HAS ";
+                var a = "", a_arr = [], a_o = "", i = 0, j = 0, le = Math.min(song_hot, p_artist.length), q = "(NOT %path% HAS !!.tags) AND (NOT \"$ext(%path%)\" IS cue) AND (", q_t = name.q_a + " IS "; if (lib.pm_art && lib.pmt[5] != 0) q_t = name.q_a + " HAS ";
                 for (i = 0; i < le; i++) {a = p_artist[i].artist.toLowerCase(); if (a != a_o) {a_arr.push(a); a_o = a;}}
                 for (i = 0; i < a_arr.length; i++) {a = a_arr[i]; if (lib.in_library_art(a)) {q += (j ? " OR " : "") + q_t + a; j++;}} if (!j) return on_dld_radio_tracks_done(false); q += ")";
                 try {li = fb.GetQueryItems(lib.get_lib_items(), q)} catch (e) {}
@@ -1876,7 +1880,7 @@ function radio_manager() {
                     case 1:
                     case 3: this.do_lfm_lib_radio_tracks_search(rad_source, rad_mode, rad_type, art_variety, song_hot, false, rad_id, 0, 0, ""); break;
                     default:
-                        var done = 0, q = "(NOT %path% HAS !!.tags) AND (NOT \"$ext(%path%)\" IS cue) AND (", q_t = "artist IS "; if (lib.pm_art && lib.pmt[5] != 0) q_t = "artist HAS ";
+                        var done = 0, q = "(NOT %path% HAS !!.tags) AND (NOT \"$ext(%path%)\" IS cue) AND (", q_t = name.q_a + " IS "; if (lib.pm_art && lib.pmt[5] != 0) q_t = name.q_a + " HAS ";
                         j = 0; for (i = 0; i < data.length; i++) {a = rad_type != 4 && data[0].hasOwnProperty('name') ? data[i].name : data[i]; if (lib.in_library_art(a)) {q += (j ? " OR " : "") + q_t + a; if (j == art_variety - 1) {done = j + 1; break;} else {j++; done = j}}} if (!done) return on_dld_radio_tracks_done(false);
                         q += ")"; try {li = fb.GetQueryItems(lib.get_lib_items(), q)} catch (e) {};
                         lib.get_lib_sel(li); j = 0; i = 0; timer.sim2 = window.SetTimeout(function() {finished = true; timer.reset(timer.sim1, timer.sim1i); timer.sim2 = false; add_loc(rad_source, rad_mode, rad_type, true, 1, true, true);}, iSelect_timeout);
@@ -1887,8 +1891,8 @@ function radio_manager() {
             case 3:
                 if (rad_type > 1 && !data) return on_dld_radio_tracks_done(false, "", 0, 0, true); var q = "";
                 switch (rad_type) {
-                    case 0: q += "artist IS " + rad_source; break; case 1: q = !rad_query ? "genre IS " + rad_source : rad_source; break;
-                    default: j = 0; for (i = 0; i < data.length; i++) {a = rad_type != 4 && data[0].hasOwnProperty('name') ? data[i].name : data[i]; if (lib.in_library_art(a)) {q += (j ? " OR " : "") + "artist IS " + a; if (j == art_variety - 1) break; j++;}} break;
+                    case 0: q += name.q_a + " IS " + rad_source; break; case 1: q = !rad_query ? name.q_g + " IS " + rad_source : rad_source; break;
+                    default: j = 0; for (i = 0; i < data.length; i++) {a = rad_type != 4 && data[0].hasOwnProperty('name') ? data[i].name : data[i]; if (lib.in_library_art(a)) {q += (j ? " OR " : "") + name.q_a + " IS " + a; if (j == art_variety - 1) break; j++;}} break;
                 }
                 if (this.filterID) q = "(" + q + ")" + " AND " + this.filter[this.filterID];
                 if (!j && rad_type > 1) return on_dld_radio_tracks_done(false); try {li = fb.GetQueryItems(lib.get_lib_items(), q)} catch (e) {};
@@ -1938,6 +1942,7 @@ function album_manager(p_album_name_callback) {
     this.focus = function() {if (fb.IsPlaying && this.orig_artist != this.artist) return; if (!this.lock_artist) this.orig_artist = this.artist = name.artist(); if (!this.artist) return; this.on_playback_new_track();};
     this.leave = function() {if (!this.show|| t.halt()) return; alb_m_i = -1; alb_m_i_o = 0; art_m_i = -1; art_m_i_o = 0; t.paint(); type = 0;}; this.lfm_mode = window.GetProperty("SYSTEM.Lfm Mode", 1); this.lfm_sort = window.GetProperty("SYSTEM.Lfm Sort", false);
     this.mb = window.GetProperty("SYSTEM.AlbMode", 0); this.mb_sort = window.GetProperty("SYSTEM.Mb Sort", false);
+    this.on_focus = function(p_is_focused) {if (!p_is_focused) {timer.reset(timer.search_cursor, timer.search_cursori); cursor = false; repaint();}}
     this.on_key_up = function(vkey) {if (!this.show || t.halt()) return; if (vkey == v.shift) {shift = false; shift_x = cx;}}; this.show_live = window.GetProperty("SYSTEM.Show Live MB Releases", false);
     this.pref_mb_tracks = window.GetProperty("SYSTEM.AlbTracks Pref: Lfm-0 Mb-1", 1); this.release_type = window.GetProperty("SYSTEM.Release Type", 0);
     this.rbtn_up = function(x, y) {men.search_menu(x, y, start, end, htmlfile.parentWindow.clipboardData.getData('text') ? true : false)}
@@ -2078,15 +2083,12 @@ function album_manager(p_album_name_callback) {
     }
 
     this.move = function(x, y) {
-        if (!this.show || t.halt()) return;
+        if (!this.show || t.halt()) return; type = p.m_y > art_y ? 1 : p.m_y > alb_y && p.m_y < alb_h ? 2 : 0; if (but.Dn) return;
         if (y > top && y < bot && x > margin && x < w2) {window.SetCursor(32513); this.edit = true;} else this.edit = false;
         if (y > top && y < bot && x < w1 && x > w2) window.SetCursor(32649);
         if (y > top && y < bot && x > margin && x < w1 && lbtn_dn) {var n_x = margin + this.release_w(), n_w = w3 - this.release_w(), tp = this.get_cursor_pos(x), t_x = get_cursor_x(tp); calc_txt(); if(tp < start) {if (tp < end) {if (t_x < n_x) if(offset > 0) offset--;} else if (tp > end) {if (t_x + n_x > n_x + n_w) {var l = (txt_w > n_w) ? txt_w - n_w : 0; if(l > 0) offset++;}} end = tp;} else if (tp > start) {if(t_x + n_x > n_x + n_w) {var l = (txt_w > n_w) ? txt_w - n_w : 0; if(l > 0) offset++;} end = tp;} cx = tp; repaint();}
         if (!art_l && !alb_info.length) return;
-        var l = 0; alb_m_i = -1; art_m_i = -1;
-        if (p.m_y > art_y) {l = art_l; type = 1;}
-        else if (p.m_y > alb_y && p.m_y < alb_h) {l = alb_info.length; type = 2;}
-        else {l = 0; type = 0;}
+        alb_m_i = -1; art_m_i = -1;
         if (p.m_y > art_y && p.m_y < art_y + art_sp) art_m_i = get_ix(x, y);
         else if (p.m_y > alb_y && p.m_y < alb_h) alb_m_i = get_ix(x, y);
         if (alb_m_i == alb_m_i_o && art_m_i == art_m_i_o) return;
@@ -2108,7 +2110,7 @@ function album_manager(p_album_name_callback) {
                 for (i = s; i < f; i++) {
                     if (row_y < d_h) {
                         row_y = i * ht + alb_y - alb_scrollbar.delta;
-                        if (ui.alternate) {if (i % 2 == 0) gr.FillSolidRect(0, row_y + 1, p.w, ht - 2, ui.b1); else gr.FillSolidRect(0, row_y, p.w, ht, ui.b2);}
+                        if (ui.alternate) {if (i % 2 == 0) gr.FillSolidRect(0, row_y + 1, alb_scrollbar.stripe_w, ht - 2, ui.b1); else gr.FillSolidRect(0, row_y, p.w, ht, ui.b2);}
                         if (alb_info[i].name.indexOf(">>") == 0 && ui.backcolsel != 0) gr.FillSolidRect(sel_x, row_y, sel_w, ht, ui.backcolsel);
                     }
                 }
@@ -2123,16 +2125,16 @@ function album_manager(p_album_name_callback) {
                         gr.GdiDrawText(this.mb ? alb_info[i].date : num(alb_info[i].playcount), ui.font, txt_col, this.mb ? margin : margin + tx1_w, row_y, this.mb ? txt_w : w.pc, ht, t.r);
                     }
                 }
-                if (p.scrollbar_show) alb_scrollbar.draw(gr);
             }
             else gr.GdiDrawText(this.artist_recognised(), ui.font, ui.textcol, margin, Math.round(alb_y), txt_w, ht * 2, t.l);
+            if (p.scrollbar_show && alb_scrollbar.scrollable_lines > 0) alb_scrollbar.draw(gr);
             if (art_l) {
                 s = Math.round(art_scrollbar.delta / ht + 0.4); f = s + art_r; f = art_l < f ? art_l : f;
                 var d_h = (f - s) * ht + art_y - ht * 0.9;
                 for (i = s; i < f; i++) {
                     if (row_y < d_h) {
                         row_y = i * ht + art_y - art_scrollbar.delta;
-                        if (ui.alternate) {if (i % 2 == 0) gr.FillSolidRect(0, row_y + 1, p.w, ht - 2, ui.b1); else gr.FillSolidRect(0, row_y, p.w, ht, ui.b2);}
+                        if (ui.alternate) {if (i % 2 == 0) gr.FillSolidRect(0, row_y + 1, art_scrollbar.stripe_w, ht - 2, ui.b1); else gr.FillSolidRect(0, row_y, p.w, ht, ui.b2);}
                         if (this.artists[i].name.indexOf(">>") == 0 && ui.backcolsel != 0) gr.FillSolidRect(sel_x, row_y, sel_w, ht, ui.backcolsel);
                     }
                 }
@@ -2147,8 +2149,8 @@ function album_manager(p_album_name_callback) {
                         else if (i > 0) gr.GdiDrawText(this.artists[i].disambiguation, ui.font, txt_col, margin + txt_w - txt2_w, row_y, txt2_w, ht, t.r);
                     }
                 }
-                gr.DrawLine(margin, ln2_y, w1, ln2_y, 1, ui.blend); if (p.scrollbar_show) art_scrollbar.draw(gr);
-            }} catch(e) {}
+                gr.DrawLine(margin, ln2_y, w1, ln2_y, 1, ui.blend);
+            } if (p.scrollbar_show && art_scrollbar.scrollable_lines > 0) art_scrollbar.draw(gr);} catch(e) {}
     }
 
     this.library_test = function(p_album_artist, p_album) {
@@ -2187,14 +2189,14 @@ function album_manager(p_album_name_callback) {
     }
 
     this.lbtn_dn = function(x, y) {
-        if (y < top) return; repaint(); lbtn_dn = (y > top && y < bot && x > margin && x < w2); if (y > bot) return;
+        if (y < top) return; repaint(); alb_search = lbtn_dn = (y > top && y < bot && x > margin && x < w2); if (y > bot) return;
         if (!lbtn_dn) {offset = start = end = cx = 0; timer.reset(timer.search_cursor, timer.search_cursori); return;}
         else if (x > margin && x < w2) {if (shift) {start = cx; end = cx = this.get_cursor_pos(x);} else {cx = this.get_cursor_pos(x); start = end = cx;} timer.reset(timer.search_cursor, timer.search_cursori); cursor = true; timer.search_cursor = window.SetInterval(function() {cursor = !cursor; repaint();}, 530);}
         repaint();
     }
 
     this.load = function(x, y, full_alb) {
-        if (y < top) return; repaint(); alb_search = (y > top && y < bot && x > margin && x < w2); if (y <= bot) return;
+        if (y < top || but.Dn) return; repaint(); alb_search = (y > top && y < bot && x > margin && x < w2); if (y <= bot) return;
         if (!this.show || x > p.w - p.sbar_sp) return; var i = get_ix(x, y); if (i == -1) return timer.reset(timer.search_cursor, timer.search_cursori);
         switch (type) {
             case 1:
@@ -2232,7 +2234,7 @@ function album_manager(p_album_name_callback) {
                     if (!full_alb || (this.mb && alb_info[i].release_type.indexOf("Album") == -1 && alb_info[i].release_type.indexOf("Compilation") == -1)) {
                         this.track_source = this.pref_mb_tracks; this.set_row(p.alb_id, 1, this.artist); this.dld_album(p.alb_id, i);
                     } else {
-                        /*mbtn_dn*/ alb_n = alb_info[i].name; if (ml.alb) if (this.library_test(this.artist, alb_n)) return;
+                        /*mbtn_up*/ alb_n = alb_info[i].name; if (ml.alb) if (this.library_test(this.artist, alb_n)) return;
                         this.set_row(p.alb_id, 1, this.artist); dat = this.mb ? alb_info[i].date : ""; if (!this.mb) {get_mb_tracks(p.alb_id, this.artist, alb_n);} else do_youtube_search(p.alb_id, this.artist, alb_n, this.mb ? alb_info[i].date : "");
                     } t.paint();
                 } else if (alb_info.length) {
@@ -2393,14 +2395,15 @@ function button_manager() {
     var b1 = ["all", "album", "comp", "single", "remix", "lock", "toggle", "more", "mode", "cross", "yt"], b2 = ["topalbums", "toptracks", "topsongs", "lock", "toggle", "more", "mode", "cross", "yt"], b3 = ["alb_scrollDn", "alb_scrollUp", "art_scrollDn", "art_scrollUp"], i, tt = window.CreateTooltip("Segoe UI", 15 * ui.scale * window.GetProperty(" Zoom Tooltip (%)", 100) / 100, 0);
     if (!window.GetProperty("SYSTEM.Zoom Update", false) && window.GetProperty("SYSTEM.Software Notice Checked")) window.SetProperty(" Zoom Button Size (%)", window.GetProperty(" Zoom Button Size (%)", 100) / ui.scale); window.SetProperty("SYSTEM.Zoom Update", true);
     var scale = Math.max(window.GetProperty(" Zoom Button Size (%)", 100) / 100, 0.7); window.SetProperty(" Zoom Button Size (%)", scale * 100); this.scale = ui.scale * scale;
-    this.b = null; this.btns = []; this.yt_w = 22 * this.scale, this.yt_h = 16 * this.scale;
+    this.b = null; this.btns = []; this.Dn = false; this.yt_w = 22 * this.scale, this.yt_h = 16 * this.scale;
     var scroll = function() {return p.scrollbar_show && alb.show;}
     var scroll_alb = function() {return scroll() && alb_scrollbar.scrollable_lines > 0;}
     var scroll_art = function() {return scroll() && art_scrollbar.scrollable_lines > 0;}
     var tooltip = function(n) {if (tt.text == n) return; tt.text = n; tt.activate();}
     this.create_images = function() {var alpha = [75, 192, 228], col = [ui.textcol & 0x44ffffff, ui.textcol & 0x99ffffff, ui.textcol], g, sz = arrow_symb == 0 ? Math.max(Math.round(p.but_h * 1.666667), 1) : 100, sc = sz / 100; for (j = 0; j < 3; j++) {scr[j] = gdi.CreateImage(sz, sz); g = scr[j].GetGraphics(); g.SetTextRenderingHint(3); g.SetSmoothingMode(2); if (p.scr_col) {arrow_symb == 0 ? g.FillPolygon(col[j], 1, [50 * sc, 0, 100 * sc, 76 * sc, 0, 76 * sc]) : g.DrawString(arrow_symb, gdi.Font(icon_f_name, sz, icon_f_style), col[j], 0, sz * pad, sz, sz, StringFormat(1, 1));} else {arrow_symb == 0 ? g.FillPolygon(RGBA(ui.ct, ui.ct, ui.ct, alpha[j]), 1, [50 * sc, 0, 100 * sc, 76 * sc, 0, 76 * sc]) : g.DrawString(arrow_symb, gdi.Font(icon_f_name, sz, icon_f_style), RGBA(ui.ct, ui.ct, ui.ct, alpha[j]), 0, sz * pad, sz, sz, StringFormat(1, 1));} g.SetSmoothingMode(0); scr[j].ReleaseGraphics(g);}}; this.create_images();
-    this.lbtn_dn = function(x, y) {if (!this.b) return false; if (scroll()) for (j = 0; j < b3.length; j++) if (this.b == b3[j]) {if (this.btns[this.b].trace(x, y)) this.btns[this.b].down = true; this.btns[this.b].changestate("down");} this.btns[this.b].lbtn_dn(x, y); if (this.b && !p.btn_mode && this.b.indexOf("_") == -1) this.refresh(false); return true;}
-    this.lbtn_up = function(x, y) {if (!this.b) return false; if (scroll()) for (j = 0; j < b3.length; j++) {this.btns[b3[j]].down = false; if (this.b == b3[j]) this.btns[this.b].changestate(this.btns[this.b].trace(x, y) ? "hover" : "normal");} this.move(x, y); if (!this.b) return false; this.btns[this.b].lbtn_up(x, y); if (this.b && !p.btn_mode && this.b.indexOf("_") == -1) this.refresh(false); return true;}
+    this.lbtn_dn = function(x, y) {this.move(x, y); if (!this.b) return false; this.Dn = this.b;
+        if (scroll()) for (j = 0; j < b3.length; j++) if (this.b == b3[j]) {if (this.btns[this.b].trace(x, y)) this.btns[this.b].down = true; this.btns[this.b].changestate("down");} this.btns[this.b].lbtn_dn(x, y); return true;}
+    this.lbtn_up = function(x, y) {this.Dn = false; if (scroll()) for (j = 0; j < b3.length; j++) this.btns[b3[j]].down = false; if (!this.b) return false; if (scroll()) for (j = 0; j < b3.length; j++) if (this.b == b3[j]) this.btns[this.b].changestate(this.btns[this.b].trace(x, y) ? "hover" : "normal"); this.move(x, y); if (!this.b) return false; this.btns[this.b].lbtn_up(x, y); if (this.b && !p.btn_mode && this.b.indexOf("_") == -1) this.refresh(false); return true;}
     this.leave = function() {if (this.b) this.btns[this.b].changestate("normal"); this.b = null; tooltip("");}
     this.on_script_unload = function() {tooltip("");}
 
@@ -2416,16 +2419,21 @@ function button_manager() {
     }
 
     this.move = function(x, y) {
-        if (this.b && this.btns[this.b].down == true) return; var b = null, hand = false;
+        if (alb_scrollbar.timer_but) {if ((this.btns["alb_scrollUp"].down || this.btns["alb_scrollDn"].down) && !this.btns["alb_scrollUp"].trace(x, y) && !this.btns["alb_scrollDn"].trace(x, y)) {this.btns["alb_scrollUp"].changestate("normal"); this.btns["alb_scrollDn"].changestate("normal"); window.ClearTimeout(alb_scrollbar.timer_but); alb_scrollbar.timer_but = false; alb_scrollbar.count = -1;}}
+        else if (art_scrollbar.timer_but) {if ((this.btns["art_scrollUp"].down || this.btns["art_scrollDn"].down) && !this.btns["art_scrollUp"].trace(x, y) && !this.btns["art_scrollDn"].trace(x, y)) {this.btns["art_scrollUp"].changestate("normal"); this.btns["art_scrollDn"].changestate("normal"); window.ClearTimeout(art_scrollbar.timer_but); art_scrollbar.timer_but = false; art_scrollbar.count = -1;}}
+        else for (j = 0; j < 4; j++) if (this.b == b3[j] && this.btns[this.b].down) {this.btns[this.b].changestate("down"); this.btns[this.b].l_dn();}
+        var b = null, hand = false;
         for (i in this.btns) {
-            if (p.btn_mode) {if (i == "yt") if (this.btns[i].trace(x, y)) {b = i; hand = true;}}
-            else if (!alb.show) {if (i == "yt") if (this.btns[i].trace(x, y)) {b = i; hand = true;}}
-            else if (!alb.mb) {for (j = 0; j < b2.length; j++) if (i == b2[j]) if (this.btns[i].trace(x, y)) {b = i; hand  = true;}}
-            else {for (j = 0; j < b1.length; j++) if (i == b1[j]) if (this.btns[i].trace(x, y)) {b = i; hand = true;}}
-            if (scroll_alb()) for (j = 0; j < 2; j++) if (i == b3[j] && this.btns[i].trace(x, y)) b = i;
-            if (scroll_art()) for (j = 2; j < 4; j++) if (i == b3[j] && this.btns[i].trace(x, y)) b = i;
-        } window.SetCursor(hand ? 32649 : 32512);
-        if (this.b == b) return this.b; if (b) this.btns[b].changestate("hover"); if (this.b) this.btns[this.b].changestate("normal"); this.b = b; if (!this.b) tooltip(""); return this.b;
+            if (p.btn_mode) {if (i == "yt" && (!this.Dn || this.Dn == "yt")) if (this.btns[i].trace(x, y)) {b = i; hand = true;}}
+            else if (!alb.show) {if (i == "yt" && (!this.Dn || this.Dn == "yt")) if (this.btns[i].trace(x, y)) {b = i; hand = true;}}
+            else if (!alb.mb) {for (j = 0; j < b2.length; j++) if (i == b2[j] && (!this.Dn || this.Dn == b2[j])) if (this.btns[i].trace(x, y)) {b = i; hand  = true;}}
+            else {for (j = 0; j < b1.length; j++) if (i == b1[j] && (!this.Dn || this.Dn == b1[j])) if (this.btns[i].trace(x, y)) {b = i; hand = true;}}
+            if (scroll_alb()) for (j = 0; j < 2; j++) if (i == b3[j] && (!this.Dn || this.Dn == b3[j]) && this.btns[i].trace(x, y)) b = i;
+            if (scroll_art()) for (j = 2; j < 4; j++) if (i == b3[j] && (!this.Dn || this.Dn == b3[j]) && this.btns[i].trace(x, y)) b = i;
+        }
+        window.SetCursor(!hand || (this.Dn && this.Dn != this.b) ? 32512 : 32649);
+        if (this.b == b) return this.b; if (b && (!this.Dn || this.Dn == b)) this.btns[b].changestate("hover");
+        if (this.b) this.btns[this.b].changestate("normal"); this.b = b; if (!this.b) tooltip(""); return this.b;
     }
 
     this.wheel = function(step) {
@@ -2437,7 +2445,7 @@ function button_manager() {
     }
 
     var btn = function(x, y, w, h, type, ft, txt, stat, img_src, down, l_dn, l_up, tooltext) {
-        var l = alb.mb ? 1 : 0, k = 0;
+        var l = alb.mb ? 1 : 0;
         this.draw = function (gr) {
             if (stat && type < 4) {gr.SetSmoothingMode(2); gr.FillRoundRect(this.x, this.y, this.w, this.h, 6 * but.scale, 6 * but.scale, ui.outline(ui.backcol, true));}
             if (type == 1) {gr.SetSmoothingMode(2);
@@ -2447,13 +2455,13 @@ function button_manager() {
             if (type == 1 && ui.dkMode) gr.gdiDrawText(txt, ft, this.img, this.x + 1 * but.scale, this.y, this.w, this.h, t.cc); else if (type < 2) gr.gdiDrawText(txt, ft, this.img, this.x, this.y, this.w, this.h, t.cc);
             if (type == 2) {
                 var cc = StringFormat(1, 1), fd1 = 25, fd2 = 42, norm = !p.np_graphic || !rad.full || alb.show ? true : false; gr.SetSmoothingMode(2);
-                if (norm || k) gr.FillRoundRect(this.x, this.y, 11 * but.scale, 14 * but.scale, 2 * but.scale, 2 * but.scale, RGBA(0, 0, 0, k ? 200 : 128));
-                gr.FillRoundRect(this.x + (norm || k ? 10 : 0) * but.scale, this.y, ((norm || k ? 11 : 21) + (p.video_mode ? 1 : 0)) * but.scale, 14 * but.scale, 2 * but.scale, 2 * but.scale, RGBA(255, 255, 255, k ? 200 : norm ? 100 : 8));
+                if (norm || this.img) gr.FillRoundRect(this.x, this.y, 11 * but.scale, 14 * but.scale, 2 * but.scale, 2 * but.scale, RGBA(0, 0, 0, this.img ? 200 : 128));
+                gr.FillRoundRect(this.x + (norm || this.img ? 10 : 0) * but.scale, this.y, ((norm || this.img ? 11 : 21) + (p.video_mode ? 1 : 0)) * but.scale, 14 * but.scale, 2 * but.scale, 2 * but.scale, RGBA(255, 255, 255, this.img ? 200 : norm ? 100 : 8));
                 gr.SetSmoothingMode(0); gr.SetTextRenderingHint(3);
-                if (!norm && !k) gr.DrawString("y", font1, RGBA(0, 0, 0, fd1), this.x + 1 + 0 * but.scale, this.y + 1 -5 * but.scale, 12 * but.scale, 20 * but.scale, cc);
-                gr.DrawString("y", font1, RGBA(255, 255, 255, k ? 200 : norm ? 100 : fd2), this.x + 0 * but.scale, this.y -5 * but.scale, 12 * but.scale, 20 * but.scale, cc);
-                gr.DrawString(alb.show || !p.np_graphic ? "T" : p.video_mode ? "V" : "I", font2, RGBA(0, 0, 0, k ? 200 : norm ? 150 : fd1), this.x + (!p.video_mode && (norm || k) ? 0 : 1) + 10.5 * but.scale, this.y + (norm || k ? 0 : 1) -2.8 * but.scale, 11 * but.scale, 20 * but.scale, cc);
-                if (!norm && !k) gr.DrawString(alb.show || !p.np_graphic ? "T" : p.video_mode ? "V" : "I", font2, RGBA(255, 255, 255, k ? 200 : fd2), this.x + 10.5 * but.scale, this.y -2.8 * but.scale, 11 * but.scale, 20 * but.scale, cc);
+                if (!norm && !this.img) gr.DrawString("y", font1, RGBA(0, 0, 0, fd1), this.x + 1 + 0 * but.scale, this.y + 1 -5 * but.scale, 12 * but.scale, 20 * but.scale, cc);
+                gr.DrawString("y", font1, RGBA(255, 255, 255, this.img ? 200 : norm ? 100 : fd2), this.x + 0 * but.scale, this.y -5 * but.scale, 12 * but.scale, 20 * but.scale, cc);
+                gr.DrawString(alb.show || !p.np_graphic ? "T" : p.video_mode ? "V" : "I", font2, RGBA(0, 0, 0, this.img ? 200 : norm ? 150 : fd1), this.x + (!p.video_mode && (norm || this.img) ? 0 : 1) + 10.5 * but.scale, this.y + (norm || this.img ? 0 : 1) -2.8 * but.scale, 11 * but.scale, 20 * but.scale, cc);
+                if (!norm && !this.img) gr.DrawString(alb.show || !p.np_graphic ? "T" : p.video_mode ? "V" : "I", font2, RGBA(255, 255, 255, this.img ? 200 : fd2), this.x + 10.5 * but.scale, this.y -2.8 * but.scale, 11 * but.scale, 20 * but.scale, cc);
             }
             if (type == 3) {gr.DrawLine(this.x + ht * 0.67, this.y + ht * 0.67 - 1, this.x + ht * 0.27, this.y + ht * 0.27 - 1, ht / 10, RGBA(136, 136, 136, this.img)); gr.DrawLine(this.x + ht * 0.67, this.y + ht * 0.27 - 1, this.x + ht * 0.27, this.y + ht * 0.67 - 1, ht / 10, RGBA(136, 136, 136, this.img));}
             if (type == 4 || type == 5) if (this.img) gr.DrawImage(this.img, this.x + ft, txt, stat, stat, 0, 0, this.img.Width, this.img.Height, type == 4 ? 0 : 180);
@@ -2465,8 +2473,8 @@ function button_manager() {
         this.lbtn_up = function () {this.l_up && this.l_up(x, y);}
 
         this.changestate = function(state) {
-            switch (state) {case "hover": k = 1; l = alb.mb ? 3 : 2; this.img = this.img_hover; this.ix = 2; tooltip(this.tooltext); break; case "down": this.img = this.img_down; break; default: k = 0; l = alb.mb ? 1 : 0; this.img = this.img_normal; this.ix = 0;break;}
-            if (t.rp) window.RepaintRect(this.x, this.y, this.w, this.h);
+            switch (state) {case "hover": l = alb.mb ? 3 : 2; this.img = this.img_hover; this.ix = 2; tooltip(this.tooltext); break; case "down": this.img = this.img_down; break; default: l = alb.mb ? 1 : 0; this.img = this.img_normal; this.ix = 0;break;}
+            if (t.rp) window.RepaintRect(this.x, this.y, this.w + 1, this.h + 1);
         }
 
         this.ix = 0; this.x = x; this.y = y; this.w = w; this.h = h; this.l_dn = l_dn; this.l_up = l_up; this.tooltext = tooltext;
@@ -2494,7 +2502,7 @@ function button_manager() {
             more: new btn(bx - b_w + 16 * this.scale, by, 13 * this.scale, bh, 0, font3, "▼", "", {normal: ui.textcol, hover: ui.blend}, false, "", function() {men.button(bx - bw, by + bh)},"Album Manager Settings"),
             mode: new btn(mx, !ui.dkMode ? by : by - 1 * this.scale, (!ui.dkMode ? 71 : alb.mb ? 74 : 46) * this.scale, (!ui.dkMode ? 14 : 15) * but.scale, 1, font4, alb.mb ? "MusicBrainz" : "last.fm", "", {normal: !ui.dkMode ? alb.mb ? RGB(96, 73, 139) : RGB(225, 225, 245) : ui.textcol, hover: !ui.dkMode ? alb.mb ? RGB(52, 23, 107) : RGB(225, 225, 245) : ui.textcol_h}, false, "", function() {alb.toggle("mode")}, alb.mb ? "Switch To Last.fm Mode" : "Switch To MusicBrainz Mode"),
             cross: new btn(p.w - mx - ht * 0.75, alb.fit()[1], ht, ht, 3, "", "", "", {normal: "85", hover: "192"}, false, "", function() {alb.clear()}, (alb.state() ? "Clear Search Text" : "Show Text")),
-            yt: new btn(yt_x, yt_y, this.yt_w, this.yt_h, 2, "", "", "", {normal: "1", hover: "1"}, false, "", function() {
+            yt: new btn(yt_x, yt_y, this.yt_w, this.yt_h, 2, "", "", "", {normal: 0, hover: 1}, false, "", function() {
                     if (p.w > but.yt_w && !p.btn_mode) alb.toggle("show");
                     else men.rbtn_up(bx + but.yt_w / 2, by + but.yt_h / 2);},
                 p.w > but.yt_w && !p.btn_mode ? alb.show ? "Show Now Playing" : "Toggle" : "youTube")
@@ -2523,7 +2531,7 @@ function create_dl_file() {var n = fb.ProfilePath + "yttm\\foo_lastfm_img.vbs"; 
 if (p.dl_art_img) create_dl_file(); if (p.btn_mode) {p.show_images == false; p.show_video = false;}
 
 function image_manager() {
-    var all_files_o_length = 0, alb_id = "", alb_id_o = "", alpha = 255, artist = "", artist_img = false, artistBlur = "", b_aim = [], b_fim = [], blurAutofill = window.GetProperty("ADV.Image Blur Background Auto-Fill", false), bor_w1 = 0, bor_w2 = 0, bp = false, core_img = [], covBlur = window.GetProperty(" Image Blur Background Always Use Cover", false), f_blur = false, f_im = [], folder = "", fresh_artist = true, f_sz = [], i_x = 0, image_path_o = "", imgID = "", imgID_o = "", init = true, ir = false, newalbum = true, new_BlurAlb = false, nw = 0, rsimgA = [], rsimgL = [], sh_img = false, transLevel = Math.min(Math.max((100 - window.GetProperty(" Image Smooth Transition Level (0-100)", 92)), 0.1), 100), transIncr = Math.min(Math.max((1.04 + 8 / transLevel * 0.21), 1.09), 1.25), xa = 0, xf = 0, ya = 0, yf = 0, update = 0; if (transLevel == 100) transLevel = 255;
+    var all_files_o_length = 0, alb_id = "", alb_id_o = "", alpha = 255, artist = "", artist_img = false, artistBlur = "", b_aim = [], b_fim = [], blurAutofill = window.GetProperty("ADV.Image Blur Background Auto-Fill", false), bor_w1 = 0, bor_w2 = 0, bp = false, core_img = [], covBlur = window.GetProperty(" Image Blur Background Always Use Cover", false), f_blur = false, f_im = [], folder = "", fresh_artist = true, f_sz = [], i_x = 0, image_path_o = "", imgID = "", imgID_o = "", init = true, ir = false, newalbum = true, new_BlurAlb = false, nw = 0, r = 0, rsimgA = [], rsimgL = [], sh_img = false, transLevel = Math.min(Math.max((100 - window.GetProperty(" Image Smooth Transition Level (0-100)", 92)), 0.1), 100), transIncr = Math.min(Math.max((1.04 + 8 / transLevel * 0.21), 1.09), 1.25), xa = 0, xf = 0, ya = 0, yf = 0, update = 0; if (transLevel == 100) transLevel = 255;
     var a_im = [], a_img = [], a_run = 1; if (p.cycle_art_img) {var a_sz = [], g_valid_tid = 0, ix = 0;}
     this.arr = []; this.artistart = window.GetProperty("SYSTEM.Artist Art", false); this.blurImg = false; this.border = window.GetProperty("SYSTEM.Image Border-1 Shadow-2 Both-3", 0); this.get = true; this.nh = 0; this.ny = 0; this.reflection = window.GetProperty( "SYSTEM.Image Reflection", false); this.smoothTrans = window.GetProperty("SYSTEM.Image Smooth Transition", false);
     this.artist_reset = function() {this.blurCheck(); var artist_o = artistBlur; artist = name.artist(); artistBlur = artist + (!ui.blur ? "" : p.IsVideo()); var new_artist = artist && artistBlur != artist_o || !artist || covBlur && alb_id != alb_id_o; if (new_artist) {folder = p.cleanPth(p.imgArtPth); this.clear_art_cache(); if (p.cycle_art_img) a_run = 1; all_files_o_length = 0; ix = 0;}}
@@ -2534,7 +2542,7 @@ function image_manager() {
     this.clear_c_rs_cache = function() {rsimgL[0] = false; if (f_im[0]) f_im[0].Dispose(); f_im[0] = false; if (b_fim[0]) b_fim[0].Dispose(); b_fim[0] = false;}
     this.clear_cov_cache = function() {if (core_img[0]) core_img[0].Dispose(); core_img[0] = false; this.clear_c_rs_cache();}
     var exclArr = [6473, 6500, 24104, 35875, 37235, 68626, 86884, 92172];
-    this.focus = function() {if (p.dl_art_img) dl_art.run(); this.on_playback_new_track();}
+    this.focus = function() {r++; if (r == 1) {this.on_playback_new_track(); timer.reset(timer.focus, timer.focusi); timer.focus = window.SetTimeout(function() {r = 0; timer.focus = false;}, 250); return;} timer.reset(timer.focus, timer.focusi); timer.focus = window.SetTimeout(function() {img.on_playback_new_track(); r = 0; timer.focus = false;}, 250);}
     this.get_img_fallback = function() {if (!this.get) return; if (p.video_mode && !alb.show) p.set_video(); if (this.artistart && p.cycle_art_img) {timer.image(); this.artist_reset(); update = 0; this.grab_a_img();} else this.grab_f_img(); this.get = false;}
     this.grab_a_img = function() {if (!this.artistart) return; if (a_run || update) {a_run = 0; if (artist) this.read_arr();} this.artist_image();}
     this.grab_f_img = function() {this.blurCheck(); i_x = this.artistart ? 1 : 0; var handle = fb.IsPlaying ? fb.GetNowPlaying() : fb.GetFocusItem(); if (handle) return utils.GetAlbumArtAsync(window.ID, handle, this.artistart ? 4 : 0); if (fb.IsPlaying) return; core_img[i_x] = this.noimg[2].Clone(0, 0, this.noimg[2].Width, this.noimg[2].Height); if (!core_img[i_x]) return; this.img_c(); core_img[i_x] = this.img_rs("", f_im, i_x, core_img[i_x], f_sz, 0); rsimgL[i_x] = true; this.paint();}
@@ -2640,7 +2648,7 @@ function image_manager() {
         if (covBlur && this.artistart && new_BlurAlb) {
             if (f_blur) f_blur.Dispose(); f_blur = false;
             var handle = fb.IsPlaying && !p.focus ? fb.GetNowPlaying() : fb.GetFocusItem(); if (handle) f_blur = utils.GetAlbumArtV2(handle, 0);
-            if (!f_blur) f_blur = this.noimg[0].Clone(0, 0, this.noimg[0].Width, this.noimg[0].Height); new_BlurAlb = false; if (f_blur && !blurAutofil) f_blur = f_blur.Resize(p.w, p.h);
+            if (!f_blur) f_blur = this.noimg[0].Clone(0, 0, this.noimg[0].Width, this.noimg[0].Height); new_BlurAlb = false; if (f_blur && !blurAutofill) f_blur = f_blur.Resize(p.w, p.h);
         }
         if (covBlur && this.artistart && f_blur) image = f_blur;
         this.blurImg = gdi.CreateImage(p.w, p.h), g = this.blurImg.GetGraphics(); g.SetInterpolationMode(0);
@@ -2673,7 +2681,7 @@ function image_manager() {
             else gr.DrawImage(pic, 0, 0, pic.Width, pic.Height, 0, 0, pic.Width, pic.Height, 0, alpha);} catch (e) {}
     }
 
-    this.lbtn_dn = function(x, y) {
+    this.lbtn_up = function(x, y) {
         if (y > Math.min(p.h * p.rel_imgs, p.h - this.ny)) {rad.text_toggle(); t.repaint();}
         else {
             this.artistart = !this.artistart; window.SetProperty("SYSTEM.Artist Art", this.artistart);
@@ -2739,7 +2747,7 @@ function lfm_art_img(state_callback) {
 }
 
 function timers() {
-    var timer_arr = ["dl", "img", "search", "search_cursor", "sim1", "sim2", "transition", "vid", "yt", "zSearch"];
+    var timer_arr = ["dl", "focus", "img", "search", "search_cursor", "sim1", "sim2", "transition", "vid", "yt", "zSearch"];
     for (var i = 0; i < timer_arr.length; i++) {this[timer_arr[i]] = false; this[timer_arr[i] + "i"] = i;} this.rad_chk = true; this.step = 0;
     this.reset = function(timer, n) {if (timer) window.ClearTimeout(timer); this[timer_arr[n]] = false;}
     this.res = function() {img.update(); this.reset(this.dl, this.dli);}
@@ -2753,9 +2761,9 @@ var timer = new timers(); if (!alb.show && p.np_graphic) p.set_video();
 
 function on_album_search_done_callback() {alb.calc_rows_alb(); t.paint();}
 function on_get_album_art_done(metadb, art_id, image, image_path) {img.get_album_art_done(image, image_path);}
-function on_item_focus_change() {if (!t.block() && !alb.show) t.repaint(); if (fb.IsPlaying) return; if (!alb.lock_artist) alb.orig_artist = alb.artist = name.artist(); if (p.np_graphic) {if (t.block()) {img.get = true; img.artist_reset();} else {img.get = false;}} if (!alb.show) {t.repaint(); alb.get = true;} if (!alb.show && p.np_graphic && (!p.dl_art_img || !p.img_exp(p.cleanPth(p.imgArtPth), p.TwentyEight_Days))) {img.focus(); timer.reset(timer.zSearch, timer.zSearchi); return;} timer.reset(timer.zSearch, timer.zSearchi); timer.zSearch = window.SetTimeout(function() {alb.focus(); if (p.np_graphic) img.focus(); timer.zSearch = false;}, 1000);}
+function on_item_focus_change() {if (!t.block() && !alb.show && !ui.blur) t.repaint(); if (fb.IsPlaying) return; if (p.np_graphic) {if (t.block()) {img.get = true; img.artist_reset();} else {img.get = false;}} if (!alb.show) {if (!ui.blur) t.repaint(); alb.get = true;} if ((!alb.show || ui.blur) && p.np_graphic) img.focus(); timer.reset(timer.zSearch, timer.zSearchi); timer.zSearch = window.SetTimeout(function() {if (!alb.lock_artist) alb.orig_artist = alb.artist = name.artist(); if (alb.show) alb.focus(); if (p.np_graphic && p.dl_art_img) dl_art.run(); timer.zSearch = false;}, 1000);}
 function on_load_image_done(tid, image) {img.load_done(tid, image);}
-function on_metadb_changed() {if (p.ir()) return; timer.reset(timer.zSearch, timer.zSearchi); timer.zSearch = window.SetTimeout(function() {if (!alb.show) t.repaint(); alb.focus(); if (p.np_graphic) img.focus(); else p.vid_chk(); timer.zSearch = false;}, 500);}
+function on_metadb_changed() {if (p.ir()) return; if (!t.block() && !alb.show && !ui.blur) t.repaint(); if (p.np_graphic) img.focus(); timer.reset(timer.zSearch, timer.zSearchi); timer.zSearch = window.SetTimeout(function() {alb.focus(); if (p.np_graphic && p.dl_art_img) dl_art.run(); timer.zSearch = false;}, 500);}
 function on_playback_stop(reason) {if (reason == 2) return; on_item_focus_change();}
 function on_size() {t.rp = false; p.w = window.Width; p.h = window.Height; if (!p.w || !p.h) return; p.on_size(); ui.get_font(); but.refresh(true); if (p.np_graphic) img.on_size(); rad.on_size(); t.rp = true;}
 function on_paint(gr) {ui.draw(gr); if (p.np_graphic) img.draw(gr); if (!alb.show) rad.draw(gr); else alb.draw(gr); but.draw(gr);}
@@ -3005,7 +3013,7 @@ function menu_object() {
                         case 4: img.border = img.border == 0 ? 2 : img.border == 1 ? 3 : img.border == 2 ? 0 : 1; window.SetProperty("SYSTEM.Image Border-1 Shadow-2 Both-3", img.border); img.on_size(); break;
                     }
                     break;
-                case "Nowplaying": rad.mbtn_dn(x, y, i); break;
+                case "Nowplaying": rad.mbtn_up(x, y, i); break;
                 case "Blacklist":
                     if (i == 1) pl.love();
                     else if (i == 2) {
@@ -3033,14 +3041,14 @@ function menu_object() {
 var men = new menu_object();
 
 function on_char(code) {alb.on_char(code)}
+function on_focus(is_focused) {alb.on_focus(is_focused);}
 function on_library_items_added() {if (!lib) return; lib.upd = true; lib.update = true;}; function on_library_items_removed() {if (!lib) return; lib.upd = true; lib.update = true;}; function on_library_items_changed() {if (!lib) return; if ((ml.pc_installed && ml.sort_type > 1) && (fb.PlaybackTime > 59 && fb.PlaybackTime < 65)) return; if (fb.IsPlaying) {var handle = fb.GetNowPlaying(); if (handle && handle.Path.slice(-7) == "!!.tags") return; /*!!.tags use mtags_mng due to m-TAGS/YouTube popup triggers*/} lib.upd = true; lib.update = true;}
 function on_key_down(vkey) {alb.on_key_down(vkey); if (p.np_graphic) img.on_key_down(vkey)}; function on_key_up(vkey) {alb.on_key_up(vkey)}
 function on_mouse_lbtn_dblclk(x, y) {but.lbtn_dn(x, y); if (!p.dbl_click) return; p.click(x, y);}
 function on_mouse_lbtn_down(x, y) {but.lbtn_dn(x, y); alb.lbtn_dn(x, y); if (alb.scrollbar_type()) alb.scrollbar_type().lbtn_dn(x, y);}
-function on_mouse_lbtn_up(x, y) {but.lbtn_up(x, y); alb.lbtn_up(x, y); alb_scrollbar.lbtn_up(x, y); art_scrollbar.lbtn_up(x, y); if (p.dbl_click) return; p.click(x, y);}
+function on_mouse_lbtn_up(x, y) {if (!p.dbl_click && !but.Dn) p.click(x, y); but.lbtn_up(x, y); alb.lbtn_up(x, y); alb_scrollbar.lbtn_up(x, y); art_scrollbar.lbtn_up(x, y);}
 function on_mouse_leave() {but.leave(); alb.leave(); alb_scrollbar.leave(); art_scrollbar.leave();}
-function on_mouse_mbtn_down(x, y) {if (p.np_graphic) rad.mbtn_dn(x, y);}
-function on_mouse_mbtn_up(x, y) {alb.load(x, y, true);}
+function on_mouse_mbtn_up(x, y) {alb.load(x, y, true); rad.mbtn_up(x, y);}
 function on_mouse_move(x, y) {if (p.m_x == x && p.m_y == y) return; p.m_x = x; p.m_y = y; but.move(x, y); alb.move(x, y); if (!alb.scrollbar_type()) return; alb.scrollbar_type().move(x, y);}
 function on_mouse_rbtn_up(x, y) {if (!alb.edit) {men.rbtn_up(x, y); return true;} else {alb.rbtn_up(x, y); return true;}}
 function on_mouse_wheel(step) {switch (utils.IsKeyPressed(0x11)) {case false: if (t.halt()) break; if (!alb.show && p.show_images) img.wheel(step); if (!alb.show && p.show_images || !alb.scrollbar_type()) break; alb.scrollbar_type().wheel(step, false); break; case true: but.wheel(step); ui.wheel(step); break;}}
@@ -3055,4 +3063,4 @@ function RGBA(r, g, b, a) {return a << 24 | r << 16 | g << 8 | b;}
 function StringFormat() {var a = arguments, h_align = 0, v_align = 0, trimming = 0, flags = 0; switch (a.length) {case 3: trimming = a[2]; case 2: v_align = a[1]; case 1: h_align = a[0]; break; default: return 0;} return (h_align << 28 | v_align << 24 | trimming << 20 | flags);}
 
 if (!window.GetProperty("SYSTEM.Software Notice Checked", false)) fb.ShowPopupMessage("THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHORS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.", "YouTube Track Manager"); window.SetProperty("SYSTEM.Software Notice Checked", true);
-if (!window.GetProperty("SYSTEM.Playlist Check", false)) fb.ShowPopupMessage("The following playlists by default:\n\nAlbum, Loved, Radio, RadioTracks, Top [prefix for Top50, Top40, TopTracks etc].\n\nIf you already use any of these, change the ones used by YouTube Track Manager before using the script.\n\nTo do this, open panel properties. Just change the names as required. Ensure comma \",\" separators are retained & not used in names. See the documentation for more info.", "YouTube Track Manager"); window.SetProperty("SYSTEM.Playlist Check", true); window.SetProperty(" Image Border-1 Shadow-2 Both-3", null); window.SetProperty("ADV.Playback Statistics: Use JScript Panel Fields", null); window.SetProperty("ADV.Library Filter (Use Query Syntax)", null); window.SetProperty("SYSTEM.Library Sort Type", null); window.SetProperty("SYSTEM.Use Library Filter", null);
+if (!window.GetProperty("SYSTEM.Playlist Check", false)) fb.ShowPopupMessage("The following playlists by default:\n\nAlbum, Loved, Radio, RadioTracks, Top [prefix for Top50, Top40, TopTracks etc].\n\nIf you already use any of these, change the ones used by YouTube Track Manager before using the script.\n\nTo do this, open panel properties. Just change the names as required. Ensure comma \",\" separators are retained & not used in names. See the documentation for more info.", "YouTube Track Manager"); window.SetProperty("SYSTEM.Playlist Check", true); window.SetProperty(" Image Border-1 Shadow-2 Both-3", null); window.SetProperty(" Titleformat Artist", null); window.SetProperty(" Titleformat Genre", null); window.SetProperty(" Titleformat Title", null); window.SetProperty("ADV.Playback Statistics: Use JScript Panel Fields", null); window.SetProperty("ADV.Library Filter (Use Query Syntax)", null); window.SetProperty("SYSTEM.Library Sort Type", null); window.SetProperty("SYSTEM.Use Library Filter", null);
