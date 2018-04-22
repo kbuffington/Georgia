@@ -1,6 +1,6 @@
 
-var pref = new Properties(); // preferences
-var tf	 = new Properties(); // titleformating strings
+var pref = PanelProperties.get_instance(); // preferences
+var tf	 = PanelProperties.get_instance(); // titleformating strings
 
 // THEME PREFERENCES/PROPERTIES EXPLANATIONS - After initial run, these values are changed in Options Menu or by Right Click >> Properties and not here!
 pref.add_properties(
