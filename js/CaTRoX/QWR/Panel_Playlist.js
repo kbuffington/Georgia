@@ -34,6 +34,7 @@ g_properties.add_properties(
         auto_album_art:     ['user.header.this.art.auto', false],
         show_group_info:    ['user.header.info.show', true],
         show_original_date: ['user.header.original_date.show', false],
+        show_disc_headers:  ['user.header.disc_headers.show', true],
 
         alternate_row_color:  ['user.row.alternate_color', true],
         show_playcount:       ['user.row.play_count.show', _.cc('foo_playcount')],
@@ -334,7 +335,7 @@ function PlaylistPanel(x,y) {
 
     //<editor-fold desc="Callback Implementation">
     this.on_paint = function (gr) {
-		gr.FillSolidRect(this.x, this.y, this.w, this.h, g_theme.colors.pss_back); //TODO: can I not need this
+        gr.FillSolidRect(this.x, this.y, this.w, this.h, g_theme.colors.pss_back); //TODO: can I not need this
         if (!is_activated) {
             is_activated = true;
 
@@ -353,18 +354,18 @@ function PlaylistPanel(x,y) {
 
     this.on_size = function (w, h) {
         var x = Math.round(ww *.5);
-		var y = btns[30].y + btns[30].h + 10 + listTop;
-		var playlist_w = w - x;
-		var playlist_h = Math.max(0, h - geo.lower_bar_h - 10 - y - listBottom);
-		var rightSpace = 0; //listRight;
+        var y = btns[30].y + btns[30].h + 10 + listTop;
+        var playlist_w = w - x;
+        var playlist_h = Math.max(0, h - geo.lower_bar_h - 10 - y - listBottom);
+        var rightSpace = 0; //listRight;
 
-		this.h = playlist_h;
-		this.w = playlist_w;
-		this.x = x;
-		this.y = y;
+        this.h = playlist_h;
+        this.w = playlist_w;
+        this.x = x;
+        this.y = y;
 
-		playlist.on_size(playlist_w - rightSpace - listLeft, playlist_h - (g_properties.show_playlist_info ? playlist_info_and_gap_h : 0),
-				x + listLeft, y + (g_properties.show_playlist_info ? playlist_info_and_gap_h : 0));
+        playlist.on_size(playlist_w - rightSpace - listLeft, playlist_h - (g_properties.show_playlist_info ? playlist_info_and_gap_h : 0),
+                x + listLeft, y + (g_properties.show_playlist_info ? playlist_info_and_gap_h : 0));
         playlist_info.set_xyw(x, y, this.w - rightSpace);
 
         is_activated = window.IsVisible;
@@ -616,7 +617,7 @@ function PlaylistPanel(x,y) {
         playlist.initialize_list();
     };
 
-	// TODO: Mordred - Do this elsewhere?
+    // TODO: Mordred - Do this elsewhere?
     this.mouse_in_this = function (x, y) {
         return (x >= this.x && x < this.x + this.w &&
                 y >= this.y && y < this.y + this.h);
@@ -668,10 +669,10 @@ function Playlist(x, y) {
         gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
 
         if (this.items_to_draw.length) {
-			// Mordred - Passing top, bottom for clipping purposes
-			var that = this;
+            // Mordred - Passing top, bottom for clipping purposes
+            var that = this;
             _.forEachRight(this.items_to_draw, function (item) {
-			    item.draw(gr, that.y, that.y + that.h);
+                item.draw(gr, that.y, that.y + that.h);
             }, that);
 
             // Hide rows that shouldn't be visible
@@ -705,14 +706,14 @@ function Playlist(x, y) {
     };
 
     this.on_size = function (w, h, x, y) {
-		List.prototype.on_size.apply(this, [w, h, x, y]);
-		// TODO: Mordred - can we avoid this? was_on_size_called causing probs
-		this.x = x;
-		this.y = y;
-		this.h = h;
-		this.w = w;
-		was_on_size_called = true;
-		this.reinitialize();
+        List.prototype.on_size.apply(this, [w, h, x, y]);
+        // TODO: Mordred - can we avoid this? was_on_size_called causing probs
+        this.x = x;
+        this.y = y;
+        this.h = h;
+        this.w = w;
+        was_on_size_called = true;
+        this.reinitialize();
     };
 
     this.on_mouse_move = function (x, y, m) {
@@ -789,11 +790,11 @@ function Playlist(x, y) {
 
         if (_.isInstanceOf(item, Header)) {
             plman.ExecutePlaylistDefaultAction(cur_playlist_idx, _.head(item.rows).idx);
-		}
-		else if (_.isInstanceOf(item, DiscHeader)) {
-			// Toggling works, but cannot get List to redraw
-			// item.toggle_collapse();
-		}
+        }
+        else if (_.isInstanceOf(item, DiscHeader)) {
+            // Toggling works, but cannot get List to redraw
+            // item.toggle_collapse();
+        }
         else {
             if (g_properties.show_rating && item.rating_trace(x, y)) {
                 item.rating_click(x, y);
@@ -1713,7 +1714,9 @@ function Playlist(x, y) {
             playlist_copy.length = playlist_copy.length - header.rows.length; ///< much faster then _.drop or slice, since it does not create a new array
             playlist_copy.reverse();
 
-            header.init_disc_rows(that);
+            if (g_properties.show_disc_headers) {
+                header.init_disc_rows(that);
+            }
             headers.push(header);
             ++head_nr;
         }
@@ -2795,11 +2798,11 @@ PlaylistContent = function () {
                 if (cur_y >= wy + wh) {
                     should_break = true;
                     break;
-				}
+                }
 
-				if (_.isInstanceOf(header_row, DiscHeader) && header_row.is_collapsed) {
-					j += header_row.rows.length;
-				}
+                if (_.isInstanceOf(header_row, DiscHeader) && header_row.is_collapsed) {
+                    j += header_row.rows.length;
+                }
             }
             if (should_break) {
                 break;
@@ -3085,16 +3088,16 @@ function Header(x, y, w, h, idx, row_h_arg) {
         }
 
         clipImg.ReleaseGraphics(grClip);
-		var y = this.y;
-		var h = this.h;
-		var srcY = 0;
-		if (this.y < top) {
-			y = top;
-			h = this.h - (top - this.y);
-			srcY = this.h - h;
-		} else if (this.y + this.h > bottom) {
-			h = bottom - this.y;
-		}
+        var y = this.y;
+        var h = this.h;
+        var srcY = 0;
+        if (this.y < top) {
+            y = top;
+            h = this.h - (top - this.y);
+            srcY = this.h - h;
+        } else if (this.y + this.h > bottom) {
+            h = bottom - this.y;
+        }
         gr.DrawImage(clipImg, this.x, y, this.w, h, 0, srcY, this.w, h, 0, 255);
         clipImg.Dispose();
     };
@@ -3271,54 +3274,54 @@ function Header(x, y, w, h, idx, row_h_arg) {
         metadb = _.head(this.rows).metadb;
     };
 
-	this.init_disc_rows = function (that) {
+    this.init_disc_rows = function (that) {
         var disc, lastDisc = '';
-		var tfo = fb.TitleFormat('$ifgreater(%totaldiscs%,1,,false)[' + tf.disc_subtitle + ']');
-        var disc_group = fb.TitleFormat('%album artist% %album% %edition% %discnumber%' + tf.disc_subtitle);
+        var tfo = fb.TitleFormat('$ifgreater(%totaldiscs%,1,,false)[%discsubtitle%]');
+        var disc_group = fb.TitleFormat('%album artist% %album% %edition% %discnumber% %discsubtitle%');
         var disc_nr = 0;
-		var startIndex;
-		var disc_header = null;
-		var rows_copy = [];
+        var startIndex;
+        var disc_header = null;
+        var rows_copy = [];
 
         for (var i = 0; i < this.rows.length; i++) {
-			if (tfo.EvalWithMetadb(this.rows[i].metadb) !== 'false') {
-				disc = disc_group.EvalWithMetadb(this.rows[i].metadb);
-				if (disc != lastDisc) {
-					if (disc_header) {
-						rows_copy.splice(startIndex, 0, disc_header);
-					} else if (!rows_copy.length) {
-						// only copy if we have to
-						rows_copy = this.rows.slice();
-					}
-					disc_header = new DiscHeader(that.list_x, 0, that.list_w, that.row_h, this.rows[i].metadb, this);
+            if (tfo.EvalWithMetadb(this.rows[i].metadb) !== 'false') {
+                disc = disc_group.EvalWithMetadb(this.rows[i].metadb);
+                if (disc != lastDisc) {
+                    if (disc_header) {
+                        rows_copy.splice(startIndex, 0, disc_header);
+                    } else if (!rows_copy.length) {
+                        // only copy if we have to
+                        rows_copy = this.rows.slice();
+                    }
+                    disc_header = new DiscHeader(that.list_x, 0, that.list_w, that.row_h, this.rows[i].metadb, this);
                     lastDisc = disc;
-					startIndex = i + disc_nr;	// index in header where DiscHeader will be inserted
-					disc_nr++;
-				}
+                    startIndex = i + disc_nr;	// index in header where DiscHeader will be inserted
+                    disc_nr++;
+                }
                 this.rows[i].disc = disc_nr - 1;    // already incremented
                 disc_header.rows.push(this.rows[i]);
-			} else {
-				if (disc_header) {
-					// special case with single disc, but discsubtitle only on some tracks
-					rows_copy.splice(startIndex, 0, disc_header);
-					disc_header = null;
-				}
-			}
-		}
-		if (disc_header) {
-			rows_copy.splice(startIndex, 0, disc_header);
-		}
+            } else {
+                if (disc_header) {
+                    // special case with single disc, but discsubtitle only on some tracks
+                    rows_copy.splice(startIndex, 0, disc_header);
+                    disc_header = null;
+                }
+            }
+        }
+        if (disc_header) {
+            rows_copy.splice(startIndex, 0, disc_header);
+        }
         if (disc_nr) {
-			this.rows = rows_copy;
-			for (var i = 0; i < this.rows.length; i++) {
-				this.rows[i].num_in_header = i + 1;
-				this.rows[i].is_odd = (i + 1) % 2;
-			}
-		}
-		this.num_discs = disc_nr;
-		_.dispose(tfo);
-		_.dispose(disc_group);
-	}
+            this.rows = rows_copy;
+            for (var i = 0; i < this.rows.length; i++) {
+                this.rows[i].num_in_header = i + 1;
+                this.rows[i].is_odd = (i + 1) % 2;
+            }
+        }
+        this.num_discs = disc_nr;
+        _.dispose(tfo);
+        _.dispose(disc_group);
+    }
 
     this.has_selected_items = function () {
         return _.some(that.rows, function (row) {
@@ -3349,10 +3352,10 @@ function Header(x, y, w, h, idx, row_h_arg) {
         var duration_in_seconds = 0;
 
         for (var i = 0; i < that.rows.length; ++i) {
-			if (!_.isInstanceOf(that.rows[i], DiscHeader)) {
-				duration_in_seconds += that.rows[i].metadb.Length;
-			}
-		}
+            if (!_.isInstanceOf(that.rows[i], DiscHeader)) {
+                duration_in_seconds += that.rows[i].metadb.Length;
+            }
+        }
 
         if (!duration_in_seconds) {
             return '';
@@ -3370,7 +3373,7 @@ function Header(x, y, w, h, idx, row_h_arg) {
 
     this.is_collapsed = false;
 
-	this.num_discs = 0;
+    this.num_discs = 0;
 
     //private:
     var that = this;
@@ -3385,65 +3388,63 @@ function Header(x, y, w, h, idx, row_h_arg) {
 Header.prototype = Object.create(List.Item.prototype);
 Header.prototype.constructor = Header;
 
-var show_disc_headers = true;
-
 function DiscHeader(x, y, w, h, metadb, header) {
     List.Item.call(this, x, y, w, h);
 
     //public:
     this.draw = function (gr, top, bottom) {
-		gr.FillSolidRect(this.x, this.y, this.w, this.h, g_pl_colors.background);
+        gr.FillSolidRect(this.x, this.y, this.w, this.h, g_pl_colors.background);
 
-		if (this.is_odd && g_properties.alternate_row_color) {
+        if (this.is_odd && g_properties.alternate_row_color) {
             gr.FillSolidRect(this.x, this.y + 1, this.w, this.h - 1, g_pl_colors.row_alternate);
-		}
+        }
 
-		gr.DrawRect(this.x, this.y, this.w, this.h - 1, 1, rgba(100,100,100,100));
+        gr.DrawRect(this.x, this.y, this.w, this.h - 1, 1, rgba(100,100,100,100));
 
-		var cur_x = this.x + 10;
-		var title_font = g_pl_fonts.title_normal;
-		var title_color = g_pl_colors.title_normal;
+        var cur_x = this.x + 10;
+        var title_font = g_pl_fonts.title_normal;
+        var title_color = g_pl_colors.title_normal;
 
-		if (this.is_selected()) {
-			title_color = g_pl_colors.title_selected;
+        if (this.is_selected()) {
+            title_color = g_pl_colors.title_selected;
             title_font = g_pl_fonts.title_selected;
-		}
+        }
 
-		var disc_header_text_format = g_string_format.v_align_center | g_string_format.trim_ellipsis_char | g_string_format.no_wrap;
-		var disc_text = _.tf('[Disc %discnumber% $if('+ tf.disc_subtitle+', \u2014 ,) ]['+ tf.disc_subtitle +']', that.metadb);
-		gr.DrawString(disc_text, title_font, title_color, cur_x, this.y, this.w, this.h, disc_header_text_format);
+        var disc_header_text_format = g_string_format.v_align_center | g_string_format.trim_ellipsis_char | g_string_format.no_wrap;
+        var disc_text = _.tf('[Disc %discnumber% $if(%discsubtitle%, \u2014 ,) ][%discsubtitle%]', that.metadb);
+        gr.DrawString(disc_text, title_font, title_color, cur_x, this.y, this.w, this.h, disc_header_text_format);
 
-		var tracks_text = this.rows.length + ' Track' + (this.rows.length > 1 ? 's' : '') + ' - ' + get_duration();
+        var tracks_text = this.rows.length + ' Track' + (this.rows.length > 1 ? 's' : '') + ' - ' + get_duration();
 
-		var tracks_w = Math.ceil(gr.MeasureString(tracks_text, title_font, 0, 0, 0, 0).Width + 5);
-		var tracks_x = this.x + this.w - tracks_w - 8;
+        var tracks_w = Math.ceil(gr.MeasureString(tracks_text, title_font, 0, 0, 0, 0).Width + 5);
+        var tracks_x = this.x + this.w - tracks_w - 8;
 
-		gr.DrawString(tracks_text, title_font, title_color, tracks_x, this.y, tracks_w, this.h, g_string_format.v_align_center);
+        gr.DrawString(tracks_text, title_font, title_color, tracks_x, this.y, tracks_w, this.h, g_string_format.v_align_center);
 
-		if (this.is_collapsed) {
-			// what to draw here?
-		}
+        if (this.is_collapsed) {
+            // what to draw here?
+        }
     };
 
-	this.is_selected = function () {
-		return _.every(that.rows, function (row) {
+    this.is_selected = function () {
+        return _.every(that.rows, function (row) {
             return row.is_selected();
         });
-	};
+    };
 
-	this.toggle_collapse = function () {
-		this.is_collapsed = !this.is_collapsed;
+    this.toggle_collapse = function () {
+        this.is_collapsed = !this.is_collapsed;
 
-		this.header.collapse();
-		this.header.expand();
-	}
+        this.header.collapse();
+        this.header.expand();
+    }
 
-	function get_duration() {
+    function get_duration() {
         var duration_in_seconds = 0;
 
-		for (var i = 0; i < that.rows.length; ++i) {
-			duration_in_seconds += that.rows[i].metadb.Length;
-		}
+        for (var i = 0; i < that.rows.length; ++i) {
+            duration_in_seconds += that.rows[i].metadb.Length;
+        }
 
         if (!duration_in_seconds) {
             return '';
@@ -3452,24 +3453,24 @@ function DiscHeader(x, y, w, h, metadb, header) {
         return utils.FormatDuration(duration_in_seconds);
     }
 
-	this.rows = [];
+    this.rows = [];
 
-	this.x = x;
-	this.y = y;
-	this.w = w;
-	this.h = h;
-	this.idx = -1;
-	this.metadb = metadb;	// metadb of first disc child
-	this.header = header;
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+    this.idx = -1;
+    this.metadb = metadb;	// metadb of first disc child
+    this.header = header;
 
-	this.num_in_header = 0;
+    this.num_in_header = 0;
 
-	this.is_collapsed = false;
-	this.is_playing = false;
-	this.is_focused = false;
-	this.is_odd = false;
+    this.is_collapsed = false;
+    this.is_playing = false;
+    this.is_focused = false;
+    this.is_odd = false;
 
-	var that = this;
+    var that = this;
 }
 
 DiscHeader.prototype = Object.create(List.Item.prototype);
@@ -3550,12 +3551,9 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
         var right_pad = 0;
         var testRect = false;
 
-		var title_y = this.y;
-		var title_h = this.h;
-
-		if (_.tf('$ifgreater(%totaldiscs%,1,true,false)', this.metadb) != 'false') {
-			cur_x += 20;
-		}
+        if (_.tf('$ifgreater(%totaldiscs%,1,true,false)', this.metadb) != 'false') {
+            cur_x += 20;
+        }
 
         //---> RATING
         if (g_properties.show_rating) {
@@ -3574,7 +3572,7 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
             if (length_text) {
                 var length_x = this.x + this.w - length_w - right_pad;
 
-                gr.DrawString(length_text, title_font, title_color, length_x, title_y, length_w, title_h, g_string_format.align_center);
+                gr.DrawString(length_text, title_font, title_color, length_x, this.y, length_w, this.h, g_string_format.align_center);
                 testRect && gr.DrawRect(length_x, this.y - 1, length_w, this.h, 1, _.RGBA(155, 155, 255, 250));
             }
             // We always want that padding
@@ -3597,7 +3595,7 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
                 );
                 var count_x = this.x + this.w - count_w - right_pad;
 
-                gr.DrawString(count_text, g_pl_fonts.playcount, count_color, count_x, title_y, count_w, title_h, g_string_format.align_center);
+                gr.DrawString(count_text, g_pl_fonts.playcount, count_color, count_x, this.y, count_w, this.h, g_string_format.align_center);
                 testRect && gr.DrawRect(count_x, this.y - 1, count_w, this.h, 1, _.RGBA(155, 155, 255, 250));
 
                 right_pad += count_w;
@@ -3636,13 +3634,13 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
             var title_w = this.w - right_pad - 10;
 
             var title_text_format = g_string_format.v_align_center | g_string_format.trim_ellipsis_char | g_string_format.no_wrap;
-            gr.DrawString(title_text + (title_artist_text ? '' : queue_text), title_font, title_color, cur_x, title_y, title_w, title_h, title_text_format);
+            gr.DrawString(title_text + (title_artist_text ? '' : queue_text), title_font, title_color, cur_x, this.y, title_w, this.h, title_text_format);
 
             testRect && gr.DrawRect(this.x, this.y - 1, title_w, this.h, 1, _.RGBA(155, 155, 255, 250));
 
             cur_x += Math.ceil(
                 /** @type {!number} */
-                gr.MeasureString(title_text, title_font, 0, 0, title_w, title_h, title_text_format | g_string_format.measure_trailing_spaces).Width
+                gr.MeasureString(title_text, title_font, 0, 0, title_w, this.h, title_text_format | g_string_format.measure_trailing_spaces).Width
             );
         }
 
@@ -3652,7 +3650,7 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
             var title_artist_w = this.w - (title_artist_x - this.x) - right_pad;
 
             var title_artist_text_format = g_string_format.v_align_center | g_string_format.trim_ellipsis_char | g_string_format.no_wrap;
-            gr.DrawString(title_artist_text + queue_text, title_artist_font, title_artist_color, title_artist_x, title_y, title_artist_w, this.h, title_artist_text_format);
+            gr.DrawString(title_artist_text + queue_text, title_artist_font, title_artist_color, title_artist_x, this.y, title_artist_w, this.h, title_artist_text_format);
         }
     };
 
@@ -3709,8 +3707,8 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
     //const after header creation
     this.is_odd = false;
     this.num_in_header = undefined;
-	this.header = undefined;
-	this.disc = undefined;
+    this.header = undefined;
+    this.disc = undefined;
 
     this.queue_idx = undefined;
     this.queue_idx_count = 0;
@@ -4727,11 +4725,11 @@ function PlaylistManager(x, y, w, h) {
         this.w = w;
     };
 
-	this.set_xyw = function (x, y, w) {
-		this.x = x;
-		this.y = y;
-		this.w = w;
-	}
+    this.set_xyw = function (x, y, w) {
+        this.x = x;
+        this.y = y;
+        this.w = w;
+    }
 
     this.trace = function (x, y) {
         return x >= this.x && x < this.x + this.w && y >= this.y && y < this.y + this.h;
