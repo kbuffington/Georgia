@@ -32,7 +32,7 @@ function buttonEventHandler(x, y, m) {
 
     switch (c) {
 
-        case "on_mouse_move":
+        case 'on_mouse_move':
             if (downButton) return;
 
             if (oldButton && oldButton != thisButton) {
@@ -51,14 +51,14 @@ function buttonEventHandler(x, y, m) {
 
             oldButton = thisButton;
             break;
-        case ("on_mouse_lbtn_dblclk"):
+        case 'on_mouse_lbtn_dblclk':
             if (thisButton) {
                 thisButton.changeState(2);
                 downButton = thisButton;
                 downButton.onDblClick();
             }
             break;
-        case ("on_mouse_lbtn_down"):
+        case 'on_mouse_lbtn_down':
             if (thisButton) {
                 thisButton.changeState(2);
                 downButton = thisButton;
@@ -66,7 +66,7 @@ function buttonEventHandler(x, y, m) {
 
             break;
 
-        case "on_mouse_lbtn_up":
+        case 'on_mouse_lbtn_up':
             if (downButton) {
                 downButton.onClick();
 
@@ -79,7 +79,7 @@ function buttonEventHandler(x, y, m) {
                 downButton = undefined;
             }
             break;
-        case ("on_mouse_leave"):
+        case 'on_mouse_leave':
             oldButton = undefined;
             if (downButton) return; // for menu buttons
 
@@ -116,7 +116,7 @@ function Button(x, y, w, h, id, img, tip) {
 	this.w = w;
 	this.h = h;
 	this.id = id;
-	this.tooltip = typeof tip !== 'undefined' ? tip : "";
+	this.tooltip = typeof tip !== 'undefined' ? tip : '';
 	this.img = img;
 	this.state = 0;
 	this.hoverAlpha = 0;
@@ -125,176 +125,145 @@ function Button(x, y, w, h, id, img, tip) {
 }
 // =================================================== //
 Button.prototype.mouseInThis = function (x, y) {
-
 	return (this.x <= x) && (x <= this.x + this.w) && (this.y <= y) && (y <= this.y + this.h);
-
 }
 // =================================================== //
 Button.prototype.repaint = function () {
-
-	var expXY = 2,
-		expWH = expXY * 2;
-
-	if (!displayPlaylist && (this.id == "NextBtn" || this.id == "PrevBtn")) {
-		try {
-			window.RepaintRect(this.x + (this.w - nextImg.width)/2 - expXY, this.y + ((this.h )/2) - expXY, nextImg.width + expWH, nextImg.height + expWH);
-		} catch(e) {
-			// probably redrawing during a size?
-		}
-	}
-	else {
-        window.RepaintRect(this.x - expXY, this.y - expXY, this.w + expWH, this.h + expWH);
-    }
+	window.RepaintRect(this.x, this.y, this.w, this.h);
 }
 // =================================================== //
 Button.prototype.changeState = function (state) {
-
-	if (!displayPlaylist || (this.id != "NextBtn" && this.id != "PrevBtn")) {
-		this.state = state;
-		activatedBtns.push(this);
-		buttonAlphaTimer();
-	}
-
+	this.state = state;
+	activatedBtns.push(this);
+	buttonAlphaTimer();
 }
 // =================================================== //
 Button.prototype.onClick = function () {
 
 	switch (this.id) {
 
-	case "Stop":
-		fb.Stop();
-		break;
-	case "Previous":
-		fb.Prev();
-		break;
-	case "Play/Pause":
-		fb.PlayOrPause();
-		break;
-	case "Next":
-		fb.Next();
-		break;
-	case "Playback/Random":
-		fb.RunMainMenuCommand("Playback/Random");
-		break;
-	case "Reload":
-		window.Reload();
-		break;
-	case "Console":
-		fb.RunMainMenuCommand("View/Console");
-		break;
-	case "OpenExplorer":
-		if (!safeMode) {
+		case 'Stop':
+			fb.Stop();
+			break;
+		case 'Previous':
+			fb.Prev();
+			break;
+		case 'Play/Pause':
+			fb.PlayOrPause();
+			break;
+		case 'Next':
+			fb.Next();
+			break;
+		case 'Playback/Random':
+			fb.RunMainMenuCommand("Playback/Random");
+			break;
+		case 'Reload':
+			window.Reload();
+			break;
+		case 'Console':
+			fb.RunMainMenuCommand("View/Console");
+			break;
+		case 'OpenExplorer':
+			if (!safeMode) {
+				try {
+					WshShell.Run("explorer.exe /e,::{20D04FE0-3AEA-1069-A2D8-08002B30309D}");
+				} catch (e) {
+					console.log(e);
+				};
+			}
+			break;
+		case 'Minimize':
+			fb.RunMainMenuCommand("View/Hide");
+			break;
+		case 'Maximize':
 			try {
-				WshShell.Run("explorer.exe /e,::{20D04FE0-3AEA-1069-A2D8-08002B30309D}");
+				if (maximizeToFullScreen ? !utils.IsKeyPressed(VK_CONTROL) : utils.IsKeyPressed(VK_CONTROL)) {
+					UIHacks.FullScreen = !UIHacks.FullScreen;
+				} else {
+					if (UIHacks.MainWindowState == WindowState.Maximized) UIHacks.MainWindowState = WindowState.Normal;
+					else UIHacks.MainWindowState = WindowState.Maximized;
+				}
 			} catch (e) {
-				fb.trace(e)
-			};
-		}
-		break;
-	case "Minimize":
-		fb.RunMainMenuCommand("View/Hide");
-		break;
-	case "Maximize":
-		try {
-			if (maximizeToFullScreen ? !utils.IsKeyPressed(VK_CONTROL) : utils.IsKeyPressed(VK_CONTROL)) {
-				UIHacks.FullScreen = !UIHacks.FullScreen;
-			} else {
-				if (UIHacks.MainWindowState == WindowState.Maximized) UIHacks.MainWindowState = WindowState.Normal;
-				else UIHacks.MainWindowState = WindowState.Maximized;
+				console.log(e + " Disable WSH safe mode");
 			}
-		} catch (e) {
-			fb.trace(e + " Disable WSH safe mode")
-		}
-		break;
-	case "Close":
-		fb.Exit();
-		break;
-	case "File":
-	case "Edit":
-	case "View":
-	case "Playback":
-	case "Library":
-	case "Help":
-		onMainMenu(this.x, this.y + this.h, this.id);
-		break;
-	case "Playlists":
-		onPlaylistsMenu(this.x, this.y + this.h);
-		break;
-	case "Options":
-		onSettingsMenu(this.x, this.y + this.h);
-		break;
-	case "Repeat":
-		var pbo = fb.PlaybackOrder;
-		if (pbo == playbackOrder.Default) fb.PlaybackOrder = playbackOrder.RepeatPlaylist;
-		else if (pbo == playbackOrder.RepeatPlaylist) fb.PlaybackOrder = playbackOrder.RepeatTrack;
-		else if (pbo == playbackOrder.RepeatTrack) fb.PlaybackOrder = playbackOrder.Default;
-		else fb.PlaybackOrder = playbackOrder.RepeatPlaylist;
-		break;
-	case "Shuffle":
-		var pbo = fb.PlaybackOrder;
-		if (pbo != playbackOrder.ShuffleTracks) fb.PlaybackOrder = playbackOrder.ShuffleTracks;
-		else fb.PlaybackOrder = playbackOrder.Default;
-		break;
-	case "Mute":
-		fb.VolumeMute();
-		break;
-	case "Front":
-		coverSwitch(0);
-		break;
-	case "Back":
-		coverSwitch(1);
-		break;
-	case "CD":
-		coverSwitch(2);
-		break;
-	case "Artist":
-		coverSwitch(3);
-		break;
-	case "Settings":
-		fb.ShowPreferences();
-		break;
-	case "Properties":
-		fb.RunContextCommand("Properties");
-		break;
-	case "Rating":
-		onRatingMenu(this.x, this.y + this.h);
-		break;
-	case "Lyrics":
-		displayLyrics = !displayLyrics;
-		if ((fb.IsPlaying || fb.IsPaused) && albumart_scaled) {
-			if (displayLyrics) {
-				refresh_lyrics();
+			break;
+		case 'Close':
+			fb.Exit();
+			break;
+		case 'File':
+		case 'Edit':
+		case 'View':
+		case 'Playback':
+		case 'Library':
+		case 'Help':
+			onMainMenu(this.x, this.y + this.h, this.id);
+			break;
+		case 'Playlists':
+			onPlaylistsMenu(this.x, this.y + this.h);
+			break;
+		case 'Options':
+			onSettingsMenu(this.x, this.y + this.h);
+			break;
+		case 'Repeat':
+			var pbo = fb.PlaybackOrder;
+			if (pbo == playbackOrder.Default) fb.PlaybackOrder = playbackOrder.RepeatPlaylist;
+			else if (pbo == playbackOrder.RepeatPlaylist) fb.PlaybackOrder = playbackOrder.RepeatTrack;
+			else if (pbo == playbackOrder.RepeatTrack) fb.PlaybackOrder = playbackOrder.Default;
+			else fb.PlaybackOrder = playbackOrder.RepeatPlaylist;
+			break;
+		case 'Shuffle':
+			var pbo = fb.PlaybackOrder;
+			if (pbo != playbackOrder.ShuffleTracks) fb.PlaybackOrder = playbackOrder.ShuffleTracks;
+			else fb.PlaybackOrder = playbackOrder.Default;
+			break;
+		case 'Mute':
+			fb.VolumeMute();
+			break;
+		case 'Front':
+			coverSwitch(0);
+			break;
+		case 'Back':
+			coverSwitch(1);
+			break;
+		case 'CD':
+			coverSwitch(2);
+			break;
+		case 'Artist':
+			coverSwitch(3);
+			break;
+		case 'Settings':
+			fb.ShowPreferences();
+			break;
+		case 'Properties':
+			fb.RunContextCommand("Properties");
+			break;
+		case 'Rating':
+			onRatingMenu(this.x, this.y + this.h);
+			break;
+		case 'Lyrics':
+			displayLyrics = !displayLyrics;
+			if ((fb.IsPlaying || fb.IsPaused) && albumart_scaled) {
+				if (displayLyrics) {
+					refresh_lyrics();
+				}
+				window.RepaintRect(albumart_size.x-1, albumart_size.y-1, albumart_scaled.width+2, albumart_scaled.height+2);
 			}
-			window.RepaintRect(albumart_size.x-1, albumart_size.y-1, albumart_scaled.width+2, albumart_scaled.height+2);
-		}
-		break;
-	case "Playlist":
-		// we appear to be getting album art way too frequently here -- delete this comment and others when verified this is cool
-		displayPlaylist = !displayPlaylist;
-		if (displayPlaylist) {
-			playlist.on_size(ww, wh);
-		} else {
-			// on_playback_new_track(fb.GetNowPlaying());
-		}
-		ResizeArtwork(false);
-		window.Repaint();
-		break;
+			break;
+		case 'Playlist':
+			// we appear to be getting album art way too frequently here -- delete this comment and others when verified this is cool
+			displayPlaylist = !displayPlaylist;
+			if (displayPlaylist) {
+				playlist.on_size(ww, wh);
+			}
+			ResizeArtwork(false);
+			window.Repaint();
+			break;
 	}
-
 }
 // =================================================== //
 
 Button.prototype.onDblClick = function () {
-
-	switch (this.id) {
-
-		case "PrevBtn":
-			fb.Prev();
-			break;
-		case "NextBtn":
-			fb.Next();
-			break;
-	}
+	// we don't do anything with dblClick currently
 }
 // =================================================== //
 
@@ -302,16 +271,12 @@ function getPlaybackOrder() {
 
 	var order;
 
-
 	for (var i in playbackOrder) {
 
 		if (fb.PlaybackOrder == playbackOrder[i]) {
-
 			order = i;
 			break;
-
 		}
-
 	}
 
 	return order;
@@ -372,8 +337,8 @@ function onMainMenu(x, y, name) {
 
 		if (ret > 0) {
 			menuManager.ExecuteByID(ret - 1);
-		}
-	}
+        }
+    }
 
 	menuManager.Dispose();
 	menu.Dispose();
@@ -418,27 +383,24 @@ function buttonAlphaTimer() {
 						activatedBtns[i].hoverAlpha = Math.max(0, activatedBtns[i].hoverAlpha -= buttonHoverOutStep);
 						activatedBtns[i].downAlpha = Math.max(0, activatedBtns[i].downAlpha -= Math.max(0, buttonDownOutStep));
 						activatedBtns[i].repaint();
-
 						break;
 					case 1:
 						activatedBtns[i].hoverAlpha = Math.min(255, activatedBtns[i].hoverAlpha += buttonHoverInStep);
 						activatedBtns[i].downAlpha = Math.max(0, activatedBtns[i].downAlpha -= buttonDownOutStep);
 						activatedBtns[i].repaint();
-
 						break;
 					case 2:
 						activatedBtns[i].downAlpha = Math.min(255, activatedBtns[i].downAlpha += buttonDownInStep);
 						activatedBtns[i].hoverAlpha = Math.max(0, activatedBtns[i].hoverAlpha -= buttonDownInStep);
 						activatedBtns[i].repaint();
-
 						break;
 				}
 			}
 
 			//---> Test button alpha values and turn button timer off when it's not required;
 			for (i = activatedBtns.length - 1; i >= 0; i--) {
-				if ((!activatedBtns[i].hoverAlpha && !activatedBtns.downAlpha) ||
-					activatedBtns[i].hoverAlpha === 255 || activatedBtns[i].downAlpha === 255) {
+				if ((!activatedBtns[i].hoverAlpha && !activatedBtns[i].downAlpha) ||
+					  activatedBtns[i].hoverAlpha === 255 || activatedBtns[i].downAlpha === 255) {
 					activatedBtns.splice(i, 1);
 				}
 			}
@@ -446,11 +408,11 @@ function buttonAlphaTimer() {
 			if (!activatedBtns.length) {
 				window.ClearInterval(buttonTimer);
 				buttonTimer = null;
-				trace && console.log("buttonTimerStarted = true");
+                trace && console.log("buttonTimerStarted = false");
 			}
 
 		}, buttonTimerDelay);
 
-		trace && console.log("buttonTimerStarted = false");
+        trace && console.log("buttonTimerStarted = true");
 	}
 }
