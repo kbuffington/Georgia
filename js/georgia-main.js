@@ -24,13 +24,22 @@ testFont('HelveticaNeueLT Std Thin');
 testFont('HelveticaNeueLT Std Med');
 testFont('HelveticaNeueLT Std Lt');
 testFont('Guifx v2 Transports');
-ft.album_lrg			= gdi.Font('HelveticaNeueLT Std', 36, 0);
-ft.album_med 			= gdi.Font('HelveticaNeueLT Std', 32, 0);
-ft.album_sml 			= gdi.Font('HelveticaNeueLT Std', 28, 0);
+ft.album_lrg			= gdi.Font('HelveticaNeueLT Std Med', 36, 0);
+ft.album_med 			= gdi.Font('HelveticaNeueLT Std Med', 32, 0);
+ft.album_sml 			= gdi.Font('HelveticaNeueLT Std Med', 28, 0);
+// ft.album_lrg			= gdi.Font('HelveticaNeueLT Std', 36, g_font_style.bold);
+// ft.album_med			= gdi.Font('HelveticaNeueLT Std', 32, g_font_style.bold);
+// ft.album_sml			= gdi.Font('HelveticaNeueLT Std', 28, g_font_style.bold);
 ft.title_lrg			= gdi.Font('HelveticaNeueLT Std Thin', 34, 0);
 ft.title_med 			= gdi.Font('HelveticaNeueLT Std Thin', 30, 0);
 ft.title_sml 			= gdi.Font('HelveticaNeueLT Std Thin', 26, 0);
-ft.year					= gdi.Font('HelveticaNeueLT Std', 48, 1);
+ft.tracknum_lrg		    = gdi.Font('HelveticaNeueLT Std Lt', 34, g_font_style.bold);
+ft.tracknum_med 		= gdi.Font('HelveticaNeueLT Std Lt', 30, g_font_style.bold);
+ft.tracknum_sml 		= gdi.Font('HelveticaNeueLT Std Lt', 26, g_font_style.bold);
+// ft.tracknum_lrg	    = gdi.Font('HelveticaNeueLT Std Med', 34, 0);
+// ft.tracknum_med 		= gdi.Font('HelveticaNeueLT Std Med', 30, 0);
+// ft.tracknum_sml 		= gdi.Font('HelveticaNeueLT Std Med', 26, 0);
+ft.year					= gdi.Font('HelveticaNeueLT Std', 48, g_font_style.bold);
 ft.artist				= gdi.Font('HelveticaNeueLT Std Med', 40, 0);
 ft.track_info			= gdi.Font('HelveticaNeueLT Std Thin', 18, 0);
 ft.grd_key   			= gdi.Font('HelveticaNeueLT Std', 18, 0);
@@ -484,7 +493,7 @@ function on_paint(gr) {
 		}
 	}
 
-	if (!displayPlaylist) {
+	if (!displayPlaylist && fb.IsPlaying) {
 		if (albumart)
 			gridSpace = Math.round(albumart_size.x-geo.aa_shadow-textLeft);
 		else
@@ -512,20 +521,35 @@ function on_paint(gr) {
 			}
 
 			if (str.title) {
-				gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
 				ft.title = ft.title_lrg;
-				txtRec = gr.MeasureString(str.title, ft.title, 0, 0, text_width, wh);
+                ft.tracknum = ft.tracknum_lrg;
+                var trackNumWidth = 0;
+                if (str.tracknum) {
+                    trackNumWidth = gr.MeasureString(str.tracknum, ft.title, 0, 0, 0, 0).Width + 8;
+                }
+                txtRec = gr.MeasureString(str.title, ft.title, 0, 0, text_width - trackNumWidth, wh);
 				if (txtRec.lines > 2) {
-					ft.title = ft.title_med;
-					txtRec = gr.MeasureString(str.title, ft.title, 0, 0, text_width, wh);
+                    ft.title = ft.title_med;
+                    ft.tracknum = ft.tracknum_med;
+                    if (str.tracknum) {
+                        trackNumWidth = gr.MeasureString(str.tracknum, ft.tracknum, 0, 0, 0, 0).Width + 8;
+                    }
+                    txtRec = gr.MeasureString(str.title, ft.title, 0, 0, text_width - trackNumWidth, wh);
 					if (txtRec.lines > 2) {
-						ft.title = ft.title_sml;
+                        ft.title = ft.title_sml;
+                        ft.tracknum = ft.tracknum_sml;
+                        if (str.tracknum) {
+                            trackNumWidth = gr.MeasureString(str.tracknum, ft.tracknum, 0, 0, 0, 0).Width + 8;
+                        }
 					}
 				}
 				var numLines = Math.min(2, txtRec.lines);
 				height = gr.CalcTextHeight(str.title, ft.title) * numLines + 3;
 
-				gr.DrawString(str.title, ft.title, col.title, textLeft, top, text_width, height, g_string_format.trim_ellipsis_word);
+                trackNumWidth = Math.ceil(trackNumWidth);
+                gr.DrawString(str.tracknum, ft.tracknum, col.title, textLeft, top, trackNumWidth, height);
+                gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);    // thicker fonts can use anti-alias
+                gr.DrawString(str.title, ft.title, col.title, textLeft + trackNumWidth, top, text_width - trackNumWidth, height, g_string_format.trim_ellipsis_word);
 
 				top += height + 12;
 				gr.SetTextRenderingHint(TextRenderingHint.AntiAlias);
@@ -600,42 +624,55 @@ function on_paint(gr) {
 				}
 			}
 			col2_width = text_width - 10 - col1_width;
-
 			col1_height = gr.CalcTextHeight("A", grid_key_ft);
+
+			// TODO: should probably test this out fully
+			// if (calcBrightness(col.primary) > 190) {
+			// 	col.grid_key = col.extraDarkAccent;
+			// 	col.grid_val = col.extraDarkAccent;
+			// } else {
+			// 	col.grid_key = rgb(255,255,255);
+			// 	col.grid_val = rgb(255,255,255);
+			// }
+
 			for (k=0, i=0; k < str.grid.length; k++) {
 				var key   = str.grid[k].label;
 				var value = str.grid[k].val;
 				var showLastFmImage = false;
 
-				// gr.DrawString(key, grid_key_ft, rgb(0,0,0), textLeft-0.5, top+0.5, col1_width, col1_height, StringFormat(0,0,trim));	// key
-				gr.DrawString(key, grid_key_ft, col.grid_key, textLeft, top, col1_width, col1_height, StringFormat(0,0,trim));	// key
+				if (value.length) {
+					// gr.DrawString(key, grid_key_ft, rgb(0,0,0), textLeft-0.5, top+0.5, col1_width, col1_height, StringFormat(0,0,trim));	// key
+					gr.DrawString(key, grid_key_ft, col.grid_key, textLeft, top, col1_width, col1_height, StringFormat(0,0,trim));	// key
 
-				switch (key) {
-					case 'Rating':  	grid_val_col = col.rating; dropShadow = true; break;
-					case 'Mood':		grid_val_col = col.mood; dropShadow = true; break;
-					case 'Hotness':		grid_val_col = col.hotness; dropShadow = true; break;
-					case 'Play Count':	showLastFmImage = true; break;
-					default:			grid_val_col = col.grid_val; dropShadow = false; break;
-				}
-				txtRec = gr.MeasureString(value, grid_val_ft, 0, 0, col2_width, wh);
-				cell_height = txtRec.Height + 5;
-				if (dropShadow) {
-					gr.DrawString(value, grid_val_ft, col.extraDarkAccent, textLeft + col1_width + 9.5, top + 0.5, col2_width, cell_height, StringFormat(0,0,4));
-					gr.DrawString(value, grid_val_ft, col.extraDarkAccent, textLeft + col1_width + 10.5, top + 0.5, col2_width, cell_height, StringFormat(0,0,4));
-					gr.DrawString(value, grid_val_ft, col.extraDarkAccent, textLeft + col1_width + 9.5, top - 0.5, col2_width, cell_height, StringFormat(0,0,4));
-					gr.DrawString(value, grid_val_ft, col.extraDarkAccent, textLeft + col1_width + 10.5, top - 0.5, col2_width, cell_height, StringFormat(0,0,4));
-				}
-				gr.DrawString(value, grid_val_ft, grid_val_col, textLeft + col1_width + 10, top, col2_width, cell_height, StringFormat(0,0,4));
-				if (playCountVerifiedByLastFm && showLastFmImage) {
-					var lastFmLogo = lastFmImg;
-					if (getBlue(col.primary) < 20 && getGreen(col.primary) < 20 && Math.abs(getRed(col.primary) - 185) < 52) {
-						lastFmLogo = lastFmWhiteImg;
+					switch (key) {
+						case 'Rating':  	grid_val_col = col.rating; dropShadow = true; break;
+						case 'Mood':		grid_val_col = col.mood; dropShadow = true; break;
+						case 'Hotness':		grid_val_col = col.hotness; dropShadow = true; break;
+						case 'Play Count':	showLastFmImage = true; break;
+						default:			grid_val_col = col.grid_val; dropShadow = false; break;
 					}
-					var heightRatio = (cell_height - 12) / lastFmImg.height;
-					gr.DrawImage(lastFmLogo, textLeft + col1_width + txtRec.Width + 20, top + 3, Math.round(lastFmLogo.width * heightRatio), cell_height - 12,
-						0, 0, lastFmLogo.width, lastFmLogo.height);
+					txtRec = gr.MeasureString(value, grid_val_ft, 0, 0, col2_width, wh);
+					cell_height = txtRec.Height + 5;
+					if (dropShadow) {
+						gr.DrawString(value, grid_val_ft, col.extraDarkAccent, textLeft + col1_width + 9.5, top + 0.5, col2_width, cell_height, StringFormat(0,0,4));
+						gr.DrawString(value, grid_val_ft, col.extraDarkAccent, textLeft + col1_width + 10.5, top + 0.5, col2_width, cell_height, StringFormat(0,0,4));
+						gr.DrawString(value, grid_val_ft, col.extraDarkAccent, textLeft + col1_width + 9.5, top - 0.5, col2_width, cell_height, StringFormat(0,0,4));
+						gr.DrawString(value, grid_val_ft, col.extraDarkAccent, textLeft + col1_width + 10.5, top - 0.5, col2_width, cell_height, StringFormat(0,0,4));
+					}
+					gr.DrawString(value, grid_val_ft, grid_val_col, textLeft + col1_width + 10, top, col2_width, cell_height, StringFormat(0,0,4));
+
+					if (playCountVerifiedByLastFm && showLastFmImage) {
+						var lastFmLogo = lastFmImg;
+						// if (getBlue(col.primary) < 20 && getGreen(col.primary) < 20 && Math.abs(getRed(col.primary) - 185) < 52) {
+						if (colorDistance(col.primary, rgb(185,0,0), false) < 125) {
+							lastFmLogo = lastFmWhiteImg;
+						}
+						var heightRatio = (cell_height - 12) / lastFmImg.height;
+						gr.DrawImage(lastFmLogo, textLeft + col1_width + txtRec.Width + 20, top + 3, Math.round(lastFmLogo.width * heightRatio), cell_height - 12,
+							0, 0, lastFmLogo.width, lastFmLogo.height);
+					}
+					top += cell_height + 5;
 				}
-				top += cell_height + 5;
 			}
 		}
 		if (showExtraDrawTiming) drawTextGrid.Print();
@@ -800,9 +837,9 @@ function on_paint(gr) {
 		width = 0;
 	}
 
-	var stxt = gr.MeasureString(str.lower_bar1, ft.lower_bar, 0, 0, ww, wh);
+	var stxt = gr.MeasureString(str.tracknum, ft.lower_bar, 0, 0, ww, wh);
 	trackNumWidth = stxt.Width;
-	stxt = gr.MeasureString(str.lower_bar2, ft.lower_bar, 0, 0, ww, wh);
+	stxt = gr.MeasureString(str.title, ft.lower_bar, 0, 0, ww, wh);
 	titleWidth = stxt.Width;
 	var ft_lower_bold = ft.lower_bar_bold;
 	var ft_lower = ft.lower_bar
@@ -810,12 +847,12 @@ function on_paint(gr) {
 		// we don't have room for all the text so use a smaller font and recalc size
 		ft_lower_bold =  ft.lower_bar_sml_bold;
 		ft_lower = ft.lower_bar_sml;
-		stxt = gr.MeasureString(str.lower_bar1, ft.lower_bar_sml_bold, 0, 0, ww, wh);
+		stxt = gr.MeasureString(str.tracknum, ft.lower_bar_sml_bold, 0, 0, ww, wh);
 		trackNumWidth = stxt.Width;
 	}
-	gr.DrawString(str.lower_bar1, ft_lower_bold, col.now_playing, pbLeft, lowerBarTop, 0.95*ww-width,0.5*geo.lower_bar_h,StringFormat(0,0,4,0x00001000));
+	gr.DrawString(str.tracknum, ft_lower_bold, col.now_playing, pbLeft, lowerBarTop, 0.95*ww-width,0.5*geo.lower_bar_h,StringFormat(0,0,4,0x00001000));
 	width += trackNumWidth;
-	gr.DrawString('  '+str.lower_bar2, ft_lower, col.now_playing, pbLeft + trackNumWidth, lowerBarTop, 0.95*ww-width,0.5*geo.lower_bar_h,StringFormat(0,0,4,0x00001000));
+	gr.DrawString('  '+str.title, ft_lower, col.now_playing, pbLeft + trackNumWidth, lowerBarTop, 0.95*ww-width,0.5*geo.lower_bar_h,StringFormat(0,0,4,0x00001000));
 
 	// Progress bar/Seekbar
 	var pbTop = Math.round(lowerBarTop + stxt.Height) + 8;
@@ -1817,7 +1854,8 @@ function on_metadb_changed(handles, fromhook) {
 		else
 			tracknum = fb.TitleFormat(tf.tracknum).Eval();
 
-		str.title = tracknum + title;
+        str.tracknum = tracknum;
+        str.title = title;
 		str.artist = artist;
 		str.year = $('$year($if2(%original release date%,%date%)))');
 		str.album = $("[%album%][ '['"+ tf.album_trans +"']']");
@@ -1835,10 +1873,10 @@ function on_metadb_changed(handles, fromhook) {
 		}
 		str.trackInfo = $(codec + '[ | %replaygain_album_gain%]');
 
-		if (fb.IsPlaying || fb.IsPaused) {
-			str.lower_bar1 = tracknum;
-			str.lower_bar2 = title;
-		}
+		// if (fb.IsPlaying || fb.IsPaused) {
+		// 	str.tracknum = tracknum;
+		// 	str.title = title;
+		// }
 		str.disc = fb.TitleFormat(tf.disc).Eval();
 
 		h = Math.floor(fb.PlaybackLength/3600);
@@ -2132,6 +2170,8 @@ function on_key_down(vkey) {
 	var ShiftKeyPressed = utils.IsKeyPressed(VK_SHIFT);
 
 	if (displayPlaylist) {
+		trace_call && console.log(qwr_utils.function_name());
+
 		if (key_down_suppress.is_supressed(vkey)) {
 			return;
 		}
@@ -2166,57 +2206,6 @@ function on_key_down(vkey) {
 	keyPressed = true;
 
 	switch (vkey) {
-		case VK_UP:
-			if (focusItemIndex == 0 && !listIsScrolledUp) displayFocusItem(0);
-			if (focusItemIndex == 0) return;
-
-			if (ShiftKeyPressed) {
-
-				if (tempFocusItemIndex == focusItemIndex) {
-					plman.ClearPlaylistSelection(activeList);
-					plman.SetPlaylistSelectionSingle(activeList, focusItemIndex, true);
-				}
-
-				if (tempFocusItemIndex < focusItemIndex) {
-					plman.SetPlaylistSelectionSingle(activeList, focusItemIndex, false);
-				}
-
-				plman.SetPlaylistSelectionSingle(activeList, focusItemIndex - 1, true);
-
-			}
-
-			if (!CtrlKeyPressed && !ShiftKeyPressed) {
-				plman.ClearPlaylistSelection(activeList);
-				plman.SetPlaylistSelectionSingle(activeList, focusItemIndex - 1, true);
-			}
-
-			plman.SetPlaylistFocusItem(activeList, focusItemIndex - 1);
-			break;
-		case VK_DOWN:
-			if (focusItemIndex == (playlistItemCount - 1) && !listIsScrolledDown) displayFocusItem(focusItemIndex);
-			if (focusItemIndex == (playlistItemCount - 1)) return;
-
-			if (ShiftKeyPressed) {
-
-				if (tempFocusItemIndex == focusItemIndex) {
-					plman.ClearPlaylistSelection(activeList);
-					plman.SetPlaylistSelectionSingle(activeList, focusItemIndex, true);
-				}
-
-				if (tempFocusItemIndex > focusItemIndex) {
-					plman.SetPlaylistSelectionSingle(activeList, focusItemIndex, false);
-				}
-
-				plman.SetPlaylistSelectionSingle(activeList, focusItemIndex + 1, true);
-
-			}
-
-			if (!CtrlKeyPressed && !ShiftKeyPressed) {
-				plman.ClearPlaylistSelection(activeList);
-				plman.SetPlaylistSelectionSingle(activeList, focusItemIndex + 1, true);
-			}
-			plman.SetPlaylistFocusItem(activeList, focusItemIndex + 1);
-			break;
 		case VK_PGUP:	// VK_PRIOR
 			var IDnr = 0;	// go to first item unless there's a scroll bar
 
@@ -2487,10 +2476,11 @@ function on_notify_data(name, info) {
 function clearUIVariables() {
 	return {
 		artist: '',
-		title: '',
+        tracknum: stoppedStr1,
+        title: stoppedStr2,
 		year: '',
-		lower_bar1: stoppedStr1,
-		lower_bar2: stoppedStr2,
+		// lower_bar1: stoppedStr1,
+		// lower_bar2: stoppedStr2,
 		grid: [],
 		time: ''
 	}
@@ -3576,8 +3566,6 @@ function createButtonImages() {
 			var playbackEllypseColor = RGB(80, 80, 80);
 			if (btn[i].id == "settings")
 				var iconAlpha = 150;
-			else if (btn[i].id == "NextBtn" || btn[i].id == "PrevBtn")
-				var iconAlpha = 0;
 			else
 				var iconAlpha = 140;
 
@@ -3589,8 +3577,6 @@ function createButtonImages() {
 				playbackEllypseColor = RGB(190, 195, 200);
 				if (btn[i].id == "settings")
 					iconAlpha = 230;
-				else if (btn[i].id == "NextBtn" || btn[i].id == "PrevBtn")
-					iconAlpha = 255;
 				else
 					iconAlpha = 215;
 			} else if (s == 2) {

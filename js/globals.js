@@ -57,15 +57,16 @@ var g_txt_shadowcolor = RGBA(000, 000, 000, 255);
 //Tag Properties
 tf.add_properties(
 	{
-		added:          ['Tag Fields: Added', '$ifgreater($if(%lastfm_added%,$replace($date(%lastfm_added%),-,),999999999),$replace($date(%added%),-,),[%added%],[%lastfm_added%])'],
-		// '$replace($date(%added%),-,) - $if(%lastfm_added%,$replace($date(%lastfm_added%),-,),999999999) $ifgreater($if(%lastfm_added%,$replace($date(%lastfm_added%),-,),999999999),$replace($date(%added%),-,),%added%,%lastfm_added%)'
+		// added:          ['Tag Fields: Added', '$ifgreater($if(%lastfm_added%,$replace($date(%lastfm_added%),-,),999999999),$replace($date(%added%),-,),[%added%],[%lastfm_added%])'],
+		added:          ['Tag Fields: Added', '[$if2(%added_enhanced%,%added%)]'],
 		artist:			['Tag Fields: Artist String', '%artist%'],
 		artist_country: ['Tag Fields: Country', '%artistcountry%'],	// we call meta_num(artistcountry) so don't wrap this in % signs
 		disc:			['Tag Fields: Disc String', '$ifgreater(%totaldiscs%,1,CD %discnumber%/%totaldiscs%,)'],
 		disc_subtitle: 	['Tag Fields: Disc Subtitle', '%discsubtitle%'],
 		year:			['Tag Fields: Year', '$puts(d,$if2(%original release date%,%date%))$if($strcmp($year($get(d)),$get(d)),$get(d),)'],
 		date:			['Tag Fields: Date', '$puts(d,$if2(%original release date%,%date%))$if($strcmp($year($get(d)),$get(d)),,$get(d))'],
-		last_played:	['Tag Fields: Last Played', '$ifgreater($if(%lastfm_last_played%,$replace($date(%lastfm_last_played%),-,),0),$replace($date(%last_played%),-,),[%lastfm_last_played%],[%last_played%])'],
+		// last_played:	['Tag Fields: Last Played', '$ifgreater($if(%lastfm_last_played%,$replace($date(%lastfm_last_played%),-,),0),$replace($date(%last_played%),-,),[%lastfm_last_played%],[%last_played%])'],
+		last_played:	['Tag Fields: Last Played', '[$if2(%last_played_enhanced%,%last_played%)]'],
 		title:			['Tag Fields: Song Title String', "%title%[ '('%original artist%' cover)'][ '['%translation%']']"],
 		vinyl_side:		['Tag Fields: Vinyl Side', '%vinyl side%'],			// the tag used for determining what side a song appears on for vinyl releases - i.e. song A1 has a %vinyl side% of "A"
 		vinyl_tracknum: ['Tag Fields: Vinyl Track#', '%vinyl tracknumber%'],	// the tag used for determining the track number on vinyl releases i.e. song A1 has %vinyl tracknumber% set to "1"
@@ -74,6 +75,10 @@ tf.add_properties(
 		edition:		['Tag Fields: Edition', '[$if(%original release date%,$ifequal($year(%original release date%),$year(%date%),,$year(%date%) ))%edition%]'],
 	}
 )
+
+// Playlist TF strings, not currently saved in globals:
+// %album%[ — '['$if(%original release date%,$ifequal($year(%original release date%),$year(%date%),,$year(%date%) ))%edition%']']
+
 var componentEnhancedPlaycount = _.cc('foo_enhanced_playcount');
 if (!componentEnhancedPlaycount) {
 	console.log('foo_enhanced_playcount not loaded');

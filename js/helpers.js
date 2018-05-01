@@ -77,27 +77,29 @@ function calculateGridMaxTextWidth(gr, gridArray, font) {
 
 function calcAgeDateString(date) {
     console.log('calcAgeDateString:', date);
-    var str = "";
-    try {
-        var days = calcAge($date(date), true);
+	var str = '';
+	if (date.length) {
+		try {
+			var days = calcAge($date(date), true);
 
-        var then = new Date($date(date));
+			var then = new Date($date(date));
 
-        var diffDate = new Date(new Date() - then);
-        if (diffDate.toISOString().slice(0, 4) - 1970) {
-            str = (diffDate.toISOString().slice(0, 4) - 1970) + 'y ';
-        }
-        if (diffDate.getMonth()) {
-            str += diffDate.getMonth() + 'm ';
-        }
-        if (diffDate.getDate()-1) {
-            str += (diffDate.getDate()-1) + 'd';
-        }
-    } catch (e) {
-        console.log(e);
-        console.log('date:', date, 'days:', days, 'then:', then);
-        fail();
-    }
+			var diffDate = new Date(new Date() - then);
+			if (diffDate.toISOString().slice(0, 4) - 1970) {
+				str = (diffDate.toISOString().slice(0, 4) - 1970) + 'y ';
+			}
+			if (diffDate.getMonth()) {
+				str += diffDate.getMonth() + 'm ';
+			}
+			if (diffDate.getDate()-1) {
+				str += (diffDate.getDate()-1) + 'd';
+			}
+		} catch (e) {
+			console.log(e);
+			console.log('date:', date, 'days:', days, 'then:', then);
+			fail();
+		}
+	}
 
     return str.trim();
 }

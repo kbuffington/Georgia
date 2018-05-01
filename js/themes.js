@@ -153,15 +153,17 @@ themeList.push({
 
 function setTheme(theme) {
 	// theme.primary = rgb(192,192,160); // testing conflicts
-	if (isCloseToColor(theme.primary, col.bg)) {
-		console.log('Theme primary color is too close to bg color. Adjusting.');
+	// if (isCloseToColor(theme.primary, col.bg)) {
+    if (colorDistance(theme.primary, col.bg, true) < 40) {
+		console.log('>>> Theme primary color is too close to bg color. Adjusting.');
 		// darken theme.primary because it's too close to col.bg
 		theme.primary = shadeColor(theme.primary, 10);
 	}
-	col.info_bg = theme.primary;
-	if (isCloseToColor(theme.primary, col.progress_bar)) {
+    col.info_bg = theme.primary;
+	// if (isCloseToColor(theme.primary, col.progress_bar)) {
+    if (colorDistance(theme.primary, col.progress_bar, true) < 40) {
 		// progress fill is too close in color to bg
-		console.log('Theme primary color is too close to progress bar. Adjusting.');
+		console.log('>>> Theme primary color is too close to progress bar. Adjusting.');
 		col.progress_fill = tintColor(theme.primary, 10);
 	} else {
 		col.progress_fill = theme.primary;
@@ -432,12 +434,13 @@ function isCloseToGreyscale(color) {
     return isColorCloseToColorVal(color, avg, 10);
 }
 
+// TODO: remove this when colorDistance is fully tested
 function isCloseToColor(color, testColor) {
 	var r = getRed(testColor);
 	var g = getGreen(testColor);
 	var b = getBlue(testColor);
 	var threshold = isGreyscale(color) ? 16 : isCloseToGreyscale(color) ? 12 : 5;	// is greyscale threshold too high?
-	console.log('Diff:', calcBrightness(color), calcBrightness(testColor), Math.abs(calcBrightness(color) - calcBrightness(testColor)));
+    console.log('Diff:', calcBrightness(color), calcBrightness(testColor), Math.abs(calcBrightness(color) - calcBrightness(testColor)));
 	return Math.abs(calcBrightness(color) - calcBrightness(testColor)) <= threshold;
 }
 
@@ -448,4 +451,21 @@ function isColorCloseToColorVal(color, avg, threshold) {
 	return !(r < avg - threshold || r > avg + threshold ||
 		g < avg - threshold || g > avg + threshold ||
 		b < avg - threshold || b > avg + threshold);
+}
+
+function colorDistance(a, b, log) {
+    var aCol = new Color(a);
+    var bCol = new Color(b);
+
+    var rho = (aCol.r + bCol.r) / 2;
+    var deltaR = Math.pow(aCol.r - bCol.r, 2);
+    var deltaG = Math.pow(aCol.g - bCol.g, 2);
+    var deltaB = Math.pow(aCol.b - bCol.b, 2);
+
+    // var distance = Math.sqrt((2 + rho/256) * deltaR + 4 * deltaG + (2 + (255 - rho)/256) * deltaB);
+    var distance = Math.sqrt(2 * deltaR  + 4 * deltaG + 3 * deltaB + (rho * (deltaR - deltaB))/256);
+    if (log === true) {
+        console.log(aCol.getRGB(), bCol.getRGB(), distance);
+    }
+    return distance;
 }
