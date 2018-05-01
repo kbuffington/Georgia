@@ -476,12 +476,7 @@ function KeyActionHandler() {
      * @return{boolean} true, if key is registered, false - otherwise
      */
     this.invoke_key_action = function(key, key_modifiers) {
-        var key_obj = actions[key];
-        if (!key_obj) {
-            return false;
-        }
-
-        var key_action = actions[key];
+		var key_action = actions[key];
         if (!actions[key]) {
             return false;
         }
