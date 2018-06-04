@@ -3,33 +3,59 @@ HyperlinkStates = {
     Hovered: 1
 }
 
-function Hyperlink(text, font, col, type, x, y) {
+var measureStringScratchImg = gdi.CreateImage(1000, 200);
+var hyperlinksCount = 0;
+
+function Hyperlink(text, font, type, x_offset, y_offset, container_w) {
+	hyperlinksCount++;
     this.text = text;
 	this.font = font;
-	this.hoverFont = gdi.font(font.Name, font.Size, font.Style | FontStyle.Underline);
+	this.hoverFont = gdi.font(font.Name, font.Size, font.Style | g_font_style.underline);
     this.type = type;
-    this.col = col;
-    this.x = x;
-    this.y = y;
+	this.x_offset = x_offset;
+	if (x_offset < 0) {
+		this.x = container_w + x_offset;	// right justified links
+	} else {
+		this.x = x_offset;
+	}
+	this.y_offset = y_offset;
+	this.y = y_offset;
+	this.container_w = container_w;
     this.state = HyperlinkStates.Normal;
 
-    var tempImg = gdi.CreateImage(ww ? ww : 200, 200);
-    var gr = tempImg.GetGraphics();
-    this.h = gr.CalcTextHeight(this.text, font) + 1;
-    this.w = gr.CalcTextWidth(this.text, font);
-    tempImg.ReleaseGraphics(gr);
+	var gr = measureStringScratchImg.GetGraphics();
+	var link_dimensions = gr.MeasureString(text, font, 0, 0, 0, 0);
+    this.h = Math.ceil(link_dimensions.Height) + 1;
+    this.w = Math.min(Math.ceil(link_dimensions.Width) + 1, container_w);
+	measureStringScratchImg.ReleaseGraphics(gr);
+
+    this.get_w = function () {
+        // console.log('Width of ', this.text, ': ', link_dimensions.Width);
+        return link_dimensions.Width;
+    }
+
+	this.set_y = function (y) {
+		this.y = y + this.y_offset - 2;
+	}
+
+	this.set_w = function (w) {
+		if (this.x_offset < 0) {
+			this.x = w + this.x_offset;	// add because offset is negative
+		}
+		this.container_w = w;
+		this.w = Math.ceil(Math.min(this.container_w, link_dimensions.Width + 1));
+	}
 }
 
-Hyperlink.prototype.mouseInThis = function (x, y) {
+Hyperlink.prototype.trace = function (x, y) {
+	// console.log('(', x, ',', y, ')', this.x, this.y, this.x + this.w, this.y + this.h);
 	return (this.x <= x) && (x <= this.x + this.w) && (this.y <= y) && (y <= this.y + this.h);
 }
 
-Hyperlink.prototype.onPaint = function(gr) {
-    // if (this.state === HyperlinkStates.Hovered) {
-    //     gr.DrawLine(this.x, this.y + this.h - 3, this.x + this.w - 1, this.y + this.h - 3, 2, this.col);
-	// }
+Hyperlink.prototype.draw = function (gr, color) {
 	var font = this.state === HyperlinkStates.Hovered ? this.hoverFont : this.font;
-    gr.DrawString(this.text, font, this.col, this.x, this.y, this.w, this.h);
+	gr.DrawString(this.text, font, color, this.x, this.y_offset, this.w, this.h);
+	// gr.DrawRect(this.x, this.y_offset, this.w, this.h, 1, rgb(255,0,0))
 }
 
 Hyperlink.prototype.repaint = function() {
@@ -40,56 +66,13 @@ Hyperlink.prototype.repaint = function() {
     }
 }
 
-Hyperlink.prototype.onClick = function() {
+Hyperlink.prototype.click = function() {
     var handle_list = fb.GetQueryItems(fb.GetLibraryItems(), this.type + ' IS ' + this.text);
     if (handle_list.Count) {
         var pl = plman.FindOrCreatePlaylist('Search', true);
         plman.ClearPlaylist(pl);
         plman.InsertPlaylistItems(pl, 0, handle_list);
-        plman.SortByFormat(pl, '%artist% $if2(%AlbumSortOrder%,%date%) %album% %discnumber% %tracknumber%');
+        plman.SortByFormat(pl, '$if2(%ArtistSortOrder%,%album artist%) $if2(%AlbumSortOrder%,%date%) %album% %discnumber% %tracknumber%');
         plman.ActivePlaylist = pl;
-    }
-}
-
-var lastActiveHyperlink = null;
-
-function hyperlinkEventHandler(x, y) {
-    var thisHyperlink = null;
-
-    for (var i in hyperlinks) {
-        if (typeof hyperlinks[i] === 'object' && hyperlinks[i].mouseInThis(x, y)) {
-            thisHyperlink = hyperlinks[i];
-            break;
-        }
-    }
-
-    if (lastActiveHyperlink && lastActiveHyperlink != thisHyperlink) {
-        lastActiveHyperlink.state = HyperlinkStates.Normal;
-        lastActiveHyperlink.repaint();
-    }
-    lastActiveHyperlink = thisHyperlink;
-
-    if (thisHyperlink) {
-        var e = caller();
-        switch (e) {
-            case 'on_mouse_move':
-                thisHyperlink.state = HyperlinkStates.Hovered;
-                thisHyperlink.repaint();
-                break;
-
-            case 'on_mouse_lbtn_dblclk':
-                break;
-
-            case 'on_mouse_lbtn_down':
-                thisHyperlink.onClick(x, y);
-                break;
-
-            case 'on_mouse_lbtn_up':
-                break;
-
-            case 'on_mouse_leave':
-                break;
-
-        }
     }
 }
