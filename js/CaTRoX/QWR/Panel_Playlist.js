@@ -7,7 +7,7 @@
 var trace_call = false;
 var trace_on_paint = false;
 var trace_on_move = false;
-var trace_initialize_list_performance = false;
+var trace_initialize_list_performance = true;
 
 g_script_list.push('Panel_Playlist.js');
 
@@ -34,7 +34,7 @@ g_properties.add_properties(
         auto_album_art:     ['user.header.this.art.auto', false],
         show_group_info:    ['user.header.info.show', true],
         show_original_date: ['user.header.original_date.show', false],
-        show_disc_headers:  ['user.header.disc_headers.show', true],
+        show_disc_header:   ['user.header.disc_header.show', true],
 
         alternate_row_color:  ['user.row.alternate_color', true],
         show_playcount:       ['user.row.play_count.show', _.cc('foo_playcount')],
@@ -71,32 +71,34 @@ var g_has_modded_jscript = qwr_utils.has_modded_jscript();
 
 /** @enum{number} */
 var g_drop_effect = {
-    none: 0,
-    copy: 1,
-    move: 2,
-    link: 4,
+    none:   0,
+    copy:   1,
+    move:   2,
+    link:   4,
     scroll: 0x80000000
 };
 
 //---> Fonts
 var g_pl_fonts = {
-    title_normal:   gdi.font('Segoe Ui', 12),
-    title_selected: gdi.font('Segoe Ui', 12),
-    title_playing:  gdi.font('Segoe Ui', 12),
+    title_normal:   gdi.Font('Segoe Ui', 12),
+    title_selected: gdi.Font('Segoe Ui', 12),
+    title_playing:  gdi.Font('Segoe Ui', 12),
 
-    artist_normal:          gdi.font('Segoe Ui Semibold', 18),
-    artist_playing:         gdi.font('Segoe Ui Semibold', 18, g_font_style.underline),
-    artist_normal_compact:  gdi.font('Segoe Ui Semibold', 15),
-    artist_playing_compact: gdi.font('Segoe Ui Semibold', 15, g_font_style.underline),
+    artist_normal:          gdi.Font('Segoe Ui Semibold', 18),
+    artist_playing:         gdi.Font('Segoe Ui Semibold', 18, g_font_style.underline),
+    artist_normal_compact:  gdi.Font('Segoe Ui Semibold', 15),
+    artist_playing_compact: gdi.Font('Segoe Ui Semibold', 15, g_font_style.underline),
 
-    playcount:      gdi.font('Segoe Ui', 9),
-    album:          gdi.font('Segoe Ui Semibold', 15),
-    date:           gdi.font('Segoe UI Semibold', 20, g_font_style.italic),
-    date_compact:   gdi.font('Segoe UI Semibold', 15),
-    info:           gdi.font('Segoe Ui', 11),
-    cover:          gdi.font('Segoe Ui Semibold', 11),
-    rating_not_set: gdi.font('Segoe Ui Symbol', 14),
-    rating_set:     gdi.font('Segoe Ui Symbol', 16)
+    playcount:      gdi.Font('Segoe Ui', 9),
+    album:          gdi.Font('Segoe Ui Semibold', 15),
+    date:           gdi.Font('Segoe UI Semibold', 20, g_font_style.italic),
+    date_compact:   gdi.Font('Segoe UI Semibold', 15),
+    info:           gdi.Font('Segoe Ui', 11),
+    cover:          gdi.Font('Segoe Ui Semibold', 11),
+    rating_not_set: gdi.Font('Segoe Ui Symbol', 14),
+    rating_set:     gdi.Font('Segoe Ui Symbol', 16),
+
+    dummy_text: gdi.Font('Segoe Ui', 16)
 };
 
 var g_pl_colors = {};
@@ -121,9 +123,9 @@ g_pl_colors.line_normal = g_theme.colors.panel_line;
 g_pl_colors.line_playing = g_pl_colors.line_normal;
 g_pl_colors.line_selected = g_theme.colors.panel_line_selected;
 //---> Row
-g_pl_colors.title_selected = _.RGB(160, 162, 164);
+// g_pl_colors.title_selected = _.RGB(160, 162, 164);
 g_pl_colors.title_selected = _.RGB(170, 172, 174);
-g_pl_colors.title_playing = _.RGB(255, 165, 0);
+// g_pl_colors.title_playing = _.RGB(255, 165, 0);
 g_pl_colors.title_playing = _.RGB(255, 255, 255);
 g_pl_colors.title_normal = g_theme.colors.panel_text_normal;
 g_pl_colors.count_normal = _.RGB(120, 122, 124);
@@ -333,7 +335,7 @@ function on_notify_data(name, info) {
  * @param {number} y
  * @constructor
  */
-function PlaylistPanel(x,y) {
+function PlaylistPanel(x, y) {
 
     //<editor-fold desc="Callback Implementation">
     this.on_paint = function (gr) {
@@ -458,8 +460,8 @@ function PlaylistPanel(x,y) {
         playlist.on_key_down(vkey);
 
         var modifiers = {
-            ctrl: utils.IsKeyPressed(VK_CONTROL),
-            alt: utils.IsKeyPressed(VK_MENU),
+            ctrl:  utils.IsKeyPressed(VK_CONTROL),
+            alt:   utils.IsKeyPressed(VK_MENU),
             shift: utils.IsKeyPressed(VK_SHIFT)
         };
         key_handler.invoke_key_action(vkey, modifiers);
@@ -564,6 +566,14 @@ function PlaylistPanel(x,y) {
         playlist.on_playback_new_track(metadb);
     };
 
+    this.on_playback_pause = function (state) {
+        if (!is_activated) {
+            return;
+        }
+
+        playlist.on_playback_pause(state);
+    }
+
     this.on_playback_queue_changed = function (origin) {
         if (!is_activated) {
             return;
@@ -625,6 +635,9 @@ function PlaylistPanel(x,y) {
                 y >= this.y && y < this.y + this.h);
     }
 
+    /**
+     * @param {boolean} show_playlist_info
+     */
     function toggle_playlist_info(show_playlist_info) {
         playlist.y = that.y + (show_playlist_info ? (playlist_info_and_gap_h) : 0);
         var new_playlist_h = show_playlist_info ? (playlist.h - playlist_info_and_gap_h) : (playlist.h + playlist_info_and_gap_h);
@@ -640,9 +653,15 @@ function PlaylistPanel(x,y) {
 
     var that = this;
 
-    /** @const {number} */
+    /**
+     * @const
+     * @type {number}
+     */
     var playlist_info_h = 24;
-    /** @const {number} */
+    /**
+     * @const
+     * @type {number}
+     */
     var playlist_info_and_gap_h = playlist_info_h + 2;
 
     var is_activated = window.IsVisible;
@@ -690,7 +709,7 @@ function Playlist(x, y) {
                 text = 'Playlist: ' + plman.GetPlaylistName(cur_playlist_idx) + '\n<--- Empty --->';
             }
 
-            gr.DrawString(text, gdi.font('Segoe Ui', 16), _.RGB(80, 80, 80), this.x, this.y, this.w, this.h, g_string_format.align_center);
+            gr.DrawString(text, gdi.Font('Segoe Ui', 16), _.RGB(80, 80, 80), this.x, this.y, this.w, this.h, g_string_format.align_center);
         }
 
         if (this.is_scrollbar_available) {
@@ -725,6 +744,13 @@ function Playlist(x, y) {
             return true;
         }
 
+        var item = this.get_item_under_mouse(x, y);
+        if (_.isInstanceOf(item, Header)) {
+            if (item.on_mouse_move(x, y, m)) {
+                return true;
+            }
+        }
+
         if (!this.mouse_down) {
             return true;
         }
@@ -736,7 +762,8 @@ function Playlist(x, y) {
                     x: undefined,
                     y: undefined
                 };
-                last_hover_item = this.get_item_under_mouse(x, y);
+                last_hover_item =
+                    /** @type {?BaseHeader|?Row} */ this.get_item_under_mouse(x, y);
 
                 selection_handler.perform_internal_drag_n_drop();
             }
@@ -759,13 +786,18 @@ function Playlist(x, y) {
         last_pressed_coord.y = y;
 
         if (item) {
-            if (ctrl_pressed && shift_pressed && _.isInstanceOf(item, Header)) {
+            if (ctrl_pressed && _.isInstanceOf(item, Header)) {
+                if (item.on_mouse_lbtn_down(x, y, m)) {
+                    return true;    // was handled
+                }
+            }
+            if (ctrl_pressed && shift_pressed && _.isInstanceOf(item, BaseHeader)) {
                 collapse_handler.toggle_collapse(item);
                 this.mouse_down = false;
             }
             else if (shift_pressed
                 || (_.isInstanceOf(item, Row) && !item.is_selected()
-                    || _.isInstanceOf(item, Header) && !item.is_completely_selected())) {
+                    || _.isInstanceOf(item, BaseHeader) && !item.is_completely_selected())) {
                 selection_handler.update_selection(item, ctrl_pressed, shift_pressed);
             }
             else {
@@ -792,12 +824,9 @@ function Playlist(x, y) {
             return true;
         }
 
-        if (_.isInstanceOf(item, Header)) {
-            plman.ExecutePlaylistDefaultAction(cur_playlist_idx, _.head(item.rows).idx);
-        }
-        else if (_.isInstanceOf(item, DiscHeader)) {
-            // Toggling works, but cannot get List to redraw
-            // item.toggle_collapse();
+        if (_.isInstanceOf(item, BaseHeader)) {
+            item.on_mouse_lbtn_dblclk(x, y, m, collapse_handler);
+            this.repaint();
         }
         else {
             if (g_properties.show_rating && item.rating_trace(x, y)) {
@@ -836,7 +865,7 @@ function Playlist(x, y) {
             var shift_pressed = utils.IsKeyPressed(VK_SHIFT);
             var item = this.get_item_under_mouse(x, y);
             if (item) {
-                selection_handler.update_selection(item, ctrl_pressed, shift_pressed);
+                selection_handler.update_selection(/** @type {Row|BaseHeader} */ item, ctrl_pressed, shift_pressed);
             }
         }
 
@@ -861,7 +890,7 @@ function Playlist(x, y) {
 
         }
         else if (_.isInstanceOf(item, Row) && !item.is_selected()
-            || _.isInstanceOf(item, Header) && !item.is_completely_selected()) {
+            || _.isInstanceOf(item, BaseHeader) && !item.is_completely_selected()) {
             selection_handler.update_selection(item);
         }
 
@@ -915,7 +944,7 @@ function Playlist(x, y) {
                 cmm.append_separator();
             }
 
-            if (g_properties.show_header) {
+            if (collapse_handler) {
                 append_collapse_menu_to(cmm);
             }
 
@@ -1034,26 +1063,29 @@ function Playlist(x, y) {
             }
         }
         else if (row) {
-            collapse_handler.expand(row.header);
-            if (collapse_handler.changed) {
-                this.repaint();
+            if (collapse_handler) {
+                collapse_handler.expand(row.parent);
+                if (collapse_handler.changed) {
+                    this.repaint();
+                }
             }
 
             selection_handler.drag(row, drop_info.is_above);
 
             if (this.is_scrollbar_available) {
                 if (y < (this.list_y + this.row_h * 2) && !this.scrollbar.is_scrolled_up) {
-                    selection_handler.drag(null, null);
+                    selection_handler.drag(null, false); // To clear last hover row
                     start_drag_scroll('up');
                 }
                 if (y > (this.list_y + this.list_h - this.row_h * 2) && !this.scrollbar.is_scrolled_down) {
-                    selection_handler.drag(null, null);
+                    selection_handler.drag(null, false); // To clear last hover row
                     start_drag_scroll('down');
                 }
             }
         }
 
-        last_hover_item = this.get_item_under_mouse(x, y);
+        last_hover_item =
+            /** @type {?BaseHeader|?Row} */ this.get_item_under_mouse(x, y);
 
         if (!this.trace_list(x, y)) {
             action.Effect = g_drop_effect.none;
@@ -1084,7 +1116,7 @@ function Playlist(x, y) {
         }
         else {
             action.Effect = filter_effect_by_modifiers(action.Effect);
-            if (g_drop_effect.none !== action.Effect){
+            if (g_drop_effect.none !== action.Effect) {
                 selection_handler.external_drop(action);
             }
             else {
@@ -1214,7 +1246,7 @@ function Playlist(x, y) {
             if (fb.CursorFollowPlayback) {
                 selection_handler.clear_selection();
 
-                if (g_properties.auto_colapse) {
+                if (collapse_handler && g_properties.auto_colapse) {
                     collapse_handler.collapse_all_but_now_playing();
                 }
                 scroll_to_now_playing();
@@ -1223,6 +1255,12 @@ function Playlist(x, y) {
 
         this.repaint();
     };
+
+    this.on_playback_pause = function (state) {
+        if (playing_item) {
+            playing_item.repaint();
+        }
+    }
 
     this.on_playback_queue_changed = function (origin) {
         if (!queue_handler) {
@@ -1235,6 +1273,7 @@ function Playlist(x, y) {
 
     this.on_playback_stop = function (reason) {
         if (playing_item) {
+            playing_item.clear_title_text(); // Mordred: need to regen tracknumber
             playing_item.is_playing = false;
             playing_item.repaint();
         }
@@ -1257,21 +1296,31 @@ function Playlist(x, y) {
             image = null;
         }
 
-        /** @type {Array<Row|Header>} */
+        /** @type {Array<Row|BaseHeader>} */
         var items = this.items_to_draw;
         items.forEach(function (item) {
-            if (_.isInstanceOf(item, Header) && !item.is_art_loaded() && _.head(item.rows).metadb.Compare(metadb)) {
-                item.assign_art(image);
-                item.repaint();
+            if (_.isInstanceOf(item, Header)) {
+                var header =
+                    /** @type {Header} */ item;
+                if (!header.is_art_loaded() && header.get_first_row().metadb.Compare(metadb)) {
+                    header.assign_art(image);
+                    header.repaint();
+                }
             }
         });
     };
 
     this.on_notify_data = function (name, info) {
         if (name === 'sync_group_query_state') {
-            Header.grouping_handler.sync_state(info);
+            if (!window.IsVisible) {
+                // Need to reinitialize grouping_handler manually, since most of the callbacks are ignored when panel is hidden
+                Header.grouping_handler.on_playlists_changed();
+                Header.grouping_handler.set_active_playlist(plman.GetPlaylistName(plman.ActivePlaylist));
+                Header.grouping_handler.sync_state(info);
+            }
+            else {
+                Header.grouping_handler.sync_state(info);
 
-            if (window.IsVisible) {
                 this.initialize_list();
                 scroll_to_focused_or_now_playing();
             }
@@ -1279,9 +1328,12 @@ function Playlist(x, y) {
     };
     //</editor-fold>
 
-    this.register_key_actions = function(key_handler) {
+    /**
+     * @param {KeyActionHandler} key_handler
+     */
+    this.register_key_actions = function (key_handler) {
         key_handler.register_key_action(VK_UP,
-            _.bind(function(modifiers){
+            _.bind(function (modifiers) {
                 if (!this.cnt.rows.length) {
                     return;
                 }
@@ -1296,25 +1348,22 @@ function Playlist(x, y) {
                 }
 
                 if (!focused_item) {
-                    var first_item = _.head(this.items_to_draw);
-                    focused_item = _.isInstanceOf(first_item, Header) ? _.head(first_item.rows) : first_item;
+                    var top_item = _.head(this.items_to_draw);
+                    focused_item = _.isInstanceOf(top_item, Row) ? top_item : top_item.get_first_row();
                 }
 
-                var header = focused_item.header;
-                var new_focus_idx;
-                if (header.is_collapsed) {
-                    new_focus_idx = _.last(this.cnt.headers[Math.max(0, focused_item.header.idx - 1)].rows).idx;
-                }
-                else {
-                    new_focus_idx = Math.max(0, focused_item.idx - 1);
+                var visible_item = cnt_helper.is_item_visible(focused_item) ? focused_item : cnt_helper.get_visible_parent(focused_item);
+                var new_item = cnt_helper.get_navigateable_neighbour(visible_item, -1);
+                if (!new_item) {
+                    new_item = visible_item;
                 }
 
-                selection_handler.update_selection(this.cnt.rows[new_focus_idx], null, modifiers.shift);
+                selection_handler.update_selection(new_item, undefined, modifiers.shift);
                 this.repaint();
-        },this));
+            }, this));
 
         key_handler.register_key_action(VK_DOWN,
-            _.bind(function(modifiers) {
+            _.bind(function (modifiers) {
                 if (!this.cnt.rows.length) {
                     // skip repaint
                     return;
@@ -1330,99 +1379,98 @@ function Playlist(x, y) {
                 }
 
                 if (!focused_item) {
-                    var first_item = _.head(this.items_to_draw);
-                    focused_item = _.isInstanceOf(first_item, Header) ? _.head(first_item.rows) : first_item;
+                    var top_item = _.head(this.items_to_draw);
+                    focused_item = _.isInstanceOf(top_item, Row) ? top_item : top_item.get_first_row();
                 }
 
-                var header = focused_item.header;
-                var new_focus_idx;
-                if (header.is_collapsed) {
-                    new_focus_idx = _.head(this.cnt.headers[Math.min(this.cnt.headers.length - 1, focused_item.header.idx + 1)].rows).idx;
-                }
-                else {
-                    new_focus_idx = Math.min(this.cnt.rows.length - 1, focused_item.idx + 1);
+                var visible_item = cnt_helper.is_item_visible(focused_item) ? focused_item : cnt_helper.get_visible_parent(focused_item);
+                var new_item = cnt_helper.get_navigateable_neighbour(visible_item, 1);
+                if (!new_item) {
+                    new_item = visible_item;
                 }
 
-                selection_handler.update_selection(this.cnt.rows[new_focus_idx], null, modifiers.shift);
+                selection_handler.update_selection(new_item, undefined, modifiers.shift);
                 this.repaint();
-            },this));
+            }, this));
 
         key_handler.register_key_action(VK_LEFT,
-            _.bind(function(modifiers) {
-                if (!g_properties.show_header || !this.cnt.rows.length) {
+            _.bind(function (modifiers) {
+                if (!collapse_handler || !this.cnt.rows.length) {
                     return;
                 }
 
                 if (!focused_item) {
-                    var first_item = _.head(this.items_to_draw);
-                    focused_item = _.isInstanceOf(first_item, Header) ? _.head(first_item.rows) : first_item;
+                    var top_item = _.head(this.items_to_draw);
+                    focused_item = _.isInstanceOf(top_item, Row) ? top_item : top_item.get_first_row();
+                }
+                var new_focus = focused_item;
+
+                // Get top uncollapsed header
+                var visible_header = cnt_helper.get_visible_parent(focused_item);
+                if (visible_header) {
+                    while (_.isInstanceOf(visible_header.parent, BaseHeader) && visible_header.is_collapsed) {
+                        visible_header = visible_header.parent;
+                    }
+
+                    collapse_handler.collapse(visible_header);
+                    new_focus = visible_header;
                 }
 
-                collapse_handler.collapse(focused_item.header);
-
-                selection_handler.update_selection(focused_item.header, null, null);
+                selection_handler.update_selection(new_focus);
                 this.repaint();
-            },this));
+            }, this));
 
         key_handler.register_key_action(VK_RIGHT,
-            _.bind(function(modifiers) {
-                if (!g_properties.show_header || !this.cnt.rows.length) {
+            _.bind(function (modifiers) {
+                if (!collapse_handler || !this.cnt.rows.length) {
                     return;
                 }
 
                 if (!focused_item) {
-                    var first_item = _.head(this.items_to_draw);
-                    focused_item = _.isInstanceOf(first_item, Header) ? _.head(first_item.rows) : first_item;
+                    var top_item = _.head(this.items_to_draw);
+                    focused_item = _.isInstanceOf(top_item, Row) ? top_item : top_item.get_first_row();
                 }
+                var new_focus = focused_item;
 
-                var header = focused_item.header;
-                collapse_handler.expand(header);
+                var visible_header = cnt_helper.get_visible_parent(focused_item);
+                var new_focus_item = visible_header.get_first_row();
+
+                collapse_handler.expand(visible_header);
                 if (collapse_handler.changed) {
-                    var new_focus_item = _.head(header.rows);
                     scroll_to_row(focused_item, new_focus_item);
-
-                    selection_handler.update_selection(new_focus_item, null, null);
-                    this.repaint();
+                    new_focus = new_focus_item;
                 }
-            },this));
+
+                selection_handler.update_selection(new_focus);
+                this.repaint();
+            }, this));
 
         key_handler.register_key_action(VK_PRIOR,
-            _.bind(function(modifiers) {
+            _.bind(function (modifiers) {
                 if (!this.cnt.rows.length) {
                     return;
                 }
 
                 if (!focused_item) {
-                    var first_item = _.head(this.items_to_draw);
-                    focused_item = _.isInstanceOf(first_item, Header) ? _.head(first_item.rows) : first_item;
+                    var top_item = _.head(this.items_to_draw);
+                    focused_item = _.isInstanceOf(top_item, Row) ? top_item : top_item.get_first_row();
                 }
 
                 var new_focus_item;
                 if (this.is_scrollbar_available) {
                     new_focus_item = _.head(this.items_to_draw);
-                    if (_.isInstanceOf(new_focus_item, DiscHeader)) {
-                        new_focus_item = this.items_to_draw[1]; // this will not work if we can collapse DiscHeaders
-                    }
-                    if (_.isInstanceOf(new_focus_item, Header)) {
-                        if (_.isInstanceOf(_.head(new_focus_item.rows), DiscHeader)) {
-                            new_focus_item = _.head(new_focus_item.rows).rows[0];   // first row in DiscHeader
-                        } else {
-                            new_focus_item = this.cnt.rows[_.head(new_focus_item.rows).idx];
-                        }
+                    if (!cnt_helper.is_item_navigateable(new_focus_item)) {
+                        new_focus_item = cnt_helper.get_navigateable_neighbour(new_focus_item, 1);
                     }
                     if (new_focus_item.y < this.list_y && new_focus_item.y + new_focus_item.h > this.list_y) {
-                        new_focus_item = this.cnt.rows[new_focus_item.idx + 1];
+                        new_focus_item = cnt_helper.get_navigateable_neighbour(new_focus_item, 1);
                     }
-                    if (new_focus_item.idx === focused_item.idx) {
+                    if (new_focus_item === focused_item) {
                         this.scrollbar.shift_page(-1);
 
                         new_focus_item = _.head(this.items_to_draw);
-                        if (_.isInstanceOf(new_focus_item, Header)) {
-                            if (_.isInstanceOf(_.head(new_focus_item.rows), DiscHeader)) {
-                                new_focus_item = _.head(new_focus_item.rows).rows[0];   // first row in DiscHeader
-                            } else {
-                                new_focus_item = this.cnt.rows[_.head(new_focus_item.rows).idx];
-                            }
+                        if (!cnt_helper.is_item_navigateable(new_focus_item)) {
+                            new_focus_item = cnt_helper.get_navigateable_neighbour(new_focus_item, 1);
                         }
                     }
                 }
@@ -1430,42 +1478,37 @@ function Playlist(x, y) {
                     new_focus_item = _.head(this.items_to_draw);
                 }
 
-                selection_handler.update_selection(new_focus_item, null, modifiers.shift);
+                selection_handler.update_selection(new_focus_item, undefined, modifiers.shift);
                 this.repaint();
-            },this));
+            }, this));
 
         key_handler.register_key_action(VK_NEXT,
-            _.bind(function(modifiers) {
+            _.bind(function (modifiers) {
                 if (!this.cnt.rows.length) {
                     return;
                 }
 
                 if (!focused_item) {
-                    var first_item = _.head(this.items_to_draw);
-                    focused_item = _.isInstanceOf(first_item, Header) ? _.head(first_item.rows) : first_item;
+                    focused_item = _.head(this.items_to_draw);
+                    if (!cnt_helper.is_item_navigateable(focused_item)) {
+                        focused_item = cnt_helper.get_navigateable_neighbour(focused_item, 1);
+                    }
                 }
 
                 var new_focus_item;
                 if (this.is_scrollbar_available) {
                     new_focus_item = _.last(this.items_to_draw);
-                    if (_.isInstanceOf(new_focus_item, DiscHeader)) {
-                        new_focus_item = this.items_to_draw[this.items_to_draw.length - 2]; // this will not work if we can collapse DiscHeaders
-                    }
-                    if (_.isInstanceOf(new_focus_item, Header)) {
-                        new_focus_item = _.last(this.cnt.headers[new_focus_item.idx - 1].rows);
+                    if (!cnt_helper.is_item_navigateable(new_focus_item)) {
+                        new_focus_item = cnt_helper.get_navigateable_neighbour(new_focus_item, -1);
                     }
                     if (new_focus_item.y < this.list_y + this.list_h && new_focus_item.y + new_focus_item.h > this.list_y + this.list_h) {
-                        new_focus_item = this.cnt.rows[new_focus_item.idx - 1];
+                        new_focus_item = cnt_helper.get_navigateable_neighbour(new_focus_item, -1);
                     }
-                    if (new_focus_item.idx === focused_item.idx) {
+                    if (new_focus_item === focused_item) {
                         this.scrollbar.shift_page(1);
-
                         new_focus_item = _.last(this.items_to_draw);
-                        if (_.isInstanceOf(new_focus_item, Header)) {
-                            new_focus_item = _.last(this.cnt.headers[new_focus_item.idx - 1].rows);
-                        }
-                        if (_.isInstanceOf(new_focus_item, DiscHeader)) {
-                            new_focus_item = this.items_to_draw[this.items_to_draw.length - 2]; // this will not work if we can collapse DiscHeaders
+                        if (!cnt_helper.is_item_navigateable(new_focus_item)) {
+                            new_focus_item = cnt_helper.get_navigateable_neighbour(new_focus_item, -1);
                         }
                     }
                 }
@@ -1473,63 +1516,63 @@ function Playlist(x, y) {
                     new_focus_item = _.last(this.items_to_draw);
                 }
 
-                selection_handler.update_selection(new_focus_item, null, modifiers.shift);
+                selection_handler.update_selection(new_focus_item, undefined, modifiers.shift);
                 this.repaint();
-            },this));
+            }, this));
 
         key_handler.register_key_action(VK_HOME,
-            _.bind(function(modifiers) {
-                selection_handler.update_selection(_.head(this.cnt.rows), null, modifiers.shift);
+            _.bind(function (modifiers) {
+                selection_handler.update_selection(_.head(this.cnt.rows), undefined, modifiers.shift);
                 this.repaint();
-            },this));
+            }, this));
 
         key_handler.register_key_action(VK_END,
-            _.bind(function(modifiers) {
-                selection_handler.update_selection(_.last(this.cnt.rows), null, modifiers.shift);
+            _.bind(function (modifiers) {
+                selection_handler.update_selection(_.last(this.cnt.rows), undefined, modifiers.shift);
                 this.repaint();
-            },this));
+            }, this));
 
         key_handler.register_key_action(VK_DELETE,
-            _.bind(function(modifiers) {
+            _.bind(function (modifiers) {
                 if (!selection_handler.has_selected_items() && focused_item) {
                     selection_handler.update_selection(focused_item);
                 }
                 plman.UndoBackup(cur_playlist_idx);
                 plman.RemovePlaylistSelection(cur_playlist_idx);
-            },this));
+            }, this));
 
         key_handler.register_key_action(VK_KEY_A,
-            _.bind(function(modifiers) {
+            _.bind(function (modifiers) {
                 if (modifiers.ctrl) {
                     selection_handler.select_all();
                     this.repaint();
                 }
-            },this));
+            }, this));
 
         key_handler.register_key_action(VK_KEY_F,
-            _.bind(function(modifiers) {
+            _.bind(function (modifiers) {
                 if (modifiers.ctrl) {
                     fb.RunMainMenuCommand('Edit/Search');
                 }
                 else if (modifiers.shift) {
                     fb.RunMainMenuCommand('Library/Search');
                 }
-            },this));
+            }, this));
 
         key_handler.register_key_action(VK_RETURN,
-            _.bind(function(modifiers) {
+            _.bind(function (modifiers) {
                 plman.ExecutePlaylistDefaultAction(cur_playlist_idx, focused_item.idx);
-            },this));
+            }, this));
 
         key_handler.register_key_action(VK_KEY_O,
-            _.bind(function(modifiers) {
+            _.bind(function (modifiers) {
                 if (modifiers.shift) {
                     fb.RunContextCommandWithMetadb('Open Containing Folder', focused_item.metadb);
                 }
-            },this));
+            }, this));
 
         key_handler.register_key_action(VK_KEY_Q,
-            _.bind(function(modifiers) {
+            _.bind(function (modifiers) {
                 if (!queue_handler) {
                     return;
                 }
@@ -1537,40 +1580,42 @@ function Playlist(x, y) {
                 if (modifiers.ctrl && modifiers.shift) {
                     queue_handler.flush();
                 }
-                else if (modifiers.ctrl) {
-                    queue_handler.add_row(focused_item);
+                else if (selection_handler.selected_items_count() === 1) {
+                    if (modifiers.ctrl) {
+                        queue_handler.add_row(focused_item);
+                    }
+                    else if (modifiers.shift) {
+                        queue_handler.remove_row(focused_item);
+                    }
                 }
-                else if (modifiers.shift) {
-                    queue_handler.remove_row(focused_item);
-                }
-            },this));
+            }, this));
 
         key_handler.register_key_action(VK_F5,
-            _.bind(function(modifiers) {
+            _.bind(function (modifiers) {
                 Header.art_cache.clear();
                 this.initialize_and_repaint_list(true);
-            },this));
+            }, this));
 
         key_handler.register_key_action(VK_KEY_C,
-            _.bind(function(modifiers) {
+            _.bind(function (modifiers) {
                 if (modifiers.ctrl) {
                     selection_handler.copy();
                 }
-            },this));
+            }, this));
 
         key_handler.register_key_action(VK_KEY_X,
-            _.bind(function(modifiers) {
+            _.bind(function (modifiers) {
                 if (modifiers.ctrl) {
                     selection_handler.cut();
                 }
-            },this));
+            }, this));
 
         key_handler.register_key_action(VK_KEY_V,
-            _.bind(function(modifiers) {
+            _.bind(function (modifiers) {
                 if (modifiers.ctrl && !plman.IsPlaylistLocked(cur_playlist_idx)) {
                     selection_handler.paste();
                 }
-            },this));
+            }, this));
     };
 
     this.initialize_and_repaint_list = function (refocus) {
@@ -1597,14 +1642,16 @@ function Playlist(x, y) {
         // Clear contents
 
         this.cnt.rows = [];
-        this.cnt.headers = [];
-        this.cnt.set_header_h_in_rows(header_h_in_rows);
+        this.cnt.sub_items = [];
 
         // Initialize rows
 
         trace_initialize_list_performance && profiler_part.reset();
 
-        this.cnt.rows = initialize_rows(plman.GetPlaylistItems(cur_playlist_idx), plman.PlaylistItemCount(cur_playlist_idx));
+        var rows_metadb = plman.GetPlaylistItems(cur_playlist_idx);
+        // this.cnt.rows = initialize_rows(rows_metadb);
+        // this.cnt.rows = initialize_rows(plman.GetPlaylistItems(cur_playlist_idx), plman.PlaylistItemCount(cur_playlist_idx));
+        this.cnt.rows = initialize_rows(plman.GetPlaylistItems(cur_playlist_idx));
 
         trace_initialize_list_performance && console.log('Rows initialized in ' + profiler_part.Time + 'ms');
 
@@ -1627,33 +1674,31 @@ function Playlist(x, y) {
         trace_initialize_list_performance && profiler_part.reset();
 
         Header.grouping_handler.set_active_playlist(plman.GetPlaylistName(cur_playlist_idx));
-        this.cnt.headers = create_headers(this.cnt.rows);
-        if (g_properties.show_disc_headers) {
-            this.cnt.disc_headers = get_disc_headers(this.cnt.headers);
-        }
+        // this.cnt.sub_items = create_headers(this.cnt.rows);
+        this.cnt.sub_items = create_headers(this.cnt.rows, rows_metadb);
 
         trace_initialize_list_performance && console.log('Headers initialized in ' + profiler_part.Time + 'ms');
-
-        collapse_handler.initialize(this.cnt.headers);
 
         if (!was_on_size_called) {
             // First time init
 
             if (g_properties.show_header) {
+                collapse_handler = new CollapseHandler(/** @type {PlaylistContent} */ this.cnt);
                 if (g_properties.collapse_on_start) {
                     collapse_handler.collapse_all();
                 }
-            }
-            else {
-                collapse_handler.expand_all();
-            }
 
-            collapse_handler.set_callback(_.bind(function () {
-                this.on_list_items_change();
-            }, this));
+                collapse_handler.set_callback(_.bind(function () {
+                    this.on_list_items_change();
+                }, this));
+            }
         }
         else {
             // Update list control
+
+            if (collapse_handler) {
+                collapse_handler.on_content_change();
+            }
 
             this.on_list_items_change();
         }
@@ -1663,7 +1708,7 @@ function Playlist(x, y) {
         if (g_properties.show_queue_position) {
             queue_handler = new QueueHandler(this.cnt.rows, cur_playlist_idx);
         }
-        selection_handler = new SelectionHandler(this.cnt.rows, cur_playlist_idx);
+        selection_handler = new SelectionHandler(/** @type {PlaylistContent} */ this.cnt, cur_playlist_idx);
 
         trace_initialize_list_performance && console.log('Playlist initialized in ' + profiler.Time + 'ms');
     };
@@ -1672,7 +1717,6 @@ function Playlist(x, y) {
         if (cur_playlist_idx !== plman.ActivePlaylist) {
             g_properties.scroll_pos = _.isNil(scroll_pos_list[plman.ActivePlaylist]) ? 0 : scroll_pos_list[plman.ActivePlaylist];
         }
-
         this.initialize_list();
         scroll_to_focused();
     };
@@ -1705,18 +1749,14 @@ function Playlist(x, y) {
      * @param {number} playlist_size
      * @return {Array<Row>}
      */
-    function initialize_rows(playlist_items, playlist_size) {
-        // Magic! For some reason using array[i] instead of IFbMetadbHandleList.Item(i) greatly increases performance :\
-        var playlist_items_arr = [];
-        for (var i = 0; i < playlist_size; ++i) {
-            playlist_items_arr[i] = playlist_items.Item(i);
-        }
+    function initialize_rows(playlist_items) {
+        var playlist_items_array = playlist_items.Convert().toArray();
 
         var rows = [];
-        for (var i = 0; i < playlist_size; ++i) {
-            rows[i] = new Row(that.list_x, 0, that.list_w, that.row_h, playlist_items_arr[i], i, cur_playlist_idx);
+        for (var i = 0, playlist_size = playlist_items_array.length; i < playlist_size; ++i) {
+            rows[i] = new Row(that.list_x, 0, that.list_w, that.row_h, playlist_items_array[i], i, cur_playlist_idx);
             if (!g_properties.show_header) {
-                rows[i].is_odd = (i + 1) % 2;
+                rows[i].is_odd = !(i & 1);
             }
         }
 
@@ -1725,53 +1765,26 @@ function Playlist(x, y) {
 
     /**
      * @param {Array<Row>} rows
+     * @param {IFbMetadbHandleList} rows_metadb
      * @return {Array<Header>}
      */
-    function create_headers(rows) {
-        var playlist_copy = _.clone(rows);
-        var head_nr = 0;
-        var headers = [];
-        while (playlist_copy.length) {
-            var header = new Header(that.list_x, 0, that.list_w, that.row_h * header_h_in_rows, head_nr, that.row_h);
-            header.init_rows(playlist_copy);
-
-            playlist_copy.reverse();
-            playlist_copy.length = playlist_copy.length - header.rows.length; ///< much faster then _.drop or slice, since it does not create a new array
-            playlist_copy.reverse();
-
-            if (g_properties.show_disc_headers) {
-                header.init_disc_rows(that);
-            }
-            headers.push(header);
-            ++head_nr;
-        }
-
-        return headers;
+    function create_headers(rows, rows_metadb) {
+        var prepared_rows = Header.prepare_initialization_data(rows, rows_metadb);
+        return Header.create_headers(/** @type {PlaylistContent} */ that.cnt, that.list_x, 0, that.list_w, that.row_h * header_h_in_rows, prepared_rows);
     }
 
     /**
-     * @param {Array<Header>} rows
-     * @return {Array<DiscHeader>}
+     * @type {function(Array<Header>)}
      */
-    function get_disc_headers(headers) {
-        var disc_headers = [];
-
-        headers.forEach(function (header) {
-            disc_headers.push.apply(disc_headers, header.discs);
-        });
-
-        return disc_headers;
-    }
-
     var debounced_get_album_art = _.debounce(function (items) {
-        items.forEach(function (item) {
+        _.forEach(items, function (item) {
             if (!_.isInstanceOf(item, Header) || item.is_art_loaded()) {
                 return;
             }
 
-            var metadb = _.head(item.rows).metadb;
+            var metadb = item.get_first_row().metadb;
             var cached_art = Header.art_cache.get_image_for_meta(metadb);
-            if (cached_art){
+            if (cached_art) {
                 item.assign_art(cached_art);
             }
             else {
@@ -1779,10 +1792,13 @@ function Playlist(x, y) {
             }
         });
     }, 500, {
-        'leading':  false,
-        'trailing': true
+        leading:  false,
+        trailing: true
     });
 
+    /**
+     * @param {Array<Header>} items
+     */
     function get_album_art(items) {
         if (!g_properties.show_album_art || g_properties.use_compact_header) {
             return;
@@ -1799,6 +1815,10 @@ function Playlist(x, y) {
     }
 
     //<editor-fold desc="Context Menu">
+
+    /**
+     * @param {Context.Menu} parent_menu
+     */
     function append_edit_menu_to(parent_menu) {
         var has_selected_item = selection_handler.has_selected_items();
         var is_playlist_locked = plman.IsPlaylistLocked(cur_playlist_idx);
@@ -1854,6 +1874,9 @@ function Playlist(x, y) {
         }
     }
 
+    /**
+     * @param {Context.Menu} parent_menu
+     */
     function append_collapse_menu_to(parent_menu) {
         var ce = new Context.Menu('Collapse/Expand');
         parent_menu.append(ce);
@@ -1922,6 +1945,9 @@ function Playlist(x, y) {
         );
     }
 
+    /**
+     * @param {Context.Menu} parent_menu
+     */
     function append_appearance_menu_to(parent_menu) {
         var appear = new Context.Menu('Appearance');
         parent_menu.append(appear);
@@ -1935,8 +1961,17 @@ function Playlist(x, y) {
             _.bind(function () {
                 g_properties.show_header = !g_properties.show_header;
                 if (g_properties.show_header) {
+                    collapse_handler = new CollapseHandler(/** @type {PlaylistContent} */ this.cnt);
                     collapse_handler.expand_all();
+                    collapse_handler.set_callback(_.bind(function () {
+                        this.on_list_items_change();
+                    }, that));
                 }
+                else {
+                    collapse_handler.expand_all();
+                    collapse_handler = null;
+                }
+
                 this.initialize_list();
                 scroll_to_focused_or_now_playing();
             }, that),
@@ -1956,6 +1991,16 @@ function Playlist(x, y) {
                     scroll_to_focused_or_now_playing();
                 }, that),
                 {is_checked: g_properties.use_compact_header}
+            );
+
+            appear_header.append_item(
+                'Show disc sub-header',
+                _.bind(function () {
+                    g_properties.show_disc_header = !g_properties.show_disc_header;
+                    this.initialize_list();
+                    scroll_to_focused_or_now_playing();
+                }, that),
+                {is_checked: g_properties.show_disc_header}
             );
 
             appear_header.append_item(
@@ -2056,6 +2101,9 @@ function Playlist(x, y) {
         );
     }
 
+    /**
+     * @param {Context.Menu} parent_menu
+     */
     function append_sort_menu_to(parent_menu) {
         var has_multiple_selected_items = selection_handler.selected_items_count() > 1;
         var is_auto_playlist = plman.IsAutoPlaylist(cur_playlist_idx);
@@ -2173,6 +2221,10 @@ function Playlist(x, y) {
         );
     }
 
+    /**
+     * @param {Context.Menu} parent_menu
+     * @param {IFbMetadbHandle} metadb
+     */
     function append_weblinks_menu_to(parent_menu, metadb) {
         var web = new Context.Menu('Weblinks');
         parent_menu.append(web);
@@ -2197,6 +2249,9 @@ function Playlist(x, y) {
         });
     }
 
+    /**
+     * @param {Context.Menu} parent_menu
+     */
     function append_send_items_menu_to(parent_menu) {
         var playlist_count = plman.PlaylistCount;
 
@@ -2255,6 +2310,11 @@ function Playlist(x, y) {
 
     //</editor-fold>
 
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @return {{row: ?Row, is_above: ?boolean}}
+     */
     function get_drop_row_info(x, y) {
         var drop_info = {
             row:      undefined,
@@ -2272,19 +2332,21 @@ function Playlist(x, y) {
 
         var is_above = y < (item.y + item.h / 2);
 
-        if (_.isInstanceOf(item, Header)) {
+        if (_.isInstanceOf(item, BaseHeader)) {
+            var first_row_in_header = item.get_first_row();
+
             if (is_above) {
-                if (item.idx === 0) {
-                    drop_info.row = _.head(item.rows);
+                if (first_row_in_header === _.head(that.cnt.rows)) {
+                    drop_info.row = first_row_in_header;
                     drop_info.is_above = true;
                 }
                 else {
-                    drop_info.row = _.last(that.cnt.headers[item.idx - 1].rows);
+                    drop_info.row = that.cnt.rows[first_row_in_header.idx - 1];
                     drop_info.is_above = false;
                 }
             }
             else {
-                drop_info.row = _.head(item.rows);
+                drop_info.row = first_row_in_header;
                 drop_info.is_above = true;
             }
         }
@@ -2294,9 +2356,8 @@ function Playlist(x, y) {
                 drop_info.is_above = true;
             }
             else {
-                if (g_properties.show_header
-                    && item.idx === _.last(item.header.rows).idx
-                    || item.idx === _.last(that.cnt.rows).idx) {
+                if (g_properties.show_header && item.idx === _.last(item.parent.sub_items).idx
+                    || item === _.last(that.cnt.rows)) {
                     drop_info.row = item;
                     drop_info.is_above = false;
                 }
@@ -2321,8 +2382,8 @@ function Playlist(x, y) {
             plman.ActivePlaylist = playing_item_location.PlaylistIndex;
             that.initialize_list();
         }
-        else {
-            collapse_handler.expand(playing_item.header);
+        else if (collapse_handler) {
+            collapse_handler.expand(playing_item.parent);
         }
 
         selection_handler.update_selection(that.cnt.rows[playing_item_location.PlaylistItemIndex]);
@@ -2360,78 +2421,59 @@ function Playlist(x, y) {
         }
     }
 
+    /**
+     * @param {?Row} from_row
+     * @param {Row} to_row
+     */
     function scroll_to_row(from_row, to_row) {
         if (!that.is_scrollbar_available) {
             return;
         }
 
         var has_headers = g_properties.show_header;
-        var has_disc_headers = g_properties.show_disc_headers;
 
-        var from_header = from_row ? from_row.header : undefined;
-        var to_header = to_row.header;
-        var is_from_header = from_header ? from_header.is_collapsed : false;
-        var is_to_header = to_header.is_collapsed;
-        var from_item = is_from_header ? from_header : from_row;
-        var to_item = is_to_header ? to_header : to_row;
-
-        var to_item_h_in_rows = is_to_header ? header_h_in_rows : 1;
-        var to_item_state = get_item_visibility_state(to_item);
+        var visible_to_item = cnt_helper.is_item_visible(to_row) ? to_row : cnt_helper.get_visible_parent(to_row);
+        var to_item_state = get_item_visibility_state(visible_to_item);
 
         var shifted_successfully = false;
-
         switch (to_item_state.visibility) {
-            case visibility_state['none']: {
-                if (from_item) {
-                    var from_item_state = get_item_visibility_state(from_item);
-                    if (from_item_state.visibility !== visibility_state['none']) {
-                        var from_item_type = _.isInstanceOf(from_item, Header) ? Header : Row;
-
-                        var is_item_prev = _.isInstanceOf(to_item, from_item_type) && from_item.idx - 1 === to_item.idx
-                            || is_from_header && !is_to_header && from_header.idx - 1 === to_header.idx && to_item.idx === _.last(to_header.rows).idx
-                            || !is_from_header && is_to_header && from_header.idx - 1 === to_header.idx && from_item.idx === _.head(from_header.rows).idx;
-
-                        var is_item_next = _.isInstanceOf(to_item, from_item_type) && from_item.idx + 1 === to_item.idx
-                            || is_from_header && !is_to_header && from_header.idx + 1 === to_header.idx && to_item.idx === _.head(to_header.rows).idx
-                            || !is_from_header && is_to_header && from_header.idx + 1 === to_header.idx && from_item.idx === _.last(from_header.rows).idx;
-
-                        var row_shift = from_item_state.invisible_part + to_item_h_in_rows;
-                        if (is_item_prev) {
-                            if (has_headers && !is_from_header && !is_to_header && to_item.idx === _.last(to_header.rows).idx) {
-                                var from_header_state = get_item_visibility_state(from_header);
-                                row_shift += from_header_state.invisible_part;
-                                if (_.isInstanceOf(_.head(from_header.rows), DiscHeader)) {
-                                    row_shift++;
-                                }
-                            }
-                            else if (has_disc_headers && !is_to_header && to_item.num_in_header === from_row.num_in_header - 2) {
-                                // has DiscHeader between items
-                                row_shift += 1;
-                            }
-                            that.scrollbar.scroll_to(g_properties.scroll_pos - row_shift);
-                            shifted_successfully = true;
-                        }
-                        else if (is_item_next) {
-                            if (has_headers && !is_to_header && (to_item.idx === _.head(to_header.rows).idx || to_item.num_in_header === 2)) {
-                                var to_header_state = get_item_visibility_state(to_header);
-                                row_shift += to_header_state.invisible_part;
-                                if (_.isInstanceOf(_.head(to_header.rows), DiscHeader)) {
-                                    row_shift++;
-                                }
-                            }
-                            else if (has_disc_headers && !is_to_header && to_item.num_in_header === from_row.num_in_header + 2) {
-                                // has DiscHeader between items
-                                row_shift += 1;
-                            }
-
-                            that.scrollbar.scroll_to(g_properties.scroll_pos + row_shift);
-                            shifted_successfully = true;
-                        }
-                    }
+            case visibility_state.none: {
+                if (!from_row) {
+                    break;
                 }
+
+                var visible_from_item = cnt_helper.is_item_visible(from_row) ? from_row : cnt_helper.get_visible_parent(from_row);
+
+                var from_item_state = get_item_visibility_state(visible_from_item);
+                if (from_item_state.visibility === visibility_state.none) {
+                    break;
+                }
+
+                var direction = (to_row.idx - from_row.idx) > 0 ? 1 : -1;
+                var scroll_shift = 0;
+                var neighbour_item = visible_from_item;
+                do {
+                    var neighbour_item_state = get_item_visibility_state(neighbour_item);
+                    scroll_shift += neighbour_item_state.invisible_part;
+                    neighbour_item = direction > 0 ? cnt_helper.get_next_visible_item(neighbour_item) : cnt_helper.get_prev_visible_item(neighbour_item);
+                } while (neighbour_item && !cnt_helper.is_item_navigateable(neighbour_item));
+
+                assert(!_.isNil(neighbour_item),
+                    LogicError, 'Failed to get navigateable neighbour');
+
+                if (visible_to_item !== neighbour_item) {
+                    // I.e. to_item and from_item are not neighbours
+                    break;
+                }
+
+                scroll_shift += visible_to_item.h / that.row_h;
+
+                that.scrollbar.scroll_to(g_properties.scroll_pos + direction * scroll_shift);
+                shifted_successfully = true;
+
                 break;
             }
-            case visibility_state['partial_top']: {
+            case visibility_state.partial_top: {
                 if (to_item_state.invisible_part % 1 > 0) {
                     that.scrollbar.shift_line(-1);
                 }
@@ -2439,7 +2481,7 @@ function Playlist(x, y) {
                 shifted_successfully = true;
                 break;
             }
-            case visibility_state['partial_bottom']: {
+            case visibility_state.partial_bottom: {
                 if (to_item_state.invisible_part % 1 > 0) {
                     that.scrollbar.shift_line(1);
                 }
@@ -2447,59 +2489,66 @@ function Playlist(x, y) {
                 shifted_successfully = true;
                 break;
             }
-            case visibility_state['full']: {
+            case visibility_state.full: {
                 shifted_successfully = true;
                 break;
             }
             default: {
-                throw new ArgumentError('visibility_state', to_item_state.visibility);
+                throw ArgumentError('visibility_state', to_item_state.visibility);
             }
         }
 
         if (shifted_successfully) {
-            if (has_headers && !is_to_header && to_item.idx === _.head(to_header.rows).idx) {
-                var to_header_state = get_item_visibility_state(to_header);
-                that.scrollbar.scroll_to(g_properties.scroll_pos - to_header_state.invisible_part);
+            if (has_headers) {
+                var scroll_shift = 0;
+                var top_item = visible_to_item;
+                while (top_item.parent && _.isInstanceOf(top_item.parent, BaseHeader) && top_item === _.head(top_item.parent.sub_items)) {
+                    top_item = top_item.parent;
+                    var header_state = get_item_visibility_state(top_item);
+                    scroll_shift += header_state.invisible_part;
+                }
+                that.scrollbar.scroll_to(g_properties.scroll_pos - scroll_shift);
             }
         }
         else {
-            var item_draw_idx = get_item_draw_row_idx(to_item);
+            var item_draw_idx = get_item_draw_row_idx(visible_to_item);
             var new_scroll_pos = Math.max(0, item_draw_idx - Math.floor(that.rows_to_draw_precise / 2));
             that.scrollbar.scroll_to(new_scroll_pos);
         }
     }
 
+    /**
+     * @enum {number}
+     */
     var visibility_state = {
-        'none':           0,
-        'partial_top':    1,
-        'partial_bottom': 2,
-        'full':           3
+        none:           0,
+        partial_top:    1,
+        partial_bottom: 2,
+        full:           3
     };
 
+    /**
+     * @param {Row|BaseHeader} item_to_check
+     * @return {{visibility: visibility_state, invisible_part: number}}
+     */
     function get_item_visibility_state(item_to_check) {
         var item_state = {
-            visibility:     visibility_state['none'],
+            visibility:     visibility_state.none,
             invisible_part: item_to_check.h / that.row_h
         };
 
-        var item_to_check_type = _.isInstanceOf(item_to_check, Header) ? Header : Row;
-
         _.forEach(that.items_to_draw, function (item) {
-            if (!_.isInstanceOf(item, item_to_check_type)) {
-                return true;
-            }
-
-            if (item.idx === item_to_check.idx) {
+            if (item === item_to_check) {
                 if (item.y < that.list_y && item.y + item.h > that.list_y) {
-                    item_state.visibility = visibility_state['partial_top'];
+                    item_state.visibility = visibility_state.partial_top;
                     item_state.invisible_part = (that.list_y - item.y) / that.row_h;
                 }
                 else if (item.y < that.list_y + that.list_h && item.y + item.h > that.list_y + that.list_h) {
-                    item_state.visibility = visibility_state['partial_bottom'];
+                    item_state.visibility = visibility_state.partial_bottom;
                     item_state.invisible_part = ((item.y + item.h) - (that.list_y + that.list_h)) / that.row_h;
                 }
                 else {
-                    item_state.visibility = visibility_state['full'];
+                    item_state.visibility = visibility_state.full;
                     item_state.invisible_part = 0;
                 }
                 return false;
@@ -2509,107 +2558,126 @@ function Playlist(x, y) {
         return item_state;
     }
 
-    // At worst has O(playlist_size) complexity
-    function get_item_draw_row_idx(item) {
-        var draw_row_idx = -1;
+    /**
+     * Note: at worst has O(playlist_size) complexity
+     *
+     * @param {Row|BaseHeader} target_item
+     * @return {number}
+     */
+    function get_item_draw_row_idx(target_item) {
         var cur_row = 0;
-        if (_.isInstanceOf(item, Header)) {
-            _.forEach(that.cnt.headers, function (header, i) {
-                if (item.idx === i) {
-                    draw_row_idx = cur_row;
-                    return false;
-                }
+        var is_target_row = _.isInstanceOf(target_item, Row);
 
-                cur_row += header_h_in_rows;
-                if (!header.is_collapsed) {
-                    cur_row += header.rows.length;
-                }
-            });
-        }
-        else {
-            _.forEach(that.cnt.headers, function (header) {
-                if (g_properties.show_header) {
+        function iterate_level(sub_items, target_item) {
+            if (_.isInstanceOf(_.head(sub_items), BaseHeader)) {
+                var header_h_in_rows = Math.round(_.head(sub_items).h / that.row_h);
+
+                for (var i = 0; i < sub_items.length; ++i) {
+                    var header = sub_items[i];
+                    if (header === target_item) {
+                        return true;
+                    }
+
                     cur_row += header_h_in_rows;
+
                     if (header.is_collapsed) {
+                        continue;
+                    }
+
+                    if (iterate_level(header.sub_items, target_item)) {
                         return true;
                     }
                 }
+            }
+            else { // Row
+                if (is_target_row) {
+                    for (var j = 0; j < sub_items.length; ++j) {
+                        if (target_item === sub_items[j]) {
+                            return true;
+                        }
 
-                _.forEach(header.rows, function (row) {
-                    if (item.idx === row.idx) {
-                        draw_row_idx = cur_row;
-                        return false;
+                        ++cur_row;
                     }
-                    ++cur_row;
-                });
-                if (draw_row_idx !== -1) {
-                    return false;
                 }
-            });
+                else {
+                    cur_row += sub_items.length;
+                }
+            }
+
+            return false;
         }
-        if (draw_row_idx === -1) {
-            throw new LogicError('Could not find item in drawn item list');
+
+        if (!iterate_level(g_properties.show_header ? that.cnt.sub_items : that.cnt.rows, target_item)) {
+            throw LogicError('Could not find item in drawn item list');
         }
-        return draw_row_idx;
+
+        return cur_row;
     }
 
     //</editor-fold>
 
+    /**
+     * @param {string} key 'up' or 'down'
+     */
     function start_drag_scroll(key) {
-        if (!drag_scroll_timeout_timer) {
-            drag_scroll_timeout_timer = setTimeout(function () {
-                if (!drag_scroll_repeat_timer) {
-                    drag_scroll_repeat_timer = setInterval(function () {
-                        if (!that.scrollbar.in_sbar && !selection_handler.is_dragging() || !drag_scroll_timeout_timer) {
-                            return;
-                        }
-
-                        drag_scroll_in_progress = true;
-
-                        var cur_marked_item;
-                        if (key === 'up') {
-                            that.scrollbar.shift_line(-1);
-
-                            cur_marked_item = _.head(that.items_to_draw);
-                            if (_.isInstanceOf(cur_marked_item, Header)) {
-                                collapse_handler.expand(cur_marked_item);
-                                if (collapse_handler.changed) {
-                                    that.scrollbar.scroll_to(g_properties.scroll_pos + cur_marked_item.rows.length);
-                                }
-
-                                cur_marked_item = _.head(cur_marked_item.rows);
-                            }
-
-                            selection_handler.drag(cur_marked_item, true);
-                            cur_marked_item.is_drop_boundary_reached = true;
-                        }
-                        else if (key === 'down') {
-                            that.scrollbar.shift_line(1);
-
-                            cur_marked_item = _.last(that.items_to_draw);
-                            if (_.isInstanceOf(cur_marked_item, Header)) {
-                                collapse_handler.expand(cur_marked_item);
-                                if (collapse_handler.changed) {
-                                    that.repaint();
-                                }
-
-                                cur_marked_item = _.last(that.cnt.headers[cur_marked_item.idx - 1].rows);
-                            }
-
-                            selection_handler.drag(cur_marked_item, false);
-                            cur_marked_item.is_drop_boundary_reached = true;
-                        }
-                        else {
-                            throw new ArgumentError('drag_scroll_command', key);
-                        }
-
-                        if (that.scrollbar.is_scrolled_down || that.scrollbar.is_scrolled_up) {
-                            stop_drag_scroll();
-                        }
-                    }, 50);
-                }
-            }, 350);
+        if (drag_scroll_timeout_timer) {
+            return;
         }
+
+        drag_scroll_timeout_timer = setTimeout(function () {
+            if (drag_scroll_repeat_timer) {
+                return;
+            }
+
+            drag_scroll_repeat_timer = setInterval(function () {
+                if (!that.scrollbar.in_sbar && !selection_handler.is_dragging() || !drag_scroll_timeout_timer) {
+                    return;
+                }
+
+                drag_scroll_in_progress = true;
+
+                var cur_marked_item;
+                if (key === 'up') {
+                    that.scrollbar.shift_line(-1);
+
+                    cur_marked_item = _.head(that.items_to_draw);
+                    if (_.isInstanceOf(cur_marked_item, BaseHeader)) {
+                        collapse_handler.expand(cur_marked_item);
+                        if (collapse_handler.changed) {
+                            that.scrollbar.scroll_to(g_properties.scroll_pos + cur_marked_item.get_sub_items_total_h_in_rows());
+                        }
+
+                        cur_marked_item = cur_marked_item.get_first_row();
+                    }
+
+                    selection_handler.drag(cur_marked_item, true);
+                    cur_marked_item.is_drop_boundary_reached = true;
+                }
+                else if (key === 'down') {
+                    that.scrollbar.shift_line(1);
+
+                    cur_marked_item = _.last(that.items_to_draw);
+                    if (_.isInstanceOf(cur_marked_item, BaseHeader)) {
+                        collapse_handler.expand(cur_marked_item);
+                        if (collapse_handler.changed) {
+                            that.repaint();
+                        }
+
+                        cur_marked_item = that.cnt.rows[cur_marked_item.get_first_row().idx - 1];
+                    }
+
+                    selection_handler.drag(cur_marked_item, false);
+                    cur_marked_item.is_drop_boundary_reached = true;
+                }
+                else {
+                    throw ArgumentError('drag_scroll_command', key);
+                }
+
+                if (that.scrollbar.is_scrolled_down || that.scrollbar.is_scrolled_up) {
+                    stop_drag_scroll();
+                }
+            }, 50);
+        }, 350);
     }
 
     function stop_drag_scroll() {
@@ -2626,6 +2694,10 @@ function Playlist(x, y) {
         drag_scroll_in_progress = false;
     }
 
+    /**
+     * @param {number} effect
+     * @return {number}
+     */
     function filter_effect_by_modifiers(effect) {
         var ctrl_pressed = utils.IsKeyPressed(VK_CONTROL);
         var shift_pressed = utils.IsKeyPressed(VK_SHIFT);
@@ -2655,6 +2727,7 @@ function Playlist(x, y) {
     var that = this;
 
     // Constants
+    /** @type {number} */
     var header_h_in_rows = g_properties.use_compact_header ? g_properties.rows_in_compact_header : g_properties.rows_in_header;
 
     // Window state
@@ -2663,8 +2736,9 @@ function Playlist(x, y) {
     var is_in_focus = false;
 
     // Playback state
-    /** @type {?number} */
+    /** @type {number} */
     var cur_playlist_idx = undefined;
+    /** @type {?Row} */
     var playing_item = undefined;
     /** @type {?Row} */
     var focused_item = undefined;
@@ -2674,7 +2748,7 @@ function Playlist(x, y) {
     var key_down = false;
 
     // Item events
-    /** @type {?List.Item} */
+    /** @type {?Row|?BaseHeader} */
     var last_hover_item = undefined;
     /** @type  {{x: ?number, y: ?number}} */
     var last_pressed_coord = {
@@ -2688,13 +2762,21 @@ function Playlist(x, y) {
     var drag_scroll_repeat_timer;
 
     // Scrollbar props
+    /** @type {Array<number>} float */
     var scroll_pos_list = [];
 
     // Objects
+    /** @type {?SelectionHandler} */
     var selection_handler = undefined;
+    /** @type {?QueueHandler} */
     var queue_handler = undefined;
-
-    var collapse_handler = new CollapseHandler();
+    /** @type {?CollapseHandler} */
+    var collapse_handler = undefined;
+    /**
+     * @const
+     * @type {ContentNavigationHelper}
+     */
+    var cnt_helper = this.cnt.helper;
 
     // Workaround for bug: PlayingPlaylist is equal to -1 on startup
     if (plman.PlayingPlaylist === -1) {
@@ -2707,12 +2789,14 @@ Playlist.prototype.constructor = Playlist;
 
 
 /**
+ * @final
  * @constructor
  * @extend {List.RowContent}
  */
 PlaylistContent = function () {
     List.RowContent.call(this);
 
+    /** @override */
     this.generate_items_to_draw = function (wy, wh, row_shift, pixel_shift, row_h) {
         if (!this.rows.length) {
             return [];
@@ -2726,180 +2810,947 @@ PlaylistContent = function () {
         return generate_all_items_to_draw(wy, wh, first_item);
     };
 
+    /** @override */
     this.update_items_w_size = function (w) {
         if (!g_properties.show_header) {
             List.RowContent.prototype.update_items_w_size.apply(this, [w]);
             return;
         }
 
-        this.headers.forEach(function (item) {
-            item.set_w(w);
-        });
-
-        this.rows.forEach(function (item) {
-            item.set_w(w);
-        });
-
-        this.disc_headers.forEach(function (item) {
+        this.sub_items.forEach(function (item) {
             item.set_w(w);
         });
     };
 
+    /** @override */
     this.calculate_total_h_in_rows = function () {
         if (!g_properties.show_header) {
             return List.RowContent.prototype.calculate_total_h_in_rows.apply(this);
         }
 
-        var total_height_in_rows = this.headers.length * header_h_in_rows;
-        this.headers.forEach(function (header) {
-            if (!header.is_collapsed) {
-                total_height_in_rows += header.rows.length;
+        if (!this.sub_items.length) {
+            return 0;
+        }
+
+        var total_height_in_rows = Math.round(_.head(this.sub_items).h / g_properties.row_h) * this.sub_items.length;
+        _.forEach(this.sub_items, function (item) {
+            if (!item.is_collapsed) {
+                total_height_in_rows += item.get_sub_items_total_h_in_rows();
             }
         });
 
         return total_height_in_rows;
     };
 
-    this.set_header_h_in_rows = function (header_h_in_rows_arg) {
-        header_h_in_rows = header_h_in_rows_arg;
-    };
-
+    /**
+     * @param {number} wy
+     * @param {number} wh
+     * @param {number} row_shift
+     * @param {number} pixel_shift
+     * @param {number} row_h
+     * @return {Row|BaseHeader}
+     */
     function generate_first_item_to_draw(wy, wh, row_shift, pixel_shift, row_h) {
-        var first_item = null;
-
         var start_y = wy + pixel_shift;
         var cur_row = 0;
 
-        for (var i = 0; i < that.headers.length; ++i) {
-            var header = that.headers[i];
-            if (cur_row + header_h_in_rows - 1 >= row_shift) {
-                header.set_y(start_y + (cur_row - row_shift) * row_h);
+        /**
+         * Searches sub_items for first visible item {@link ContentNavigationHelper.is_item_visible}
+         *
+         * @param {Array<BaseHeader>|Array<Row>} sub_items
+         * @return {?BaseHeader|?Row}
+         */
+        function iterate_level(sub_items) {
+            if (_.isInstanceOf(_.head(sub_items), BaseHeader)) {
+                var header_h_in_rows = Math.round(_.head(sub_items).h / row_h);
 
-                first_item = header;
-                break;
+                for (var i = 0; i < sub_items.length; ++i) {
+                    var header = sub_items[i];
+                    if (cur_row + header_h_in_rows - 1 >= row_shift && !header.dont_draw) {
+                        header.set_y(start_y + (cur_row - row_shift) * row_h);
+                        return header;
+                    }
+
+                    if (!header.dont_draw) {
+                        cur_row += header_h_in_rows;
+                    }
+
+                    if (header.is_collapsed) {
+                        continue;
+                    }
+
+                    var result = iterate_level(header.sub_items);
+                    if (result) {
+                        return result;
+                    }
+                }
+            }
+            else { // Row
+                if (cur_row + sub_items.length - 1 >= row_shift) {
+                    var row_start_idx = (cur_row > row_shift) ? 0 : row_shift - cur_row;
+                    cur_row += row_start_idx;
+
+                    var row = sub_items[row_start_idx];
+                    row.set_y(start_y + (cur_row - row_shift) * row_h);
+
+                    return row;
+                }
+
+                cur_row += sub_items.length;
             }
 
-            cur_row += header_h_in_rows;
-
-            if (header.is_collapsed) {
-                continue;
-            }
-
-            if (cur_row + header.rows.length - 1 >= row_shift) {
-                var header_row_start_idx = (cur_row > row_shift) ? 0 : row_shift - cur_row;
-                cur_row += header_row_start_idx;
-
-                var header_row = header.rows[header_row_start_idx];
-                header_row.set_y(start_y + (cur_row - row_shift) * row_h);
-
-                first_item = header_row;
-                break;
-            }
-
-            cur_row += header.rows.length;
+            return null;
         }
 
-        if (!first_item) {
-            throw new LogicError('first_item_to_draw cant be null!');
-        }
+        var first_item = iterate_level(that.sub_items);
+        assert(!_.isNil(first_item),
+            LogicError, 'first_item_to_draw can\'t be null!');
 
         return first_item;
     }
 
+    /**
+     * @param {number} wy
+     * @param {number} wh
+     * @param {Row|BaseHeader} first_item
+     * @return {Array<Row|BaseHeader>}
+     */
     function generate_all_items_to_draw(wy, wh, first_item) {
-        var items_to_draw = [];
-
-        var is_first_item_header = _.isInstanceOf(first_item, Header);
-        var is_first = true;
+        var items_to_draw = [first_item];
         var cur_y = first_item.y + first_item.h;
 
-        items_to_draw.push(first_item);
+        /**
+         *
+         * @param {Array<BaseHeader>|Array<Row>} sub_items
+         * @param {Row|BaseHeader} start_item
+         * @return {boolean} true, if start_item was used
+         */
+        function iterate_level(sub_items, start_item) {
+            var is_cur_level_header = _.isInstanceOf(_.head(sub_items), BaseHeader);
+            var start_item_used = !start_item;
 
-        var header_start_idx = is_first_item_header ? first_item.idx : first_item.header.idx;
-        for (var i = header_start_idx; i < that.headers.length; ++i) {
-            var header = that.headers[i];
-            if (!is_first) {
-                header.set_y(cur_y);
-
-                items_to_draw.push(header);
-                cur_y += header.h;
-            }
-            if (is_first && is_first_item_header) {
-                is_first = false;
-            }
-
-            if (cur_y >= wy + wh) {
-                break;
+            var leveled_start_item = start_item;
+            while (leveled_start_item && leveled_start_item.parent !== _.head(sub_items).parent) {
+                leveled_start_item = leveled_start_item.parent;
             }
 
-            if (header.is_collapsed) {
-                continue;
+            var start_idx = 0;
+            if (leveled_start_item) {
+                start_idx = _.isInstanceOf(leveled_start_item, Row) ? leveled_start_item.idx_in_header : leveled_start_item.idx;
             }
 
-            var header_rows = header.rows;
-            var header_row_start_idx = is_first ? (first_item.num_in_header - 1) : 0;
+            for (var i = start_idx; i < sub_items.length; ++i) {
+                var item = sub_items[i];
+                if (start_item_used && !item.dont_draw) {
+                    item.set_y(cur_y);
 
-            var should_break = false;
-            for (var j = header_row_start_idx; j < header_rows.length; ++j) {
-                var header_row = header_rows[j];
-                if (!is_first) {
-                    header_row.set_y(cur_y);
-                    items_to_draw.push(header_row);
-
-                    cur_y += header_row.h;
+                    items_to_draw.push(item);
+                    cur_y += item.h;
                 }
-                if (is_first) {
-                    is_first = false;
+                if (!start_item_used && item === start_item) {
+                    start_item_used = true;
                 }
 
                 if (cur_y >= wy + wh) {
-                    should_break = true;
                     break;
                 }
 
-                if (_.isInstanceOf(header_row, DiscHeader) && header_row.is_collapsed) {
-                    j += header_row.rows.length;
+                if (is_cur_level_header) {
+                    if (item.is_collapsed) {
+                        continue;
+                    }
+
+                    if (iterate_level(item.sub_items, start_item_used ? null : start_item)) {
+                        start_item_used = true;
+                    }
+
+                    if (cur_y >= wy + wh) {
+                        break;
+                    }
                 }
             }
-            if (should_break) {
-                break;
-            }
+
+            return start_item_used;
         }
+
+        iterate_level(that.sub_items, first_item);
 
         return items_to_draw;
     }
 
-    /** @type {Array<Header>} */
-    this.headers = [];
+    /**
+     * It is assumed that every sub_items array contains only items of the same single type
+     *
+     * @type {Array<Header>}
+     */
+    this.sub_items = [];
 
-    /** @type {Array<DiscHeader>} */
-    this.disc_headers = [];
+    this.helper = new ContentNavigationHelper(this);
 
     var that = this;
-
-    var header_h_in_rows = 0;
 };
 PlaylistContent.prototype = Object.create(List.RowContent.prototype);
 PlaylistContent.prototype.constructor = PlaylistContent;
 
+function getItemType(item) {
+    if (!item) {
+        return 'Item is undefined or null'
+    }
+    else if (_.isInstanceOf(item, Header)) {
+        return 'Header';
+    }
+    else if (_.isInstanceOf(item, DiscHeader)) {
+        return 'DiscHeader';
+    }
+    else if (_.isInstanceOf(item, Row)) {
+        return 'Row';
+    }
+    return 'Unknown Item Type'
+}
+
+function ContentNavigationHelper(cnt_arg) {
+    /**
+     * @param {Row|BaseHeader} item
+     * @return {?BaseHeader}
+     */
+    this.get_visible_parent = function (item) {
+        if (!item.parent || !_.isInstanceOf(item.parent, BaseHeader)) {
+            return null;
+        }
+
+        var cur_item = item;
+        do {
+            cur_item = cur_item.parent;
+        } while (cur_item.parent && cur_item.parent.is_collapsed);
+
+        return cur_item;
+    };
+
+    /**
+     * Returns true if item is not hidden by collapsed parent
+     *
+     * @param {Row|BaseHeader} item
+     * @return {boolean}
+     */
+    this.is_item_visible = function (item) {
+        if (item.parent && _.isInstanceOf(item.parent, BaseHeader)) {
+            return !item.parent.is_collapsed;
+        }
+
+        return true;
+    };
+
+    /**
+     * Returns true if item can be selected by arrow keys
+     *
+     * @param {Row|BaseHeader} item
+     * @return {boolean}
+     */
+    this.is_item_navigateable = function (item) {
+        return _.isInstanceOf(item, Row) ? true : item.is_collapsed;
+    };
+
+    /**
+     * {@link ContentNavigationHelper.is_item_navigateable}
+     *
+     * @param {Row|BaseHeader} item
+     * @param {number} direction
+     * @return {Row|BaseHeader|null}
+     */
+    this.get_navigateable_neighbour = function (item, direction) {
+        var neighbour_item = item;
+        do {
+            neighbour_item = this.get_visible_neighbour(neighbour_item, direction);
+        } while (neighbour_item && !this.is_item_navigateable(neighbour_item));
+
+        return neighbour_item;
+    };
+
+    /**
+     * {@link ContentNavigationHelper.is_item_visible}
+     *
+     * @param {Row|BaseHeader} item
+     * @param {number} direction
+     * @return {Row|BaseHeader|null}
+     */
+    this.get_visible_neighbour = function (item, direction) {
+        return direction > 0 ? this.get_next_visible_item(item) : this.get_prev_visible_item(item);
+    };
+
+    /**
+     * @param {Row|BaseHeader} item
+     * @return {Row|BaseHeader|null}
+     */
+    this.get_prev_visible_item = function (item) {
+
+        /**
+         * @param {BaseHeader} item
+         * @return {BaseHeader|Row}
+         */
+        function get_last_visible_item(item) {
+            var last_item = item;
+            while (!_.isInstanceOf(last_item, Row) && !last_item.is_collapsed) {
+                last_item = _.last(last_item.sub_items);
+            }
+
+            return last_item;
+        }
+
+        /**
+         * @param {BaseHeader} header
+         * @return {Row|BaseHeader|null}
+         */
+        function get_prev_item_before_header(header) {
+            if (header === _.head(header.parent.sub_items)) {
+                return _.isInstanceOf(header.parent, BaseHeader) ? header.parent : null;
+            }
+
+            return get_last_visible_item(header.parent.sub_items[header.idx - 1]);
+        }
+
+        /**
+         * @param {Row} row
+         * @return {Row|BaseHeader|null}
+         */
+        function get_prev_item_before_row(row) {
+            if (row === _.head(row.parent.sub_items)) {
+                return row.parent;
+            }
+
+            return row.parent.sub_items[row.idx_in_header - 1];
+        }
+
+        if (!g_properties.show_header) {
+            if (item === _.head(cnt.rows)) {
+                return null;
+            }
+
+            return cnt.rows[item.idx - 1];
+        }
+
+        if (_.isInstanceOf(item, BaseHeader)) {
+            return get_prev_item_before_header(item);
+        }
+
+        return get_prev_item_before_row(item);
+    };
+
+    /**
+     * @param {Row|BaseHeader} item
+     * @return {Row|BaseHeader|null}
+     */
+    this.get_next_visible_item = function (item) {
+
+        /**
+         * @param {Row|BaseHeader} item
+         * @return {Row|BaseHeader|null}
+         */
+        function get_next_item(item) {
+            var next_item = item;
+            while (next_item) {
+                if (!next_item.parent) {
+                    return null;
+                }
+
+                if (next_item !== _.last(next_item.parent.sub_items)) {
+                    var next_item_idx = _.isInstanceOf(next_item, Row) ? next_item.idx_in_header : next_item.idx;
+                    return next_item.parent.sub_items[next_item_idx + 1];
+                }
+
+                next_item = next_item.parent;
+            }
+
+            return next_item;
+        }
+
+        if (!g_properties.show_header) {
+            if (item === _.last(cnt.rows)) {
+                return null;
+            }
+
+            return cnt.rows[item.idx + 1];
+        }
+
+        if (_.isInstanceOf(item, BaseHeader) && !item.is_collapsed) {
+            return _.head(item.sub_items);
+        }
+
+        return get_next_item(item);
+    };
+
+    /**
+     * @const
+     * @type {PlaylistContent}
+     */
+    var cnt = cnt_arg;
+}
+
+//<editor-fold desc="BaseHeader">
+
 /**
+ * @param {List.Content|BaseHeader} parent
+ * @param {number} x
+ * @param {number} y
+ * @param {number} w
+ * @param {number} h
+ * @param {number} idx
+ *
+ * @abstract
  * @constructor
  * @extends {List.Item}
  */
-function Header(x, y, w, h, idx, row_h_arg) {
+function BaseHeader(parent, x, y, w, h, idx) {
     List.Item.call(this, x, y, w, h);
+
+    /**
+     * @const
+     * @type {BaseHeader|List.Content}
+     */
+    this.parent = parent;
+
+    /**
+     * @const
+     * @type {number}
+     */
+    this.idx = idx;
+
+    /** @type {boolean} */
+    this.is_collapsed = false;
+
+    /**
+     * @type {number}
+     * @private
+     */
+    this.row_count = 0;
+
+    /** @type{Array<Row>|Array<BaseHeader>} */
+    this.sub_items = [];
+}
+
+BaseHeader.prototype = Object.create(List.Item.prototype);
+BaseHeader.prototype.constructor = BaseHeader;
+
+/**
+ * @param {Array<Row>|Array<BaseHeader>} items
+ * @return {number} Number of processed items
+ * @abstract
+ */
+BaseHeader.prototype.initialize_items = function (items) {
+    throw LogicError("initialize_contents not implemented");
+};
+
+/**
+ * @override
+ * @abstract
+ */
+BaseHeader.prototype.draw = function (gr) {
+    // Need this useless method to suppress warning =(
+    throw LogicError("draw not implemented");
+};
+
+/** @override */
+BaseHeader.prototype.set_w = function (w) {
+    List.Item.prototype.set_w.apply(this, [w]);
+
+    this.sub_items.forEach(function (item) {
+        item.set_w(w);
+    });
+};
+
+BaseHeader.prototype.get_first_row = function () {
+    if (!this.sub_items.length) {
+        return null;
+    }
+
+    var item = _.head(this.sub_items);
+    while (item && !_.isInstanceOf(item, Row)) {
+        item = _.head(item.sub_items);
+    }
+
+    return item;
+};
+
+BaseHeader.prototype.get_row_indexes = function () {
+    var row_indexes = [];
+
+    if (_.isInstanceOf(_.head(this.sub_items), Row)) {
+        this.sub_items.forEach(function (item) {
+            row_indexes.push(item.idx);
+        });
+    }
+    else {
+        this.sub_items.forEach(function (item) {
+            row_indexes = row_indexes.concat(item.get_row_indexes());
+        });
+    }
+
+    return row_indexes;
+};
+
+/**
+ * @return {number}
+ */
+BaseHeader.prototype.get_sub_items_total_h_in_rows = function () {
+    if (!this.sub_items.length) {
+        return 0;
+    }
+
+    if (_.isInstanceOf(_.head(this.sub_items), Row)) {
+        return this.sub_items.length;
+    }
+
+    var h_in_rows = Math.round(_.head(this.sub_items).h / g_properties.row_h) * this.sub_items.length;
+    _.forEach(this.sub_items, function (item) {
+        if (!item.is_collapsed) {
+            h_in_rows += item.get_sub_items_total_h_in_rows();
+        }
+    });
+
+    return h_in_rows;
+};
+
+BaseHeader.prototype.has_selected_items = function () {
+    var is_function = typeof _.head(this.sub_items).has_selected_items === "function";
+    return _.some(this.sub_items, function (item) {
+        return is_function ? item.has_selected_items() : item.is_selected();
+    });
+};
+
+BaseHeader.prototype.is_completely_selected = function () {
+    var is_function = typeof _.head(this.sub_items).is_completely_selected === "function";
+    return _.every(this.sub_items, function (item) {
+        return is_function ? item.is_completely_selected() : item.is_selected();
+    });
+};
+
+BaseHeader.prototype.is_playing = function () {
+    var is_function = typeof _.head(this.sub_items).is_playing === "function";
+    return _.some(this.sub_items, function (item) {
+        return is_function ? item.is_playing() : item.is_playing;
+    });
+};
+
+BaseHeader.prototype.is_focused = function () {
+    var is_function = typeof _.head(this.sub_items).is_focused === "function";
+    return _.some(this.sub_items, function (item) {
+        return is_function ? item.is_focused() : item.is_focused;
+    });
+};
+
+BaseHeader.prototype.on_mouse_lbtn_dblclk = function (x, y, m) {
+    plman.ExecutePlaylistDefaultAction(plman.ActivePlaylist, this.get_first_row().idx);
+}
+
+/**
+ * @return {number} float number
+ */
+BaseHeader.prototype.get_duration = function () {
+    var duration_in_seconds = 0;
+
+    if (_.isInstanceOf(_.head(this.sub_items), Row)) {
+        _.forEach(this.sub_items, function (item) {
+            duration_in_seconds += item.metadb.Length;
+        });
+    }
+    else {
+        _.forEach(this.sub_items, function (item) {
+            duration_in_seconds += item.get_duration();
+        });
+    }
+
+    return duration_in_seconds;
+};
+
+//</editor-fold>
+
+function DiscHeader(parent, x, y, w, h, idx) {
+    BaseHeader.call(this, parent, x, y, w, h, idx);
+
+    /** @override */
+    this.initialize_items_old = function (rows_to_process) {
+        this.sub_items = [];
+        if (!rows_to_process.length) {
+            return 0;
+        }
+        var tfo = fb.TitleFormat('$ifgreater(%totaldiscs%,1,%discnumber%,)[%discsubtitle%]');
+        this.disc_title = tfo.EvalWithMetadb(_.head(rows_to_process).metadb);
+        if (this.disc_title === '') {
+            this.dont_draw = true;
+        }
+        for (i=0, len = rows_to_process.length; i < len; ++i) {
+            var item = rows_to_process[i];
+            var cur_cd = tfo.EvalWithMetadb(item.metadb);
+            if (this.disc_title !== cur_cd) {
+                break;
+            }
+            item.idx_in_header = i;
+            // noinspection JSBitwiseOperatorUsage
+            item.is_odd = !(i & 1);
+            item.parent = this;
+
+            this.sub_items.push(item);
+        }
+
+        _.dispose(tfo);
+
+        if (this.sub_items.length) {
+            this.metadb = this.sub_items[0].metadb;
+        }
+        return this.sub_items.length;
+    };
+
+    /** @override */
+    this.initialize_items = function (rows_with_data) {
+        this.sub_items = [];
+        if (!rows_with_data.length) {
+            return 0;
+        }
+
+        var first_data = _.head(rows_with_data)[1];
+        _.forEach(rows_with_data, _.bind(function (item, i) {
+            if (first_data !== item[1]) {
+                return false;
+            }
+
+            var row = item[0];
+
+            row.idx_in_header = i;
+            // noinspection JSBitwiseOperatorUsage
+            row.is_odd = !(i & 1);
+            row.parent = this;
+
+            this.sub_items.push(row);
+        }, this));
+
+        this.disc_title = first_data;
+
+        return this.sub_items.length;
+    };
 
     //public:
     this.draw = function (gr, top, bottom) {
+        gr.FillSolidRect(this.x, this.y, this.w, this.h, g_pl_colors.background);
+
+        if (this.is_collapsed || (this.is_odd && g_properties.alternate_row_color)) {
+            gr.FillSolidRect(this.x, this.y + 1, this.w, this.h - 1, g_pl_colors.row_alternate);
+        }
+
+        var cur_x = this.x + 18;
+        var right_pad = 10;
+        var testRect = false;
+
+        var title_font = g_pl_fonts.title_normal;
+        var title_color = g_pl_colors.title_normal;
+
+        if (this.is_selected()) {
+            title_color = g_pl_colors.title_selected;
+            title_font = g_pl_fonts.title_selected;
+        }
+
+        var disc_header_text_format = g_string_format.v_align_center | g_string_format.trim_ellipsis_char | g_string_format.no_wrap;
+        var disc_text = this.disc_title; //_.tf('[Disc %discnumber% $if('+ tf.disc_subtitle+', \u2014 ,) ]['+ tf.disc_subtitle +']', that.sub_items[0].metadb);
+        gr.DrawString(disc_text, title_font, title_color, cur_x, this.y, this.w, this.h, disc_header_text_format);
+        var disc_w = Math.ceil(gr.MeasureString(disc_text, title_font, 0, 0, 0, 0).Width + 5);
+
+        var tracks_text = this.sub_items.length + ' Track' + (this.sub_items.length > 1 ? 's' : '') + ' - ' + get_duration();
+
+        var tracks_w = Math.ceil(gr.MeasureString(tracks_text, title_font, 0, 0, 0, 0).Width + 5);
+        var tracks_x = this.x + this.w - tracks_w - right_pad;
+
+        gr.DrawString(tracks_text, title_font, title_color, tracks_x, this.y, tracks_w, this.h, g_string_format.v_align_center | g_string_format.h_align_far);
+
+        if (this.is_collapsed) {
+            var line_y = Math.round(this.y + this.h / 2) - 2;
+            gr.DrawLine(cur_x + disc_w, line_y, this.x + this.w - tracks_w - 10, line_y, 1, _.RGBA(100,100,100,100));
+            line_y += 4;
+            gr.DrawLine(cur_x + disc_w, line_y, this.x + this.w - tracks_w - 10, line_y, 1, _.RGBA(100,100,100,100));
+        } else {
+            var line_y = Math.round(this.y + this.h / 2);
+            gr.DrawLine(cur_x + disc_w, line_y, this.x + this.w - tracks_w - 10, line_y, 1, _.RGBA(100,100,100,100));
+        }
+    };
+
+    this.is_selected = function () {
+        return _.every(that.sub_items, function (row) {
+            return row.is_selected();
+        });
+    };
+
+    this.toggle_collapse = function () {
+        this.is_collapsed = !this.is_collapsed;
+
+        // this.header.collapse();
+        // this.header.expand();
+    }
+
+    this.on_mouse_lbtn_dblclk = function(x, y, m, collapse_handler) {
+        collapse_handler.toggle_collapse(this);
+    }
+
+    function get_duration() {
+        var duration_in_seconds = 0;
+
+        for (var i = 0; i < that.sub_items.length; ++i) {
+            duration_in_seconds += that.sub_items[i].metadb.Length;
+        }
+
+        if (!duration_in_seconds) {
+            return '';
+        }
+
+        return utils.FormatDuration(duration_in_seconds);
+    }
+
+    this.idx = idx;
+
+    this.num_in_header = 0;
+    this.dont_draw = false;
+
+    this.disc_title = '';
+    var that = this;
+}
+
+DiscHeader.prototype = Object.create(BaseHeader.prototype);
+DiscHeader.prototype.constructor = Header;
+
+/**
+ * @param {Array<Row>} rows_to_process
+ * @param {IFbMetadbHandleList} rows_metadb
+ * @return {Array<Array>} Has the following format Array<[row,row_data]>
+ */
+DiscHeader.prepare_initialization_data = function (rows_to_process, rows_metadb) {
+    // var tfo = fb.TitleFormat("$if2([%discnumber%]','[%subtitle%],)");
+    // var tfo = fb.TitleFormat('$ifgreater(%totaldiscs%,1,%discnumber%,)[%discsubtitle%]');
+    var tfo = fb.TitleFormat('[Disc %discnumber% $if('+ tf.disc_subtitle+', \u2014 ,) ]['+ tf.disc_subtitle +']');
+    var disc_data = tfo.EvalWithMetadbs(rows_metadb).toArray();
+    _.dispose(tfo);
+
+    return _.zip(rows_to_process, disc_data);
+};
+
+/**
+ * @param {BaseHeader} parent
+ * @param {number} x
+ * @param {number} y
+ * @param {number} w
+ * @param {number} h
+ * @param {Array<Array>} prepared_rows Has the following format Array<[row,row_data]>
+ * @param {number} rows_to_process_count
+ * @return {Array<DiscHeader>}
+ */
+DiscHeader.create_headers = function (parent, x, y, w, h, prepared_rows, rows_to_process_count) {
+    function has_valid_data(rows_with_data, rows_to_check_count) {
+        for (var i = 0; i < rows_to_check_count; ++i) {
+            if (!_.isEmpty(rows_with_data[i][1])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    if (!has_valid_data(prepared_rows, rows_to_process_count)) {
+        _.trimArray(prepared_rows, rows_to_process_count, true);
+        return [];
+    }
+
+    var prepared_rows_copy = _.clone(prepared_rows);
+    prepared_rows_copy.length = rows_to_process_count;
+
+    var header_idx = 0;
+    var headers = [];
+    var start_length = prepared_rows_copy.length;
+    while (prepared_rows_copy.length) {
+        var header = new DiscHeader(parent, x, y, w, h, header_idx);
+        var processed_items = header.initialize_items(prepared_rows_copy);
+
+        _.trimArray(prepared_rows_copy, processed_items, true);
+
+        headers.push(header);
+        ++header_idx;
+    }
+
+    _.trimArray(prepared_rows, rows_to_process_count, true);
+
+    return headers;
+};
+
+/**
+ * @param {List.Content|BaseHeader} parent
+ * @param {number} x
+ * @param {number} y
+ * @param {number} w
+ * @param {number} h
+ * @param {number} idx
+ *
+ * @final
+ * @constructor
+ * @extends {BaseHeader}
+ */
+function Header(parent, x, y, w, h, idx) {
+    BaseHeader.call(this, parent, x, y, w, h, idx);
+
+    /** @override */
+    this.initialize_items_old = function (rows_to_process) {
+        this.sub_items = [];
+        if (!rows_to_process.length) {
+            return 0;
+        }
+
+        var query = grouping_handler.get_query();
+        if (query && grouping_handler.show_cd()) {
+            query = query.replace(/%discnumber%/, '').replace(/%totaldiscs%/, '');
+        }
+
+        var tfo = fb.TitleFormat(query ? query : ''); // workaround a bug, because of which '' is sometimes treated as null :\
+        var owned_rows = [];
+
+        // TODO: replace with EvalWithMetadbs somehow
+
+        var group = tfo.EvalWithMetadb(_.head(rows_to_process).metadb);
+        for (i = 0, len = rows_to_process.length; i < len; ++i) {
+            var item = rows_to_process[i];
+            var cur_group = tfo.EvalWithMetadb(item.metadb);
+            if (group !== cur_group) {
+                break;
+            }
+            item.idx_in_header = i;
+            if (g_properties.show_header) {
+                // noinspection JSBitwiseOperatorUsage
+                item.is_odd = !(i & 1);
+            }
+            item.parent = this;
+            owned_rows.push(item);
+        }
+
+        _.dispose(tfo);
+
+        metadb = _.head(owned_rows).metadb;
+
+        var sub_headers = create_cd_headers(owned_rows);
+        if (sub_headers.length) {
+            this.sub_items = sub_headers;
+        }
+        else {
+            this.sub_items = owned_rows;
+
+            for (i = 0, len = owned_rows.length; i < len; ++i) {
+                var item = owned_rows[i];
+                item.idx_in_header = i;
+                if (g_properties.show_header) {
+                    // noinspection JSBitwiseOperatorUsage
+                    item.is_odd = !(i & 1);
+                }
+                item.parent = this;
+            }
+        }
+
+        this.initialize_hyperlinks();
+
+        return owned_rows.length;
+    };
+
+    /** @override */
+    this.initialize_items = function (rows_with_data) {
+        this.sub_items = [];
+
+        var rows_with_header_data = rows_with_data[0];
+        if (!rows_with_header_data.length) {
+            return 0;
+        }
+
+        var first_data = _.head(rows_with_header_data)[1];
+
+        var owned_rows = [];
+        _.forEach(rows_with_header_data, _.bind(function (item) {
+            if (first_data !== item[1]) {
+                return false;
+            }
+
+            owned_rows.push(item[0]);
+        }, this));
+
+        metadb = _.head(owned_rows).metadb;
+
+        var sub_headers = [];
+        if (g_properties.show_disc_header && grouping_handler.show_cd()) {
+            var rows_with_discheader_data = rows_with_data[1];
+            sub_headers = create_cd_headers(rows_with_discheader_data, owned_rows.length);
+            if (sub_headers.length) {
+                this.sub_items = sub_headers;
+            }
+        }
+
+        if (sub_headers.length) {
+            this.sub_items = sub_headers;
+        }
+        else {
+            this.sub_items = owned_rows;
+
+            _.forEach(owned_rows, _.bind(function (item, i) {
+                item.idx_in_header = i;
+                if (g_properties.show_header) {
+                    // noinspection JSBitwiseOperatorUsage
+                    item.is_odd = !(i & 1);
+                }
+                item.parent = this;
+            }, this));
+        }
+
+        return owned_rows.length;
+    };
+
+    /**
+     * @param {Array} prepared_rows
+     * @param {number} rows_to_proccess_count
+     * @return {Array<DiscHeader>}
+     */
+    function create_cd_headers(prepared_rows, rows_to_proccess_count) {
+        return DiscHeader.create_headers(that, that.x, 0, that.w, g_properties.row_h, prepared_rows, rows_to_proccess_count);
+    }
+
+    function create_cd_headers_old(rows) {
+        var rows_copy = _.clone(rows);
+        var header_idx = 0;
+        var headers = [];
+        while (rows_copy.length) {
+            var header = new DiscHeader(that, that.x, 0, that.w, g_properties.row_h, header_idx);
+            var processed_items = header.initialize_items(rows_copy);
+
+            rows_copy.reverse();
+            rows_copy.length = rows_copy.length - processed_items; ///< much faster then _.drop or slice, since it does not create a new array
+            rows_copy.reverse();
+
+            headers.push(header);
+            ++header_idx;
+        }
+
+        var has_cd = _.some(headers, function (item) {
+            return item.disc_title !== '';
+        });
+
+        return has_cd ? headers : [];
+    }
+
+    /** @override */
+    this.draw = function (gr, top, bottom) {
+        // drawProfiler = fb.CreateProfiler('Header.draw items:' + this.sub_items.length);
         if (g_properties.use_compact_header) {
             this.draw_compact_header(gr)
         }
         else {
             this.draw_normal_header(gr, top, bottom);
         }
+        // drawProfiler.Print();
     };
 
+    /**
+     * @param {IGdiGraphics} gr
+     */
     this.draw_normal_header = function (gr, top, bottom) {
+        if (!hyperlinks_initialized) {
+            this.initialize_hyperlinks(gr);
+        }
+
         var artist_color = g_pl_colors.artist_normal;
         var album_color = g_pl_colors.album_normal;
         var info_color = g_pl_colors.info_normal;
@@ -2925,14 +3776,24 @@ function Header(x, y, w, h, idx, row_h_arg) {
         var grClip = clipImg.GetGraphics();
 
         grClip.FillSolidRect(0, 0, this.w, this.h, g_pl_colors.background); // Solid background for ClearTypeGridFit text rendering
-
         if (this.has_selected_items()) {
             grClip.FillSolidRect(0, 0, this.w, this.h, g_pl_colors.row_selected);
         }
 
+        if (this.is_playing()) {
+            var p = 6;  // from art below
+            if (this.has_selected_items()) {
+                grClip.FillSolidRect(0, p, 8, this.h - p * 2, col.accent);
+                // grClip.FillGradRect(5, p, this.w / 2, this.h - p * 2, 180, g_pl_colors.row_selected, col.accent);
+            } else {
+                grClip.FillSolidRect(0, p, 8, this.h - p * 2, col.darkAccent);
+                // grClip.FillGradRect(5, p, this.w / 2, this.h - p * 2, 180, g_pl_colors.background, col.darkAccent);
+            }
+        }
+
         grClip.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
 
-        if (this.is_collapsed && is_focused()) {
+        if (this.is_collapsed && this.is_focused()) {
             grClip.DrawRect(2, 2, this.w - 4, this.h - 4, 1, line_color);
         }
 
@@ -2944,7 +3805,7 @@ function Header(x, y, w, h, idx, row_h_arg) {
         if (g_properties.show_album_art) {
             if (!this.is_art_loaded()) {
                 var cached_art = Header.art_cache.get_image_for_meta(metadb);
-                if (cached_art){
+                if (cached_art) {
                     this.assign_art(cached_art);
                 }
             }
@@ -2975,6 +3836,7 @@ function Header(x, y, w, h, idx, row_h_arg) {
                 }
                 else if (!this.is_art_loaded()) {
                     grClip.DrawString('LOADING', g_pl_fonts.cover, line_color, art_box_x, art_box_y, art_box_size, art_box_size, g_string_format.align_center);
+                    alreadyDrawn = true;
                 }
                 else {// null
                     grClip.DrawString('NO COVER', g_pl_fonts.cover, _.RGB(100, 100, 100), art_box_x, art_box_y, art_box_size, art_box_size, g_string_format.align_center);
@@ -3011,11 +3873,13 @@ function Header(x, y, w, h, idx, row_h_arg) {
             if (date_text) {
                 var date_w = Math.ceil(gr.MeasureString(date_text, date_font, 0, 0, 0, 0).Width + 5);
                 var date_x = this.w - date_w - 5;
-                var date_y = 0;
-                var date_h = this.h - 4;
 
-                if (date_x > left_pad) {
+                if (!hyperlinks.date && date_x > left_pad) {
+                    var date_y = 0;
+                    var date_h = this.h - 4;
                     grClip.DrawString(date_text, date_font, date_color, date_x, date_y, date_w, date_h, g_string_format.v_align_center);
+                } else {
+                    hyperlinks.date.draw(grClip, date_color);
                 }
 
                 part2_right_pad += this.w - date_x;
@@ -3038,8 +3902,11 @@ function Header(x, y, w, h, idx, row_h_arg) {
                 }
 
                 var artist_text_format = g_string_format.v_align_far | g_string_format.trim_ellipsis_char | g_string_format.no_wrap;
-                grClip.DrawString(artist_text, artist_font, artist_color, artist_x, 0, artist_w, artist_h, artist_text_format);
-
+                if (is_radio || !hyperlinks.artist)  {
+                    grClip.DrawString(artist_text, artist_font, artist_color, artist_x, 0, artist_w, artist_h, artist_text_format);
+                } else {
+                    hyperlinks.artist.draw(grClip, artist_color);
+                }
                 //part1_cur_x += artist_w;
             }
         }
@@ -3083,8 +3950,8 @@ function Header(x, y, w, h, idx, row_h_arg) {
         //---> INFO
         if (g_properties.show_group_info) {
             var info_x = part3_cur_x;
-            var info_y = Math.ceil(2 * part_h);
-            var info_h = row_h;
+            var info_y = 2 * part_h;
+            var info_h = part_h;//row_h;
             var info_w = this.w - info_x;
 
             var bitspersample = _.tf('$Info(bitspersample)', metadb);
@@ -3117,23 +3984,55 @@ function Header(x, y, w, h, idx, row_h_arg) {
                 codec = (_.startsWith(metadb.RawPath, '3dydfy:') || _.startsWith(metadb.RawPath, 'fy+')) ? 'yt' : metadb.Path;
             }
 
-            var track_count = this.rows.length - this.discs.length;
-            var genre = is_radio ? '' : (grouping_handler.get_query_name() !== 'artist' ? '[%genre% | ]' : '');
+            var track_count = this.sub_items.length;
+            var genre_text_w = 0;
+            if (!is_radio && grouping_handler.get_query_name() !== 'artist') {
+                var genre_text = _.tf('[%genre%]', metadb).replace(/, /g,' \u2022 ');
+                genre_text_w = Math.ceil(gr.MeasureString(genre_text, g_pl_fonts.info, 0, 0, 0, 0).Width + 3);
+                if (!hyperlinks.genre0) {
+                    grClip.DrawString(genre_text, g_pl_fonts.info, info_color, info_x, info_y, info_w, info_h, info_text_format);
+                } else {
+                    var i = 0;
+                    while (hyperlinks['genre' + i]) {
+                        if (i > 0) {
+                            grClip.DrawString(' \u2022 ', g_pl_fonts.info, info_color, genre_hyperlink.x + genre_hyperlink.get_w(), info_y, 8, info_h);
+                        }
+                        genre_hyperlink = hyperlinks['genre' + i];
+                        genre_hyperlink.draw(grClip, info_color);
+                        i++;
+                    }
+                }
+            }
             var disc_number = (grouping_handler.show_cd() && _.tf('[%totaldiscs%]', metadb) !== '1') ? _.tf('[ | Disc: %discnumber%/%totaldiscs%]', metadb) : '';
-            var info_text = _.tf(genre + codec + disc_number + '[ | %replaygain_album_gain%]', metadb) + (is_radio ? '' : ' | ' + track_count + (track_count === 1 ? ' Track' : ' Tracks'));
-            if (get_duration()) {
-                info_text += ' | Time: ' + get_duration();
+            var info_text = _.tf(codec + disc_number + '[ | %replaygain_album_gain%]', metadb) + (is_radio ? '' : ' | ' + track_count + (track_count === 1 ? ' Track' : ' Tracks'));
+            if (genre_text_w) {
+                info_text = '| ' + info_text;
+            }
+            if (this.get_duration()) {
+                info_text += ' | Time: ' + utils.FormatDuration(this.get_duration());
             }
 
             var info_text_format = g_string_format.trim_ellipsis_char | g_string_format.no_wrap;
-            grClip.DrawString(info_text, g_pl_fonts.info, info_color, info_x, info_y, info_w, info_h, info_text_format);
+            grClip.DrawString(info_text, g_pl_fonts.info, info_color, info_x + genre_text_w, info_y, info_w, info_h, info_text_format);
 
             //---> Record labels
-            var info_text_w = Math.ceil(gr.MeasureString(info_text, g_pl_fonts.info, 0, 0, 0, 0).Width + 5);    // TODO: Mordred - should only call MeasureString once
-            var label_string = $('$if2(%label%,[%publisher%])', metadb).replace(/, /g,' \u2022 ');
-            var label_w = Math.ceil(gr.MeasureString(label_string, g_pl_fonts.info, 0, 0, 0, 0).Width + 10);
-            if (info_w > label_w + info_text_w) {
-                grClip.DrawString(label_string, g_pl_fonts.info, info_color, this.w - label_w - 10, info_y, label_w, info_h, g_string_format.h_align_far);
+            if (!hyperlinks.label0) {
+                var info_text_w = Math.ceil(gr.MeasureString(info_text, g_pl_fonts.info, 0, 0, 0, 0).Width + 5);    // TODO: Mordred - should only call MeasureString once
+                var label_string = $('$if2(%label%,[%publisher%])', metadb).replace(/, /g,' \u2022 ');
+                var label_w = Math.ceil(gr.MeasureString(label_string, g_pl_fonts.info, 0, 0, 0, 0).Width + 10);
+                if (info_w > label_w + info_text_w) {
+                    grClip.DrawString(label_string, g_pl_fonts.info, info_color, this.w - label_w - 10, info_y, label_w, info_h, g_string_format.h_align_far);
+                }
+            } else {
+                var i = 0;
+                while (hyperlinks['label' + i]) {
+                    if (i > 0) {
+                        grClip.DrawString(' \u2022 ', g_pl_fonts.info, info_color, label_hyperlink.x + label_hyperlink.w + 1, info_y, 8, info_h);
+                    }
+                    label_hyperlink = hyperlinks['label' + i];
+                    label_hyperlink.draw(grClip, info_color);
+                    i++;
+                }
             }
 
             //---> Info line
@@ -3161,6 +4060,7 @@ function Header(x, y, w, h, idx, row_h_arg) {
         }
 
         clipImg.ReleaseGraphics(grClip);
+
         var y = this.y;
         var h = this.h;
         var srcY = 0;
@@ -3171,10 +4071,14 @@ function Header(x, y, w, h, idx, row_h_arg) {
         } else if (this.y + this.h > bottom) {
             h = bottom - this.y;
         }
-        gr.DrawImage(clipImg, this.x, y, this.w, h, 0, srcY, this.w, h, 0, 255);
+        gr.DrawImage(clipImg, this.x, y, this.w, h, 0, srcY, this.w, h);
         clipImg.Dispose();
+
     };
 
+    /**
+     * @param {IGdiGraphics} gr
+     */
     this.draw_compact_header = function (gr) {
         var artist_color = g_pl_colors.artist_normal;
         var album_color = g_pl_colors.album_normal;
@@ -3209,7 +4113,7 @@ function Header(x, y, w, h, idx, row_h_arg) {
 
         grClip.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
 
-        if (this.is_collapsed && is_focused()) {
+        if (this.is_collapsed && this.is_focused()) {
             grClip.DrawRect(2, 2, this.w - 4, this.h - 4, 1, line_color);
         }
 
@@ -3288,6 +4192,9 @@ function Header(x, y, w, h, idx, row_h_arg) {
         clipImg.Dispose();
     };
 
+    /**
+     * @param {IGdiBitmap} image
+     */
     this.assign_art = function (image) {
         if (!image || !g_properties.show_album_art) {
             art = null;
@@ -3315,250 +4222,208 @@ function Header(x, y, w, h, idx, row_h_arg) {
         Header.art_cache.add_image_for_meta(art, metadb);
     };
 
+    /**
+     * @return {boolean}
+     */
     this.is_art_loaded = function () {
         return art !== undefined;
     };
 
-    this.init_rows = function (rows_to_process) {
-        this.rows = [];
-        if (!rows_to_process.length) {
-            return;
+    this.initialize_hyperlinks = function (gr) {
+        hyperlinks_initialized = true;
+        var date_font = g_pl_fonts.date;
+        var artist_font = g_pl_fonts.artist_normal;
+
+        date_query = '$year($if2(%original release date%,%date%))'; // Mordred: my date query
+
+        var date_text = _.tf(date_query, metadb);
+        if (date_text) {
+            var date_w = Math.ceil(gr.MeasureString(date_text, date_font, 0, 0, 0, 0).Width + 5);
+            var date_x = -date_w - 5;
+            var date_y = Math.floor((this.h / 2) - 17);
+
+            hyperlinks.date = new Hyperlink(date_text, date_font, 'date', date_x, date_y, this.w);
         }
 
-        var query = grouping_handler.get_query();
-        var tfo = fb.TitleFormat(query ? query : ''); // workaround a bug, because of which '' is sometimes treated as null :\
-
-        var group = tfo.EvalWithMetadb(_.head(rows_to_process).metadb);
-        _.forEach(rows_to_process, _.bind(function (item, i) {
-            var cur_group = tfo.EvalWithMetadb(item.metadb);
-            if (group !== cur_group) {
-                return false;
-            }
-            item.num_in_header = i + 1;
-            if (g_properties.show_header) {
-                item.is_odd = (i + 1) % 2;
-            }
-            item.header = this;
-            this.rows.push(item);
-        }, this));
-
-        _.dispose(tfo);
-
-        metadb = _.head(this.rows).metadb;
-    };
-
-    this.init_disc_rows = function (that) {
-        var disc, lastDisc = '';
-        var tfo = fb.TitleFormat('$ifgreater(%totaldiscs%,1,,false)[' + tf.disc_subtitle + ']');
-        var disc_group = fb.TitleFormat('%album artist% %album% %edition% %discnumber%' + tf.disc_subtitle);
-        var disc_nr = 0;
-        var startIndex;
-        var disc_header = null;
-        var rows_copy = [];
-
-        for (var i = 0; i < this.rows.length; i++) {
-            if (tfo.EvalWithMetadb(this.rows[i].metadb) !== 'false') {
-                disc = disc_group.EvalWithMetadb(this.rows[i].metadb);
-                if (disc != lastDisc) {
-                    if (disc_header) {
-                        rows_copy.splice(startIndex, 0, disc_header);
-                    } else if (!rows_copy.length) {
-                        // only copy if we have to
-                        rows_copy = this.rows.slice();
-                    }
-                    disc_header = new DiscHeader(that.list_x, 0, that.list_w, that.row_h, this.rows[i].metadb, this);
-                    lastDisc = disc;
-                    startIndex = i + disc_nr;	// index in header where DiscHeader will be inserted
-                    disc_nr++;
+        var left_pad = 16 + this.h;
+        if (!_.startsWith(metadb.RawPath, 'http')) {
+            // don't create for radio
+            var artist_text = _.tf(grouping_handler.get_title_query(), metadb);
+            if (artist_text) {
+                var artist_x = left_pad;
+                var artist_w = this.w - artist_x;
+                var artist_h = this.h / 3;
+                if (!g_properties.show_group_info) {
+                    artist_w -= part2_right_pad + 5;
+                    artist_h -= 5;
                 }
-                this.rows[i].disc = disc_nr - 1;    // already incremented
-                disc_header.rows.push(this.rows[i]);
+
+                hyperlinks.artist = new Hyperlink(artist_text, artist_font, 'artist', artist_x, 5, this.w);
+            }
+        }
+
+        // var info_text_w = Math.ceil(gr.MeasureString(info_text, g_pl_fonts.info, 0, 0, 0, 0).Width + 5);    // TODO: Mordred - should only call MeasureString once
+        // var label_string = $('$if2(%label%,[%publisher%])', metadb).replace(/, /g,' \u2022 ');
+        var label_string = _.tf('$if2(%label%,[%publisher%])', metadb).replace(', Inc.', '= Inc.');
+        var labels = label_string.split(', ');
+        var label_left = -5;    // -5 offset from right edge
+        label_y = Math.round(2 * this.h / 3);
+        for (var i = labels.length - 1; i >= 0; --i) {
+            labels[i] = labels[i].replace('= Inc.', ', Inc.');
+            var label_w = gr.MeasureString(labels[i], g_pl_fonts.info, 0, 0, 0, 0).Width + 10;
+            label_left -= label_w;
+            hyperlinks['label' + i] = new Hyperlink(labels[i], g_pl_fonts.info, 'label', label_left, label_y, this.w);
+            label_left -= 6;  // spacing between labels
+        }
+
+        var genre_string = _.tf('%genre%', metadb);
+        var genres = genre_string.split(', ');
+        var genre_left = left_pad;
+        var genre_y = label_y;
+        for (var i = 0; i < genres.length; i++) {
+            var genre_w = gr.MeasureString(genres[i], g_pl_fonts.info, 0, 0, 0, 0).Width + 10;
+            hyperlinks['genre' + i] = new Hyperlink(genres[i], g_pl_fonts.info, 'genre', genre_left, genre_y, this.w);
+            genre_left += genre_w;
+        }
+
+        for (h in hyperlinks) {
+            hyperlinks[h].set_y(this.y);
+        }
+    }
+
+    this.on_mouse_move = function (x, y, m) {
+        var handled = false;
+        var needs_redraw = false;
+
+        for (h in hyperlinks) {
+            if (hyperlinks[h].trace(x - that.x, y)) {
+                if (hyperlinks[h].state !== HyperlinkStates.Hovered) {
+                    hyperlinks[h].state = HyperlinkStates.Hovered;
+                    needs_redraw = true;
+                }
+                handled = true;
             } else {
-                if (disc_header) {
-                    // special case with single disc, but discsubtitle only on some tracks
-                    rows_copy.splice(startIndex, 0, disc_header);
-                    disc_header = null;
+                if (hyperlinks[h].state !== HyperlinkStates.Normal) {
+                    hyperlinks[h].state = HyperlinkStates.Normal;
+                    needs_redraw = true;
                 }
             }
         }
-        if (disc_header) {
-            rows_copy.splice(startIndex, 0, disc_header);
+
+        if (needs_redraw) {
+            this.repaint();
         }
-        if (disc_nr) {
-            this.rows = rows_copy;
-            for (var i = 0; i < this.rows.length; i++) {
-                if (_.isInstanceOf(this.rows[i], DiscHeader)) {
-                    this.discs.push(this.rows[i]);
-                }
-                this.rows[i].num_in_header = i + 1;
-                this.rows[i].is_odd = (i + 1) % 2;
+
+        return handled;
+    }
+
+    this.on_mouse_lbtn_down = function (x, y, m) {
+        var handled = false;
+
+        for (h in hyperlinks) {
+            if (hyperlinks[h].trace(x - that.x, y)) {
+                hyperlinks[h].click();
+                handled = true;
+                break;
             }
-        }
-        _.dispose(tfo);
-        _.dispose(disc_group);
+        };
+
+        return handled;
     }
 
-    this.has_selected_items = function () {
-        return _.some(that.rows, function (row) {
-            return row.is_selected();
-        });
-    };
+    this.set_y = function (y) {
+        List.Item.prototype.set_y.apply(this, [y]);
 
-    this.is_completely_selected = function () {
-        return _.every(that.rows, function (row) {
-            return row.is_selected();
-        });
-    };
-
-    this.is_playing = function () {
-        return _.some(that.rows, function (row) {
-            return row.is_playing;
-        });
-    };
-
-    //private:
-    function is_focused() {
-        return _.some(that.rows, function (row) {
-            return row.is_focused;
-        });
+        for (h in hyperlinks) {
+            hyperlinks[h].set_y(y);
+        }
     }
 
-    function get_duration() {
-        var duration_in_seconds = 0;
+    this.set_w = function (w) {
+        // console.log('this.set_w:', w);
+        List.Item.prototype.set_w.apply(this, [w]);
 
-        for (var i = 0; i < that.rows.length; ++i) {
-            if (!_.isInstanceOf(that.rows[i], DiscHeader)) {
-                duration_in_seconds += that.rows[i].metadb.Length;
-            }
+        this.sub_items.forEach(function (item) {
+            item.set_w(w);
+        });
+
+        for (h in hyperlinks) {
+            hyperlinks[h].set_w(w);
         }
-
-        if (!duration_in_seconds) {
-            return '';
-        }
-
-        return utils.FormatDuration(duration_in_seconds);
     }
-
-    //public:
-    /** @const {number} */
-    this.idx = idx;
-
-    /** @type{Array<Row|DiscHeader>} */
-    this.rows = [];
-
-    this.is_collapsed = false;
-
-    /** @type{Array<DiscHeader>} */
-    this.discs = [];
 
     //private:
     var that = this;
-    var row_h = row_h_arg;
+
+    /**
+     * @const
+     * @type {number}
+     */
     var art_max_size = that.h - 16;
 
+    /** @type {IFbMetadbHandle} */
     var metadb;
+    /**
+     * @type {?IGdiBitmap}
+     */
     var art = undefined; // undefined > Not Loaded; null > Loaded & Not Found; !_.isNil > Loaded & Found
     var grouping_handler = Header.grouping_handler;
+
+    var hyperlinks = {};
+    var hyperlinks_initialized = false;
+
+    var header_image = undefined;
 }
 
-Header.prototype = Object.create(List.Item.prototype);
+Header.prototype = Object.create(BaseHeader.prototype);
 Header.prototype.constructor = Header;
 
-function DiscHeader(x, y, w, h, metadb, header) {
-    List.Item.call(this, x, y, w, h);
-
-    //public:
-    this.draw = function (gr, top, bottom) {
-        gr.FillSolidRect(this.x, this.y, this.w, this.h, g_pl_colors.background);
-
-        if (this.is_odd && g_properties.alternate_row_color) {
-            gr.FillSolidRect(this.x, this.y + 1, this.w, this.h - 1, g_pl_colors.row_alternate);
-        }
-
-        var cur_x = this.x + 18;
-        var right_pad = 10;
-        var testRect = false;
-
-        var title_font = g_pl_fonts.title_normal;
-        var title_color = g_pl_colors.title_normal;
-
-        if (this.is_selected()) {
-            title_color = g_pl_colors.title_selected;
-            title_font = g_pl_fonts.title_selected;
-        }
-
-        var disc_header_text_format = g_string_format.v_align_center | g_string_format.trim_ellipsis_char | g_string_format.no_wrap;
-        var disc_text = _.tf('[Disc %discnumber% $if('+ tf.disc_subtitle+', \u2014 ,) ]['+ tf.disc_subtitle +']', that.metadb);
-        gr.DrawString(disc_text, title_font, title_color, cur_x, this.y, this.w, this.h, disc_header_text_format);
-        var disc_w = Math.ceil(gr.MeasureString(disc_text, title_font, 0, 0, 0, 0).Width + 5);
-
-        var tracks_text = this.rows.length + ' Track' + (this.rows.length > 1 ? 's' : '') + ' - ' + get_duration();
-
-        var tracks_w = Math.ceil(gr.MeasureString(tracks_text, title_font, 0, 0, 0, 0).Width + 5);
-        var tracks_x = this.x + this.w - tracks_w - right_pad;
-
-        gr.DrawString(tracks_text, title_font, title_color, tracks_x, this.y, tracks_w, this.h, g_string_format.v_align_center | g_string_format.h_align_far);
-
-        if (this.is_collapsed) {
-            var line_y = Math.round(this.y + this.h / 2) - 2;
-            gr.DrawLine(cur_x + disc_w, line_y, this.x + this.w - tracks_w - 5, line_y, 1, _.RGBA(100,100,100,100));
-            line_y += 4;
-            gr.DrawLine(cur_x + disc_w, line_y, this.x + this.w - tracks_w - 5, line_y, 1, _.RGBA(100,100,100,100));
-        } else {
-            var line_y = Math.round(this.y + this.h / 2);
-            gr.DrawLine(cur_x + disc_w, line_y, this.x + this.w - tracks_w - 5, line_y, 1, _.RGBA(100,100,100,100));
-        }
-    };
-
-    this.is_selected = function () {
-        return _.every(that.rows, function (row) {
-            return row.is_selected();
-        });
-    };
-
-    this.toggle_collapse = function () {
-        this.is_collapsed = !this.is_collapsed;
-
-        this.header.collapse();
-        this.header.expand();
+/**
+ * @param {Array<Row>} rows_to_process
+ * @param {IFbMetadbHandleList} rows_metadb
+ * @return {Array} Has the following format [Array<[row,row_data]>, disc_header_prepared_data]
+ */
+Header.prepare_initialization_data = function (rows_to_process, rows_metadb) {
+    var query = Header.grouping_handler.get_query();
+    if (g_properties.show_disc_header && query && Header.grouping_handler.show_cd()) {
+        query = query.replace(/%discnumber%/, '').replace(/%totaldiscs%/, '').replace(/%subtitle%/, '');
     }
 
-    function get_duration() {
-        var duration_in_seconds = 0;
+    var tfo = fb.TitleFormat(query ? query : ''); // workaround a bug, because of which '' is sometimes treated as null :\
+    var rows_data = tfo.EvalWithMetadbs(rows_metadb).toArray();
+    _.dispose(tfo);
 
-        for (var i = 0; i < that.rows.length; ++i) {
-            duration_in_seconds += that.rows[i].metadb.Length;
-        }
+    var prepared_disc_data = g_properties.show_disc_header ? DiscHeader.prepare_initialization_data(rows_to_process, rows_metadb) : [];
 
-        if (!duration_in_seconds) {
-            return '';
-        }
+    return [_.zip(rows_to_process, rows_data), prepared_disc_data];
+};
 
-        return utils.FormatDuration(duration_in_seconds);
+/**
+ * @param {PlaylistContent} parent
+ * @param {number} x
+ * @param {number} y
+ * @param {number} w
+ * @param {number} h
+ * @param {Array} prepared_rows Has the following format [Array<[row,row_data]>, disc_header_prepared_data]
+ * @return {Array<Header>}
+ */
+Header.create_headers = function (parent, x, y, w, h, prepared_rows) {
+    var prepared_header_rows = prepared_rows[0];
+
+    var header_idx = 0;
+    var headers = [];
+    while (prepared_header_rows.length) {
+        var header = new Header(parent, x, y, w, h, header_idx);
+        var processed_rows_count = header.initialize_items(prepared_rows);
+
+        _.trimArray(prepared_header_rows, processed_rows_count, true);
+
+        headers.push(header);
+        ++header_idx;
     }
 
-    this.rows = [];
-
-    this.x = x;
-    this.y = y;
-    this.w = w;
-    this.h = h;
-    this.idx = -1;
-    this.metadb = metadb;	// metadb of first disc child
-    this.header = header;
-
-    this.num_in_header = 0;
-
-    this.is_collapsed = false;
-    this.is_playing = false;
-    this.is_focused = false;
-    this.is_odd = false;
-
-    var that = this;
-}
-
-DiscHeader.prototype = Object.create(List.Item.prototype);
-DiscHeader.prototype.constructor = Header;
+    return headers;
+};
 
 /**
  * @param {number} x
@@ -3619,8 +4484,8 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
         //--->
         if (g_properties.show_focused_row && this.is_focused) {
             // last item is cropped
-            var rect_h = this.is_cropped ? this.h - 2 : this.h - 1;
-            gr.DrawRect(this.x + 1, this.y, this.w - 2, rect_h, 1, row_color_focus);
+            // var rect_h = this.is_cropped ? this.h - 2 : this.h - 1;
+            // gr.DrawRect(this.x + 1, this.y, this.w - 2, rect_h, 1, row_color_focus);
         }
 
         if (this.is_drop_top_selected) {
@@ -3651,7 +4516,6 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
             var length_w = 50;
             if (length_text) {
                 var length_x = this.x + this.w - length_w - right_pad;
-                // console.log('row: ', this.w);
 
                 gr.DrawString(length_text, title_font, title_color, length_x, this.y, length_w, this.h, g_string_format.h_align_far | g_string_format.v_align_center);
                 testRect && gr.DrawRect(length_x, this.y - 1, length_w, this.h, 1, _.RGBA(155, 155, 255, 250));
@@ -3671,9 +4535,14 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
         //---> COUNT
         if (g_properties.show_playcount) {
             if (_.isNil(count_text)) {
-                count_text = (is_radio ? '' : _.tf('%play_count%', this.metadb));
-                if (count_text) {
-                    count_text = _.toNumber(count_text) === 0 ? '' : (count_text + ' |');
+                if (is_radio) {
+                    count_text = '';
+                }
+                else {
+                    count_text = (is_radio ? '' : _.tf('%play_count%', this.metadb));
+                    if (count_text) {
+                        count_text = _.toNumber(count_text) === 0 ? '' : (count_text + ' |');
+                    }
                 }
             }
 
@@ -3708,7 +4577,14 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
 
         //---> TITLE init
         if (_.isNil(title_text)) {
-            var track_num_query = '$if2(%tracknumber%,$pad_right(' + this.num_in_header + ',2,0)).';
+            // var track_num_query = '$if2(%tracknumber%,$pad_right(' + this.num_in_header + ',2,0)).';
+            // Mordred's track query
+            var track_num_query = '$if(%tracknumber%,%tracknumber%,$pad_right(' + (this.idx_in_header + 1) + ',2,0)).';
+            if (pref.use_vinyl_nums) {
+				track_num_query = tf.vinyl_track;
+			}if (this.is_playing) {
+                track_num_query = '      ';
+            }
             var title_query = track_num_query + '  %title%';
             title_text = (fb.IsPlaying && this.is_playing && is_radio) ? _.tfe(title_query) : _.tf(title_query, metadb);
         }
@@ -3716,14 +4592,18 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
         //---> TITLE ARTIST init
         if (_.isNil(title_artist_text)) {
             title_artist_text = _.tf('[  \u25AA  %track artist%]', metadb);
+            title_artist_text = _.tf('[  \u25AA  $if($strcmp(' + tf.artist + ',%artist%),$ifgreater($len(%album artist%),1,$ifgreater($len(%track artist%),1,%track artist%,),),' + tf.artist + ')]', metadb);
         }
 
         //---> TITLE draw
         {
-            var title_w = this.w - right_pad - 10;
+            var title_w = this.w - right_pad - 22;
 
             var title_text_format = g_string_format.v_align_center | g_string_format.trim_ellipsis_char | g_string_format.no_wrap;
             gr.DrawString(title_text + (title_artist_text ? '' : queue_text), title_font, title_color, cur_x, this.y, title_w, this.h, title_text_format);
+            if (this.is_playing) {
+                gr.DrawString(fb.IsPaused ? g_guifx.pause : g_guifx.play, ft.guifx, title_color, cur_x + 1, this.y, title_w, this.h, title_text_format);
+            }
 
             testRect && gr.DrawRect(this.x, this.y - 1, title_w, this.h, 1, _.RGBA(155, 155, 255, 250));
 
@@ -3765,6 +4645,11 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
         rating.reset_queried_data();
     };
 
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @return {boolean}
+     */
     this.rating_trace = function (x, y) {
         if (!g_properties.show_rating) {
             return false;
@@ -3772,35 +4657,58 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
         return rating.trace(x, y);
     };
 
+    /**
+     * @param {number} x
+     * @param {number} y
+     */
     this.rating_click = function (x, y) {
-        if (!g_properties.show_rating) {
-            throw new LogicError('Rating_click was called, when there was no rating object.\nShould use trace before calling click');
-        }
+        assert(g_properties.show_rating,
+            LogicError, 'Rating_click was called, when there was no rating object.\nShould use trace before calling click');
+
         rating.click(x, y);
     };
 
+    /**
+     * @return {boolean}
+     */
     this.is_selected = function () {
         return plman.IsPlaylistItemSelected(cur_playlist_idx, this.idx);
     };
 
     function initialize_rating() {
-        rating = new Rating(0, that.y, 0, that.h, metadb);
-        rating.x = that.x + that.w - rating.w - rating_right_pad;
+        rating = new Rating(0, that.y, that.w - rating_right_pad, that.h, metadb);
+        rating.x = that.x + that.w - (rating.w + rating_right_pad);
     }
 
-    //public:
-    /** @const {number} */
+    this.clear_title_text = function () {
+        title_text = null;
+    }
+
+    /**
+     * @const
+     * @type {number}
+     */
     this.idx = idx;
-    /** @const {IFbMetadbHandle} */
+    /**
+     * @const
+     * @type {IFbMetadbHandle}
+     */
     this.metadb = metadb;
 
     //const after header creation
+    /** @type {boolean} */
     this.is_odd = false;
-    this.num_in_header = undefined;
-    this.header = undefined;
-    this.disc = undefined;
+    /** @type {number} */
+    this.idx_in_header = undefined;
+    /**
+     * @const
+     * @type {BaseHeader}
+     */
+    this.parent = undefined;
 
+    /** @type {?number} */
     this.queue_idx = undefined;
+    /** @type {number} */
     this.queue_idx_count = 0;
 
     //state
@@ -3811,13 +4719,25 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
     this.is_drop_top_selected = false;
     this.is_cropped = false;
 
-    //private:
     var that = this;
 
+    /**
+     * @const
+     * @type {number}
+     */
     var cur_playlist_idx = cur_playlist_idx_arg;
 
+    /**
+     * @const
+     * @type {number}
+     */
     var rating_left_pad = 0;
+    /**
+     * @const
+     * @type {number}
+     */
     var rating_right_pad = 10;
+    /** @type {?Rating} */
     var rating = undefined;
 
     /** @type {?string} */
@@ -3831,31 +4751,51 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
 
     initialize_rating();
 }
-
 Row.prototype = Object.create(List.Item.prototype);
 Row.prototype.constructor = Row;
 
-
 /**
+ *
+ * @param {number} x
+ * @param {number} y
+ * @param {number} max_w
+ * @param {number} h
+ * @param {IFbMetadbHandle} metadb
  * @constructor
  */
-function Rating(x, y, w, h, metadb) {
+function Rating(x, y, max_w, h, metadb) {
+    /**
+     * @param {IGdiGraphics} gr
+     * @param {number} color
+     */
     this.draw = function (gr, color) {
+        var cur_rating = this.get_rating();
+        var cur_rating_x = this.x;
+
         for (var j = 0; j < 5; j++) {
-            var cur_rating_x = this.x + j * btn_w;
-            if (j < this.get_rating()) {
+            if (j < cur_rating) {
                 gr.DrawString('\u2605', g_pl_fonts.rating_set, color, cur_rating_x, this.y - 1, btn_w, this.h, g_string_format.align_center);
             }
             else {
                 gr.DrawString('\u2219', g_pl_fonts.rating_not_set, color, cur_rating_x, this.y - 1, btn_w, this.h, g_string_format.align_center);
             }
+            cur_rating_x += btn_w;
         }
     };
 
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @return {boolean}
+     */
     this.trace = function (x, y) {
         return x >= this.x && x < this.x + this.w && y >= this.y && y < this.y + this.h;
     };
 
+    /**
+     * @param {number} x
+     * @param {number} y
+     */
     this.click = function (x, y) {
         if (!this.trace(x, y)) {
             return;
@@ -3876,12 +4816,15 @@ function Rating(x, y, w, h, metadb) {
             }
         }
         else {
-            fb.RunContextCommandWithMetadb((current_rating === new_rating) ? '<not set>' : ('Rating/' + new_rating), this.metadb);
+            fb.RunContextCommandWithMetadb('Rating/' + (current_rating === new_rating ? '<not set>' : new_rating), this.metadb);
         }
 
         rating = (current_rating === new_rating) ? 0 : new_rating;
     };
 
+    /**
+     * @return {number}
+     */
     this.get_rating = function () {
         if (_.isNil(rating)) {
             var current_rating;
@@ -3902,60 +4845,72 @@ function Rating(x, y, w, h, metadb) {
         rating = undefined;
     };
 
-    //const:
-    /** @const {number} */
+    /**
+     * @const
+     * @type {number}
+     */
     var btn_w = 14;
 
-    //public:
+    /**
+     * @const
+     * @type {IFbMetadbHandle}
+     */
     this.metadb = metadb;
 
-    /** @const {number} */
+    /** @type {number} */
     this.x = x;
-    /** @const {number} */
+    /** @type {number} */
     this.y = y;
-    /** @const {number} */
-    this.w = btn_w * 5;
-    /** @const {number} */
+    /**
+     * @const
+     * @type {number}
+     */
+    this.w = Math.min(btn_w * 5, max_w);
+    /**
+     * @const
+     * @type {number}
+     */
     this.h = h;
 
-    //private:
+    /** @type {?number} */
     var rating = undefined;
 }
 
 /**
+ * @param {PlaylistContent} cnt_arg
+ * @param {number} cur_playlist_idx_arg
  * @constructor
  */
-function SelectionHandler(rows_arg, cur_playlist_idx_arg) {
+function SelectionHandler(cnt_arg, cur_playlist_idx_arg) {
     this.initialize_selection = function () {
         selected_indexes = [];
-        rows.forEach(function (item, i) {
+        _.forEach(rows, function (item, i) {
             if (plman.IsPlaylistItemSelected(cur_playlist_idx, item.idx)) {
                 selected_indexes.push(i);
             }
         });
     };
 
-    // changes focus and selection
+    /**
+     * @param {Row|BaseHeader} item
+     * @param {boolean=} [ctrl_pressed=false]
+     * @param {boolean=} [shift_pressed=false]
+     */
     this.update_selection = function (item, ctrl_pressed, shift_pressed) {
-        if (!item) {
-            throw new LogicError('update_selection was called with undefined item');
-        }
+        assert(!_.isNil(item),
+            LogicError, 'update_selection was called with undefined item');
 
         if (!ctrl_pressed && !shift_pressed) {
             selected_indexes = [];
             last_single_selected_index = undefined;
         }
 
-        if (_.isInstanceOf(item, Header)) {
-            update_selection_with_header(item, ctrl_pressed, shift_pressed);
+        var visible_item = cnt_helper.is_item_visible(item) ? item : cnt_helper.get_visible_parent(item);
+        if (_.isInstanceOf(visible_item, BaseHeader)) {
+            update_selection_with_header(visible_item, ctrl_pressed, shift_pressed);
         }
         else {
-            if (item.header.is_collapsed) {
-                update_selection_with_header(item.header, ctrl_pressed, shift_pressed);
-            }
-            else {
-                update_selection_with_row(item, ctrl_pressed, shift_pressed);
-            }
+            update_selection_with_row(/** @type {Row}*/ visible_item, ctrl_pressed, shift_pressed);
         }
 
         selected_indexes.sort(numeric_ascending_sort);
@@ -3981,10 +4936,16 @@ function SelectionHandler(rows_arg, cur_playlist_idx_arg) {
         plman.ClearPlaylistSelection(cur_playlist_idx);
     };
 
+    /**
+     * @return {boolean}
+     */
     this.has_selected_items = function () {
         return !!selected_indexes.length;
     };
 
+    /**
+     * @return {number}
+     */
     this.selected_items_count = function () {
         return selected_indexes.length;
     };
@@ -3999,21 +4960,20 @@ function SelectionHandler(rows_arg, cur_playlist_idx_arg) {
 
         var effect = fb.DoDragDrop(cur_playlist_selection, g_drop_effect.copy | g_drop_effect.move | g_drop_effect.link);
 
-        function can_handle_move_drop(){
+        function can_handle_move_drop() {
             // We can handle the 'move drop' properly only when playlist is still in the same state
             return cur_playlist_size === plman.PlaylistItemCount(cur_playlist_idx)
                 && _.isEqual(cur_selected_indexes, selected_indexes);
         }
 
-        if ( g_drop_effect.none === effect && can_handle_move_drop()) {
+        if (g_drop_effect.none === effect && can_handle_move_drop()) {
             // This needs special handling, because on NT, DROPEFFECT_NONE
             // is returned for some move operations, instead of DROPEFFECT_MOVE.
             // See Q182219 for the details.
 
             var items_to_remove = [];
             var playlist_items = plman.GetPlaylistItems(cur_playlist_idx);
-            _.forEach(cur_selected_indexes, function(idx)
-            {
+            _.forEach(cur_selected_indexes, function (idx) {
                 var cur_item = playlist_items.Item(idx);
                 if (_.startsWith(cur_item.RawPath, 'file://') && !fso.FileExists(cur_item.Path)) {
                     items_to_remove.push(idx);
@@ -4026,8 +4986,7 @@ function SelectionHandler(rows_arg, cur_playlist_idx_arg) {
                 plman.RemovePlaylistSelection(cur_playlist_idx);
             }
         }
-        else if (g_drop_effect.move === effect && can_handle_move_drop())
-        {
+        else if (g_drop_effect.move === effect && can_handle_move_drop()) {
             plman.RemovePlaylistSelection(cur_playlist_idx);
         }
 
@@ -4049,15 +5008,26 @@ function SelectionHandler(rows_arg, cur_playlist_idx_arg) {
         is_internal_drag_n_drop_active = false;
     };
 
+    /**
+     * @return {boolean}
+     */
     this.is_dragging = function () {
         return is_dragging;
     };
 
+    /**
+     * @return {boolean}
+     */
     this.is_internal_drag_n_drop_active = function () {
         return is_internal_drag_n_drop_active;
     };
 
-    // calls repaint
+    /**
+     * Also calls repaint
+     *
+     * @param {?Row} hover_row
+     * @param {boolean} is_above
+     */
     this.drag = function (hover_row, is_above) {
         if (_.isNil(hover_row)) {
             clear_last_hover_row();
@@ -4070,12 +5040,12 @@ function SelectionHandler(rows_arg, cur_playlist_idx_arg) {
 
         var is_drop_top_selected = is_above;
         var is_drop_bottom_selected = !is_above;
-        var is_drop_boundary_reached = hover_row.num_in_header === 0 || (!is_above && hover_row.num_in_header === rows.length - 1);
+        var is_drop_boundary_reached = hover_row.idx === 0 || (!is_above && hover_row.idx === rows.length - 1);
 
         if (is_internal_drag_n_drop_active && !utils.IsKeyPressed(VK_CONTROL)) {
             // Can't move selected item on itself
-            var is_item_above_selected = hover_row.num_in_header !== 0 && rows[hover_row.num_in_header - 1].is_selected();
-            var is_item_below_selected = hover_row.num_in_header !== (rows.length - 1) && rows[hover_row.num_in_header + 1].is_selected();
+            var is_item_above_selected = hover_row.idx !== 0 && rows[hover_row.idx - 1].is_selected();
+            var is_item_below_selected = hover_row.idx !== (rows.length - 1) && rows[hover_row.idx + 1].is_selected();
             is_drop_top_selected &= !hover_row.is_selected() && !is_item_above_selected;
             is_drop_bottom_selected &= !hover_row.is_selected() && !is_item_below_selected;
         }
@@ -4084,7 +5054,7 @@ function SelectionHandler(rows_arg, cur_playlist_idx_arg) {
 
         var needs_repaint = false;
         if (last_hover_row) {
-            if (last_hover_row.num_in_header === cur_hover_item.num_in_header) {
+            if (last_hover_row.idx === cur_hover_item.idx) {
                 needs_repaint = last_hover_row.is_drop_top_selected !== is_drop_top_selected
                     || last_hover_row.is_drop_bottom_selected !== is_drop_bottom_selected
                     || last_hover_row.is_drop_boundary_reached !== is_drop_boundary_reached;
@@ -4109,10 +5079,16 @@ function SelectionHandler(rows_arg, cur_playlist_idx_arg) {
         last_hover_row = cur_hover_item;
     };
 
+    /**
+     * @return {boolean}
+     */
     this.can_drop = function () {
         return !plman.IsPlaylistLocked(cur_playlist_idx);
     };
 
+    /**
+     * @param {boolean} copy_selection
+     */
     this.drop = function (copy_selection) {
         if (!is_dragging) {
             return;
@@ -4148,6 +5124,9 @@ function SelectionHandler(rows_arg, cur_playlist_idx_arg) {
         }
     };
 
+    /**
+     * @param {IDropTargetAction} action
+     */
     this.external_drop = function (action) {
         plman.ClearPlaylistSelection(cur_playlist_idx);
 
@@ -4230,6 +5209,9 @@ function SelectionHandler(rows_arg, cur_playlist_idx_arg) {
         plman.SetPlaylistFocusItem(cur_playlist_idx, insert_idx);
     };
 
+    /**
+     * @param {number} playlist_idx
+     */
     this.send_to_playlist = function (playlist_idx) {
         plman.UndoBackup(playlist_idx);
         plman.ClearPlaylistSelection(playlist_idx);
@@ -4252,30 +5234,14 @@ function SelectionHandler(rows_arg, cur_playlist_idx_arg) {
         move_selection(Math.min(rows.length, _.last(selected_indexes) + 2));
     };
 
-    // changes focus and selection
+    /**
+     * @param {Row} row
+     * @param {boolean} ctrl_pressed
+     * @param {boolean} shift_pressed
+     */
     function update_selection_with_row(row, ctrl_pressed, shift_pressed) {
         if (shift_pressed) {
-            var a = 0,
-                b = 0;
-
-            if (_.isNil(last_single_selected_index)) {
-                last_single_selected_index = plman.GetPlaylistFocusItemIndex(cur_playlist_idx);
-                if (-1 === last_single_selected_index){
-                    last_single_selected_index = 0;
-                }
-            }
-
-            var last_selected_header = rows[last_single_selected_index].header;
-            if (last_single_selected_index < row.idx) {
-                a = last_selected_header.is_collapsed ? _.head(last_selected_header.rows).idx : last_single_selected_index;
-                b = row.idx;
-            }
-            else {
-                a = row.idx;
-                b = last_selected_header.is_collapsed ? _.last(last_selected_header.rows).idx : last_single_selected_index;
-            }
-
-            selected_indexes = _.range(a, b + 1);
+            selected_indexes = get_shift_selection(row.idx);
 
             plman.ClearPlaylistSelection(cur_playlist_idx);
             plman.SetPlaylistSelection(cur_playlist_idx, selected_indexes, true);
@@ -4309,35 +5275,16 @@ function SelectionHandler(rows_arg, cur_playlist_idx_arg) {
         plman.SetPlaylistFocusItem(cur_playlist_idx, row.idx);
     }
 
-    // changes focus and selection
+    /**
+     * @param {BaseHeader} header
+     * @param {boolean} ctrl_pressed
+     * @param {boolean} shift_pressed
+     */
     function update_selection_with_header(header, ctrl_pressed, shift_pressed) {
-        var row_indexes = [];
-        header.rows.forEach(function (row) {
-            row_indexes.push(row.idx);
-        });
+        var row_indexes = header.get_row_indexes();
 
         if (shift_pressed) {
-            var a = 0,
-                b = 0;
-
-            if (_.isNil(last_single_selected_index)) {
-                last_single_selected_index = plman.GetPlaylistFocusItemIndex(cur_playlist_idx);
-                if (-1 === last_single_selected_index){
-                    last_single_selected_index = 0;
-                }
-            }
-
-            var last_selected_header = rows[last_single_selected_index].header;
-            if (last_single_selected_index < _.head(header.rows).idx) {
-                a = last_selected_header.is_collapsed ? _.head(last_selected_header.rows).idx : last_single_selected_index;
-                b = _.head(header.rows).idx;
-            }
-            else {
-                a = _.head(header.rows).idx;
-                b = last_selected_header.is_collapsed ? _.last(last_selected_header.rows).idx : last_single_selected_index;
-            }
-
-            selected_indexes = _.union(_.range(a, b + 1), row_indexes);
+            selected_indexes = _.union(get_shift_selection(_.head(row_indexes)), row_indexes);
         }
         else if (ctrl_pressed) {
             var is_selected = _.difference(row_indexes, selected_indexes).length === 0;
@@ -4347,11 +5294,11 @@ function SelectionHandler(rows_arg, cur_playlist_idx_arg) {
             else {
                 selected_indexes = _.union(selected_indexes, row_indexes);
             }
-            last_single_selected_index = _.head(row_indexes).idx;
+            last_single_selected_index = _.head(row_indexes);
         }
         else {
             selected_indexes = row_indexes;
-            last_single_selected_index = _.head(row_indexes).idx;
+            last_single_selected_index = _.head(row_indexes);
         }
 
         plman.ClearPlaylistSelection(cur_playlist_idx);
@@ -4359,6 +5306,45 @@ function SelectionHandler(rows_arg, cur_playlist_idx_arg) {
         if (row_indexes.length) {
             plman.SetPlaylistFocusItem(cur_playlist_idx, _.head(row_indexes));
         }
+    }
+
+    /**
+     * @param {number} selected_idx
+     */
+    function get_shift_selection(selected_idx) {
+        var a = 0,
+            b = 0;
+
+        if (_.isNil(last_single_selected_index)) {
+            last_single_selected_index = plman.GetPlaylistFocusItemIndex(cur_playlist_idx);
+            if (-1 === last_single_selected_index) {
+                last_single_selected_index = 0;
+            }
+        }
+
+        if (cnt_helper.is_item_visible(rows[last_single_selected_index])) {
+            if (last_single_selected_index < selected_idx) {
+                a = last_single_selected_index;
+                b = selected_idx;
+            }
+            else {
+                a = selected_idx;
+                b = last_single_selected_index;
+            }
+        }
+        else {
+            var last_selected_header = cnt_helper.get_visible_parent(rows[last_single_selected_index]);
+            if (last_single_selected_index < selected_idx) {
+                a = _.head(last_selected_header.get_row_indexes());
+                b = selected_idx;
+            }
+            else {
+                a = selected_idx;
+                b = _.last(last_selected_header.get_row_indexes());
+            }
+        }
+
+        return _.range(a, b + 1);
     }
 
     function clear_last_hover_row() {
@@ -4370,6 +5356,9 @@ function SelectionHandler(rows_arg, cur_playlist_idx_arg) {
         }
     }
 
+    /**
+     * @param {number} new_idx
+     */
     function move_selection(new_idx) {
         plman.UndoBackup(cur_playlist_idx);
 
@@ -4398,6 +5387,9 @@ function SelectionHandler(rows_arg, cur_playlist_idx_arg) {
         }
     }
 
+    /**
+     * @return {boolean}
+     */
     function is_selection_contiguous() {
         var is_contiguous = true;
         _.forEach(selected_indexes, function (item, i) {
@@ -4413,33 +5405,56 @@ function SelectionHandler(rows_arg, cur_playlist_idx_arg) {
         return is_contiguous;
     }
 
+    /**
+     * @param {number} a
+     * @param {number} b
+     * @return {number}
+     */
     function numeric_ascending_sort(a, b) {
         return (a - b);
     }
 
-    /** @const {Array<Row>} */
-    var rows = rows_arg;
-    /** @const {number} */
+    /**
+     * @const
+     * @type {ContentNavigationHelper}
+     */
+    var cnt_helper = cnt_arg.helper;
+
+    /**
+     * @const
+     * @type {Array<Row>}
+     */
+    var rows = cnt_arg.rows;
+    /**
+     * @const
+     * @type {number}
+     */
     var cur_playlist_idx = cur_playlist_idx_arg;
 
+    /** @type {Array<number>} */
     var selected_indexes = [];
     /** @type {?number} */
     var last_single_selected_index = undefined;
 
+    /** @type {boolean} */
     var is_dragging = false;
+    /** @type {boolean} */
     var is_internal_drag_n_drop_active = false;
+    /** @type {?Row} */
     var last_hover_row = undefined;
 
     this.initialize_selection();
 }
 
 /**
+ * @param {PlaylistContent} cnt_arg
  * @constructor
  */
-function CollapseHandler() {
-    this.initialize = function (headers_arg) {
-        headers = headers_arg;
+function CollapseHandler(cnt_arg) {
+    this.on_content_change = function () {
+        headers = cnt.sub_items;
         this.changed = false;
+
         if (g_properties.collapse_on_playlist_switch) {
             if (g_properties.auto_colapse) {
                 this.collapse_all_but_now_playing()
@@ -4450,32 +5465,38 @@ function CollapseHandler() {
         }
     };
 
+    /**
+     * @param {BaseHeader} item
+     */
     this.toggle_collapse = function (item) {
         this.changed = true;
-        item.is_collapsed = !item.is_collapsed;
+        set_collapsed_state_recursive(item, !item.is_collapsed);
 
         trigger_callback();
     };
 
+    /**
+     * @param {BaseHeader} item
+     */
     this.collapse = function (item) {
-        this.changed = item.is_collapsed !== true;
-        item.is_collapsed = true;
+        this.changed = set_collapsed_state_recursive(item, true);
 
         trigger_callback();
     };
 
+    /**
+     * @param {BaseHeader} item
+     */
     this.expand = function (item) {
-        this.changed = item.is_collapsed !== false;
-        item.is_collapsed = false;
+        this.changed = set_collapsed_state_recursive(item, false);
 
         trigger_callback();
     };
 
     this.collapse_all = function () {
         this.changed = false;
-        headers.forEach(_.bind(function (item) {
-            this.changed |= item.is_collapsed !== true;
-            item.is_collapsed = true;
+        _.forEach(headers, _.bind(function (item) {
+            this.changed |= set_collapsed_state_recursive(item, true);
         }, this));
 
         trigger_callback();
@@ -4483,14 +5504,12 @@ function CollapseHandler() {
 
     this.collapse_all_but_now_playing = function () {
         this.changed = false;
-        headers.forEach(_.bind(function (item) {
+        _.forEach(headers, _.bind(function (item) {
             if (item.is_playing()) {
-                this.changed |= item.is_collapsed !== false;
-                item.is_collapsed = false;
+                this.changed |= set_collapsed_state_recursive(item, false);
                 return;
             }
-            this.changed |= item.is_collapsed !== true;
-            item.is_collapsed = true;
+            this.changed |= set_collapsed_state_recursive(item, true);
         }, this));
 
         trigger_callback();
@@ -4498,14 +5517,16 @@ function CollapseHandler() {
 
     this.expand_all = function () {
         this.changed = false;
-        headers.forEach(_.bind(function (item) {
-            this.changed |= item.is_collapsed !== false;
-            item.is_collapsed = false;
+        _.forEach(headers, _.bind(function (item) {
+            this.changed |= set_collapsed_state_recursive(item, false);
         }, this));
 
         trigger_callback();
     };
 
+    /**
+     * @param {function()} on_collapse_change_callback_arg
+     */
     this.set_callback = function (on_collapse_change_callback_arg) {
         on_collapse_change_callback = on_collapse_change_callback_arg;
     };
@@ -4516,14 +5537,47 @@ function CollapseHandler() {
         }
     }
 
+    /**
+     * @param {BaseHeader} header
+     * @param {boolean} is_collapsed
+     * @return {boolean} true if changed, false - otherwise
+     */
+    function set_collapsed_state_recursive(header, is_collapsed) {
+        var changed = header.is_collapsed !== is_collapsed;
+        header.is_collapsed = is_collapsed;
+
+        var sub_items = header.sub_items;
+        if (_.isInstanceOf(_.head(sub_items), Row)) {
+            return changed;
+        }
+
+        _.forEach(sub_items, function (item) {
+            changed |= set_collapsed_state_recursive(item, is_collapsed);
+        });
+
+        return changed;
+    }
+
+    /** @type {boolean} */
     this.changed = false;
 
     var that = this;
-    var headers = [];
+
+    /**
+     * @const
+     * @type {PlaylistContent}
+     */
+    var cnt = cnt_arg;
+
+    /** @type {Array<BaseHeader>} */
+    var headers = cnt_arg.sub_items;
+    /** @type {?function()} */
     var on_collapse_change_callback = undefined;
 }
 
 /**
+ * @param {Array<Row>} rows_arg
+ * @param {number} cur_playlist_idx_arg
  * @constructor
  */
 function QueueHandler(rows_arg, cur_playlist_idx_arg) {
@@ -4538,7 +5592,7 @@ function QueueHandler(rows_arg, cur_playlist_idx_arg) {
         }
 
         queue_contents.forEach(function (queued_item, i) {
-            if (queued_item.PlaylistIndex !== cur_playlist_idx) {
+            if (queued_item.PlaylistIndex !== cur_playlist_idx || queued_item.PlaylistItemIndex === -1) {
                 return;
             }
 
@@ -4546,6 +5600,12 @@ function QueueHandler(rows_arg, cur_playlist_idx_arg) {
             var has_row = _.find(queued_rows, function (queued_row) {
                 return queued_row.idx === cur_queued_row.idx;
             });
+
+            if (!cur_queued_row) {
+                console.log('>>> Error! - queued_item.PlaylistIndex:', queued_item.PlaylistIndex,
+                    'queued_item.PlaylistItemIndex:', queued_item.PlaylistItemIndex, 'cur_playlist_idx:', cur_playlist_idx);
+                return;
+            }
 
             if (!has_row) {
                 cur_queued_row.queue_idx = i + 1;
@@ -4559,6 +5619,9 @@ function QueueHandler(rows_arg, cur_playlist_idx_arg) {
         });
     };
 
+    /**
+     * @param {Row} row
+     */
     this.add_row = function (row) {
         if (!row) {
             return;
@@ -4567,6 +5630,9 @@ function QueueHandler(rows_arg, cur_playlist_idx_arg) {
         plman.AddPlaylistItemToPlaybackQueue(cur_playlist_idx, row.idx);
     };
 
+    /**
+     * @param {Row} row
+     */
     this.remove_row = function (row) {
         if (!row) {
             return;
@@ -4599,9 +5665,18 @@ function QueueHandler(rows_arg, cur_playlist_idx_arg) {
         queued_rows = [];
     }
 
+    /**
+     * @const
+     * @type {number}
+     */
     var cur_playlist_idx = cur_playlist_idx_arg;
+    /**
+     * @const
+     * @type {Array<Row>}
+     */
     var rows = rows_arg;
 
+    /** @type {Array<Row>} */
     var queued_rows = [];
 
     this.initialize_queue();
@@ -4825,21 +5900,24 @@ function PlaylistManager(x, y, w, h) {
         return x >= this.x && x < this.x + this.w && y >= this.y && y < this.y + this.h;
     };
 
-    this.register_key_actions = function(key_handler) {
+    /**
+     * @param {KeyActionHandler} key_handler
+     */
+    this.register_key_actions = function (key_handler) {
         key_handler.register_key_action(VK_KEY_N,
-            _.bind(function(modifiers) {
+            _.bind(function (modifiers) {
                 if (modifiers.ctrl) {
                     plman.CreatePlaylist(plman.PlaylistCount, '');
                     plman.ActivePlaylist = plman.PlaylistCount - 1;
                 }
-            },this));
+            }, this));
 
         key_handler.register_key_action(VK_KEY_M,
-            _.bind(function(modifiers) {
+            _.bind(function (modifiers) {
                 if (modifiers.ctrl) {
                     fb.RunMainMenuCommand('View/Playlist Manager');
                 }
-            },this));
+            }, this));
     };
 
     var throttled_repaint = _.throttle(_.bind(function () {
@@ -4849,6 +5927,14 @@ function PlaylistManager(x, y, w, h) {
         throttled_repaint();
     };
 
+    /**
+     * @param {IGdiGraphics} gr
+     * @param {number} x
+     * @param {number} y
+     * @param {number} w
+     * @param {number} h
+     * @param {state} panel_state
+     */
     function draw_on_image(gr, x, y, w, h, panel_state) {
 
         var text_color;
@@ -4880,13 +5966,13 @@ function PlaylistManager(x, y, w, h) {
 
         if (plman.IsPlaylistLocked(plman.ActivePlaylist)) {
             // Position above scrollbar for eye candy
-            var sbar_x = w - g_properties.scrollbar_w - g_properties.scrollbar_right_pad;
-            var lock_text = '\uF023';
+            var sbar_x = x + w - g_properties.scrollbar_w - g_properties.scrollbar_right_pad;
+            var lock_text = '\uf023';
             var lock_w = Math.ceil(
                 /** @type {!number} */
-                gr.MeasureString(lock_text, gdi.font('FontAwesome', 12), 0, 0, 0, 0).Width
+                gr.MeasureString(lock_text, gdi.Font('Font Awesome 5 Free Solid', 14), 0, 0, 0, 0).Width
             );
-            gr.DrawString(lock_text, gdi.font('FontAwesome', 12), text_color, sbar_x + Math.round((g_properties.scrollbar_w - lock_w) / 2), 0, 8, h, g_string_format.align_center);
+            gr.DrawString(lock_text, gdi.Font('Font Awesome 5 Free Solid', 14), text_color, sbar_x + Math.round((g_properties.scrollbar_w - lock_w) / 2), y, lock_w, h, g_string_format.align_center);
 
             right_pad += lock_w;
         }
@@ -4900,6 +5986,9 @@ function PlaylistManager(x, y, w, h) {
         gr.DrawString(info_text, g_pl_fonts.title_selected, text_color, info_x, info_y, info_w, info_h, info_text_format);
     }
 
+    /**
+     * @param {state} new_state
+     */
     function change_state(new_state) {
         if (that.panel_state === new_state) {
             return;
@@ -4934,6 +6023,7 @@ function PlaylistManager(x, y, w, h) {
 
     /** @type {state} */
     this.panel_state = state.normal;
+    /** @type {number} */
     this.hover_alpha = 0;
 
     //private:
@@ -4946,10 +6036,15 @@ function PlaylistManager(x, y, w, h) {
         return item.panel_state === state.hovered;
     });
 
+    /** @type {?IGdiBitmap} */
     var image_normal = null;
+    /** @type {?IGdiBitmap} */
     var image_hovered = null;
 }
 
+/**
+ * @param {Context.Menu} parent_menu
+ */
 PlaylistManager.append_playlist_info_visibility_context_menu_to = function (parent_menu) {
     parent_menu.append_item(
         'Show playlist manager',
@@ -5016,6 +6111,9 @@ function GroupingHandler() {
         }
     };
 
+    /**
+     * @param {string} cur_playlist_name_arg
+     */
     this.set_active_playlist = function (cur_playlist_name_arg) {
         cur_playlist_name = cur_playlist_name_arg;
         var group_name = settings.playlist_group_data[cur_playlist_name];
@@ -5040,35 +6138,56 @@ function GroupingHandler() {
             cur_group = settings.group_presets[group_by_name.indexOf(group_name)];
         }
 
-        if (!cur_group) {
-            throw new ArgumentError('group_name', group_name);
-        }
+        assert(!_.isNil(cur_group),
+            ArgumentError, 'group_name', group_name);
     };
 
+    /**
+     * @return {string}
+     */
     this.get_query = function () {
         return cur_group.group_query;
     };
 
+    /**
+     * @return {string}
+     */
     this.get_title_query = function () {
         return cur_group.title_query;
     };
 
+    /**
+     * @return {string}
+     */
     this.get_sub_title_query = function () {
         return cur_group.sub_title_query;
     };
 
+    /**
+     * @return {string}
+     */
     this.get_query_name = function () {
         return cur_group.name;
     };
 
+    /**
+     * @return {boolean}
+     */
     this.show_cd = function () {
         return cur_group.show_cd;
     };
 
+    /**
+     * @return {boolean}
+     */
     this.show_date = function () {
         return cur_group.show_date;
     };
 
+    /**
+     * @param {Context.Menu} parent_menu
+     * @param {function()} on_execute_callback_fn
+     */
     this.append_menu_to = function (parent_menu, on_execute_callback_fn) {
         var group = new Context.Menu('Grouping');
         parent_menu.append(group);
@@ -5135,13 +6254,15 @@ function GroupingHandler() {
         })
     };
 
+    /** @param {?} value */
     this.sync_state = function (value) {
-        settings.recieve_sync(value);
+        settings.receive_sync(value);
+        initalize_name_to_preset_map();
         this.set_active_playlist(cur_playlist_name);
     };
 
     /**
-     * @param {function} on_execute_callback_fn
+     * @param {function()} on_execute_callback_fn
      */
     function request_user_query(on_execute_callback_fn) {
         var on_ok_fn = function (ret_val) {
@@ -5170,15 +6291,13 @@ function GroupingHandler() {
     }
 
     /**
-     * @param {function} on_execute_callback_fn
+     * @param {function()} on_execute_callback_fn
      */
     function manage_groupings(on_execute_callback_fn) {
         var on_ok_fn = function (ret_val) {
             settings.group_presets = ret_val[0];
-            group_by_name = settings.group_presets.map(function (item) {
-                return item.name;
-            });
             settings.default_group_name = ret_val[2];
+            initalize_name_to_preset_map();
 
             cur_group = settings.group_presets[group_by_name.indexOf(ret_val[1])];
             settings.playlist_group_data[cur_playlist_name] = ret_val[1];
@@ -5226,19 +6345,34 @@ function GroupingHandler() {
         settings.save();
     }
 
-    var playlists = [];
+    function initalize_name_to_preset_map() {
+        group_by_name = settings.group_presets.map(function (item) {
+            return item.name;
+        });
+    }
 
+    /**
+     * @const
+     * @type {GroupingHandler.Settings}
+     */
     var settings = new GroupingHandler.Settings();
+    /** @type {?Array<string>} */
+    var playlists = [];
+    /** @type {string} */
     var cur_playlist_name = '';
+    /** @type {?GroupingHandler.Settings.Group} */
     var cur_group = undefined;
-    var group_by_name = settings.group_presets.map(function (item) {
-        return item.name;
-    });
+    /** @type {?Array<string>} */
+    var group_by_name = undefined;
 
+    initalize_name_to_preset_map();
     initialize_playlists();
     cleanup_settings();
 }
 
+/**
+ * @constructor
+ */
 GroupingHandler.Settings = function () {
     this.load = function () {
         this.playlist_group_data = JSON.parse(g_properties.playlist_group_data);
@@ -5265,7 +6399,10 @@ GroupingHandler.Settings = function () {
         window.NotifyOthers('sync_group_query_state', syncData);
     };
 
-    this.recieve_sync = function (settings_data) {
+    /**
+     * @param {{g_playlist_group_data, g_playlist_custom_group_data, g_default_group_name, g_group_presets}} settings_data
+     */
+    this.receive_sync = function (settings_data) {
         g_properties.playlist_group_data = settings_data.g_playlist_group_data;
         g_properties.playlist_custom_group_data = settings_data.g_playlist_custom_group_data;
         g_properties.default_group_name = settings_data.g_default_group_name;
@@ -5293,6 +6430,10 @@ GroupingHandler.Settings = function () {
                     show_date: true,
                     show_cd:   true
                 }),
+                new CtorGroupData('artist_album_disc_edition', 'by artist / album / disc number / edition / codec', '%album artist%%album%%discnumber%%edition%%codec%', undefined, undefined, {
+                    show_date: true,
+                    show_cd:   true
+                }),
                 new CtorGroupData('path', 'by path', '$directory_path(%path%)', undefined, undefined, {
                     show_date: true
                 }),
@@ -5307,12 +6448,16 @@ GroupingHandler.Settings = function () {
         }
     }
 
-    // Alias
+    /** @typedef {GroupingHandler.Settings.Group} */
     var CtorGroupData = GroupingHandler.Settings.Group;
 
+    /** @type {Object<string, string>} */
     this.playlist_group_data = {};
+    /** @type {Object<string, GroupingHandler.Settings.Group>} */
     this.playlist_custom_group_data = {};
+    /** @type {string} */
     this.default_group_name = '';
+    /** @type {Array<GroupingHandler.Settings.Group>} */
     this.group_presets = [];
 
     fixup_g_properties();
@@ -5332,12 +6477,19 @@ GroupingHandler.Settings = function () {
  * @struct
  */
 GroupingHandler.Settings.Group = function (name, description, group_query, title_query, sub_title_query, options) {
+    /** @type {string} */
     this.name = name;
+    /** @type {string} */
     this.description = description;
+    /** @type {string} */
     this.group_query = !_.isNil(group_query) ? group_query : '';
+    /** @type {string} */
     this.title_query = !_.isNil(title_query) ? title_query : '[%album artist%]';
-    this.sub_title_query = !_.isNil(sub_title_query) ? sub_title_query : '[%album%[ - %albumsubtitle%]]';
+    /** @type {string} */
+    this.sub_title_query = !_.isNil(sub_title_query) ? sub_title_query : '[%album%[ - %albumsubtitle%]][ - \[%edition%\]]';
+    /** @type {boolean} */
     this.show_date = !!(options && options.show_date);
+    /** @type {boolean} */
     this.show_cd = !!(options && options.show_cd);
 };
 
@@ -5410,7 +6562,10 @@ function ArtImageCache(max_cache_size_arg) {
         cache_item.queue_iterator = queue.begin();
     }
 
-    /** @const{number} */
+    /**
+     * @const
+     * @type {number}
+     */
     var max_cache_size = max_cache_size_arg;
     /** @type {LinkedList<IFbMetadbHandle>} */
     var queue = new LinkedList();
@@ -5420,5 +6575,5 @@ function ArtImageCache(max_cache_size_arg) {
 
 Header.art_cache = new ArtImageCache(200);
 
-var playlist = new PlaylistPanel(0,0);
+var playlist = new PlaylistPanel(0, 0);
 playlist.initialize();
