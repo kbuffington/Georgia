@@ -9,16 +9,12 @@ pref.add_properties(
 		rotation_amt: 		['Art: Degrees to rotate CDart', 3],		// # of degrees to rotate per track change.
 		aa_glob:			['Art: Cycle through all images', true],	// true: use glob, false: use albumart reader (front only)
 		display_cdart: 		['Art: Display CD art', true],				// true: show CD artwork behind album artwork. This artwork is expected to be named cd.png and have transparent backgrounds (can be found at fanart.tv)
-		max_cache_size:		['Art: Max image cache size (in MB)', 50], 	// maximum size of the image cache directory. Maximum size is 250 MB.
 		t_aa_glob:			['Art: Seconds to display each art', 30],	// seconds per image
 		rotate_cdart:		['Art: Rotate CD art on new track', true],		// true: rotate cdArt based on track number. i.e. rotationAmt = %tracknum% * x degrees
 		cdart_ontop:		['Art: Show CD art above front cover', false],	// true: display cdArt above front cover
-		cache_images:		['Art: Cache artwork locally', false],		// true: don't attempt to reload images if album/folder hasn't changed from last track; false: reload all images each new track
 		show_debug_log:		['Debug: Show Debug Output', false],		// true: show debug output in console
 		hide_cursor:    	['Hide Cursor when stationary', true],		// true: hide cursor when not moving, false: don't
 		generate_theme:		['Theme: Generate custom theme from artwork', true],      // true: generate a new theme for artwork, false: use built in themes
-		// show_codec_img:		['Show images for codecs', true],				// true: show the icon for individual codecs in upper right corner
-		// show_mp3_codec:		['Show MP3 codec image', false],				// true: show the codec icon for mp3s
 		show_flags:			['Show country flags', true],				// true: show the artist country flags
 		check_multich:		['Check for MultiChannel version', false],	// true: search paths in tf.MultiCh_paths to see if there is a multichannel version of the current album available
 		use_vinyl_nums:		['Use vinyl style numbering (e.g. A1)',true],	// true: if the tags specified in tf.vinyl_side and tf.vinyl_tracknum are set, then we'll show vinyl style track numbers (i.e. "B2." instead of "04.")
@@ -40,10 +36,6 @@ pref.add_properties(
 
 if (pref.t_aa_glob < 5) {
 	pref.t_aa_glob = 5;
-}
-if (pref.max_cache_size < 0) {
-	pref.max_cache_size = 0;
-	// window.SetProperty("Art: Max image cache size (in MB)", pref.max_cache_size);
 }
 
 // Lyrics variables

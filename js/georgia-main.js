@@ -2479,136 +2479,44 @@ function clearUIVariables() {
         tracknum: stoppedStr1,
         title: stoppedStr2,
 		year: '',
-		// lower_bar1: stoppedStr1,
-		// lower_bar2: stoppedStr2,
 		grid: [],
 		time: ''
 	}
 }
 
-function ClearOldCachedFiles(path) {
-	clearCache = fb.CreateProfiler("ClearOldCachedFiles");
-	var totalSize = 0;
-	var fileList = [];
-	pref.max_cache_size = Math.abs(Math.min(250, pref.max_cache_size));	// don't allow cache size to be > 250 MB
-	dir = fso.GetFolder(path);
-	if (dir.size > pref.max_cache_size*1024*1024) {
-		var files = utils.Glob(path + "\\*.*").toArray();
-		for (i=0; i<files.length; i++) {	// create temp array to speed up sorting by reducing amount of GetFile calls in .sort
-			fileList.push({ name: files[i], date: fso.GetFile(files[i]).DateCreated })
+var max_width = 1200;
+var max_height = 1600;
+function encache(img, path) {
+	var h = img.Height;
+	var w = img.Width;
+	if (h > max_width || w > max_height) {
+		var scale_factor = w / max_width;
+		if (scale_factor < w / max_height) {
+			scale_factor = w / max_height;
 		}
-		fileList.sort(function (a, b) {
-			return b.date - a.date;	// sort descending
-		});
-		for (i=0; i<fileList.length; i++) {
-			f = fso.GetFile(fileList[i].name);
-			totalSize += f.size;
-			if (totalSize < pref.max_cache_size*1024*1024) {
-				console.log(fileList[i].date + " - " + fileList[i].name.substring(62));
-			} else {
-				// delete files
-				try {
-					console.log('Deleting: ' + fileList[i].date + " - " + fileList[i].name.substring(62));
-					f = fso.GetFile(fileList[i].name);
-					f.Delete(true);
-				} catch (e) {
-					console.log("unable to delete " + fileList[i].name);
-				}
+		h = Math.min(h / scale_factor);
+		w = Math.min(w / scale_factor);
 			}
+	art_cache[path] = img.Resize(w, h);
+	img.Dispose();
+	art_cache_indexes.push(path);
+	if (art_cache_indexes.length > art_cache_max_size) {
+		var remove = art_cache_indexes.shift();
+		console.log('deleting cached img:', remove)
+		disposeImg(art_cache[remove]);
+		delete art_cache[remove];
 		}
-	}
-	clearCache.Print();
+	return art_cache[path];
 }
 
-function getAlbumArt() {	// only used for playlist
-	console.log("in getAlbumArt()");
-	if (!displayPlaylist || !showAlbumArt || fastScrollActive) return;
-	for (var i = 0; i != maxRows; i++) {
-		var ID = playlist[i + listStep[activeList]];
-		var groupNr = ID.groupNr;
-		if (ID.isGroupHeader) {
-			if (groupNr != tempGroupNrOnGetAlbumArt) {
-				g_image_cache.hit(ID.metadb);
-				repaintList();
-			}
-			tempGroupNrOnGetAlbumArt = groupNr;
-		}
+function AttemptToLoadCachedImage(path) {
+	var image = null;
+
+	if (art_cache[path]) {
+		debugLog('cache hit: ' + path);
+		return art_cache[path];
 	}
-}
-
-function AttemptToLoadCachedImage(path, copy) {
-	var image = null,
-		compare = false;
-
-	if (pref.cache_images) {
-		cacheAttempt = fb.CreateProfiler("AttemptToLoadCachedImage");
-		/* this function returns null if the cached file cannot be found, or if the file is found but the file size is different on host machine */
-		console.log("AttemptToLoadCachedImage: path = " + path + ", copy=" + copy);
-		var parsedName = path.replace(/ /g,'').replace(/:/g,'').replace(/\//g,'').replace(/\*/g,'').replace(/\\/g,'');
-		var fixedFullPath = fb.ProfilePath + "georgia\\imgcache\\" + parsedName;
-
-		if (!cachedImageCompare.hasOwnProperty(path)) {	// we only want to compare cache file sizes once per restart
-			cachedImageCompare[path] = true;			// save key/value and then force a comparison
-			compare = true;
-		}
-		if (fso.FileExists(fixedFullPath) && (!compare || fso.FileExists(path))) {
-			if (compare) {
-				console.log('Comparing image file sizes.');
-				f = fso.GetFile(path);
-			}
-			c = fso.GetFile(fixedFullPath);
-			if (!compare || f.Size == c.Size) {
-				if (pref.show_debug_log) {
-					console.log(" - cache hit for " + fixedFullPath);
-				}
-				image = gdi.Image(fixedFullPath);
-			} else if (copy === true) {
-				if (compare) {
-					console.log("File sizes changed from " + c.Size + " (cached) to " + f.Size + " (disk)");
-				}
-				try {
-					c.Close;
-					c.Delete(true);
-					f.copy(fixedFullPath);	// file size has changed, so attempt to copy it again
-					image = gdi.Image(fixedFullPath);
-				} catch(e) {
-					image = null;
-				}
-			}
-		}
-		else if (fso.FileExists(path) && copy === true) {
-			try {
-				f = fso.GetFile(path);
-				f.copy(fixedFullPath);
-				image = gdi.Image(fixedFullPath);
-			} catch(e) {
-				image = null; // not sure we can get here, but just in case
-			}
-		}
-		cacheAttempt.Print();
-	}
-	return image;
-}
-
-var artSize = 40; //rowsInGroup * rowH - 8;	// for fastest performance artSize here needs to correspond to groupH - padding * 2 in on_paint
-
-/* this can only be used to load front cover images for the playlist */
-function GetAlbumArtAsync(id, metadb, imageType, groupNum) {
-	if (pref.cache_images) {
-		var path = $("$replace(%path%,%filename_ext%,)folder.jpg", metadb);
-		var image = AttemptToLoadCachedImage(path, true);
-		if (image === null) {
-			console.log("cache miss in GetAlbumArtAsync");
-			utils.GetAlbumArtAsync(id, metadb, AlbumArtId.front);
-		} else {
-			if (image && image.Height > artSize)
-				image = image.Resize(artSize, artSize, 0);
-			g_image_cache.store(metadb, image);
-			repaintList();
-		}
-	}
-	else
-		utils.GetAlbumArtAsync(id, metadb, AlbumArtId.front);
+	return null;
 }
 
 // album art retrieved from GetAlbumArtAsync
@@ -2621,18 +2529,6 @@ function on_get_album_art_done(metadb, art_id, image, image_path) {
 		RepaintWindow(); // calls on_paint()
 	}
 
-	// var tempGroupNr = -1;
-
-	// for (var i = 0; i != maxRows; i++) {
-	// 	var ID = playlist[i + listStep[activeList]];
-	// 	var groupNr = ID.groupNr;
-	// 	if (ID.isGroupHeader && groupNr != tempGroupNr && ID.metadb.Compare(metadb)) {
-	// 		g_image_cache.getit(metadb, 1, image);
-	// 		tempGroupNr = groupNr;
-	// 		repaintList();
-	// 		break;
-	// 	}
-	// }
 	if (displayPlaylist) {
 		trace_call && console.log(qwr_utils.function_name());
 		playlist.on_get_album_art_done(metadb, art_id, image, image_path);
@@ -2641,17 +2537,17 @@ function on_get_album_art_done(metadb, art_id, image, image_path) {
 
 // returned from LoadImageAsync
 function on_load_image_done(cookie, image) {
-	debugLog("on_load_image_done returned")
+	console.log('on_load_image_done returned');
 	if (cookie == disc_art_loading) {
 		disposeCDImg(cdart);	// delay disposal so we don't get flashing
-		cdart = image;
+		cdart = encache(image, cdartPath);
 		ResizeArtwork(true);
 		CreateRotatedCDImage();
 		lastLeftEdge = 0;	// recalc label location
 	}
 	else if (cookie == album_art_loading) {
-		disposeImg(albumart);	// delay disposal so we don't get flashing
-		albumart = image;
+		// disposeImg(albumart);	// delay disposal so we don't get flashing
+		albumart = encache(image, album_art_path);
 		if (retrieveThemeColorsWhenLoaded && newTrackFetchingArtwork) {
 			getThemeColors(albumart);
 			retrieveThemeColorsWhenLoaded = false;
@@ -2934,9 +2830,9 @@ function calcDateRatios(dontUpdateLastPlayed, currentLastPlayed) {
 }
 
 function glob_image(index) {
-	var temp_albumart = AttemptToLoadCachedImage(aa_list[index], true);
+	var temp_albumart = AttemptToLoadCachedImage(aa_list[index]);
 	if (temp_albumart) {
-		albumart = disposeImg(albumart);
+		// albumart = disposeImg(albumart);
 		albumart = temp_albumart;
 		if (cdart) {
 			ResizeArtwork(false);
@@ -2948,6 +2844,7 @@ function glob_image(index) {
 		}
 	} else {
 		album_art_loading = gdi.LoadImageAsync(window.ID, aa_list[index]);
+		album_art_path = aa_list[index];
 		if (index === 0) {
 			retrieveThemeColorsWhenLoaded = true;
 		}
@@ -2968,22 +2865,6 @@ function fisherYates ( myArray ) {
 	}
 }
 
-function eliminateDuplicates(imgPathArray) {
-	var i,
-	out=[],
-	obj={};
-	pattern = /(cd|vinyl)([0-9]*|[a-h])\.png/i;
-
-	for (i=0;i<imgPathArray.length;i++) {
-		obj[imgPathArray[i]]=0;
-	}
-	for (i in obj) {
-		if (!pattern.test(i))	// we don't want to display cd/vinyl pngs in the album art area because they are probably transparent
-			out.push(i);
-	}
-	return out;
-}
-
 /* I use the debugLog function instead of console.log so that I can easily hide messages that I don't want cluttering the console constantly */
 function debugLog(str) {
 	if (pref.show_debug_log) console.log(str);
@@ -2997,7 +2878,7 @@ function disposeImg(oldImage) {
 
 function disposeCDImg(cdImage) {
 	cdart_size = new ImageSize(0,0,0,0);
-	disposeImg(cdImage);
+	// disposeImg(cdImage);
 	return null;
 }
 
