@@ -19,7 +19,7 @@ pref.add_properties(
 		check_multich:		['Check for MultiChannel version', false],	// true: search paths in tf.MultiCh_paths to see if there is a multichannel version of the current album available
 		use_vinyl_nums:		['Use vinyl style numbering (e.g. A1)',true],	// true: if the tags specified in tf.vinyl_side and tf.vinyl_tracknum are set, then we'll show vinyl style track numbers (i.e. "B2." instead of "04.")
 		start_Playlist:		['Display playlist on startup', false],		// true: show the playlist window when the theme starts up
-		show_transport:		['Show transport controls', false],			// true: show the play/pause/next/prev/random buttons at the top of the screen
+		show_transport:		['Show transport controls', true],			// true: show the play/pause/next/prev/random buttons at the top of the screen
 		show_random_button: ['Show Random Button', true],				// true: show random button in transport controls, ignored if transport not shown
 		freq_update:		['Frequent progress bar updates', true],	// true: update progress bar multiple times a second. Smoother, but uses more CPU
 		time_zone:          ['Time-zone (formatted +/-HH:MM, e.g. -06:00)', '+00:00'],  // used to create accurate timezone offsets. "Z", "-06:00", "+06:00", etc. are all valid values
@@ -126,7 +126,7 @@ tf.grid = [ // simply add, change or remove entries to change grid layout
 	{ label: 'Last Played',  val: '[' + tf.last_played + ']', age: true },
 	{ label: 'URL',		     val: "$if(%source webpage url%,$left($put(url,$replace(%source webpage url%,'http://',,www.,)),$sub($strchr($get(url),/),1)))$if($and(%source webpage url%,%www%),', ')$if(%www%,$left($put(url,$replace(%www%,'http://',,www.,)),$sub($strchr($get(url),/),1)))" },
 	{ label: 'Hotness',	     val: "$puts(X,5)$puts(Y,$div(%_dynamic_rating%,400))$repeat($repeat(I,$get(X))   ,$div($get(Y),$get(X)))$repeat(I,$mod($get(Y),$get(X)))$ifgreater(%_dynamic_rating%,0,   $replace($div(%_dynamic_rating%,1000)'.'$mod($div(%_dynamic_rating%,100),10),0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9),)" },
-	{ label: 'Play Count',   val: "$if(%play_count%,$puts(X,5)$puts(Y,$max(%play_count%,%lastfm_play_count%))$repeat($repeat(I,$get(X)) ,$div($get(Y),$get(X)))$repeat(I,$mod($get(Y),$get(X)))   $get(Y))" },
+	{ label: 'Play Count',   val: "$if($or(%play_count%,%lastfm_play_count%),$puts(X,5)$puts(Y,$max(%play_count%,%lastfm_play_count%))$repeat($repeat(I,$get(X)) ,$div($get(Y),$get(X)))$repeat(I,$mod($get(Y),$get(X)))   $get(Y))" },
 	// { label: 'Last.fm Count',val: '[%lastfm_play_count%]' },
 	// { label: 'Played Times', val: '[' + tf.played_times + ']' },
 	// { label: 'Last.fm Plays',val: '[' + tf.last_fm_plays + ']' },

@@ -213,8 +213,6 @@ var dropped = false;
 var totalLength = selectionLength = 0;
 var listInfoHeight = 24;
 
-var g_image_cache = new image_cache;
-
 // END OF CONFIGURATION /////////////////////////////////
 
 
@@ -227,7 +225,6 @@ var albumart_size   = new ImageSize(0,0,0,0);		// position (big image)
 var cdart			= null;							// cdart image
 var cdart_size	  	= new ImageSize(0,0,0,0);		// cdart position (offset from albumart_size)
 var image_bg		= gdi.Image(pref.bg_image); 	// background image
-var scaled_bg_img   = null;							// background image pre-scaled based on the dimensions of the window to speed up drawing considerably
 var albumart_scaled = null;							// pre-scaled album art to speed up drawing considerably
 var recordLabels	= [];							// array of record label images
 var bandLogo		= null;							// band logo image
@@ -251,7 +248,8 @@ var retrieveThemeColorsWhenLoaded = false;			// only load theme colors on first 
 var newTrackFetchingArtwork = false;				// only load theme colors when newTrackFetchingArtwork = true
 var noArtwork = false;								// only use default theme when noArtwork was found
 var playCountVerifiedByLastFm = false;				// show Last.fm image when we %lastfm_play_count% > 0
-var pauseBorderWidth= 2;
+var pauseBorderWidth = 2;
+var art_off_center   = false;                       // if true, album art has been shifted 40 pixels to the right
 
 //var inShowMenuEntry   = false;
 
@@ -280,7 +278,6 @@ var fadeAlpha = 255;		// full alpha which will be decremented
 var nextPrevAlpha = 255;	// full alpha for next/prev icons which will be decremented
 var showTimeElapsed = true;	// this will alternate while paused to make the elapsed time blink
 var bandLogoHQ = false;		// if true will partially remove the 10 pixel "gutter" around the image that fanart.tv requires around their high-rez images so that logos use more of the available space.
-var numLabels = 0;			// how many record labels do we need to draw (max is 2 currently)
 var t_interval; 			// milliseconds between screen updates
 var settingsY = 0;			// location of settings button
 var lastLeftEdge = 0;		// the left edge of the record labels. Saved so we don't have to recalculate every on every on_paint unless size has changed
@@ -289,13 +286,11 @@ var displayLyrics = 0;
 
 var tl_firstPlayedRatio = 0;
 var tl_lastPlayedRatio = 0;
-var gDrawTimeOnly = 0;
 
 var current_path;
 var last_path;
 var lastDiscNumber;
 var lastVinylSide;
-var currentRating;
 var currentLastPlayed = '';
 var multiChannelAvailable = false;	// display if there's a multi-channel version of the mp3 available
 
@@ -307,7 +302,6 @@ var g_playtimer = null;
 var g_timer_abs;
 
 // TODO change these variable names
-var g_file = null;
 var g_tab = Array();
 var g_scroll=0;
 var g_lyrics_path;
@@ -318,7 +312,6 @@ var focus_next=0;
 var hundredth = 0;
 var g_is_scrolling = false;
 var g_tab_length;
-var g_txt_align;
 
 var midpoint;		// this is the center of the lyrics, where the highlighted line will display
 var lyrPos;			// this is the absolute yPosition of the very first line in the lyrics. It will start at midpoint and then move up and off the screen
@@ -382,17 +375,11 @@ var ForAppending = 8;
 
 var fso = new ActiveXObject("Scripting.FileSystemObject");
 
-// Lyrics Objects
-sentence = function () {
-	this.timer = 0;
-	this.text = '';
-	this.total_lines = 0;
-	this.ante_lines = 0;
-	this.ToString = function ToString() {
-		var str = "timer= " + this.timer + " text: " + this.text + " total_lines= " + this.total_lines + " ante_lines= " + this.ante_lines;
-		return str;
-	}
-}
+var art_cache = {};
+var art_cache_indexes = [];
+var art_cache_max_size = 10;
+var cdartPath = '';
+var album_art_path = '';
 
 // Call initialization function
 on_init();
@@ -431,15 +418,19 @@ function on_paint(gr) {
 			CreateRotatedCDImage();
 		}
 		if (!pref.cdart_ontop || displayLyrics) {
-			if (showExtraDrawTiming) drawCD = fb.CreateProfiler("cdart");
-			rotatedCD && !displayPlaylist && pref.display_cdart && gr.DrawImage(rotatedCD, cdart_size.x, cdart_size.y, cdart_size.w, cdart_size.h, 0,0,rotatedCD.width,rotatedCD.height,0);
-			if (showExtraDrawTiming) drawCD.Print();
+            if (rotatedCD && !displayPlaylist && pref.display_cdart) {
+                if (showExtraDrawTiming) drawCD = fb.CreateProfiler("cdart");
+                gr.DrawImage(rotatedCD, cdart_size.x, cdart_size.y, cdart_size.w, cdart_size.h, 0,0,rotatedCD.width,rotatedCD.height,0);
+                if (showExtraDrawTiming) drawCD.Print();
+            }
 			gr.DrawImage(albumart_scaled, albumart_size.x, albumart_size.y, albumart_size.w, albumart_size.h, 0, 0, albumart_scaled.width, albumart_scaled.height);
 		} else {	// draw cdart on top of front cover
 			gr.DrawImage(albumart_scaled, albumart_size.x, albumart_size.y, albumart_size.w, albumart_size.h, 0, 0, albumart_scaled.width, albumart_scaled.height);
-			if (showExtraDrawTiming) drawCD = fb.CreateProfiler("cdart");
-			rotatedCD && !displayPlaylist && pref.display_cdart && gr.DrawImage(rotatedCD, cdart_size.x, cdart_size.y, cdart_size.w, cdart_size.h, 0,0,rotatedCD.width,rotatedCD.height,0);
-			if (showExtraDrawTiming) drawCD.Print();
+            if (rotatedCD && !displayPlaylist && pref.display_cdart) {
+                if (showExtraDrawTiming) drawCD = fb.CreateProfiler("cdart");
+                gr.DrawImage(rotatedCD, cdart_size.x, cdart_size.y, cdart_size.w, cdart_size.h, 0,0,rotatedCD.width,rotatedCD.height,0);
+                if (showExtraDrawTiming) drawCD.Print();
+            }
 		}
 		if (displayLyrics && albumart_scaled) {
 			gr.FillSolidRect(albumart_size.x-1,albumart_size.y-1,albumart_size.w+1,albumart_size.h+1,RGBA(0,0,0,155));
@@ -513,12 +504,7 @@ function on_paint(gr) {
 		}
 
 		if (gridSpace > 120) {
-			if (gridSpace < 300) {
-				top = Math.round(0.12*wh);	// need to make more room when cramped horizontally
-			}
-			else {
-				top = Math.min((albumart_size.y ? albumart_size.y : 96) + 15, 115);
-			}
+            top = (albumart_size.y ? albumart_size.y : 96) + 15;
 
 			if (str.title) {
 				ft.title = ft.title_lrg;
@@ -541,6 +527,7 @@ function on_paint(gr) {
                         if (str.tracknum) {
                             trackNumWidth = gr.MeasureString(str.tracknum, ft.tracknum, 0, 0, 0, 0).Width + 8;
                         }
+                        txtRec = gr.MeasureString(str.title, ft.title, 0, 0, text_width - trackNumWidth, wh);
 					}
 				}
 				var numLines = Math.min(2, txtRec.lines);
@@ -605,8 +592,6 @@ function on_paint(gr) {
 			}
 
 			// Tag grid
-			trim = g_string_format.trim_ellipsis_word;
-
 			labelWidth = calculateGridMaxTextWidth(gr, str.grid, ft.grd_key_lg);
 			// console.log(labelWidth, text_width / 3, )
 			if (labelWidth < text_width / 3) {
@@ -620,11 +605,10 @@ function on_paint(gr) {
 				if (labelWidth < text_width / 3) {
 					col1_width = labelWidth;
 				} else {
-					col1_width = Math.floor(text_width / 3);
+                    col1_width = Math.floor(text_width / 3);
 				}
 			}
 			col2_width = text_width - 10 - col1_width;
-			col1_height = gr.CalcTextHeight("A", grid_key_ft);
 
 			// TODO: should probably test this out fully
 			// if (calcBrightness(col.primary) > 190) {
@@ -641,9 +625,6 @@ function on_paint(gr) {
 				var showLastFmImage = false;
 
 				if (value.length) {
-					// gr.DrawString(key, grid_key_ft, rgb(0,0,0), textLeft-0.5, top+0.5, col1_width, col1_height, StringFormat(0,0,trim));	// key
-					gr.DrawString(key, grid_key_ft, col.grid_key, textLeft, top, col1_width, col1_height, StringFormat(0,0,trim));	// key
-
 					switch (key) {
 						case 'Rating':  	grid_val_col = col.rating; dropShadow = true; break;
 						case 'Mood':		grid_val_col = col.mood; dropShadow = true; break;
@@ -659,7 +640,8 @@ function on_paint(gr) {
 						gr.DrawString(value, grid_val_ft, col.extraDarkAccent, textLeft + col1_width + 9.5, top - 0.5, col2_width, cell_height, StringFormat(0,0,4));
 						gr.DrawString(value, grid_val_ft, col.extraDarkAccent, textLeft + col1_width + 10.5, top - 0.5, col2_width, cell_height, StringFormat(0,0,4));
 					}
-					gr.DrawString(value, grid_val_ft, grid_val_col, textLeft + col1_width + 10, top, col2_width, cell_height, StringFormat(0,0,4));
+					gr.DrawString(key, grid_key_ft, col.grid_key, textLeft, top, col1_width, cell_height, g_string_format.trim_ellipsis_char);	// key
+                    gr.DrawString(value, grid_val_ft, grid_val_col, textLeft + col1_width + 10, top, col2_width, cell_height, StringFormat(0,0,4));
 
 					if (playCountVerifiedByLastFm && showLastFmImage) {
 						var lastFmLogo = lastFmImg;
@@ -683,20 +665,15 @@ function on_paint(gr) {
 		// BAND LOGO drawing code
 		showExtraDrawTiming && (drawBandLogos = fb.CreateProfiler("on_paint -> band logos"));
 		if (bandLogo) {
-			if (bandLogoHQ != true) {
-				logoWidth = Math.min(bandLogo.width, albumart_size.x-ww*0.05);
-				heightScale = logoWidth / bandLogo.width;
-				logoTop = Math.round(albumart_size.y + albumart_size.h - (heightScale * bandLogo.height) - 12);
-				gr.DrawImage(bandLogo, Math.round(albumart_size.x/2 - logoWidth/2), logoTop, logoWidth, Math.round(bandLogo.height*heightScale),
-					0,0,bandLogo.width, bandLogo.height, 0);
-			}
-			else {
-				logoWidth = Math.min(bandLogo.width/2, albumart_size.x-ww*0.05);	// max width we'll draw is 1/2 the full size because the images are just so big
-				heightScale = logoWidth / (bandLogo.width);   // width is fixed to logoWidth, so scale height accordingly
-				logoTop = Math.round(albumart_size.y + albumart_size.h - (heightScale * (bandLogo.height)) - 12);
-				gr.DrawImage(bandLogo, Math.round(albumart_size.x/2 - logoWidth/2), logoTop, Math.round(logoWidth), Math.round((bandLogo.height)*heightScale),
-					0,0,bandLogo.width, bandLogo.height, 0);
-			}
+            // max width we'll draw is 1/2 the full size because the HQ images are just so big
+			logoWidth = Math.min(bandLogoHQ ? bandLogo.width / 2 : bandLogo.width * 1.5, albumart_size.x-ww*0.05);
+			heightScale = logoWidth / bandLogo.width;   // width is fixed to logoWidth, so scale height accordingly
+            logoTop = Math.round(albumart_size.y + albumart_size.h - (heightScale * bandLogo.height)) - 4;
+            if (!bandLogoHQ) {
+                logoTop -= 20;
+            }
+            gr.DrawImage(bandLogo, Math.round(albumart_size.x/2 - logoWidth/2), logoTop, Math.round(logoWidth), Math.round(bandLogo.height*heightScale),
+                0,0,bandLogo.width, bandLogo.height, 0);
 		}
 		if (showExtraDrawTiming) drawBandLogos.Print();
 
@@ -717,7 +694,8 @@ function on_paint(gr) {
 		// this section should draw in 3ms or less always
 		if (recordLabels.length > 0) {
 			var rightSideGap = 20,  // how close last label is to right edge
-				labelSpacing = 0,
+                labelSpacing = 0,
+                leftEdgeGap = art_off_center ? 20 : 40, // space between art and label
 				leftEdgeWidth = 30; // how far label background extends on left
 			if (showExtraDrawTiming) drawLabelTime = fb.CreateProfiler("on_paint -> record labels");
 			totalLabelWidth = 0;
@@ -756,7 +734,7 @@ function on_paint(gr) {
 							leftEdge += 4;
 						}
 					} else  {
-						leftEdge = Math.round(Math.max(albumart_size.x + albumart_size.w + leftEdgeWidth + 40, ww*0.975-totalLabelWidth+1));
+						leftEdge = Math.round(Math.max(albumart_size.x + albumart_size.w + leftEdgeWidth + leftEdgeGap, ww*0.975-totalLabelWidth+1));
 					}
 				} else {
 					leftEdge = Math.round(ww*0.975-totalLabelWidth);
@@ -879,515 +857,9 @@ function on_paint(gr) {
 	gr.SetSmoothingMode(SmoothingMode.AntiAlias);
 
 	if (displayPlaylist) {
-		playlist.on_paint(gr);
-	}
-
-	if (0 && displayPlaylist) {
-		gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
-
-		var startX = Math.floor(ww*.5);
-		var startY = btns[30].y + btns[30].h + 10;
-
-		if (!playlist_shadow)
-			createDropShadow();
-		playlist_shadow && gr.DrawImage(playlist_shadow, startX - 10, startY - 10, playlist_shadow.width, playlist_shadow.height, 0,0,playlist_shadow.width,playlist_shadow.height)
-		gr.FillRoundRect(startX, startY, ww, listH + listTop + listBottom, 6, 6, backgroundColor);
-		gr.DrawRoundRect(startX, startY, ww, listH + listTop + listBottom, 6, 6, 1, RGB(20,20,20));
-		gr.DrawRoundRect(startX+1, startY+1, ww, listH + listTop + listBottom, 6, 6, 1, RGB(50,50,50));
-
-		gr.SetSmoothingMode(SmoothingMode.None); // disable smoothing
-		if (showPlaylistInfo) {
-
-			var selectedIndexesLength = selectedIndexes.length;
-			var totalItems = 0;
-
-			selectedIndexesLength ? totalItems = selectedIndexesLength : totalItems = playlistItemCount;
-
-			var items = (totalItems > 1 ? " items selected" : " item selected");
-
-			if (!selectedIndexesLength) {
-				selectionLength = totalLength;
-				items = (totalItems > 1 ? " items" : " item");
-			}
-
-			gr.FillSolidRect(startX+2, startY+2, listW, listInfoHeight, RGB(43, 43, 43));
-			gr.DrawString(fb.GetPlaylistName(activeList) + ": " + totalItems + items + ", Length: " + selectionLength, titleFontSelected, RGB(150, 152, 154), startX + 12, startY+2, listW - 20, listInfoHeight - 2, StringFormat(1, 1));
-
-		}
-
-		var playingID;
-		var selectedID;
-		var focusID;
-		var queueIndexes = [];
-		var queueIndexCount = [];
-		var isPlaylistItemQueued = [];
-		var groupItemCounter = 0;
-
-		if (plman.PlayingPlaylist == activeList) {
-			playingID = plman.GetPlayingItemLocation().PlaylistItemIndex;
-
-		}
-
-		focusID = plman.GetPlaylistFocusItemIndex(activeList);
-
-		if (listLength) {
-
-			//---> Get visible group row count
-
-			var visibleGroupRows = [];
-			var tempGroupNr = 0;
-			var groupRowCount = 0;
-
-			for (var i = 0; i != maxRows; i++) {
-
-				var ID = playlist[i + listStep[activeList]];
-
-				try {
-					if (ID.isGroupHeader) {
-						var groupNr = ID.groupNr;
-						(groupNr == tempGroupNr) ? groupRowCount++ : groupRowCount = 1;
-						visibleGroupRows[groupNr] = groupRowCount;
-
-						tempGroupNr = groupNr;
-					}
-				} catch (e) {
-					console.log("ID.isGroupHeader or ID.groupNr was undefined, presumably because the object was null. listStep[activeList]=" + listStep[activeList] + ", i=" + i);
-				}
-			}
-
-			//--->
-
-			var tempGroupNr = -1;
-			var lastDisc;
-
-			for (var i = 0; i != maxRows; i++) {
-
-				var ID = playlist[i + listStep[activeList]];
-
-				try {
-					if (plman.IsPlaylistItemSelected(activeList, ID.nr)) {
-						selectedID = ID.nr;
-					}
-				} catch (e) {
-					console.log("ID.nr was undefined, presumably because the object was null. Aborting playlist draw now.");
-					break;
-				}
-
-				var metadb = ID.metadb;
-
-				var x = listX,
-					y = r[i].y,
-					w = listW,
-					h = rowH,
-					rowX = listX - listLeft,
-					rowW = listW + listLeft + listRight;
-
-				if (ID.isGroupHeader) {
-
-					var groupNr = ID.groupNr;
-					var selectedGroup = isGroupSelected(groupNr, playingID);
-					groupItemCounter = 1;
-					lastDisc = 0;	// clear lastDisc between groups
-					//--->
-
-					if (selectedGroup) {
-						lineColor = lineColorSelected;
-						artistColor = albumColor = dateColor = infoColor = groupTitleColorSelected;
-						rowColorFocus = rowColorFocusSelected;
-					} else {
-						artistColor = artistColorNormal;
-						albumColor = albumColorNormal;
-						infoColor = infoColorNormal;
-						dateColor = dateColorNormal;
-						lineColor = lineColorNormal;
-						rowColorFocus = rowColorFocusNormal;
-					}
-
-					if (groupNr != tempGroupNr) {
-
-						var clipY = r[i].y + 1;
-						var clipH = visibleGroupRows[groupNr] * rowH - 1;
-						var clipImg = gdi.CreateImage(listW, clipH);
-						var g = clipImg.GetGraphics();
-
-						var groupY;
-						(i == 0 && ID.rowNr > 1) ? groupY = -((ID.rowNr - 1) * rowH) : groupY = -1;
-						var groupH = rowsInGroup * rowH;
-
-						var padding = 4,
-							artX = showAlbumArt ? padding : 0,
-							artY = groupY + padding,
-							artW = showAlbumArt ? groupH - padding * 2 : 0,
-							artH = groupH - padding * 2;
-
-						//--->
-						g.FillSolidRect(startX, groupY, w, groupH, backgroundColor); // Solid background for ClearTypeGridFit text rendering
-						if (selectedGroup) g.FillSolidRect(0, groupY, w, groupH, rowColorSelected);
-
-						if (isCollapsed[groupNr] && focusGroupNr == groupNr) {
-							g.DrawRect(2, groupY + 2, w - 4, groupH - 4, 1, lineColor);
-						}
-
-						//************************************************************//
-
-						if (showAlbumArt) {
-							var art = g_image_cache.fetch(metadb);
-
-							if (art) {
-								g.DrawImage(art, artX + 2, artY + 2, artW - 4, artH - 4, 0, 0, art.Width, art.Height, 0, selectedGroup ? 255 : artAlpha);
-							} else if (art === null) {
-								g.DrawString("NO COVER", infoFont, lineColor, artX, artY, artW, artH, StringFormat(1, 1));
-							} else {
-								g.DrawString("LOADING", coverFont, lineColor, artX, artY, artW, artH, StringFormat(1, 1));
-							}
-							g.DrawRect(artX, artY, artW - 1, artH - 1, 1, lineColor);
-
-						}
-
-						//************************************************************//
-
-						(!showGroupInfo) ? divGroupH = groupH / 2 : divGroupH = groupH / 3;
-
-						var leftPad = artX + artW + 10;
-						var path = $("%path%", metadb).slice(0, 4);
-
-						var radio = (path == "http") ? true : false;
-
-						//---> DATE
-						var date = $("$year($if2(%original release date%,%date%))", metadb);
-						if (date == "?" && radio) date = '';
-						dateDimensions = gr.MeasureString(date, dateFont, 0, 0, 0, 0);
-						var dateW = Math.ceil(dateDimensions.Width + 3);
-						var dateX = w - dateW;
-						var dateY = groupY - Math.ceil((dateFontSizeDifference - 4)/2);
-						var dateH = groupH;
-
-						g.SetTextRenderingHint(TextRenderingHint.AntiAlias);
-						(dateX > leftPad) && g.DrawString(date, dateFont, dateColor, dateX, dateY, dateW, dateH, StringFormat(0, 1));
-
-						//---> ARTIST
-						var artistX = leftPad;
-						if (showGroupInfo) {
-							artistW = 0 + w - artistX - 0;
-							artistH = divGroupH;
-						} else {
-							artistW = dateX - leftPad - 5;
-							artistH = divGroupH - 5;
-						}
-						var artist = $("$if($greater($len(%album artist%),0),%album artist%,%artist%)", metadb);
-						if (artist == "?" && radio) artist = "Radio Stream";
-
-						g.DrawString(artist, artistFont, artistColor, artistX, groupY, artistW, artistH, StringFormat(0, 2, 3, 0x1000));
-						// hyperlinks.push(new Hyperlink(artist, artistFont, artistColor, 'artist', artistX, groupY));
-
-						//---> ALBUM
-						var albumX = leftPad;
-						var albumW = dateX - leftPad - 5;
-						var albumH = divGroupH;
-
-						showGroupInfo ? albumY = groupY + divGroupH : albumY = groupY + divGroupH + 5;
-
-						var album = $("%album% [ \u2014 '['$if(%original release date%,$ifequal($year(%original release date%),$year(%date%),,$year(%date%) ))%edition%']']", metadb);
-						if (album == "?" && radio) album = '';
-
-						g.DrawString(album, albumFont, albumColor, albumX, albumY, albumW, albumH, StringFormat(0, showGroupInfo ? 1 : 0, 3, 0x1000));
-
-						var albumStringW = gr.MeasureString(album, albumFont, 0, 0, 0, 0).Width;
-
-						var lineX1 = leftPad + albumStringW + 10;
-						var lineY = albumY + albumH / 2 + 1;
-
-						if (!showGroupInfo) {
-							lineX1 = leftPad;
-							lineY = groupY + groupH / 2 + 1;
-						}
-						var lineX2 = dateX - 10;
-
-						(lineX2 - lineX1 > 0) && g.DrawLine(lineX1, lineY, lineX2, lineY, 1, lineColor);
-
-						//---> INFO
-						if (showGroupInfo) {
-							g.SetTextRenderingHint(TextRenderingHint.SingleBitPerPixelGridFit);
-							var infoY = groupY + artistH + albumH;
-							var infoH = h;
-
-							var codec = $("$lower($if2(%codec%,$ext(%path%)))", metadb);
-							if (codec == "cue") {
-								codec = $("$ext($info(referenced_file))", metadb);
-							} else if (codec == "mpc") {
-								codec = codec + "-" + $("$info(codec_profile)", metadb).replace("quality ", "q");
-							} else if (codec == "dts" || codec == "ac3" || codec == "atsc a/52") {
-								codec += " " + $(" $replace($replace($replace($info(channel_mode), + LFE,),' front, ','/'),' rear surround channels',$if($strstr($info(channel_mode),' + LFE'),.1,.0)) %bitrate%", metadb) + " kbps";
-								codec = codec.replace("atsc a/52", "Dolby Digital");
-							} else if ($("$info(encoding)", metadb) == "lossy") {
-								if ($("$info(codec_profile)", metadb) == "CBR") codec = codec + "-" + $("%bitrate%", metadb) + " kbps";
-								else codec = codec + "-" + $("$info(codec_profile)", metadb);
-							}
-							// console.log(codec, $("$info(encoding)", metadb), $("$info(codec_profile)", metadb), $("$info(channel_mode)", metadb))
-
-							if (!codec) codec = path;
-							var iCount = itemCount[ID.groupNr];
-							var genre = radio ? '' : "%genre% | ";
-							var info = $(genre + codec + "[ | %replaygain_album_gain%]", metadb) + (radio ? '' : " | " + iCount + (iCount == 1 ? " Track" : " Tracks") + $("$ifgreater(%totaldiscs%,1, - %totaldiscs% Discs,)", metadb) + " | Time: " + calculateGroupLength(firstItem[groupNr], lastItem[groupNr]));
-							//console.log("w = " + w + ", listW = " + listW + ", x = " + x);
-							g.DrawString(info, infoFont, infoColor, artistX, infoY, artistW, infoH, StringFormat(0, 0, 3, 0x1000));
-
-							var stringInfo = gr.MeasureString(info, infoFont, 0, 0, 0, 0);
-							var labelString = $("$if2(%label%,[%publisher%])", metadb).replace(/, /g,' \u2022 ');
-							labelWidth = Math.ceil(gr.MeasureString(labelString, infoFont, 0, 0, 0, 0).width + 10);
-							if (albumW > labelWidth + stringInfo.width)
-								g.DrawString(labelString, infoFont, infoColor, artistX + artistW - labelWidth, infoY, labelWidth-4, infoH, StringFormat(2, 0, 3, 0x1000));
-
-							var infoStringH = Math.ceil(stringInfo.Height + 5);
-							var lineX1 = artistX,
-								lineX2 = 20 + w,
-								lineY = infoY + infoStringH;
-							(lineX2 - lineX1 > 0) && g.DrawLine(lineX1, lineY, lineX2, lineY, 1, lineColor);
-
-						}
-
-						//************************************************************//
-
-						clipImg.ReleaseGraphics(g);
-						gr.DrawImage(clipImg, listX, clipY, listW, clipH, 0, 0, listW, clipH, 0, 255);
-						clipImg.Dispose();
-
-					}
-
-					tempGroupNr = groupNr;
-
-					//--->
-
-				} else if (ID.isDiscHeader) {
-					if (ID.isOdd && alternateRowColor) {
-						gr.FillSolidRect(rowX, y + 1, rowW, rowH + 1, rowColorAlternate);
-					}
-
-					titleFont = titleFontPlaying;
-					lineColor = lineColorNormal;
-
-					if (selectedID == ID.nr) {
-
-						if (alternateRowColor) {
-							gr.DrawRect(x, y, w - 1, rowH, 1, rowColorFocusSelected);
-						} else {
-							gr.FillSolidRect(rowX, y, rowW, rowH, rowColorSelected);
-						}
-
-						titleColor = titleColorSelected;
-						countColor = countColorSelected;
-						rowColorFocus = rowColorFocusSelected;
-						lineColor = lineColorSelected;
-
-					} else {
-						titleColor = titleColorNormal;
-					}
-
-					var ID = playlist[i+1 + listStep[activeList]];
-
-					discHeaderString = $("[Disc %discnumber% $if("+ tf.disc_subtitle+", \u2014 ,)]["+ tf.disc_subtitle +"]", metadb);
-					discLength = calculateDiscLength(ID.nr, lastItem[groupNr]);
-
-					var discPadding = 8;
-
-					var discStringW = gr.MeasureString(discHeaderString, titleFontPlaying, 0, 0, 0, 0).width;
-					var discLengthW = gr.MeasureString(discLength, titleFontPlaying, 0, 0, 0, 0).width;
-					var lineX1 = Math.round(x + discPadding + discStringW + 10);
-					var lineY = Math.ceil(y + h/2);
-					var lineX2 = Math.round(x + w - discLengthW - discPadding*2);
-
-					if (lineX2 - lineX1 > 0) gr.DrawLine(lineX1, lineY, lineX2, lineY, 1, lineColor);
-
-					gr.DrawString(discHeaderString, titleFontPlaying, titleColor, x + discPadding, y, w - discLengthW - discPadding*2, rowH, StringFormat(0, 1, 3, 0x1000));
-					gr.DrawString(discLength, titleFontPlaying, titleColor, x, y, w-4, rowH, StringFormat(2, 1));
-
-				} else {
-					if (ID.isOdd && alternateRowColor && playingID !== ID.nr) {
-						gr.FillSolidRect(rowX, y, rowW, rowH, rowColorAlternate);
-					}
-
-					if (selectedID == ID.nr) {
-						titleColor = titleColorSelected;
-						countColor = countColorSelected;
-						if (playingID == ID.nr) {
-							titleColor = titleColorPlaying;
-							countColor = titleColor;
-							titleFont = titleFontPlaying;
-							gr.FillSolidRect(rowX, y, rowW, rowH, col.accent);
-							// gr.DrawRect(rowX, y + 1, rowW, h - 1, 1, RGB(255,0,0));
-						} else {
-							titleFont = titleFontSelected;
-						}
-
-						if (alternateRowColor) {
-							// gr.DrawRect(x, y, w - 1, rowH, 1, rowColorFocusSelected);
-							gr.DrawRect(rowX + 1, y, rowW - 2, rowH - 1, 1, rowColorFocusSelected);
-						} else {
-							gr.FillSolidRect(rowX, y, rowW, rowH, rowColorSelected);
-						}
-
-						rowColorFocus = rowColorFocusSelected;
-
-					} else if (playingID == ID.nr) {
-
-						titleColor = titleColorPlaying;
-						titleFont = titleFontPlaying;
-						countColor = countColorPlaying;
-						gr.FillSolidRect(rowX, y, rowW, rowH, col.darkAccent);
-
-					} else {
-						titleFont = titleFontNormal;
-						titleColor = titleColorNormal;
-						countColor = countColorNormal;
-						rowColorFocus = rowColorFocusNormal;
-					}
-
-					if ((rowDrag || fileDrag) && r[i].state == 1) {
-						gr.DrawLine(x, y, x + w, y, 2, RGB(140, 142, 144));
-					}
-
-					if (!dropped && linkToLastItem && !makeSelectionDrag && i == (maxRows - 1)) {
-						gr.DrawLine(x, y + h - 1, x + w, y + h - 1, 2, RGB(255, 165, 0));
-					}
-
-					var testRect = 0;
-
-					var playCount = (radio ? '' : $("%play_count%", metadb));
-					var length = $("[%length%]", metadb);
-					var lengthWidth = length ? 50 : 0;
-					var playCountWidth = 0;
-					if (playCount != 0 && showPlayCount) {
-						playCount = playCount + " |";
-						playCountWidth = gr.MeasureString(playCount, playCountFont, 0, 0, 0, 0).Width;
-					}
-					var ratingW = 0;
-					if (componentPlayCount && showRating) ratingW = Math.ceil(ratingBtnW * 6);
-
-					//---> QUEUE
-					var queueContents = plman.GetPlaybackQueueHandles();
-					if (showQueueItem && queueContents.Count) {
-
-						var queueIndex = plman.FindPlaybackQueueItemIndex(metadb, activeList, ID.nr);
-
-						for (var q = 0; q != queueContents.Count; q++) {
-
-							var handle = queueContents.Item(q);
-							var indexCount = 0;
-
-							if (metadb.Compare(handle)) {
-
-								queueIndexes.push(queueIndex);
-								isPlaylistItemQueued[i] = true;
-
-								for (var qi = 0, l = queueIndexes.length; qi < l; qi++) {
-									if (queueIndex == queueIndexes[qi]) queueIndexCount[queueIndex] = ++indexCount;
-								}
-
-							}
-
-						}
-
-					}
-					if (isPlaylistItemQueued[i]) gr.FillSolidRect(x, y, w, h, rowColorQueued);
-
-					var queue = ((showQueueItem && queueContents.Count && queueIndex != -1) ? ('  [' + (queueIndex + 1) + ']' + (queueIndexCount[queueIndex] > 1 ? '*' + queueIndexCount[queueIndex] : '')) : '');
-
-					//---> TITLE
-					W = w - lengthWidth - playCountWidth - ratingW;
-					var gic = groupItemCounter++;
-					var itemNr = (((gic) < 10) ? ("0" + (gic)) : (gic));
-					var multiDiscs = $("$ifgreater(%totaldiscs%,1,1,0)",metadb);
-					var currDisc = $("$if2(" + tf.vinyl_side + ",[%discnumber%])", metadb);
-					var trackNumStr;
-					var trackNumWidth = 0;
-					var discSpace = 0;
-					if (pref.use_vinyl_nums) {
-						trackNumStr = tf.vinyl_track;
-					} else {
-						trackNumStr= '$if2(%tracknumber%.,' + itemNr + '.)';
-					}
-					if (multiDiscs == 1) {
-						discSpace = 25;		// leave some space before start of playlistString when we have multiple discs
-					}
-					trackNumWidth = Math.round(gr.MeasureString($(trackNumStr, metadb), titleFont, 0, 0, 0, 0).Width + 8);
-					if (playingID == ID.nr) {
-						trackNumStr = '';
-						gr.DrawString(fb.IsPaused ? g_guifx.pause : g_guifx.play, ft.guifx, titleColor, x + 10 + discSpace, y, trackNumWidth - 2, h, lc_stringformat);
-					} else {
-						gr.DrawString($(trackNumStr, metadb), titleFont, titleColor, x + 8 + discSpace, y, trackNumWidth, h, lc_stringformat);
-					}
-					playlistString = tf.title + "[  \u2022  $if($strcmp("+tf.artist+",%artist%),$ifgreater($len(%album artist%),1,$ifgreater($len(%track artist%),1,%track artist%,),),"+tf.artist+")]";
-					gr.DrawString($(playlistString, metadb) + queue, titleFont, titleColor, x + 8 + discSpace + trackNumWidth, y, W - 20 - discSpace - trackNumWidth, h, StringFormat(0, 1, 3, 0x1000));
-
-					testRect && gr.DrawRect(x, y - 1, W, h, 1, RGBA(155, 155, 255, 250));
-
-					//---> LENGTH
-					X = Math.floor(x + w - lengthWidth);
-					W = lengthWidth;
-					gr.DrawString(length, titleFont, titleColor, X, y, W-5, h, StringFormat(2, 1));
-					testRect && gr.DrawRect(X, y - 1, W, h, 1, RGBA(155, 155, 255, 250));
-
-					//---> COUNT
-					if (componentPlayCount && playCount != 0 && showPlayCount) {
-						X = x + w - lengthWidth - playCountWidth - ratingW;
-						W = playCountWidth;
-						gr.DrawString(playCount, playCountFont, countColor, X, y, W, h, StringFormat(1, 1));
-						testRect && gr.DrawRect(X, y - 1, W, h, 1, RGBA(155, 155, 255, 250));
-
-					}
-
-					//---> RATING
-
-					if (useTagRating) {
-						var fileInfo = metadb.GetFileInfo();
-						var rating = fileInfo.MetaValue(fileInfo.MetaFind("rating"), 0);
-					} else {
-						var rating = $("%rating%", metadb);
-					}
-
-					if (componentPlayCount && showRating) {
-
-						for (var j = 4; j >= 0; j--) {
-
-							var x = ratingBtnX + j * ratingBtnW - ratingBtnRightPad;
-							var w = ratingBtnW;
-
-							if (j < rating) {
-
-								if (selectedID == ID.nr)
-									var color = titleColor;
-								else
-									color = titleColor;
-
-								gr.DrawString("\u2605", ratingFontRated, color, x, y - 1, w, h, StringFormat(1, 1));
-
-							} else gr.DrawString("\u2219", ratingFontNotRated, titleColor, x, y - 1, w, h, StringFormat(1, 1));
-
-						} //eol
-
-					}
-
-				}
-
-			} // eo_row_loop
-			hyperlinks.forEach(function (h) {
-				h.onPaint(gr);
-			});
-
-			needsScrollbar && drawScrollbar(gr);
-
-		} else { //eo ifListLength
-
-			var text = "Drag some tracks here";
-
-			if (plman.PlaylistCount) {
-				text = "Playlist: " + plman.GetPlaylistName(activeList) + "\n<--- Empty --->";
-			}
-
-			gr.DrawString(text, gdi.font("Segoe Ui", 16, 0), RGB(80,80,80), startX,startY, ww-startX,wh-startY-geo.lower_bar_h, StringFormat(1, 1));
-
-		}
-		gr.SetSmoothingMode(SmoothingMode.AntiAlias);
+        showExtraDrawTiming && (drawPlaylist = fb.CreateProfiler('on_paint -> playlist'));
+        playlist.on_paint(gr);
+        showExtraDrawTiming && drawPlaylist.Print();
 	}
 
 	if (showDrawTiming)
@@ -1402,7 +874,7 @@ function show_lyrics(gr, tab, posy) {
  	if (showDebugTiming)
 		show_lyricsTime = fb.CreateProfiler("show_lyrics");
 	gr.SetTextRenderingHint(TextRenderingHint.AntiAlias);
-	g_txt_align = cc_stringformat;
+	var g_txt_align = cc_stringformat;
 
 	if (dividerImg && dividerImg.width<(albumart_size.w-10) && posy-divider_spacing-dividerImg.height>=albumart_size.y+pref.lyrics_h_padding)
 		gr.DrawImage(dividerImg, albumart_size.x+(albumart_size.w-dividerImg.width)/2, posy-divider_spacing-dividerImg.height, dividerImg.width, dividerImg.height, 0,0,dividerImg.width,dividerImg.height, 180);
@@ -1514,12 +986,10 @@ function onSettingsMenu(x, y) {
 	_rotationMenu.AppendMenuItem(MF_STRING, 32, '4 degrees');
 	_rotationMenu.AppendMenuItem(MF_STRING, 33, '5 degrees');
 	_rotationMenu.CheckMenuRadioItem(30, 33, parseInt(pref.rotation_amt)+28);
-	_rotationMenu.AppendTo(_menu, MF_STRING, 'CD Art Rotation Amount');
+    _rotationMenu.AppendTo(_menu, MF_STRING, 'CD Art Rotation Amount');
 
-	_menu.AppendMenuItem(MF_STRING, 6, 'Display CD Art above cover');
-	_menu.CheckMenuItem(pref.display_cdart ? MF_STRING : MF_DISABLED, pref.cdart_ontop);
-	_menu.AppendMenuItem(MF_STRING, 7, 'Cache Artwork (won\'t fetch on every next track)');
-	_menu.CheckMenuItem(7, pref.cache_images);
+	_menu.AppendMenuItem(pref.display_cdart ? MF_STRING : MF_DISABLED, 6, 'Display CD Art above cover');
+    _menu.CheckMenuItem(6, pref.cdart_ontop);
 	_menu.AppendMenuSeparator();
 
 	_menu.AppendMenuItem(MF_STRING, 12, 'Display playlist on startup');
@@ -1528,11 +998,6 @@ function onSettingsMenu(x, y) {
 	_menu.CheckMenuItem(13, pref.show_transport);
 	_menu.AppendMenuSeparator();
 
-	// _menu.AppendMenuItem(MF_STRING, 15, 'Show Codec Images');
-	// _menu.CheckMenuItem(15, pref.show_codec_img);
-	// _menu.AppendMenuItem(pref.show_codec_img ? MF_STRING : MF_DISABLED, 16, 'Show Codec Image for mp3s');
-	// _menu.CheckMenuItem(16, pref.show_mp3_codec);
-	// _menu.AppendMenuSeparator();
 	_menu.AppendMenuItem(MF_STRING, 17, 'Use Vinyl Style Numbering if Available');
 	_menu.CheckMenuItem(17, pref.use_vinyl_nums);
 	_menu.AppendMenuSeparator();
@@ -1582,9 +1047,6 @@ function onSettingsMenu(x, y) {
 			pref.cdart_ontop = !pref.cdart_ontop;
 			RepaintWindow();
 			break;
-		case 7:
-			pref.cache_images = !pref.cache_images;
-			break;
 		case 12:
 			pref.start_Playlist = !pref.start_Playlist;
 			break;
@@ -1595,16 +1057,6 @@ function onSettingsMenu(x, y) {
 			ResizeArtwork(true);
 			RepaintWindow();
 			break;
-		// case 15:
-		// 	pref.show_codec_img = !pref.show_codec_img;
-		// 	LoadMediaTypeImage();
-		// 	RepaintWindow();
-		// 	break;
-		// case 16:
-		// 	pref.show_mp3_codec = !pref.show_mp3_codec;
-		// 	LoadMediaTypeImage();
-		// 	RepaintWindow();
-		// 	break;
 		case 17:
 			pref.use_vinyl_nums = !pref.use_vinyl_nums;
 			RepaintWindow();
@@ -1654,7 +1106,6 @@ function onSettingsMenu(x, y) {
 	_menu.Dispose();
 
 	menu_down = false;
-//	Refresh_Menu_Buttons();
 	window.RepaintRect(pad_x, pad_y, menu_width, 24);
 }
 
@@ -1676,12 +1127,6 @@ function on_init() {
 	if (!fso.folderExists(fb.ProfilePath + themeBaseName)) {
 		fso.createFolder(fb.ProfilePath + themeBaseName);
 	}
-	if (!fso.folderExists(fb.ProfilePath + themeBaseName + '\\imgcache')) {
-		fso.createFolder(fb.ProfilePath + themeBaseName + '\\imgcache');
-	}
-	ClearOldCachedFiles(fb.ProfilePath + themeBaseName + '\\imgcache');
-
-	initList();
 
 	str = clearUIVariables();
 
@@ -1758,7 +1203,7 @@ function on_playback_new_track(metadb) {
 
 	// Fetch new albumart
 	if (!pref.cache_images || (pref.aa_glob && aa_list.length != 1) || current_path != last_path || albumart == null ||
-			fb.TitleFormat("$if2(%discnumber%,0)").Eval() != lastDiscNumber || fb.TitleFormat("$if2(" + tf.vinyl_side + ",ZZ)").Eval() != lastVinylSide) {
+			$('$if2(%discnumber%,0)') != lastDiscNumber || $('$if2(' + tf.vinyl_side + ',ZZ)') != lastVinylSide) {
 		fetchNewArtwork(metadb);
 	}
 	CreateRotatedCDImage();	// we need to always setup the rotated image because it rotates on every track
@@ -1768,13 +1213,14 @@ function on_playback_new_track(metadb) {
 	while (recordLabels.length > 0)
 		disposeImg(recordLabels.pop());
 	for (i=0;i<tf.labels.length;i++) {
-		for (j=0;j<fb.TitleFormat("$meta_num("+tf.labels[i]+")").eval();j++) {
-			labelStrings.push(fb.TitleFormat("$meta(" + tf.labels[i] + "," + j +")").eval());
+		for (j=0;j< $('$meta_num('+tf.labels[i]+')');j++) {
+			labelStrings.push( $('$meta(' + tf.labels[i] + ',' + j +')'));
 		}
 	}
-	labelStrings = eliminateDuplicates(labelStrings);
+	labelStrings = _.uniq(labelStrings);
 	for (i=0;i<labelStrings.length;i++) {
-		if ((addLabel = LoadLabelImage(labelStrings[i].replace(/'/,'\'\''))) != null) {
+		var addLabel = LoadLabelImage(labelStrings[i].replace(/'/,'\'\''));
+		if (addLabel != null) {
 			recordLabels.push(addLabel);
 		}
 	}
@@ -1792,7 +1238,7 @@ function on_playback_new_track(metadb) {
 	}
 
 	/* code to retrieve band logo */
-	bandStr = fb.TitleFormat("[%artist%]").Eval().replace(/"/g,'\'').replace(/:/g,'_').replace(/\//g,'-').replace(/\*/g,'').replace(/\?/g,'');
+	bandStr = $('[%artist%]').replace(/"/g,'\'').replace(/:/g,'_').replace(/\//g,'-').replace(/\*/g,'').replace(/\?/g,'');
 	bandLogo = disposeImg(bandLogo);
 	if (bandStr) {
 		bandLogoHQ = false;
@@ -1811,14 +1257,10 @@ function on_playback_new_track(metadb) {
 		CheckForMultiChannelVersion();
 	}
 
-	LoadMediaTypeImage();
-
 	last_path = current_path;								// for art caching purposes
 	lastDiscNumber = $('$if2(%discnumber%,0)');				// for art caching purposes
 	lastVinylSide = $('$if2(" + tf.vinyl_side + ",ZZ)');
-	currentRating = $('$if2(%rating%,)');					// save rating so we can update when it changes in on_metadb_changed()
 	currentLastPlayed = $(tf.last_played);
-	calcDateRatios();
 
 	// enable "watch for tag changes" on new track
 	metadb_handle = fb.GetNowPlaying();
@@ -1834,7 +1276,6 @@ function on_playback_new_track(metadb) {
 	}
 
 	// Lyrics stuff
-	console.log('clearing g_playtimer in on_playback_new_track()');
 	g_playtimer && window.ClearInterval(g_playtimer);
 	g_playtimer = null;
 	if (displayLyrics) {	// no need to try retrieving them if we aren't going to display them now
@@ -1844,102 +1285,114 @@ function on_playback_new_track(metadb) {
 }
 
 // tag content changed
-function on_metadb_changed(handles, fromhook) {
-	console.log('on_metadb_changed()');
+function on_metadb_changed(handle_list, fromhook) {
+    console.log('on_metadb_changed()');
 	if (fb.IsPaused || fb.IsPlaying) {
-		title  = fb.TitleFormat(tf.title).Eval();
-		artist = fb.TitleFormat(tf.artist).Eval();
-		if (pref.use_vinyl_nums)
-			tracknum = fb.TitleFormat(tf.vinyl_track).Eval();
-		else
-			tracknum = fb.TitleFormat(tf.tracknum).Eval();
+        var nowPlayingUpdated = !handle_list;   // if we don't have a handle_list we called this manually from on_playback_new_track
+        var metadb = fb.GetNowPlaying();
+        if (metadb && handle_list) {
+            for (i=0; i < handle_list.Count; i++) {
+                if (metadb.RawPath === handle_list.Item(i).RawPath) {
+                    nowPlayingUpdated = true;
+                    break;
+                }
+            }
+        }
 
-        str.tracknum = tracknum;
-        str.title = title;
-		str.artist = artist;
-		str.year = $('$year($if2(%original release date%,%date%)))');
-		str.album = $("[%album%][ '['"+ tf.album_trans +"']']");
-		var codec = $("$lower($if2(%codec%,$ext(%path%)))");
-		if (codec == "cue") {
-			codec = $("$ext($info(referenced_file))");
-		} else if (codec == "mpc") {
-			codec = codec + "-" + $("$info(codec_profile)").replace("quality ", "q");
-		} else if (codec == "dts" || codec == "ac3" || codec == "atsc a/52") {
-			codec += $("[ $replace($replace($replace($info(channel_mode), + LFE,),' front, ','/'),' rear surround channels',$if($strstr($info(channel_mode),' + LFE'),.1,.0))] %bitrate%") + " kbps";
-			codec = codec.replace("atsc a/52", "Dolby Digital");
-		} else if ($("$info(encoding)") == "lossy") {
-			if ($("$info(codec_profile)") == "CBR") codec = codec + "-" + $("%bitrate%") + " kbps";
-			else codec = codec + "-" + $("$info(codec_profile)");
-		}
-		str.trackInfo = $(codec + '[ | %replaygain_album_gain%]');
+        if (nowPlayingUpdated) {
+            // the handle_list contains the currently playing song so update
+            title  = fb.TitleFormat(tf.title).Eval();
+            artist = fb.TitleFormat(tf.artist).Eval();
+            if (pref.use_vinyl_nums)
+                tracknum = fb.TitleFormat(tf.vinyl_track).Eval();
+            else
+                tracknum = fb.TitleFormat(tf.tracknum).Eval();
 
-		// if (fb.IsPlaying || fb.IsPaused) {
-		// 	str.tracknum = tracknum;
-		// 	str.title = title;
-		// }
-		str.disc = fb.TitleFormat(tf.disc).Eval();
+            str.tracknum = tracknum;
+            str.title = title;
+            str.artist = artist;
+            str.year = $('$year($if2(%original release date%,%date%)))');
+            str.album = $("[%album%][ '['"+ tf.album_trans +"']']");
+            var codec = $("$lower($if2(%codec%,$ext(%path%)))");
+            if (codec == "cue") {
+                codec = $("$ext($info(referenced_file))");
+            } else if (codec == "mpc") {
+                codec = codec + "-" + $("$info(codec_profile)").replace("quality ", "q");
+            } else if (codec == "dts" || codec == "ac3" || codec == "atsc a/52") {
+                codec += $("[ $replace($replace($replace($info(channel_mode), + LFE,),' front, ','/'),' rear surround channels',$if($strstr($info(channel_mode),' + LFE'),.1,.0))] %bitrate%") + " kbps";
+                codec = codec.replace("atsc a/52", "Dolby Digital");
+            } else if ($("$info(encoding)") == "lossy") {
+                if ($("$info(codec_profile)") == "CBR") codec = codec + "-" + $("%bitrate%") + " kbps";
+                else codec = codec + "-" + $("$info(codec_profile)");
+            }
+            str.trackInfo = $(codec + '[ | %replaygain_album_gain%]');
 
-		h = Math.floor(fb.PlaybackLength/3600);
-		m = Math.floor(fb.PlaybackLength%3600/60);
-		s = Math.floor(fb.PlaybackLength%60);
-		str.length = (h > 0 ? h+":"+(m < 10 ? "0":'')+m : m) + ":" + (s < 10 ? "0":'') + s;
+            // if (fb.IsPlaying || fb.IsPaused) {
+            // 	str.tracknum = tracknum;
+            // 	str.title = title;
+            // }
+            str.disc = fb.TitleFormat(tf.disc).Eval();
 
-		str.grid = [];
-		for (k=0; k < tf.grid.length; k++) {
-			val = $(tf.grid[k].val);
-			if (val) {
-				if (tf.grid[k].age) {
-					val = $('$date(' + val + ')');  // never show time
-					val += ' (' + calcAgeDateString(val) + ')';
-				}
-				str.grid.push({
-					age: tf.grid[k].age,
-					label: tf.grid[k].label,
-					val: val,
-				});
-			}
-		}
+            h = Math.floor(fb.PlaybackLength/3600);
+            m = Math.floor(fb.PlaybackLength%3600/60);
+            s = Math.floor(fb.PlaybackLength%60);
+            str.length = (h > 0 ? h+":"+(m < 10 ? "0":'')+m : m) + ":" + (s < 10 ? "0":'') + s;
 
-		if ($('%lastfm_play_count%') != '0') {
-			playCountVerifiedByLastFm = true;
-		} else {
-			playCountVerifiedByLastFm = false;
-		}
+            str.grid = [];
+            for (k=0; k < tf.grid.length; k++) {
+                val = $(tf.grid[k].val);
+                if (val) {
+                    if (tf.grid[k].age) {
+                        val = $('$date(' + val + ')');  // never show time
+                        val += ' (' + calcAgeDateString(val) + ')';
+                    }
+                    str.grid.push({
+                        age: tf.grid[k].age,
+                        label: tf.grid[k].label,
+                        val: val,
+                    });
+                }
+            }
 
-		rating = $('$if2(%rating%,)');
-		if (rating.length > 0 && rating != currentRating) {
-			currentRating = rating;
-		}
+            if ($('%lastfm_play_count%') != '0') {
+                playCountVerifiedByLastFm = true;
+            } else {
+                playCountVerifiedByLastFm = false;
+            }
 
-		lastPlayed = $(tf.last_played);
-		calcDateRatios($date(currentLastPlayed) !== $date(lastPlayed), currentLastPlayed);	// last_played has probably changed and we want to update the date bar
-		if (!currentLastPlayed.length && lastPlayed.length) {
-			currentLastPlayed = $date(lastPlayed);
-			fullLastPlayed = toDatetime(lastPlayed);
-			console.log('fullLastPlayed', fullLastPlayed, currentLastPlayed);
-		}
+			lastPlayed = $(tf.last_played);
+			// console.log($date(currentLastPlayed), $date(lastPlayed), $date(currentLastPlayed) !== $date(lastPlayed));
+            calcDateRatios($date(currentLastPlayed) !== $date(lastPlayed), currentLastPlayed);	// last_played has probably changed and we want to update the date bar
+            if (lastPlayed.length) {
+                today = new Date().toISOString().split('T')[0];
+                if (!currentLastPlayed.length || $date(lastPlayed) !== today) {
+                    currentLastPlayed = lastPlayed;
+                    console.log('currentLastPlayed:', currentLastPlayed);
+                }
+            }
 
-		lp = str.grid.find(function(value) {
-			return value.label === 'Last Played';
-		});
-		if (lp) {
-			lp.val = $date(currentLastPlayed);
-			if (calcAgeDateString(lp.val)) {
-				lp.val += ' (' + calcAgeDateString(lp.val) + ')';
-			}
-		}
+            lp = str.grid.find(function(value) {
+                return value.label === 'Last Played';
+            });
+            if (lp) {
+                lp.val = $date(currentLastPlayed);
+                if (calcAgeDateString(lp.val)) {
+                    lp.val += ' (' + calcAgeDateString(lp.val) + ')';
+                }
+            }
 
-		if (pref.show_flags) {
-			LoadCountryFlags();
-		}
+            if (pref.show_flags) {
+                LoadCountryFlags();
+            }
 
-		tag_timer = 0;
+            tag_timer = 0;
+        }
 	}
 	createHyperlinks();
 	// refreshScrollbar();
 	if (displayPlaylist) {
 		trace_call && console.log(qwr_utils.function_name());
-		playlist.on_metadb_changed(handles, fromhook);
+		playlist.on_metadb_changed(handle_list, fromhook);
 	}
 	RepaintWindow();
 }
@@ -1981,7 +1434,7 @@ function on_mouse_lbtn_down(x, y, m) {
 	}
 
 	buttonEventHandler(x, y, m);
-	hyperlinkEventHandler(x, y, m);
+	// hyperlinkEventHandler(x, y, m);
 
 	if (displayPlaylist && playlist.mouse_in_this(x, y)) {
 		trace_call && console.log(qwr_utils.function_name());
@@ -2012,7 +1465,7 @@ function on_mouse_lbtn_up(x, y, m) {
 	}
 	on_mouse_move(x, y);
 	buttonEventHandler(x, y, m);
-	hyperlinkEventHandler(x, y, m);
+	// hyperlinkEventHandler(x, y, m);
 
 	onMouseLbtnDown = false;
 }
@@ -2028,7 +1481,7 @@ function on_mouse_lbtn_dblclk(x, y, m) {
 		}
 	}
 	buttonEventHandler(x, y, m);
-	hyperlinkEventHandler(x, y, m);
+	// hyperlinkEventHandler(x, y, m);
 	// rowMouseEventHandler(x, y, m);
 	// scrollbarMouseEventHandler(x, y);
 	if (displayPlaylist) {
@@ -2074,7 +1527,7 @@ function on_mouse_move(x, y, m) {
 		}
 
 		buttonEventHandler(x, y, m);
-		hyperlinkEventHandler(x, y, m);
+		// hyperlinkEventHandler(x, y, m);
 
 		if (displayPlaylist && playlist.mouse_in_this(x, y)) {
 			trace_call && trace_on_move && console.log(qwr_utils.function_name());
@@ -2102,12 +1555,13 @@ function on_mouse_wheel(delta) {
 }
 // =================================================== //
 
+// trace_call = true;
+
 function on_mouse_leave() {
 
-	// rowMouseEventHandler(0, 0);
-	// scrollbarMouseEventHandler(0, 0);
-	if (displayPlaylist)
+	if (displayPlaylist) {
 		playlist.on_mouse_leave();
+	}
 }
 
 function on_playlists_changed() {
@@ -2198,140 +1652,6 @@ function on_key_down(vkey) {
 			}
 			break;
 	}
-/*
-	var focusItemIndex = plman.GetPlaylistFocusItemIndex(activeList);
-
-	if (!ShiftKeyPressed || tempFocusItemIndex == undefined) tempFocusItemIndex = focusItemIndex;
-
-	keyPressed = true;
-
-	switch (vkey) {
-		case VK_PGUP:	// VK_PRIOR
-			var IDnr = 0;	// go to first item unless there's a scroll bar
-
-			if (needsScrollbar) {
-				var currID = playlist[Math.floor(maxRows / 2) + listStep[activeList]];
-				fastScrollActive = true;
-				onScrollStep(1, maxRows); // PAGE UP
-				var ID = playlist[Math.floor(maxRows / 2) + listStep[activeList]];
-				if (currID !== ID) {	// did the page change?
-					ID.isGroupHeader ? IDnr = firstItem[ID.groupNr] : IDnr = ID.nr;
-				}
-			}
-
-			plman.ClearPlaylistSelection(activeList);
-			plman.SetPlaylistSelectionSingle(activeList, IDnr, true);
-			plman.SetPlaylistFocusItem(activeList, IDnr);
-			break
-		case VK_PGDN:	// VK_NEXT
-			var IDnr = (playlistItemCount - 1);	// go to last item unless there's a scrollbar
-
-			if (needsScrollbar) {
-				var currID = playlist[Math.floor(maxRows / 2) + listStep[activeList]];
-				fastScrollActive = true;
-				onScrollStep(-1, maxRows); // PAGE DOWN
-				var ID = playlist[Math.floor(maxRows / 2) + listStep[activeList]];
-				if (currID !== ID) {	// did the page change?
-					ID.isGroupHeader ? IDnr = firstItem[ID.groupNr] : IDnr = ID.nr;
-				}
-			}
-
-			plman.ClearPlaylistSelection(activeList);
-			plman.SetPlaylistSelectionSingle(activeList, IDnr, true);
-			plman.SetPlaylistFocusItem(activeList, IDnr);
-			break;
-		case VK_DELETE:
-			plman.RemovePlaylistSelection(activeList, crop = false);
-			break;
-		case VK_KEY_A:
-			CtrlKeyPressed && selectAll();
-			break;
-		case VK_KEY_F:
-			CtrlKeyPressed && fb.RunMainMenuCommand("Edit/Search");
-			ShiftKeyPressed && !CtrlKeyPressed && fb.RunMainMenuCommand("Library/Search");
-			break;
-		case VK_RETURN:
-
-			plman.ExecutePlaylistDefaultAction(activeList, focusItemIndex);
-			newTrackByClick = true;
-
-			break;
-
-		case VK_HOME:
-
-			plman.ClearPlaylistSelection(activeList);
-			plman.SetPlaylistSelectionSingle(activeList, 0, true);
-			plman.SetPlaylistFocusItem(activeList, 0);
-
-			break;
-		case VK_END:
-
-			plman.ClearPlaylistSelection(activeList);
-			plman.SetPlaylistSelectionSingle(activeList, (playlistItemCount - 1), true);
-			plman.SetPlaylistFocusItem(activeList, (playlistItemCount - 1));
-
-			break;
-		case VK_KEY_N:
-			if (CtrlKeyPressed) {
-
-				plman.CreatePlaylist(plman.PlaylistCount, '');
-				plman.ActivePlaylist = plman.PlaylistCount - 1;
-
-			}
-			break;
-		case VK_KEY_O:
-			if (ShiftKeyPressed) {
-				fb.RunContextCommandWithMetadb("Open Containing Folder", fb.GetFocusItem());
-			}
-			break;
-		case VK_KEY_P:
-			if (CtrlKeyPressed) {
-				fb.RunMainMenuCommand("File/Preferences");
-			}
-			break;
-		case VK_KEY_M:
-			if (CtrlKeyPressed) {
-				fb.RunMainMenuCommand("View/Playlist Manager");
-			}
-			break;
-		case VK_KEY_Q:
-			if (CtrlKeyPressed && ShiftKeyPressed) {
-				plman.FlushPlaybackQueue();
-				return;
-			}
-
-			if (CtrlKeyPressed) {
-				console.log(activeList, focusItemIndex);
-				plman.AddPlaylistItemToPlaybackQueue(activeList, focusItemIndex);
-			} else if (ShiftKeyPressed) {
-				var index = plman.FindPlaybackQueueItemIndex(fb.GetFocusItem(), activeList, focusItemIndex)
-				plman.RemoveItemFromPlaybackQueue(index);
-			}
-			break;
-		case VK_KEY_M:
-			break;
-		case 0x6B:		// VK_ADD ??
-		case 0x6D:		// VK_SUBTRACT ??
-			if (CtrlKeyPressed && ShiftKeyPressed) {
-				var action = vkey === 0x6B ? '+' : '-';
-				if (fb.IsPlaying || fb.IsPaused) {
-					var metadb = fb.GetNowPlaying();
-					fb.RunContextCommandWithMetadb('Rating/' + action, metadb);
-				} else if (!metadb && displayPlaylist) {
-					var metadbList = plman.GetPlaylistSelectedItems(plman.ActivePlaylist);
-					if (metadbList.Count === 1) {
-						fb.RunContextCommandWithMetadb('Rating/' + action, metadbList.Item(0));
-					} else {
-						console.log('Won\'t change rating with more than one selected item');
-					}
-				}
-			}
-			break;
-		default:
-			// console.log('unhandled key: ' + vkey)
-			break;
-	}
-*/
 }
 // =================================================== //
 
@@ -2340,12 +1660,6 @@ function on_playback_queue_changed(origin) {
 	playlist.on_playback_queue_changed(origin);
 }
 
-// function on_key_up(vkey) {
-// 	if (vkey == VK_PRIOR || vkey == VK_NEXT) {
-// 		fastScrollActive = false;
-// 		getAlbumArt();
-// 	}
-// }
 
 function on_playback_pause(state) {
 	if (pref.show_transport) {
@@ -2356,7 +1670,7 @@ function on_playback_pause(state) {
 		if (timer) window.ClearInterval(timer);
 		timer = 0;
 		// fadeAlpha = 255;	// make text visible again on pause
-		window.RepaintRect(0.015*ww, 0.12*wh, Math.max(albumart_size.x-0.015*ww,0.015*ww), wh-geo.lower_bar_h-0.12*wh);
+        window.RepaintRect(0.015*ww, 0.12*wh, Math.max(albumart_size.x-0.015*ww,0.015*ww), wh-geo.lower_bar_h-0.12*wh);
 	} else {		// unpausing
 		if (pauseTimer > 0) window.ClearInterval(pauseTimer);
 		showTimeElapsed = true;
@@ -2378,12 +1692,15 @@ function on_playback_pause(state) {
 	else {
 		debugLog("Repainting on_playback_pause no albumart");
 		window.RepaintRect(0.5*(ww-geo.pause_size), 0.5*(wh-geo.pause_size),geo.pause_size+1,geo.pause_size+1);
-	}
-	repaintList();
+    }
+
+    if (displayPlaylist) {
+        playlist.on_playback_pause(state);
+    }
 }
 
 function on_playback_stop(reason) {
-	if (reason != 2) { // 2 = starting_another
+	if (reason !== 2) { // 2 = starting_another
 		// clear all variables and repaint
 		str = clearUIVariables()
 		debugLog("Repainting on_playback_stop");
@@ -2395,10 +1712,7 @@ function on_playback_stop(reason) {
 		}
 		if (metadb_handle) {
 			metadb_handle = null;
-		}
-		// repaintList();
-		trace_call && console.log(qwr_utils.function_name());
-		playlist.on_playback_stop(reason);
+        }
 		createButtonObjects(ww, wh);	// switch pause button to play
 	}
 	timer && window.ClearInterval(timer);
@@ -2406,18 +1720,14 @@ function on_playback_stop(reason) {
 		window.ClearTimeout(globTimer);
 	if (albumart && ((pref.aa_glob && aa_list.length != 1) || (!pref.cache_images || last_path == ''))) {
 		debugLog("disposing artwork");
-		albumart = disposeImg(albumart);
+		albumart = null;
 		albumart_scaled = disposeImg(albumart_scaled);
-	}
-	if (cdart && (!pref.cache_images || last_path == '')) {
-		console.log("Disposing cdart");
-		cdart = disposeCDImg(cdart);
 	}
 	bandLogo = disposeImg(bandLogo);
 	mediaTypeImg = disposeImg(mediaTypeImg);
 	while (flagImgs.length > 0)
 		disposeImg(flagImgs.pop());
-	rotatedCD = disposeImg(rotatedCD);
+    rotatedCD = disposeImg(rotatedCD);
 	globTimer = 0;
 
 	g_playtimer && window.ClearInterval(g_playtimer);
@@ -2425,8 +1735,10 @@ function on_playback_stop(reason) {
 	if (reason==0) {
 		// Stop
 		window.Repaint();
-	}
-	ClearOldCachedFiles(fb.ProfilePath + themeBaseName + '\\imgcache');
+    }
+    if (displayPlaylist) {
+        playlist.on_playback_stop(reason);
+    }
 }
 
 function on_playback_starting(cmd, is_paused) {
@@ -2434,11 +1746,6 @@ function on_playback_starting(cmd, is_paused) {
 		window.SetCursor(-1);	// hide cursor
 	}
 	createButtonObjects(ww, wh);	// play button to pause
-	repaintList();
-}
-
-function on_playback_edited(metadb) {
-	repaintList();
 }
 
 function on_drag_enter(action, x, y, mask) {
@@ -2471,6 +1778,15 @@ function on_notify_data(name, info) {
 	trace_call && console.log(qwr_utils.function_name());
 	playlist.on_notify_data(name, info);
 }
+
+var debounced_init_playlist = _.debounce(function (playlistIndex) {
+	trace_call && console.log('debounced_init_playlist');
+	playlist.on_playlist_items_added(playlistIndex);
+}, 0, {
+	leading:  false,
+	trailing: true
+});
+
 // =================================================== //
 
 function clearUIVariables() {
@@ -2496,7 +1812,7 @@ function encache(img, path) {
 		}
 		h = Math.min(h / scale_factor);
 		w = Math.min(w / scale_factor);
-			}
+	}
 	art_cache[path] = img.Resize(w, h);
 	img.Dispose();
 	art_cache_indexes.push(path);
@@ -2505,7 +1821,7 @@ function encache(img, path) {
 		console.log('deleting cached img:', remove)
 		disposeImg(art_cache[remove]);
 		delete art_cache[remove];
-		}
+	}
 	return art_cache[path];
 }
 
@@ -2562,7 +1878,7 @@ function on_load_image_done(cookie, image) {
 }
 
 function on_script_unload() {
-	console.log("Unloading Script");
+	console.log('Unloading Script');
 	// it appears we don't need to dispose the images which we loaded using gdi.Image in their declaration for some reason. Attempting to dispose them causes a script error.
 }
 
@@ -2593,11 +1909,10 @@ function refresh_seekbar() {
 
 // TIMER Callback functions
 function doRotateImage() {
-	console.log("doRotateImate: " + albumArtIndex);
+	debugLog("Repainting in doRotateImate: " + albumArtIndex);
 	albumArtIndex = (albumArtIndex + 1) % aa_list.length;
 	glob_image(albumArtIndex);
 	lastLeftEdge = 0;
-	debugLog("Repainting in doRotateImage");
 	RepaintWindow();
 	globTimer = window.SetTimeout(function() {
 		doRotateImage();
@@ -2740,13 +2055,16 @@ function calcDateRatios(dontUpdateLastPlayed, currentLastPlayed) {
 
 	playedTimesRatios = [];
 	lfmPlayedTimesRatios = [];
-	var added = 	    toDatetime($('%added%'));
-	var first_played =  toDatetime($('[%first_played%]'));
-	var last_played	=   toDatetime($('[%last_played%]'));
-	console.log('%last_played%:', $('[%last_played%]'));
-	if (dontUpdateLastPlayed) {
+	var added = 	    toTime($('$if2(%added_enhanced%,%added%)'));
+	var first_played =  toTime($('[%first_played_enhanced%]'));
+	var last_played	=   $('[%last_played_enhanced%]');
+	var today = new Date().toISOString().split('T')[0];
+	// console.log('today:', today);
+	if (dontUpdateLastPlayed && $date(last_played) === today) {
 		last_played = new Date(toDatetime(currentLastPlayed)).getTime();
-		console.log('currentLastPlayed: ', currentLastPlayed, ' => ', last_played);
+		console.log('Setting last_played to:', currentLastPlayed, ' => ', last_played);
+	} else {
+		last_played = toTime(last_played);
 	}
 
 	var lfmPlayedTimes = [];
@@ -2757,36 +2075,10 @@ function calcDateRatios(dontUpdateLastPlayed, currentLastPlayed) {
 	}
 
 	playedTimes = parseJson(raw, 'foobar: ');
-	added = new Date(added);
-	added = added.getTime();
-	if (lfmPlayedTimes.length && lfmPlayedTimes[0] < added) {
-		added = lfmPlayedTimes[0];
-		console.log('plays before added, so moving added');
-	}
 
-	if (playedTimes.length) {
-		if (lfmPlayedTimes.length) {
-			first_played = Math.min(playedTimes[0], lfmPlayedTimes[0]);
-			if (!dontUpdateLastPlayed) {
-				last_played = Math.max(playedTimes.slice(-1)[0], lfmPlayedTimes.slice(-1)[0]);
-				console.log('updating last played:', last_played, playedTimes.slice(-1), lfmPlayedTimes.slice(-1));
-			}
-		} else {
-			first_played = playedTimes[0];
-			if (!dontUpdateLastPlayed) {
-				last_played = playedTimes.slice(-1)[0];
-			}
-		}
-		console.log('last_played:', last_played);   // TODO: remove
-	}
-	if (added && (first_played || lfmPlayedTimes.length)) {
+	if (added && first_played) { //(first_played || lfmPlayedTimes.length)) {
 		age = calcAge(added, false);
-		console.log('added:', added, first_played);
-		if (lfmPlayedTimes.length && lfmPlayedTimes[0] < new Date(first_played).getTime()) {
-			first_played = lfmPlayedTimes[0];
-		}
 
-		console.log(' fp >>>', playedTimes[0], calcAgeRatio(playedTimes[0], age), lfmPlayedTimes[0],  calcAgeRatio(lfmPlayedTimes[0], age));
 		tl_firstPlayedRatio = calcAgeRatio(first_played, age);
 		tl_lastPlayedRatio = calcAgeRatio(last_played, age);
 		console.log('fp (' + first_played + ') ratio: ', tl_firstPlayedRatio, 'lp (' + last_played + ') ratio:', tl_lastPlayedRatio);
@@ -2795,13 +2087,11 @@ function calcDateRatios(dontUpdateLastPlayed, currentLastPlayed) {
 			tl_lastPlayedRatio = tl_firstPlayedRatio;
 			console.log('>>>>>>> - lp < fp')
 		}
-		console.log(' LP >>>>', last_played)
 
 		if (playedTimes.length) {
 			for (i=0; i < playedTimes.length; i++) {
 				var ratio = calcAgeRatio(playedTimes[i], age);
 				playedTimesRatios.push(ratio);
-				// console.log('ratio', i + ':', ratio);
 			}
 		} else {
 			playedTimesRatios = [tl_firstPlayedRatio, tl_lastPlayedRatio];
@@ -2811,7 +2101,7 @@ function calcDateRatios(dontUpdateLastPlayed, currentLastPlayed) {
 		var tempPlayedTimesRatios = playedTimesRatios.slice();
 		tempPlayedTimesRatios.push(1.0001);	// pick up every last.fm time after last_played fb knows about
 		for (i=0; i < tempPlayedTimesRatios.length; i++) {
-			while(j < lfmPlayedTimes.length &&
+			while (j < lfmPlayedTimes.length &&
  				(ratio = calcAgeRatio(lfmPlayedTimes[j], age)) < tempPlayedTimesRatios[i]) {
 				playedTimesRatios.push(ratio);
 				// console.log(ratio);
@@ -2888,31 +2178,11 @@ function CreateRotatedCDImage() {
 		if (cdart && cdart_size.w > 0) {	// cdart must be square so just use cdart_size.w (width)
 			rotatedCD = gdi.CreateImage(cdart_size.w,cdart_size.w);
 			rotCDimg = rotatedCD.GetGraphics();
-			trackNum = parseInt(fb.TitleFormat("$num($if(" + tf.vinyl_tracknum + ",$sub($mul(" + tf.vinyl_tracknum + ",2),1),$if2(%tracknumber%,1)),1)").Eval())-1;
+			trackNum = parseInt(fb.TitleFormat('$num($if(' + tf.vinyl_tracknum + ',$sub($mul(' + tf.vinyl_tracknum + ',2),1),$if2(%tracknumber%,1)),1)').Eval())-1;
 			if (!pref.rotate_cdart || trackNum != trackNum) trackNum = 0;	// avoid NaN issues when changing tracks rapidly
 			rotCDimg.DrawImage(cdart, 0, 0, cdart_size.w, cdart_size.w, 0, 0, 1000, 1000, trackNum*pref.rotation_amt, 255);
 			rotatedCD.ReleaseGraphics(rotCDimg);
 		}
-	}
-}
-
-function CreateScaledBGImage() {
-	if (ww && wh) {
-		scaled_bg_img = gdi.CreateImage(ww,wh-geo.lower_bar_h-1);
-		bg_graphics = scaled_bg_img.GetGraphics();
-		bg_graphics.DrawImage(image_bg, 0, 0, ww, wh-geo.lower_bar_h-1, 0, 0, image_bg.Width, image_bg.Height-geo.lower_bar_h);
-		bg_graphics.FillGradRect(0, wh-geo.lower_bar_h-geo.lower_bar_h+2, ww, geo.lower_bar_h, 90, RGBA(0,0,0,0), RGBA(0,0,0,255),0.99);// for some reason focus can't be 1.0 otherwise we get a dark line at the top
-		scaled_bg_img.ReleaseGraphics(bg_graphics);
-	}
-}
-
-function CreateAlbumArtScaledImage() {
-	albumart_scaled = disposeImg(albumart_scaled);
-	if (albumart_size.w > 0 && albumart_size.h > 0) {
-		albumart_scaled = gdi.CreateImage(albumart_size.w, albumart_size.h);
-		aa_graphics = albumart_scaled.GetGraphics();
-		aa_graphics.DrawImage(albumart, 0,0,albumart_size.w,albumart_size.h, 0,0,albumart.Width,albumart.Height);
-		albumart_scaled.ReleaseGraphics(aa_graphics);
 	}
 }
 
@@ -2922,25 +2192,37 @@ function ResizeArtwork(resetCDPosition) {
 		// var album_scale = Math.min((displayPlaylist ? 0.47*ww : 0.95*ww) / albumart.Width, 0.935*(wh-geo.lower_bar_h-32) / albumart.Height);
 		var album_scale = Math.min((displayPlaylist ? 0.47*ww : 0.75*ww) / albumart.Width, (wh - 96 - geo.lower_bar_h - 32) / albumart.Height);
 		// album_scale = Math.min(album_scale, 2);
-		if (displayPlaylist)
-			xCenter = 0.25*ww;
-		else if (ww/wh < 1.40)		 // when using a roughly 4:3 display the album art crowds, so move it slightly off center
-			xCenter = 0.56*ww;
-		else
-			xCenter = 0.5*ww;
+		if (displayPlaylist) {
+            xCenter = 0.25*ww;
+        } else if (ww/wh < 1.40) {		 // when using a roughly 4:3 display the album art crowds, so move it slightly off center
+			xCenter = 0.56*ww;  // TODO: check if this is still needed?
+        } else {
+            xCenter = 0.5*ww;
+            art_off_center = false;
+            if (album_scale == 0.75*ww / albumart.Width) {
+                xCenter += 40;
+                art_off_center = true;  // TODO: We should probably suppress labels in this case
+            }
+        }
 		albumart_size.w = Math.floor(albumart.Width * album_scale);											// width
 		albumart_size.h = Math.floor(albumart.Height * album_scale);										// height
 		albumart_size.x = Math.floor(xCenter-0.5 * albumart_size.w);										// left
 		if (album_scale !== (wh - 96 - geo.lower_bar_h - 32) / albumart.Height) {
 			// restricted by width
-
-		}
-		albumart_size.y = 32 + 32 + 32;		// height of menu bar + spacing + height of Artist text         // top
+            var y = 96 + Math.floor(((wh - 96 - geo.lower_bar_h - 32) / 2) - albumart_size.h / 2);
+            albumart_size.y = Math.min(y, 160);
+		} else {
+            albumart_size.y = 32 + 32 + 32;		// height of menu bar + spacing + height of Artist text         // top
+        }
 		if (btns[34] && albumart_size.x+albumart_size.w > btns[34].x-50) {
 			albumart_size.y += 16 - pref.show_transport*6;
-		}
+        }
+        console.log(albumart_size.x, albumart_size.x + albumart_size.w, ww - (albumart_size.x + albumart_size.w), albumart_size.w);
 
-		CreateAlbumArtScaledImage();
+		if (albumart_scaled) {
+			albumart_scaled.Dispose();
+		}
+		albumart_scaled = albumart.Resize(albumart_size.w, albumart_size.h);
 
 		if (resetCDPosition) {
 			if (ww - (albumart_size.x + albumart_size.w) < albumart_size.h*pref.cdart_amount+5)
@@ -3006,6 +2288,7 @@ function LoadLabelImage(publisherString) {
 		label = dir + labelStr + '.png';
 		if (utils.FileTest(label, 'e')) {
 			recordLabel = gdi.Image(label);
+			console.log('Found Record label:', label, !recordLabel ? '<COULD NOT LOAD>' : '');
 		} else {
 			labelStr = labelStr.replace(/ Records$/,'').replace(/ Recordings$/,'').replace(/ Music$/,'');
 			label = dir+labelStr + '.png';
@@ -3036,13 +2319,14 @@ function fetchNewArtwork(metadb) {
 				cdartPath = $(pref.cdartdisc_path);			// try cd%discnumber%.png
 				if (!utils.FileTest(cdartPath, 'e')) {
 					cdartPath = $(pref.cdart_path);			// cd%discnumber%.png didn't exist so try cd.png.
-					if (!utils.FileTest(cdartPath, 'e'))
+					if (!utils.FileTest(cdartPath, 'e')) {
 						disc_art_exists = false;			// didn't find anything
+					}
 				}
 			}
 		}
 		if (disc_art_exists) {
-			var temp_cdart = AttemptToLoadCachedImage(cdartPath, true);
+			var temp_cdart = AttemptToLoadCachedImage(cdartPath);
 			if (temp_cdart) {
 				disposeCDImg(cdart);
 				cdart = temp_cdart;
@@ -3060,7 +2344,12 @@ function fetchNewArtwork(metadb) {
 	for (k = 0; k < tf.glob_paths.length; k++) {
 		aa_list = aa_list.concat(utils.Glob($(tf.glob_paths[k])).toArray());
 	}
-	aa_list = eliminateDuplicates(aa_list); // remove duplicates
+	pattern = /(cd|vinyl)([0-9]*|[a-h])\.png/i;
+	aa_list = _.remove(_.uniq(aa_list), function (path) {
+		return !pattern.test(path);
+	});
+	// remove duplicates
+
 	if (aa_list.length) {
 		noArtwork = false;
 		if (aa_list.length > 1 && pref.aa_glob) {
@@ -3084,37 +2373,6 @@ function fetchNewArtwork(metadb) {
 function RepaintWindow() {
 	debugLog("Repainting from RepaintWindow()");
 	window.Repaint();
-}
-
-function LoadMediaTypeImage() {
-	mediaTypeImg = disposeImg(mediaTypeImg);
-	if (pref.show_codec_img) {
-		codec = fb.TitleFormat("[%codec%]").Eval();
-		switch (codec) {
-			case "DTS":
-				mediaTypeImg = gdi.Image(pref.codec_base+"DTS.png");
-				break;
-			case "ATSC A/52":
-				mediaTypeImg = gdi.Image(pref.codec_base+"Dolby Digital.png");
-				break;
-			case "FLAC":
-				mediaTypeImg = gdi.Image(pref.codec_base+"FLAC.png");
-				break;
-			case "Vorbis":
-				mediaTypeImg = gdi.Image(pref.codec_base+"Ogg.png");
-				break;
-			case "MP3":
-				if (pref.show_mp3_codec)
-					mediaTypeImg = gdi.Image(pref.codec_base+"mp3.png");
-				else
-					mediaTypeImg = null;
-				break;
-			case "default":
-				console.log("Unknown codec: "+codec);
-				break;
-			}
-		}
-	return;
 }
 
 function CheckForMultiChannelVersion() {
@@ -3493,28 +2751,12 @@ function createButtonImages() {
 	}
 	if (showExtraDrawTiming) createButtonTime.Print();
 }
-// =================================================== //
 
-
-
-// =================================================== //
-
-function selectAll() {
-
-	for (var i = 0; i != playlistItemCount; i++) {
-		selectedIndexes[i] = i;
-	}
-
-	plman.SetPlaylistSelection(plman.ActivePlaylist, selectedIndexes, true);
-
-}
 // =================================================== //
 
 function resizeDone() {
-	// console.log("resizeDone()");
+	console.log("resizeDone()");
 	// to speed up draw times, we scale the bg image once, and then draw it without scaling in on_paint which is up to 3-4x faster
-	scaled_bg_img = disposeImg(scaled_bg_img);
-	CreateScaledBGImage();
 
 	progressMoved = true;
 	SetProgressBarRefresh();
@@ -3523,1529 +2765,5 @@ function resizeDone() {
 		getAlbumArt();
 	}
 }
-// =================================================== //
 
-function calculateSelectionLaength() {
-
-	var selectionLengthInSeconds = 0;
-	var a = selectedIndexes[0];
-	var b = selectedIndexes[selectedIndexes.length - 1];
-
-	for (var item = a; item <= b; item++) {
-
-		selectionLengthInSeconds += parseFloat(fb.TitleFormat("%length_seconds_fp%").EvalWithMetadb(getPlaylistItems.Item(item)));
-	}
-
-	return timeFormat(selectionLengthInSeconds);
-
-}
-// =================================================== //
-
-function calculateGroupLength(a, b) {
-
-	var groupLengthInSeconds = 0;
-
-	for (var item = a; item <= b; item++) {
-		groupLengthInSeconds += parseFloat(fb.TitleFormat("%length_seconds_fp%").EvalWithMetadb(getPlaylistItems.Item(item)));
-	}
-	return timeFormat(groupLengthInSeconds);
-
-}
-// =================================================== //
-
-function calculateDiscLength(a, b) {
-
-	var discLengthInSeconds = 0;
-	var disc = parseInt(fb.TitleFormat("%discnumber%").EvalWithMetadb(getPlaylistItems.Item(a)));
-
-	for (var item = a; item <= b; item++) {
-		if (disc == parseInt(fb.TitleFormat("%discnumber%").EvalWithMetadb(getPlaylistItems.Item(item))))
-			discLengthInSeconds += parseFloat(fb.TitleFormat("%length_seconds_fp%").EvalWithMetadb(getPlaylistItems.Item(item)));
-		else
-			break;	// on a different disc, so stop
-	}
-
-	return timeFormat(discLengthInSeconds);
-
-}
-// =================================================== //
-
-function repaintList() {
-	if (displayPlaylist) {
-		// var ex = 10;
-		listW && window.RepaintRect(listX - listLeft, listY - 10, listW + listLeft + listRight, listH + 20);
-	}
-}
-// =================================================== //
-
-
-function collapseExpand(arg, nowPlaying) {
-
-	if (!playlistItemCount) return;
-	var playingID = plman.GetPlayingItemLocation().PlaylistItemIndex;
-	if (typeof (arg) == "number") {
-		var thisGroupNr = arg;
-
-		if (isCollapsed[thisGroupNr]) {
-			for (var j = lastItemID[thisGroupNr]; j >= firstItemID[thisGroupNr]; j--) {
-				playlist.splice(_firstItemID[thisGroupNr], 0, $playlist[j]);
-			}
-
-			isCollapsed[thisGroupNr] = false;
-		} else {
-			playlist.splice(_firstItemID[thisGroupNr], itemCount[thisGroupNr]);
-			isCollapsed[thisGroupNr] = true;
-		}
-	} else {
-		for (var i = groupNr; i >= 0; i--) {
-			if (arg == "collapse") {
-				if (isCollapsed[i] && i == nowPlaying) {
-					var thisGroupNr = nowPlaying;
-
-					for (var j = lastItemID[thisGroupNr]; j >= firstItemID[thisGroupNr]; j--) {
-						playlist.splice(_firstItemID[thisGroupNr], 0, $playlist[j]);
-					}
-
-					isCollapsed[thisGroupNr] = false;
-				}
-
-				if (i == nowPlaying) continue;
-
-				if (!isCollapsed[i]) {
-					playlist.splice(_firstItemID[i], itemCount[i]);
-					isCollapsed[i] = true;
-				}
-
-			} else if (arg == "expand") {
-				playlist = $playlist.slice(0);
-				for (var i = groupNr; i >= 0; i--) {
-					isCollapsed = [];
-				}
-			}
-		} //eol
-	}
-
-	//---> update _firstItemID
-	for (var i = 0; playlist[i]; i++) {
-		var ID = playlist[i];
-
-		if (ID.isGroupHeader && ID.rowNr == rowsInGroup) {
-			_firstItemID[ID.groupNr] = i + 1;
-		}
-	} //eol
-
-	listLength = playlist.length;
-	listOnSize();
-	window.Repaint();
-
-	if (nowPlaying != undefined) {
-
-		//when outo or collapse all but now playing is selected scrolls now playing album to the top
-
-		for (var j = 0; j < listLength; j++) {
-			var ID = playlist[j];
-
-			if (ID.isGroupHeader && ID.groupNr == nowPlaying) {
-				var step = j;
-
-				if (step < 0) step = 0;
-				listStep[activeList] = Math.min(listLength - maxRows, step);
-				window.SetProperty("system.List Step", listStep.toString());
-				break;
-			}
-		} // eol
-	}
-
-	listOnSize();
-	onScrollStep(0); //check and fix false scrolled up or down var if needed
-	window.Repaint();
-}
-// =================================================== //
-
-function getPlayingGroupCollapseExpand() {
-
-	if (!fb.IsPlaying || plman.ActivePlaylist != fb.PlayingPlaylist) return;
-
-	var playingItemLocation = plman.GetPlayingItemLocation();
-	var isValid;
-
-	if (playingItemLocation.IsValid) {
-		collapseExpand("collapse", getPlayingGroupNr());
-	}
-
-	var counter = 0;
-
-	if (!playingItemLocation.IsValid) {
-		var timer = window.SetInterval(function () { // timer for getting delayed item location info when skip track selected
-			isValid = plman.GetPlayingItemLocation().IsValid;
-			counter++;
-
-			if (isValid || counter == 100 || !fb.IsPlaying) {
-				window.ClearInterval(timer);
-
-				if (fb.IsPlaying) {
-					collapseExpand("collapse", getPlayingGroupNr());
-				}
-			}
-		}, 100);
-	}
-
-	function getPlayingGroupNr() {
-
-		var playingIndex = -1;
-
-		if (plman.PlayingPlaylist == activeList) {
-			playingIndex = plman.GetPlayingItemLocation().PlaylistItemIndex;
-		}
-
-		for (var g = 0; g <= groupNr; g++) {
-			for (var i = firstItem[g]; i <= lastItem[g]; i++) {
-				if (playingIndex == i) {
-					return g;
-				}
-			}
-		}
-	}
-
-}
-// =================================================== //
-
-function isGroupSelected(groupNr, playingID) {
-
-	// searches only currently visible groups
-	var selectedCount = 0;
-	nowPlayingGroupNr = -1;
-
-	for (var item = firstItem[groupNr]; item <= lastItem[groupNr]; item++) {
-		if (plman.IsPlaylistItemSelected(activeList, item)) selectedCount++;
-		if (playingID == item) nowPlayingGroupNr = groupNr;
-	}
-
-	if (selectedCount == (lastItem[groupNr] + 1 - firstItem[groupNr])) return true;
-	else return false;
-
-}
-// =================================================== //
-
-function displayFocusItem(focusID) {
-	if (listLength <= maxRows) return;
-
-	var visibleGroupRows = [];
-	var tempGroupNr = 0;
-	var groupRowCount = 0;
-
-	for (var i = 0; i != maxRows; i++) {
-		var ID = playlist[i + listStep[activeList]];
-
-		if (isCollapsed.length && ID.isGroupHeader) {
-			var groupNr = ID.groupNr;
-
-			(groupNr == tempGroupNr) ? groupRowCount++ : groupRowCount = 1;
-			visibleGroupRows[groupNr] = groupRowCount;
-		}
-
-		tempGroupNr = groupNr;
-	}
-
-	for (var i = 0; i != maxRows; i++) {
-		var ID = playlist[i + listStep[activeList]];
-		var groupNr = ID.groupNr;
-
-		if (isCollapsed[groupNr] && ID.isGroupHeader) {
-			for (var item = firstItem[groupNr]; item <= lastItem[groupNr]; item++) {
-				if (focusID == item && visibleGroupRows[groupNr] == rowsInGroup) {
-					return;
-				}
-			}
-
-		} else if (ID && focusID == ID.nr) return;
-
-	}
-
-	var IDnr;
-	for (var i = 0; i < listLength; i++) {
-		var ID = playlist[i];
-		var groupNr = ID.groupNr;
-
-		if (isCollapsed.length && ID.isGroupHeader && ID.rowNr == rowsInGroup) {
-			for (var item = firstItem[groupNr]; item <= lastItem[groupNr]; item++) {
-				if (focusID == item && isCollapsed[groupNr]) {
-					IDnr = firstItem[groupNr];
-				}
-			}
-		}
-
-		if (IDnr != undefined || ID.nr == focusID) {
-			var step = i - Math.floor(maxRows / 2);
-
-			if (step < 0) step = 0;
-
-			listStep[activeList] = step;
-
-			window.SetProperty("system.List Step", listStep.toString());
-			listOnSize();
-
-			window.Repaint();
-
-			listIsScrolledUp = (listStep[activeList] == 0);
-			listIsScrolledDown = ((playlist[maxRows - 1 + listStep[activeList]]) == playlist[listLength - 1]);
-
-			return;
-
-		}
-
-	} // eol
-
-}
-// =================================================== //
-
-function showNowPlaying() {
-
-	if (!fb.Isplaying) return;
-
-	var getPlayingItemLocation = plman.GetPlayingItemLocation()
-	if (!getPlayingItemLocation.IsValid) return;
-
-	if (plman.ActivePlaylist != plman.PlayingPlaylist) {
-		plman.ActivePlaylist = plman.PlayingPlaylist;
-		initList();
-	}
-
-	if (autoExpandCollapseGroups && autoCollapseOnPlaylistSwitch) collapseExpand("collapse");
-
-	var playingID = getPlayingItemLocation.PlaylistItemIndex;
-	plman.ClearPlaylistSelection(activeList);
-	plman.SetPlaylistSelectionSingle(activeList, playingID, true);
-	plman.SetPlaylistFocusItem(activeList, playingID);
-
-	for (var i = 0; i < listLength; i++) {
-		var ID = playlist[i];
-		var groupNr = ID.groupNr;
-
-		if (isCollapsed.length && ID.isGroupHeader && ID.rowNr == rowsInGroup) {
-			for (var item = firstItem[groupNr]; item <= lastItem[groupNr]; item++) {
-				if (playingID == item && isCollapsed[groupNr]) collapseExpand(groupNr);
-			}
-		}
-
-		if (ID.nr == playingID) {
-			var step = i - Math.floor(maxRows / 2);
-
-			if (step < 0) step = 0;
-
-			listStep[activeList] = step;
-
-			window.SetProperty("system.List Step", listStep.toString());
-
-			on_size();
-			window.Repaint();
-
-			break;
-		}
-	} // eol
-
-	if (plman.ActivePlaylist != plman.PlayingPlaylist)
-		showNowPlayingCalled = true;
-
-}
-// =================================================== //
-function initList() {
-	tempAlbumOnPlaybackNewTrack = undefined;
-	tempGroupNrOnGetAlbumArt = -1;
-
-	activeList = plman.ActivePlaylist;
-	playlistCount = plman.PlaylistCount;
-	playlistItemCount = plman.PlaylistItemCount(activeList);
-	getPlaylistItems = plman.GetPlaylistItems(activeList);
-	selectedItemCount = plman.GetPlaylistSelectedItems(activeList).Count;
-	return 0;
-
-	listIsScrolledUp = listIsScrolledDown = false;
-	playlist = [];
-	$playlist = [];
-	firstItem = [];
-	firstItemID = [];
-	_firstItemID = [];
-	lastItem = [];
-	lastItemID = [];
-	itemCount = [];
-	isCollapsed = [];
-	selectedIndexes = [];
-	queueIndexes = [];
-	groupNr = 0;
-	totalGroups = 0;
-	var a, b, metadb, d, dOld;
-	var id = 0;
-	var from = to = 0;
-
-	var initTest = 0;
-	if (initTest) from = new Date();
-
-	for (var i = 0; i != playlistItemCount; i++) {
-
-		metadb = getPlaylistItems.Item(i);
-		a = fb.TitleFormat(groupFormat).EvalWithMetadb(metadb);
-		if (a != b) {
-
-			for (var groupHeaderRow = 1; groupHeaderRow <= rowsInGroup; groupHeaderRow++) {
-
-				group = {
-					groupNr: groupNr, // first group nr = 0
-					metadb: metadb,
-					isGroupHeader: true,
-					rowNr: groupHeaderRow,
-					// artist: new Hyperlink($("$if($greater($len(%album artist%),0),%album artist%,%artist%)", metadb),
-					// 	artistFont, artistColorNormal, 'artist', -1000, -1000)
-				};
-
-				firstItem[groupNr] = i;
-				$playlist[id++] = group;
-
-				if (groupHeaderRow == rowsInGroup) {
-					firstItemID[groupNr] = id;
-				}
-			}
-
-			if (groupNr > 0) {
-				var lastGroupNr = groupNr - 1;
-				lastItem[lastGroupNr] = i - 1;
-				lastItemID[lastGroupNr] = id - rowsInGroup - 1;
-				itemCount[lastGroupNr] = lastItem[lastGroupNr] - firstItem[lastGroupNr] + 1;
-			}
-
-			groupNr++;
-			b = a;
-			oddItem = i % 2;
-		}
-
-		needsDiscHeader = fb.TitleFormat("$ifgreater(%totaldiscs%,1,true,false)["+ tf.disc_subtitle +"]").EvalWithMetadb(metadb);
-		if (needsDiscHeader !== "false") {
-			d = fb.TitleFormat(groupFormat + "%discnumber%").EvalWithMetadb(metadb);
-			if (d != dOld) {
-				//console.log("needsDiscHeader = " + needsDiscHeader);
-				discHeader = {
-					isDiscHeader: true,
-					metadb: metadb,
-					nr: i,
-					isOdd: i % 2 == oddItem
-				}
-				$playlist[id++] = discHeader;
-			}
-			dOld = d;
-		}
-
-		var item = {
-
-			metadb: metadb,
-			nr: i,
-			isOdd: i % 2 == oddItem
-
-		};
-
-		$playlist[id] = item;
-
-		id++;
-
-
-		if (selectedItemCount && plman.IsPlaylistItemSelected(activeList, i)) {
-			selectedIndexes.push(i);
-		}
-
-	} //eol
-
-	if (initTest) {
-		to = new Date();
-		print("Initialized: " + (to - from) + " ms");
-	}
-
-	groupNr--;
-	totalGroups = groupNr;
-
-	lastItem[groupNr] = playlistItemCount - 1;
-	lastItemID[groupNr] = id - 1;
-	itemCount[groupNr] = lastItem[groupNr] - firstItem[groupNr] + 1;
-
-	playlist = $playlist.slice(0);
-	_firstItemID = firstItemID.slice(0);
-	listLength = playlist.length;
-
-	(listOnSize = function () {
-
-		if (ww <= 0 || wh <= 0) return;
-
-		isResizingDone(ww, wh);
-
-		listX = Math.round(ww *.5) + listLeft;
-		listY = btns[30].y + btns[30].h + 10 + listTop + (showPlaylistInfo ? listInfoHeight : 0);
-		listH = Math.max(0, window.Height - geo.lower_bar_h - 10 - listY - listBottom);
-		listW = Math.max(100, window.Width - listX - listRight);
-
-		maxRows = Math.abs(Math.min(listLength, Math.floor(listH / rowH)));
-		listH = Math.floor(listH / rowH) * rowH;	// we calculate the max height the list can be, then we make it conform to the max number of rows
-
-		if (listStep[activeList] + maxRows > listLength && listLength >= maxRows) {
-			listStep[activeList] += listLength - (listStep[activeList] + maxRows);
-			window.SetProperty("system.List Step", listStep.toString());
-		}
-
-		needsScrollbar = listLength > maxRows;
-
-		if (needsScrollbar && showScrollbar) {
-			listW = listW - scrollbarWidth - scrollbarRight;
-		}
-		//---> Row Object
-		r = [];
-		b = [];
-
-		ratingBtnW = 14;
-		ratingBtnX = listX + listW - ratingBtnW * 5 - 50;
-
-		if (listLength) {
-			for (var i = 0; i != maxRows; i++) {
-				var rowY = listY + i * rowH;
-				r[i] = new Row(listX, rowY, listW, rowH);
-			}
-
-			// create Rating RowButtons
-			ratingBtnRightPad = 5;
-			for (var i = 0; i != maxRows; i++) {
-
-				r[i].b = [];
-
-				for (var j = 0; j < 5; j++) {
-
-					var x = ratingBtnX + j * ratingBtnW - ratingBtnRightPad;
-					var y = r[i].y + rowH / 2 - ratingBtnW / 2 - 1;
-
-					r[i].b[j] = new RowButton(x, y, ratingBtnW, rowH - 1);
-				}
-			}
-		}
-
-		//---> Scrollbar
-
-		scrollbarX = window.Width - scrollbarWidth - scrollbarRight;
-		scrollbarY = btns[30].y + btns[30].h + 10 + listTop + (showPlaylistInfo ? listInfoHeight : 0);
-		scrollbarBottom = listBottom;
-		scrollbarHeight = listH;
-
-		refreshScrollbar();
-
-		//--->
-
-		if (needsScrollbar) {
-			createScrollbarThumbImages();
-		}
-
-	})();
-
-	//---> init list step
-	listStep = [];
-
-	var step = [];
-	var s = window.GetProperty("system.List Step", '');
-	s.indexOf(",") != -1 ? step = s.split(",") : step[0] = Math.max(0, s);
-
-	for (var i = 0; i < playlistCount; i++) {
-
-		listStep[i] = (step[i] == undefined ? 0 : (isNaN(step[i]) ? 0 : Math.max(0, step[i])));
-
-	}
-	window.SetProperty("system.List Step", listStep.toString());
-	//--->
-
-	window.Repaint();
-	// if (needsScrollbar) {
-	// 	repaintScrollbar();
-	// }
-
-	plman.SetActivePlaylistContext();
-
-	if (showPlaylistInfo) {
-		totalLength = calculateGroupLength(0, playlistItemCount - 1);
-		if (selectedIndexes)
-			selectionLength = calculateSelectionLaength();
-	}
-
-}
-
-// nitList
-
-// =================================================== //
-var rowDrag = fileDrag = linkToLastItem = doubleClicked = mouseOverList = newTrackByClick = actionNotAllowed = clickedOnSelectedItem = selectWithDrag = false;
-var oldRowBtn, oldRowNr, oldRow, oldID, selectedIndex, dragOverID;
-
-function rowMouseEventHandler(x, y, m) {
-
-	var CtrlKeyPressed = utils.IsKeyPressed(VK_CONTROL);
-	var ShiftKeyPressed = utils.IsKeyPressed(VK_SHIFT);
-
-	if (thumbDown || !listLength || !displayPlaylist) return;
-
-	var c = caller();
-
-	var thisID, thisRow, thisRowNr, thisRowBtn;
-	var thisRowBtnNr = 0;
-
-	mouseOverList = false;
-	mouseInRatingBtn = false;
-
-	for (var i = 0; r[i]; i++) {
-
-		if (r[i].mouseInThisRow(x, y)) {
-			mouseOverList = true;
-			thisRow = r[i];
-			thisID = playlist[i + listStep[activeList]];
-			thisRowNr = i;
-			//->
-			if (showRating && !thisID.isGroupHeader) {
-
-				var b = r[i].b;
-
-				for (var j = 0; j < 5; j++) {
-					if (b[j].mouseInThisRowButton(x, y)) {
-						thisRowBtn = b[j];
-						thisRowBtnNr = j;
-						mouseInRatingBtn = true;
-					}
-
-				}
-
-			}
-
-		}
-
-	}
-
-	if (c == "on_drag_over") {
-
-		fileDrag = true;
-
-		if (thisID) {
-
-			dragOverID = thisID;
-
-		}
-
-		c = "on_mouse_move";
-
-	}
-
-	switch (c) {
-
-	case "on_mouse_move":
-
-		if (thisRow !== undefined) {
-
-			mouseOverList = true;
-			linkToLastItem = false;
-
-		}
-
-		if (selectedIndexes.length && !doubleClicked && m == 1 && (oldRow && thisRow != oldRow)) {
-
-			if (plman.IsAutoPlaylist(activeList) && !actionNotAllowed) {
-
-				window.SetCursor(IDC_NO);
-				actionNotAllowed = true;
-
-			}
-			dropped = false;
-			if (!actionNotAllowed && clickedOnSelectedItem) rowDrag = true;
-			if (!clickedOnSelectedItem) selectWithDrag = true;
-		}
-
-
-		if ((fileDrag || rowDrag || makeSelectionDrag) && thisID && thisID.isGroupHeader && isCollapsed[thisID.groupNr]) {
-			collapseExpand(thisID.groupNr);
-		}
-
-		//->
-		if (oldRow && oldRow != thisRow) {
-
-			if (!clickedOnSelectedItem && m == 1 && thisID && thisID.isGroupHeader) {
-
-				var firstIDnr = firstItem[thisID.groupNr];
-
-				if ((oldID.nr < firstIDnr && selectedIndex > oldID.nr) || (oldID.nr == firstIDnr && selectedIndex < oldID.nr)) {
-
-					plman.SetPlaylistSelectionSingle(activeList, oldID.nr, false);
-
-				}
-
-			}
-
-			oldRow.changeState(0);
-
-		}
-
-		if (thisRow && thisRow != oldRow) {
-			thisRow.changeState(1);
-
-			if (rowDrag || fileDrag || makeSelectionDrag) {
-
-				if (thisRowNr == 0 && !listIsScrolledUp) {
-
-					startScrollRepeat("dragUp");
-
-				}
-
-				if ((thisRowNr == (maxRows - 1)) && !listIsScrolledDown) {
-
-					startScrollRepeat("dragDown");
-
-				}
-
-			}
-
-			if (!clickedOnSelectedItem && m == 1) {
-
-				makeSelectionDrag = true;
-
-				selectedIndexes = [];
-
-				if (thisID && !thisID.isGroupHeader) {
-
-					for (var i = selectedIndex; i <= thisID.nr; i++) {
-						selectedIndexes.push(i);
-					}
-					for (var i = selectedIndex; i >= thisID.nr; i--) {
-						selectedIndexes.push(i);
-						selectedIndexes.sort(numericAscending);
-					}
-					if (selectedIndexes[0] == selectedIndexes[1]) selectedIndexes.length = 1;
-
-					if (selectedIndexes[0] != undefined && !thisID.isGroupHeader) {
-						plman.ClearPlaylistSelection(activeList);
-						plman.SetPlaylistSelection(plman.ActivePlaylist, selectedIndexes, true);
-					}
-				}
-			}
-		}
-
-		//->
-
-		if ((rowDrag || fileDrag) && listLength && (y > (r[maxRows - 1].y + rowH)) && !linkToLastItem && ((needsScrollbar && listIsScrolledDown) || !needsScrollbar)) {
-
-			linkToLastItem = true;
-			r[maxRows - 1].repaint();
-
-		}
-
-		if ((rowDrag || fileDrag || makeSelectionDrag) && thisID && (thisRowNr != 0 && thisRowNr != (maxRows - 1))) {
-
-			stopScrollRepeat();
-
-		}
-
-		oldID = thisID;
-		oldRow = thisRow;
-		//->
-
-		break;
-
-	case ("on_mouse_lbtn_down"):
-
-		if (doubleClicked) return;
-
-		if (!thisID) {
-			if (!mouseInScrollbar) {
-				selectedIndexes = [];
-				plman.ClearPlaylistSelection(activeList);
-			}
-			return;
-		}
-
-		var thisIndex = thisID.nr;
-
-		if (thisID.isGroupHeader) {
-
-			if (!CtrlKeyPressed) selectedIndexes = [];
-
-			var thisGroupNr = thisID.groupNr;
-
-			for (var id = firstItem[thisGroupNr]; id <= lastItem[thisGroupNr]; id++) {
-
-				selectedIndexes.push(id);
-
-			}
-
-			plman.ClearPlaylistSelection(activeList);
-			plman.SetPlaylistSelection(plman.ActivePlaylist, selectedIndexes, true);
-			plman.SetPlaylistFocusItem(activeList, firstItem[thisID.groupNr]);
-
-			clickedOnSelectedItem = true;
-
-		} else {
-
-			IDIsSelected = plman.IsPlaylistItemSelected(activeList, thisIndex);
-
-			IDIsSelected ? clickedOnSelectedItem = true : clickedOnSelectedItem = false;
-
-			if (!CtrlKeyPressed && !ShiftKeyPressed && !IDIsSelected) {
-
-				selectedIndexes = [];
-				plman.ClearPlaylistSelection(activeList);
-
-			}
-
-			if (ShiftKeyPressed) {
-
-				selectedIndexes = [];
-
-				var a = b = 0;
-
-				if (selectedIndex == undefined) selectedIndex = plman.GetPlaylistFocusItemIndex(activeList);
-
-				if (selectedIndex < thisIndex) {
-					a = selectedIndex;
-					b = thisIndex;
-				} else {
-					a = thisIndex;
-					b = selectedIndex;
-				}
-
-				for (var id = a; id <= b; id++) {
-
-					selectedIndexes.push(id);
-
-				}
-
-				plman.ClearPlaylistSelection(activeList);
-				plman.SetPlaylistSelection(activeList, selectedIndexes, true);
-
-			} else {
-
-				plman.SetPlaylistSelectionSingle(activeList, thisIndex, true);
-
-				if (utils.IsKeyPressed(VK_KEY_Q))
-					plman.AddPlaylistItemToPlaybackQueue(activeList, thisIndex);
-				else if (utils.IsKeyPressed(VK_KEY_Z)) {
-					var index = plman.FindPlaybackQueueItemIndex(thisID.metadb, activeList, thisIndex)
-					plman.RemoveItemFromPlaybackQueue(index);
-				}
-
-			}
-
-			if (!IDIsSelected && !CtrlKeyPressed && !ShiftKeyPressed) {
-
-				selectedIndexes = [];
-
-				selectedIndexes[0] = thisIndex;
-
-			}
-
-			if (CtrlKeyPressed) {
-
-				if (!IDIsSelected) selectedIndexes.push(thisIndex);
-
-				plman.SetPlaylistSelectionSingle(activeList, thisIndex, IDIsSelected ? false : true);
-
-				if (IDIsSelected) {
-
-					for (var i = 0; i < selectedIndexes.length; i++) {
-
-						if (selectedIndexes[i] == thisIndex) selectedIndexes.splice(i, 1);
-
-					}
-
-				}
-
-			}
-
-			plman.SetPlaylistFocusItem(activeList, thisIndex);
-
-			if (selectedIndex == undefined) selectedIndex = thisIndex;
-
-			if (selectedIndexes.length > 1) selectedIndexes.sort(numericAscending);
-
-		} //eof isGroup else
-
-		break;
-
-	case 'on_mouse_rbtn_down':
-
-		if (!thisID) {
-			if (!mouseInScrollbar) {
-				selectedIndexes = [];
-				plman.ClearPlaylistSelection(activeList);
-			}
-			return;
-		}
-
-		var thisIndex = thisID.nr;
-
-		if (thisID.isGroupHeader) {
-
-			if (isGroupSelected(thisID.groupNr)) return;
-
-			selectedIndexes = [];
-
-			var thisGroupNr = thisID.groupNr;
-
-			for (var id = firstItem[thisGroupNr]; id <= lastItem[thisGroupNr]; id++) {
-
-				selectedIndexes.push(id);
-
-			}
-
-			plman.ClearPlaylistSelection(activeList);
-			plman.SetPlaylistSelection(plman.ActivePlaylist, selectedIndexes, true);
-			plman.SetPlaylistFocusItem(activeList, firstItem[thisID.groupNr]);
-
-		} else {
-
-			var IDIsSelected = plman.IsPlaylistItemSelected(activeList, thisIndex);
-
-			if (IDIsSelected) {
-
-				plman.SetPlaylistFocusItem(activeList, thisIndex);
-				repaintList();
-
-			} else {
-
-				selectedIndexes = [];
-				plman.ClearPlaylistSelection(activeList);
-				selectedIndexes[0] = thisIndex;
-				plman.SetPlaylistFocusItem(activeList, thisIndex);
-				plman.SetPlaylistSelectionSingle(activeList, thisIndex, true);
-
-			}
-
-		}
-
-		break;
-
-	case 'on_mouse_lbtn_dblclk':
-
-		if (!thisID) return;
-		doubleClicked = true;
-
-		//---> Set rating
-		if (mouseInRatingBtn) {
-			var metadb = thisID.metadb;
-
-			if (useTagRating) {
-				var fileInfo = metadb.GetFileInfo();
-				var currentRating = fileInfo.MetaValue(fileInfo.MetaFind("rating"), 0);
-			} else {
-				var currentRating = $("%rating%", metadb);
-			}
-
-			var rate = thisRowBtnNr + 1;
-
-			if (useTagRating) {
-				if (!metadb.RawPath.indexOf("http://") == 0) {
-					(currentRating == 1 && rate == 1) ? metadb.UpdateFileInfoSimple("RATING", undefined) : metadb.UpdateFileInfoSimple("RATING", rate);
-				}
-			} else {
-				(currentRating == 1 && rate == 1) ? fb.RunContextCommandWithMetadb("<not set>", metadb) : fb.RunContextCommandWithMetadb("Rating/" + rate, metadb);
-			}
-			repaintList();
-			return;
-
-		}
-
-		if (thisID.isGroupHeader) {
-
-			collapseExpand(thisID.groupNr);
-
-		} else if (!utils.IsKeyPressed(VK_KEY_Q) && !utils.IsKeyPressed(VK_KEY_Z)) {
-
-			plman.ExecutePlaylistDefaultAction(activeList, thisID.nr);
-			newTrackByClick = true;
-
-		}
-
-		break;
-
-	case "on_mouse_lbtn_up":
-
-		if (doubleClicked) {
-			doubleClicked = false;
-			return;
-		}
-
-		if (thisRow) {
-			thisRow.changeState(0);
-		}
-
-		if (thisID && thisID.nr !== undefined) {
-
-			if (rowDrag && thisID) {
-
-				var selectedItems = plman.GetPlaylistSelectedItems(activeList);
-				var selectedItemCount = selectedItems.Count;
-				var focusIndex = plman.GetPlaylistFocusItemIndex(activeList);
-				var thisIndex = thisID.nr;
-				var add = 0;
-
-				if (selectedItemCount > 1) {
-
-					//--->
-					var temp;
-					var odd = false;
-					for (var i = 0; i < playlistItemCount; i++) {
-						if (plman.IsPlaylistItemSelected(activeList, i)) {
-							if (temp != undefined && ((i - 1) != temp)) {
-								odd = true;
-								break;
-							}
-							temp = i;
-						}
-					}
-					//--->
-
-					if (odd) {
-
-						for (var i = 0; i < selectedIndexes.length; i++) {
-
-							if (selectedIndexes[i] < thisIndex) {
-								add = i + 1;
-
-							}
-
-						}
-
-						plman.MovePlaylistSelection(activeList, -listLength);
-
-					} else {
-
-						for (var i = 0; i < selectedIndexes.length; i++) {
-
-							if (selectedIndexes[i] == focusIndex) {
-								add = i;
-								break;
-							}
-
-						}
-
-					}
-
-				}
-
-				if (focusIndex > thisIndex) {
-					(selectedItemCount > 1) ? (odd ? delta = thisIndex - add : delta = -(focusIndex - thisIndex - add)) : delta = -(focusIndex - thisIndex);
-				} else {
-					(selectedItemCount > 1) ? (odd ? delta = thisIndex - add : delta = (thisIndex - focusIndex - (selectedItemCount - add))) : delta = (thisIndex - 1 - focusIndex);
-				}
-
-				if (!odd && plman.IsPlaylistItemSelected(plman.ActivePlaylist, thisIndex)) delta = 0;
-				plman.MovePlaylistSelection(activeList, delta);
-
-			} //row drag end
-
-
-			if (!CtrlKeyPressed && !ShiftKeyPressed && !rowDrag && !selectWithDrag) {
-
-				if (plman.GetPlaylistSelectedItems(activeList).Count > 1) {
-
-					selectedIndexes = [];
-					selectedIndexes[0] = thisID.nr;
-					plman.ClearPlaylistSelection(activeList);
-					plman.SetPlaylistSelectionSingle(activeList, thisID.nr, true);
-
-				}
-
-			}
-
-		}
-
-		if (linkToLastItem) {
-
-			plman.MovePlaylistSelection(activeList, listLength - plman.GetPlaylistSelectedItems(activeList).Count);
-
-			r[maxRows - 1].repaint();
-
-		}
-
-		if (!ShiftKeyPressed) selectedIndex = undefined;
-
-		rowDrag = fileDrag = makeSelectionDrag = linkToLastItem = selectWithDrag = false;
-
-		//--->
-
-		plman.SetActivePlaylistContext();
-
-		if (actionNotAllowed) {
-			window.SetCursor(IDC_ARROW);
-			actionNotAllowed = false;
-		}
-
-		break;
-
-	case 'on_mouse_leave':
-
-		for (var i = 0; r[i]; i++) {
-
-			if (r[i].state != 0) {
-
-				if (r[i].b) {
-					for (var j = 0; r[i].b[j]; j++) {
-
-						r[i].b[j].changeState(0);
-
-					}
-				}
-
-				r[i].changeState(0);
-
-			}
-
-		}
-
-		selectedIndex = oldRow = thisRow = undefined;
-
-		break;
-
-	}
-
-}
-// =================================================== //
-
-// function Row(x, y, w, h, b) {
-
-// 	this.x = x;
-// 	this.y = y;
-// 	this.w = w;
-// 	this.h = h;
-// 	this.b = b;
-// 	this.state = 0;
-
-// }
-// // =================================================== //
-// Row.prototype.mouseInThisRow = function (x, y) {
-
-// 	return (this.x <= x) && (x <= this.x + this.w) && (this.y <= y) && (y <= this.y + this.h);
-
-// }
-// // =================================================== //
-// Row.prototype.repaint = function () {
-
-// 	window.RepaintRect(this.x - listLeft, this.y - 5, this.w + listLeft + listRight, this.h + 10);
-
-// }
-// // =================================================== //
-// Row.prototype.changeState = function (state) {
-
-// 	this.state = state;
-// 	if (rowDrag || fileDrag) {
-// 		this.repaint();
-// 	}
-// 	//this.state == 0 ? window.SetCursor(IDC_ARROW) : window.SetCursor(IDC_HAND);
-
-// }
-// // =================================================== //
-
-// function RowButton(x, y, w, h) {
-
-// 	this.x = x;
-// 	this.y = y;
-// 	this.w = w;
-// 	this.h = h;
-// 	this.state = 0;
-
-// }
-// // =================================================== //
-// RowButton.prototype.mouseInThisRowButton = function (x, y) {
-// 	return (this.x <= x) && (x <= this.x + this.w) && (this.y <= y) && (y <= this.y + this.h);
-
-// }
-// // =================================================== //
-// RowButton.prototype.repaint = function () {
-// 	window.RepaintRect(this.x, this.y, this.w, this.h);
-// }
-// // =================================================== //
-// RowButton.prototype.changeState = function (state) {
-
-// 	this.state = state;
-// 	this.repaint();
-// 	//this.state == 0 ? window.SetCursor(IDC_ARROW) : window.SetCursor(IDC_HAND);
-// }
-// =============================================== //
-
-function on_mouse_rbtn_up_OLD(x, y) {	// TODO: REMOVE
-	var playlistX = Math.floor(ww*.5);
-	var playlistY = btns[30].y + btns[30].h + 10;
-
-	if (!displayPlaylist || x < playlistX || y < playlistY) {
-		return;
-	} else {
-		trace_call && console.log(qwr_utils.function_name());
-		return playlist.on_mouse_rbtn_up(x, y, m);
-	}
-	// TOOD: never gets here, remove
-
-	if (mouseInScrollbar) {
-		scrollbarMouseEventHandler(x, y);
-		return true;
-	}
-
-	menu_down = true;
-
-	var metadb = utils.IsKeyPressed(VK_CONTROL) ? (fb.IsPlaying ? fb.GetNowPlaying() : fb.GetFocusItem()) : fb.GetFocusItem();
-
-	var windowsVisualStyleEnabled = window.CreateThemeManager("WINDOW");
-	var selected = plman.GetPlaylistSelectedItems(plman.ActivePlaylist).Count;
-	var selection = (selected > 1);
-	var queueActive = plman.GetPlaybackQueueHandles().Count;
-	var isAutoPlaylist = plman.IsAutoPlaylist(activeList);
-	var playlistCount = plman.PlaylistCount;
-
-	var cpm = window.CreatePopupMenu();
-	var web = window.CreatePopupMenu();
-	var ce = window.CreatePopupMenu();
-	var ccmm = fb.CreateContextMenuManager();
-	var appear = window.CreatePopupMenu();
-	var sort = window.CreatePopupMenu();
-	var lists = window.CreatePopupMenu();
-	var send = window.CreatePopupMenu();
-	var skip = window.CreatePopupMenu();
-
-	if (utils.IsKeyPressed(VK_SHIFT)) {
-
-		cpm.AppendMenuItem(MF_STRING, 1, "Restart");
-		cpm.AppendMenuSeparator();
-//		cpm.AppendMenuItem(safeMode ? MF_GRAYED : MF_STRING, 2, "Configure script...");
-	}
-	cpm.AppendMenuItem(MF_STRING, 3, "Configure...");
-	cpm.AppendMenuItem(MF_STRING, 4, "Playlist Properties...");
-	cpm.AppendMenuSeparator();
-
-
-	plman.SetActivePlaylistContext();
-
-	fb.Isplaying && cpm.AppendMenuItem(MF_STRING, 5, "Show now playing");
-
-	if (plman.PlaylistItemCount(plman.ActivePlaylist)) {
-
-		cpm.AppendMenuItem(MF_STRING, 6, "Refresh all");
-		cpm.AppendMenuItem(MF_STRING, 7, "Select all (Ctrl+A)");
-		if (selected) cpm.AppendMenuItem(isAutoPlaylist ? MF_GRAYED : MF_STRING, 8, "Remove from list (Delete)");
-		if (queueActive) cpm.AppendMenuItem(MF_STRING, 9, "Flush playback queue");
-		cpm.AppendMenuSeparator();
-		// -------------------------------------------------------------- //
-		//---> Collapse/Expand
-		if (rowsInGroup) {
-			ce.AppendMenuItem(MF_STRING, 20, "Collapse all");
-			if (plman.ActivePlaylist == plman.PlayingPlaylist) ce.AppendMenuItem(MF_STRING, 21, "Collapse all but now playing");
-			ce.AppendMenuItem(MF_STRING, 22, "Expand all");
-			ce.AppendMenuSeparator();
-			ce.AppendMenuItem(MF_STRING, 23, "Auto");
-			ce.CheckMenuItem(23, autoExpandCollapseGroups);
-			ce.AppendTo(cpm, MF_STRING | MF_POPUP, "Collapse/Expand");
-		}
-		// -------------------------------------------------------------- //
-		//---> Skip trak
-		skip.AppendMenuItem(MF_STRING, 24, "Enable");
-		skip.CheckMenuItem(24, enableSkip);
-		skip.AppendMenuSeparator();
-		skip.AppendMenuItem(enableSkip ? MF_STRING : MF_GRAYED, 25, "Rated less than 2");
-		skip.AppendMenuItem(enableSkip ? MF_STRING : MF_GRAYED, 26, "Rated less than 3");
-		skip.AppendMenuItem(enableSkip ? MF_STRING : MF_GRAYED, 27, "Rated less than 4");
-		skip.AppendMenuItem(enableSkip ? MF_STRING : MF_GRAYED, 28, "Rated less than 5");
-		skip.AppendTo(cpm, MF_STRING | MF_POPUP, "Skip");
-		skip.CheckMenuRadioItem(25, 28, 23 + skipLessThan);
-		// -------------------------------------------------------------- //
-		//---> Appearance
-		appear.AppendMenuItem(MF_STRING, 30, "Show album art");
-		appear.CheckMenuItem(30, showAlbumArt);
-		appear.AppendMenuItem(MF_STRING, 31, "Show group info");
-		appear.CheckMenuItem(31, showGroupInfo);
-		appear.AppendMenuItem(_.cc('foo_playcount') ? MF_STRING : MF_GRAYED, 32, "Show play count");
-		appear.CheckMenuItem(32, showPlayCount);
-		appear.AppendMenuItem(_.cc('foo_playcount') ? MF_STRING : MF_GRAYED, 33, "Show rating");
-		appear.CheckMenuItem(33, showRating);
-		appear.AppendMenuItem(MF_STRING, 35, "Show queue item");
-		appear.CheckMenuItem(35, showQueueItem);
-		appear.AppendMenuItem(MF_STRING, 36, "Alternate row color");
-		appear.CheckMenuItem(36, alternateRowColor);
-		appear.AppendMenuItem(MF_STRING, 37, "Show scrollbar");
-		appear.CheckMenuItem(37, showScrollbar);
-		if (showScrollbar && windowsVisualStyleEnabled) {
-			appear.AppendMenuItem(MF_STRING, 38, "Scrollbar use windows style");
-			appear.CheckMenuItem(38, scrollbarUseWindowsVisualStyle);
-		}
-		appear.AppendMenuItem(MF_STRING, 39, "Show playlist info");
-		appear.CheckMenuItem(39, showPlaylistInfo);
-		appear.AppendTo(cpm, MF_STRING | MF_POPUP, "Appearance");
-		// -------------------------------------------------------------- //
-		//---> Sort
-		sort.AppendMenuItem(MF_STRING, 40, "Sort by...");
-		sort.AppendMenuItem(MF_STRING, 41, "Randomize");
-		sort.AppendMenuItem(MF_STRING, 42, "Reverse");
-		sort.AppendMenuItem(MF_STRING, 43, "Sort by album");
-		sort.AppendMenuItem(MF_STRING, 44, "Sort by artist");
-		sort.AppendMenuItem(MF_STRING, 45, "Sort by file path");
-		sort.AppendMenuItem(MF_STRING, 46, "Sort by title");
-		sort.AppendMenuItem(MF_STRING, 47, "Sort by track number");
-		sort.AppendMenuItem(MF_STRING, 48, "Sort by album sort order");
-		sort.AppendMenuItem(MF_STRING, 49, "Sort by date");
-		sort.AppendTo(cpm, isAutoPlaylist ? MF_GRAYED : MF_STRING | MF_POPUP, selection ? "Sort selection" : "Sort");
-		// -------------------------------------------------------------- //
-		//---> Weblinks
-		web.AppendMenuItem(MF_STRING, 50, "Google");
-		web.AppendMenuItem(MF_STRING, 51, "Google Images");
-		web.AppendMenuItem(MF_STRING, 52, "eCover");
-		web.AppendMenuItem(MF_STRING, 53, "Wikipedia");
-		web.AppendMenuItem(MF_STRING, 54, "YouTube");
-		web.AppendMenuItem(MF_STRING, 55, "Last FM");
-		web.AppendMenuItem(MF_STRING, 56, "Discogs");
-		web.AppendTo(cpm, safeMode ? MF_GRAYED : MF_STRING | MF_POPUP, "Weblinks");
-
-	}
-	// -------------------------------------------------------------- //
-	//---> Playlists
-	var playlistId = 102;
-	lists.AppendMenuItem(MF_STRING, 100, "Playlist manager... (Ctrl+M)");
-	lists.AppendMenuSeparator();
-	lists.AppendMenuItem(MF_STRING, 101, "Create New Playlist");
-	lists.AppendMenuSeparator();
-	for (var i = 0; i != playlistCount; i++) {
-		lists.AppendMenuItem(MF_STRING, playlistId + i, plman.GetPlaylistName(i).replace(/\&/g, "&&") + " [" + plman.PlaylistItemCount(i) + "]" + (plman.IsAutoPlaylist(i) ? " (Auto)" : '') + (i == plman.PlayingPlaylist ? " (Now Playing)" : ''));
-	}
-	lists.AppendTo(cpm, MF_STRING | MF_POPUP, "Playlists");
-	// -------------------------------------------------------------- //
-	if (selected) {
-		var sendToPlaylistId = playlistId + playlistCount + 1;
-		send.AppendMenuItem(MF_STRING, sendToPlaylistId - 1, "Create New Playlist");
-		send.AppendMenuSeparator();
-		for (var i = 0; i != playlistCount; i++) {
-			send.AppendMenuItem((plman.IsAutoPlaylist(i) || i == activeList) ? MF_GRAYED : MF_STRING, sendToPlaylistId + i, plman.GetPlaylistName(i) + " [" + plman.PlaylistItemCount(i) + "]" + (plman.IsAutoPlaylist(i) ? " (Auto)" : '') + (i == plman.PlayingPlaylist ? " (Now Playing)" : ''));
-		}
-		send.AppendTo(cpm, MF_STRING | MF_POPUP, "Send selection");
-	}
-	// -------------------------------------------------------------- //
-	//---> Context Menu Manager
-	var contextId = playlistId + sendToPlaylistId + playlistCount;
-	if (selected) {
-		cpm.AppendMenuSeparator();
-		ccmm.InitContext(plman.GetPlaylistSelectedItems(activeList));
-		ccmm.BuildMenu(cpm, contextId, -1);
-	}
-
-	id = cpm.TrackPopupMenu(x, y);
-
-	if (selected) ccmm.ExecuteByID(id - contextId);
-	// -------------------------------------------------------------- //
-	switch (id) {
-
-	case 1:
-		fb.RunMainMenuCommand("File/Restart");
-		break;
-	case 2:
-		break;
-	case 3:
-		window.ShowConfigure();
-		break;
-	case 4:
-		window.ShowProperties();
-		break;
-	case 5:
-		showNowPlaying();
-		break;
-	case 6: 	/* refresh All */
-		initList();
-		break;
-	case 7:
-		selectAll();
-		break;
-	case 8:
-		plman.RemovePlaylistSelection(activeList);
-		repaintList();
-		break;
-	case 9:
-		plman.FlushPlaybackQueue();
-		repaintList();
-		break;
-	case 10:
-
-		break;
-		// -------------------------------------------------------------- //
-	case 20:
-		//---> Collapse/Expand
-		collapseExpand("collapse");
-		displayFocusItem(plman.GetPlaylistFocusItemIndex(activeList));
-		break;
-	case 21:
-		getPlayingGroupCollapseExpand();
-		break;
-	case 22:
-		collapseExpand("expand");
-		displayFocusItem(plman.GetPlaylistFocusItemIndex(activeList));
-		break;
-	case 23:
-		autoExpandCollapseGroups = !autoExpandCollapseGroups;
-		window.SetProperty("Playlist: Auto expand/collapse groups", autoExpandCollapseGroups);
-		autoExpandCollapseGroups && getPlayingGroupCollapseExpand();
-		break;
-		// -------------------------------------------------------------- //
-	case 24:
-		enableSkip = !enableSkip;
-		window.SetProperty("Playlist: Skip Enable", enableSkip);
-		break;
-	case 25:
-	case 26:
-	case 27:
-	case 28:
-		skipLessThan = id - 23;
-		window.SetProperty("Playlist: Skip songs rated less than", skipLessThan);
-		break;
-		// -------------------------------------------------------------- //
-	case 30:
-		//---> Appearance
-		showAlbumArt = !showAlbumArt;
-		window.SetProperty("Playlist: Show Album Art", showAlbumArt);
-		showAlbumArt && getAlbumArt();
-		repaintList();
-		break;
-	case 31:
-		showGroupInfo = !showGroupInfo;
-		window.SetProperty("Playlist: Show Group Info", showGroupInfo);
-		repaintList();
-		break;
-	case 32:
-		showPlayCount = !showPlayCount;
-		window.SetProperty("Playlist: Show Play Count", showPlayCount);
-		repaintList();
-		break;
-	case 33:
-		showRating = !showRating;
-		window.SetProperty("Playlist: Show Rating", showRating);
-		repaintList();
-		break;
-	case 35:
-		showQueueItem = !showQueueItem;
-		window.SetProperty("Playlist: Show Queue Item", showQueueItem);
-		repaintList();
-		break;
-	case 36:
-		alternateRowColor = !alternateRowColor;
-		window.SetProperty("Playlist: Alternate row color", alternateRowColor);
-		repaintList();
-		break;
-	case 37:
-		showScrollbar = !showScrollbar;
-		window.SetProperty("Playlist: Show scrollbar", showScrollbar);
-		on_size();
-		window.Repaint();
-		break;
-	case 38:
-		scrollbarUseWindowsVisualStyle = !scrollbarUseWindowsVisualStyle;
-		window.SetProperty("Playlist: Scrollbar Use windows style", scrollbarUseWindowsVisualStyle);
-		refreshScrollbarStyle();
-		break;
-	case 39:
-		showPlaylistInfo = !showPlaylistInfo;
-		window.SetProperty("Playlist: Show Playlist Info", showPlaylistInfo);
-		if (showPlaylistInfo) initList();
-		on_size();
-		window.Repaint();
-		break;
-		// -------------------------------------------------------------- //
-	case 40:
-		//---> Sort
-		selection ? fb.RunMainMenuCommand("Edit/Selection/Sort/Sort by...") : fb.RunMainMenuCommand("Edit/Sort/Sort by...");
-		break;
-	case 41:
-		plman.SortByFormat(activeList, '', selection ? true : false);
-		break;
-	case 42:
-		selection ? fb.RunMainMenuCommand("Edit/Selection/Sort/Reverse") : fb.RunMainMenuCommand("Edit/Sort/Reverse");
-		break;
-	case 43:
-		plman.SortByFormat(activeList, "%album%", selection ? true : false);
-		break;
-	case 44:
-		plman.SortByFormat(activeList, "%artist%", selection ? true : false);
-		break;
-	case 45:
-		plman.SortByFormat(activeList, "%path%%subsong%", selection ? true : false);
-		break;
-	case 46:
-		plman.SortByFormat(activeList, "%title%", selection ? true : false);
-		break;
-	case 47:
-		plman.SortByFormat(activeList, "%tracknumber%", selection ? true : false);
-		break;
-	case 48:
-		plman.SortByFormat(activeList, "%albumsortorder%", selection ? true : false);
-		break;
-	case 49:
-		plman.SortByFormat(activeList, "%date%", selection ? true : false);
-		break;
-		// -------------------------------------------------------------- //
-	case 50:
-		link("google", metadb);
-		break;
-	case 51:
-		link("googleImages", metadb);
-		break;
-	case 52:
-		link("eCover", metadb);
-		break;
-	case 53:
-		link("wikipedia", metadb);
-		break;
-	case 54:
-		link("youTube", metadb);
-		break;
-	case 55:
-		link("lastFM", metadb);
-		break;
-	case 56:
-		link("discogs", metadb);
-		break;
-		// -------------------------------------------------------------- //
-	case 100:
-		fb.RunMainMenuCommand("View/Playlist Manager");
-		break;
-	case 101:
-		plman.CreatePlaylist(playlistCount, '');
-		plman.ActivePlaylist = plman.PlaylistCount;
-		break;
-	case (sendToPlaylistId - 1):
-		plman.CreatePlaylist(playlistCount, '');
-		plman.InsertPlaylistItems(playlistCount, 0, plman.GetPlaylistSelectedItems(activeList), select = true);
-		break;
-	case 221: 		// add/remove to playback queue
-	case 222:
-	case 223:		// sometimes 223/224 is used for add/remove
-	case 224:
-	case 225:
-	case 226:
-		repaintList();
-		break;
-	case 228:
-		// Properties
-		break;
-	default:
-		id < 228 && console.log("Unknown Menu Item: " + id);
-		break;
-	}
-
-	for (var i = 0; i != playlistCount; i++) {
-		if (id == (playlistId + i)) plman.ActivePlaylist = i; // playlist switch
-	}
-
-	for (var i = 0; i < plman.PlaylistCount; i++) {
-		if (id == (sendToPlaylistId + i)) {
-			plman.ClearPlaylistSelection(i);
-			plman.InsertPlaylistItems(i, plman.PlaylistItemCount(i), plman.GetPlaylistSelectedItems(activeList), select = true);
-		}
-	}
-
-	cpm.Dispose();
-	ccmm.Dispose();
-	web.Dispose();
-	ce.Dispose();
-	appear.Dispose();
-	sort.Dispose();
-	lists.Dispose();
-	send.Dispose();
-
-	menu_down = false;
-
-	return true;
-}
 
