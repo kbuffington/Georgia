@@ -121,7 +121,16 @@ var Color = (function() {
 		},
 		get a() {
 			return this._alpha;
-		},
+        },
+        get hue() {
+            return this._hue;
+        },
+        get saturation() {
+            return this._saturation;
+        },
+        get lightness() {
+            return this._lightness;
+        },
 		get brightness() {
 			return Math.round(Math.sqrt( 0.299*this.r*this.r + 0.587*this.g*this.g + 0.114*this.b*this.b ));
 		},
