@@ -47,7 +47,7 @@ image_cache = function () {
         // cover.type : 0 = nocover, 1 = external cover, 2 = embedded cover, 3 = stream
         if(track_type!=3) {
             if(metadb) {
-                img = FormatCover(image, pw, ph, showGlassReflection, false);
+                img = FormatCover(image, pw, ph, false);
             };
         } else {
             img = images.stream;
@@ -60,48 +60,46 @@ image_cache = function () {
 
 cachedImageCompare = {};	// used for checking to see if we need to check the file size of an image in the cache to see if it has changed
 
-function FormatCover(image, w, h, reflect, rawBitmap) {
+function FormatCover(image, w, h, rawBitmap) {
     if(!image || w<=0 || h<=0) return image;
-    if(reflect) {
-        var new_img = image.Resize(w, h, 2);
-        var gb = new_img.GetGraphics();
-        if(h > w) {
-            gb.DrawImage(glass_reflect_img, Math.floor((h-w)/2)*-1 + 1, 1, h - 2, h - 2, 0, 0, glass_reflect_img.Width, glass_reflect_img.Height, 0, 150);
-        } else {
-            gb.DrawImage(glass_reflect_img, 1, Math.floor((w-h)/2)*-1 + 1, w - 2, w - 2, 0, 0, glass_reflect_img.Width, glass_reflect_img.Height, 0, 150);
-        };
-        new_img.ReleaseGraphics(gb);
-        if(rawBitmap) {
-            return new_img.CreateRawBitmap();
-        } else {
-            return new_img;
-        }
-    } else {
-        if(rawBitmap) {
-            return image.Resize(w, h, 2).CreateRawBitmap();
-        } else {
-            return image.Resize(w, h, 2);
-        }
-    };
+	if(rawBitmap) {
+		return image.Resize(w, h, 2).CreateRawBitmap();
+	} else {
+		return image.Resize(w, h, 2);
+	}
 };
 
-function draw_glass_reflect(w, h) {
-    // Mask for glass effect
-    var Mask_img = gdi.CreateImage(w, h);
-    var gb = Mask_img.GetGraphics();
-    gb.FillSolidRect(0,0,w,h,0xffffffff);
-    gb.FillGradRect(0,0,w-20,h,0,0xaa000000,0,1.0);
-    gb.SetSmoothingMode(2);
-    gb.FillEllipse(-20, 25, w*2+40, h*2, 0xffffffff);
-    Mask_img.ReleaseGraphics(gb);
-    // drawing the white rect
-    var glass_img = gdi.CreateImage(w, h);
-    gb = glass_img.GetGraphics();
-    gb.FillSolidRect(0, 0, w, h, 0xffffffff);
-    glass_img.ReleaseGraphics(gb);
-    // resizing and applying the mask
-    var Mask = Mask_img.Resize(w, h);
-    glass_img.ApplyMask(Mask);
-    Mask.Dispose();
-    return glass_img;
-};
+function ClearOldCachedFiles(path) {
+	clearCache = fb.CreateProfiler("ClearOldCachedFiles");
+	var totalSize = 0;
+	var fileList = [];
+	pref.max_cache_size = Math.abs(Math.min(250, pref.max_cache_size));	// don't allow cache size to be > 250 MB
+	dir = fso.GetFolder(path);
+	if (dir.size > pref.max_cache_size*1024*1024) {
+		var files = utils.Glob(path + "\\*.*").toArray();
+		for (i=0; i<files.length; i++) {	// create temp array to speed up sorting by reducing amount of GetFile calls in .sort
+			fileList.push({ name: files[i], date: fso.GetFile(files[i]).DateCreated })
+		}
+		fileList.sort(function (a, b) {
+			return b.date - a.date;	// sort descending
+		});
+		for (i=0; i<fileList.length; i++) {
+			f = fso.GetFile(fileList[i].name);
+			totalSize += f.size;
+			if (totalSize < pref.max_cache_size*1024*1024) {
+				console.log(fileList[i].date + " - " + fileList[i].name.substring(62));
+			} else {
+				// delete files
+				try {
+					console.log('Deleting: ' + fileList[i].date + " - " + fileList[i].name.substring(62));
+					f = fso.GetFile(fileList[i].name);
+					f.Delete(true);
+				} catch (e) {
+					console.log("unable to delete " + fileList[i].name);
+				}
+			}
+		}
+	}
+	clearCache.Print();
+}
+

@@ -876,6 +876,24 @@ _.mixin({
 
         return Math.ceil(Math.pow(10.0, (100 + db) / 50));
     },
+    /**
+     * Note: Mutates array argument
+     *
+     * @param {Array} array
+     * @param {Number} count
+     * @param {boolean} fromHead
+     */
+    trimArray: function (array, count, fromHead ){
+        /// Length deduction is much faster then _.drop or slice, since it does not create a new array
+        if (fromHead) {
+            array.reverse();
+            array.length -= count;
+            array.reverse();
+        }
+        else {
+            array.length -= count;
+        }
+    },
     ts:                   function () {
         return Math.floor(_.now() / 1000);
     },

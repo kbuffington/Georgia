@@ -1,3 +1,16 @@
+// Lyrics Objects
+
+sentence = function () {
+	this.timer = 0;
+	this.text = '';
+	this.total_lines = 0;
+	this.ante_lines = 0;
+	this.ToString = function ToString() {
+		var str = "timer= " + this.timer + " text: " + this.text + " total_lines= " + this.total_lines + " ante_lines= " + this.ante_lines;
+		return str;
+	}
+}
+
 // Lyrics Functions
 
 function refresh_lyrics() {

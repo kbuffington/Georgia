@@ -55,53 +55,53 @@ themeList.push({
 	hint: [rgb(0, 0, 48)]
 });
 
-themeList.push(purpleTheme = {
-	name: 'purple',
-	colors: {
-		primary: rgb(74, 20, 140),
-		darkAccent: rgb(42, 5, 87),
-		accent: rgb(97, 44, 161),
-		lightAccent: rgb(119, 74, 173),
-		playedLine: rgba(255, 255, 255, 75),
-	},
-	hint: [rgb(74, 20, 140)]
-});
+// themeList.push(purpleTheme = {
+// 	name: 'purple',
+// 	colors: {
+// 		primary: rgb(74, 20, 140),
+// 		darkAccent: rgb(42, 5, 87),
+// 		accent: rgb(97, 44, 161),
+// 		lightAccent: rgb(119, 74, 173),
+// 		playedLine: rgba(255, 255, 255, 75),
+// 	},
+// 	hint: [rgb(74, 20, 140)]
+// });
 
-themeList.push(greenTheme = {
-	name: 'green',
-	colors: {
-		primary: rgb(27, 94, 31),
-		darkAccent: rgb(0, 39, 3),
-		accent: rgb(10, 66, 14),
-		lightAccent: rgb(49, 113, 53),
-		playedLine: rgba(255, 255, 255, 75),
-	},
-	hint: [rgb(27, 94, 31)]
-});
+// themeList.push(greenTheme = {
+// 	name: 'green',
+// 	colors: {
+// 		primary: rgb(27, 94, 31),
+// 		darkAccent: rgb(0, 39, 3),
+// 		accent: rgb(10, 66, 14),
+// 		lightAccent: rgb(49, 113, 53),
+// 		playedLine: rgba(255, 255, 255, 75),
+// 	},
+// 	hint: [rgb(27, 94, 31)]
+// });
 
-themeList.push({
-	name: 'lighterGreen',
-	colors: {
- 		primary: rgb(90, 115, 90),
-		darkAccent: rgb(63, 81, 63),
-		accent: rgb(77, 98, 77),
-		lightAccent: rgb(122, 145, 122),
-		playedLine: rgba(255, 255, 255, 85),
-	},
-	hint: [rgb(90, 115, 90), rgb(220,240,220)]
-});
+// themeList.push({
+// 	name: 'lighterGreen',
+// 	colors: {
+//  		primary: rgb(90, 115, 90),
+// 		darkAccent: rgb(63, 81, 63),
+// 		accent: rgb(77, 98, 77),
+// 		lightAccent: rgb(122, 145, 122),
+// 		playedLine: rgba(255, 255, 255, 85),
+// 	},
+// 	hint: [rgb(90, 115, 90), rgb(220,240,220)]
+// });
 
-themeList.push({
-	name: 'purpleBlue',
-	colors: {
-		primary: rgb(51, 45, 100),
-		darkAccent: rgb(15, 10, 50),
-		accent: rgb(33, 27, 79),
-		lightAccent: rgb(76, 69, 125),
-		playedLine: rgba(255, 255, 255, 75),
-	},
-	hint: [rgb(51, 45, 90)]
-});
+// themeList.push({
+// 	name: 'purpleBlue',
+// 	colors: {
+// 		primary: rgb(51, 45, 100),
+// 		darkAccent: rgb(15, 10, 50),
+// 		accent: rgb(33, 27, 79),
+// 		lightAccent: rgb(76, 69, 125),
+// 		playedLine: rgba(255, 255, 255, 75),
+// 	},
+// 	hint: [rgb(51, 45, 90)]
+// });
 
 themeList.push({
 	name: 'black',
@@ -109,66 +109,70 @@ themeList.push({
 		primary: rgb(10,10,10),
 		darkAccent: rgb(32, 32, 32),
 		accent: rgb(56, 56, 56),
-		lightAccent: rgb(72, 72, 72),
+		lightAccent: rgb(78, 78, 78),
 		playedLine: rgba(255, 255, 255, 75),
 	},
 	hint: [rgb(0, 0, 0)]
 });
 
-themeList.push({
-	name: 'lightBrown',
-	colors: {
-		primary: rgb(179, 154, 122),
-		darkAccent: rgb(125, 108, 85),
-		accent: rgb(152, 131, 104),
-		lightAccent: rgb(193, 177, 156),
-		playedLine: rgba(255, 255, 255, 75),
-	},
-	hint: [rgb(179, 154, 122)]
-});
+// themeList.push({
+// 	name: 'lightBrown',
+// 	colors: {
+// 		primary: rgb(179, 154, 122),
+// 		darkAccent: rgb(125, 108, 85),
+// 		accent: rgb(152, 131, 104),
+// 		lightAccent: rgb(193, 177, 156),
+// 		playedLine: rgba(255, 255, 255, 75),
+// 	},
+// 	hint: [rgb(179, 154, 122)]
+// });
 
-themeList.push({
-	name: 'red',
-	colors: {
-		primary: rgb(128, 32, 32),
-		darkAccent: rgb(74, 10, 10),
-		accent: rgb(89, 20, 20),
-		lightAccent: rgb(161, 52, 52),
-		playedLine: rgba(255, 255, 255, 75),
-	},
-	hint: [rgb(128, 32, 32)]
-});
+// themeList.push({
+// 	name: 'red',
+// 	colors: {
+// 		primary: rgb(128, 32, 32),
+// 		darkAccent: rgb(74, 10, 10),
+// 		accent: rgb(89, 20, 20),
+// 		lightAccent: rgb(161, 52, 52),
+// 		playedLine: rgba(255, 255, 255, 75),
+// 	},
+// 	hint: [rgb(128, 32, 32)]
+// });
 
-themeList.push({
-	name: 'orange',
-	colors: {
-		primary: rgb(199, 117, 0),
-		darkAccent: rgb(139, 82, 0),
-		accent: rgb(169, 99, 0),
-		lightAccent: rgb(246, 152, 18),
-		playedLine: rgba(255, 255, 255, 85),
-	},
-	hint: [rgb(199, 117, 0)]
-});
+// themeList.push({
+// 	name: 'orange',
+// 	colors: {
+// 		primary: rgb(199, 117, 0),
+// 		darkAccent: rgb(139, 82, 0),
+// 		accent: rgb(169, 99, 0),
+// 		lightAccent: rgb(246, 152, 18),
+// 		playedLine: rgba(255, 255, 255, 85),
+// 	},
+// 	hint: [rgb(199, 117, 0)]
+// });
 
 function setTheme(theme) {
 	// theme.primary = rgb(192,192,160); // testing conflicts
 	// if (isCloseToColor(theme.primary, col.bg)) {
-    if (colorDistance(theme.primary, col.bg, true) < 40) {
+    if (colorDistance(theme.primary, col.bg, true) < 45) {
 		console.log('>>> Theme primary color is too close to bg color. Adjusting.');
 		// darken theme.primary because it's too close to col.bg
-		theme.primary = shadeColor(theme.primary, 10);
+		theme.primary = shadeColor(theme.primary, 5);
 	}
     col.info_bg = theme.primary;
-	// if (isCloseToColor(theme.primary, col.progress_bar)) {
-    if (colorDistance(theme.primary, col.progress_bar, true) < 40) {
+
+    col.progress_bar = rgb(125,125,125);
+    if (colorDistance(theme.primary, col.progress_bar, true) < 45) {
 		// progress fill is too close in color to bg
-		console.log('>>> Theme primary color is too close to progress bar. Adjusting.');
-		col.progress_fill = tintColor(theme.primary, 10);
-	} else {
-		col.progress_fill = theme.primary;
-	}
-	col.tl_added = theme.darkAccent;
+        console.log('>>> Theme primary color is too close to progress bar. Adjusting progress_bar');
+        if (calcBrightness(theme.primary) < 125) {
+            col.progress_bar = rgb(138,138,138);
+        } else {
+            col.progress_bar = rgb(112,112,112);
+        }
+    }
+	col.progress_fill = theme.primary;
+    col.tl_added = theme.darkAccent;
 	col.tl_played = theme.accent;
 	col.tl_unplayed = theme.lightAccent;
 	col.tl_play = theme.playedLine;
@@ -206,8 +210,8 @@ function findClosestTheme(color) {
 		distance += Math.abs(green - themeGreen);
 		distance += Math.abs(blue - themeBlue);
 
-		console.log(distance, themeArray[i].name + ' - ' + colToRgb(themeArray[i].hint, false));
 		if (distance < closestDistance) {
+			console.log(distance, themeArray[i].name + ' - ' + colToRgb(themeArray[i].hint, false));
 			closestDistance = distance;
 			closest = themeArray[i];
 		}

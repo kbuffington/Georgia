@@ -67,16 +67,15 @@ function testFont(fontName) {
 function calculateGridMaxTextWidth(gr, gridArray, font) {
 	var maxWidth = 0;
 	gridArray && gridArray.forEach(function (el) {
-		width = gr.CalcTextWidth(el.label, font);
-		if (width + 1> maxWidth) {
-			maxWidth = width + 1;
+        width = Math.ceil(gr.MeasureString(el.label, font, 0, 0, ww, wh).Width) + 1;
+		if (width > maxWidth) {
+			maxWidth = width;
 		}
 	});
 	return maxWidth;
 }
 
 function calcAgeDateString(date) {
-    console.log('calcAgeDateString:', date);
 	var str = '';
 	if (date.length) {
 		try {
@@ -109,7 +108,12 @@ function $date(dateStr) {
 }
 
 function toDatetime(dateTimeStr) {
+	// convert FB datetime string into one that we can call new Date() on
     return dateTimeStr.replace(' ', 'T') + pref.time_zone;
+}
+
+function toTime(dateTimeStr) {
+	return new Date(toDatetime(dateTimeStr)).getTime();
 }
 
 function calcAge(date, roundAge) {
