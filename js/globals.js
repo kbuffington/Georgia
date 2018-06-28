@@ -16,7 +16,7 @@ pref.add_properties(
 		hide_cursor:    	['Hide Cursor when stationary', true],		// true: hide cursor when not moving, false: don't
 		generate_theme:		['Theme: Generate custom theme from artwork', true],      // true: generate a new theme for artwork, false: use built in themes
 		show_flags:			['Show country flags', true],				// true: show the artist country flags
-		check_multich:		['Check for MultiChannel version', false],	// true: search paths in tf.MultiCh_paths to see if there is a multichannel version of the current album available
+		// check_multich:		['Check for MultiChannel version', false],	// true: search paths in tf.MultiCh_paths to see if there is a multichannel version of the current album available
 		use_vinyl_nums:		['Use vinyl style numbering (e.g. A1)',true],	// true: if the tags specified in tf.vinyl_side and tf.vinyl_tracknum are set, then we'll show vinyl style track numbers (i.e. "B2." instead of "04.")
 		start_Playlist:		['Display playlist on startup', false],		// true: show the playlist window when the theme starts up
 		show_transport:		['Show transport controls', true],			// true: show the play/pause/next/prev/random buttons at the top of the screen
@@ -64,7 +64,7 @@ tf.add_properties(
 		vinyl_tracknum: ['Tag Fields: Vinyl Track#', '%vinyl tracknumber%'],	// the tag used for determining the track number on vinyl releases i.e. song A1 has %vinyl tracknumber% set to "1"
 		translation:	['Tag Fields: Translated song title', '%translation%'],
 		album_trans:	['Tag Fields: Translated album title', '%albumtranslation%'],
-		edition:		['Tag Fields: Edition', '[$if(%original release date%,$ifequal($year(%original release date%),$year(%date%),,$year(%date%) ))%edition%]'],
+		edition:		['Tag Fields: Edition', '[$if(%original release date%,$ifequal($year(%original release date%),$year(%date%),,$year(%date%) ))$if2(%edition%,\'release\')]'],
 	}
 )
 
@@ -132,7 +132,6 @@ tf.grid = [ // simply add, change or remove entries to change grid layout
 	// { label: 'Last.fm Plays',val: '[' + tf.last_fm_plays + ']' },
 	{ label: 'Rating', 	     val: "$if(%rating%,$repeat(\u2605 ,%rating%))" },
 	{ label: 'Mood',		 val: "$if(%mood%,$puts(X,5)$puts(Y,$mul(5,%mood%))$repeat($repeat(I,$get(X))   ,$div($get(Y),$get(X)))$repeat(I,$mod($get(Y),$get(X)))$replace(%mood%,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9))" },
-	// { label: 'test', val: "$ifgreater(%lastfm_last_played%,%last_played%,[LFP: %lastfm_last_played%],[LP: %last_played%])" },
 	// { label: 'lp', val: '$ifgreater($if(%lastfm_last_played%,$replace($date(%lastfm_last_played%),-,),0),$replace($date(%last_played%),-,),%lastfm_last_played%,%last_played%)' },
 	//val: "$put(LP,$left(%last_played%,4)) $put(LFP,$left(%lastfm_last_played%,4)) $ifgreater($num($get(LP),4),$num($get(LFP),4),%last_played%,%lastfm_last_played%)"}
 ];

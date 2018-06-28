@@ -1,4 +1,4 @@
-/// <reference path="../jscript_api/Interfaces.js" />
+// / <reference path="../jscript_api/Interfaces.js" />
 
 //
 // Georgia

@@ -18,43 +18,51 @@ var ft	 = {}; // fonts
 var col	 = {}; // colors
 var geo	 = {}; // sizes
 
+var is_4k = false;
+
 // FONTS
 testFont('HelveticaNeueLT Std');
 testFont('HelveticaNeueLT Std Thin');
 testFont('HelveticaNeueLT Std Med');
 testFont('HelveticaNeueLT Std Lt');
 testFont('Guifx v2 Transports');
-ft.album_lrg			= gdi.Font('HelveticaNeueLT Std Med', 36, 0);
-ft.album_med 			= gdi.Font('HelveticaNeueLT Std Med', 32, 0);
-ft.album_sml 			= gdi.Font('HelveticaNeueLT Std Med', 28, 0);
-// ft.album_lrg			= gdi.Font('HelveticaNeueLT Std', 36, g_font_style.bold);
-// ft.album_med			= gdi.Font('HelveticaNeueLT Std', 32, g_font_style.bold);
-// ft.album_sml			= gdi.Font('HelveticaNeueLT Std', 28, g_font_style.bold);
-ft.title_lrg			= gdi.Font('HelveticaNeueLT Std Thin', 34, 0);
-ft.title_med 			= gdi.Font('HelveticaNeueLT Std Thin', 30, 0);
-ft.title_sml 			= gdi.Font('HelveticaNeueLT Std Thin', 26, 0);
-ft.tracknum_lrg		    = gdi.Font('HelveticaNeueLT Std Lt', 34, g_font_style.bold);
-ft.tracknum_med 		= gdi.Font('HelveticaNeueLT Std Lt', 30, g_font_style.bold);
-ft.tracknum_sml 		= gdi.Font('HelveticaNeueLT Std Lt', 26, g_font_style.bold);
-// ft.tracknum_lrg	    = gdi.Font('HelveticaNeueLT Std Med', 34, 0);
-// ft.tracknum_med 		= gdi.Font('HelveticaNeueLT Std Med', 30, 0);
-// ft.tracknum_sml 		= gdi.Font('HelveticaNeueLT Std Med', 26, 0);
-ft.year					= gdi.Font('HelveticaNeueLT Std', 48, g_font_style.bold);
-ft.artist				= gdi.Font('HelveticaNeueLT Std Med', 40, 0);
-ft.track_info			= gdi.Font('HelveticaNeueLT Std Thin', 18, 0);
-ft.grd_key   			= gdi.Font('HelveticaNeueLT Std', 18, 0);
-ft.grd_val				= gdi.Font('HelveticaNeueLT Std Lt', 18, 0);
-ft.grd_key_lg			= gdi.Font('HelveticaNeueLT Std', 24, 0);		// used instead of ft.grd_key if ww > 1280
-ft.grd_val_lg			= gdi.Font('HelveticaNeueLT Std Lt', 24, 0);	// used instead of ft.grd_val if ww > 1280
-ft.lower_bar			= gdi.Font('HelveticaNeueLT Std Lt', 30, 0);
-ft.lower_bar_bold		= gdi.Font('HelveticaNeueLT Std Med', 30, 0);
-ft.lower_bar_sml 		= gdi.Font('HelveticaNeueLT Std Lt', 24, 0);
-ft.lower_bar_sml_bold 	= gdi.Font('HelveticaNeueLT Std Med', 24, 0);
-ft.small_font			= gdi.Font('HelveticaNeueLT Std', 14, 0);
-ft.guifx 				= gdi.Font('Guifx v2 Transports', 16, 0);
-fontMarlett				= gdi.font('Marlett', 13, 0);
-fontSegoeUi				= gdi.font('Segoe Ui Semibold', 12, 0);
 
+var fontsCreated = null;
+function createFonts() {
+	var font_size = is_4k.toString();
+	if (fontsCreated && fontsCreated == font_size) {
+		return;	// don't redo fonts
+	}
+	function font(name, size, style) {
+		return gdi.Font(name, font_size === 'true' ? Math.min(size * 2) : size, style);
+	}
+	ft.album_lrg			= font('HelveticaNeueLT Std Med', 36, 0);
+	ft.album_med 			= font('HelveticaNeueLT Std Med', 32, 0);
+	ft.album_sml 			= font('HelveticaNeueLT Std Med', 28, 0);
+	ft.title_lrg			= font('HelveticaNeueLT Std Thin', 34, 0);
+	ft.title_med 			= font('HelveticaNeueLT Std Thin', 30, 0);
+	ft.title_sml 			= font('HelveticaNeueLT Std Thin', 26, 0);
+	ft.tracknum_lrg		    = font('HelveticaNeueLT Std Lt', 34, g_font_style.bold);
+	ft.tracknum_med 		= font('HelveticaNeueLT Std Lt', 30, g_font_style.bold);
+	ft.tracknum_sml 		= font('HelveticaNeueLT Std Lt', 26, g_font_style.bold);
+	ft.year					= font('HelveticaNeueLT Std', 48, g_font_style.bold);
+	ft.artist				= font('HelveticaNeueLT Std Med', 40, 0);
+	ft.track_info			= font('HelveticaNeueLT Std Thin', 18, 0);
+	ft.grd_key_lrg			= font('HelveticaNeueLT Std', 24, 0);		// used instead of ft.grd_key if ww > 1280
+	ft.grd_val_lrg			= font('HelveticaNeueLT Std Lt', 24, 0);	// used instead of ft.grd_val if ww > 1280
+	ft.grd_key_med			= font('HelveticaNeueLT Std', 20, 0);
+	ft.grd_val_med			= font('HelveticaNeueLT Std Lt', 20, 0);
+	ft.grd_key_sml      	= font('HelveticaNeueLT Std', 18, 0);
+	ft.grd_val_sml			= font('HelveticaNeueLT Std Lt', 18, 0);
+	ft.lower_bar			= font('HelveticaNeueLT Std Lt', 30, 0);
+	ft.lower_bar_bold		= font('HelveticaNeueLT Std Med', 30, 0);
+	ft.lower_bar_sml 		= font('HelveticaNeueLT Std Lt', 24, 0);
+	ft.lower_bar_sml_bold 	= font('HelveticaNeueLT Std Med', 24, 0);
+	ft.small_font			= font('HelveticaNeueLT Std', 14, 0);
+	ft.guifx 				= font('Guifx v2 Transports', 16, 0);
+	ft.Marlett				= font('Marlett', 13, 0);
+	ft.SegoeUi				= font('Segoe Ui Semibold', 12, 0);
+}
 
 
 var menu_font = gdi.Font("Calibri", 12, 0);
@@ -87,11 +95,29 @@ col.tl_play 	= RGB(255,255,255);	// each individual play
 col.aa_border = RGBA(060,060,060,128);
 col.aa_shadow = RGBA(000,000,000,64);
 
-geo.aa_shadow = 8; 		// size of albumart shadow
-geo.pause_size = 150;
-geo.prog_bar_h = 12;	// height of progress bar
-geo.lower_bar_h = 80;	// height of song title and time + progress bar area
+function setGeometry() {
+	geo.aa_shadow = is_4k ? 16 : 8; 		// size of albumart shadow
+	geo.pause_size = is_4k ? 300 : 150;
+	geo.prog_bar_h = is_4k ? 24 : 12;		// height of progress bar
+	geo.lower_bar_h = is_4k ? 160 : 80;		// height of song title and time + progress bar area
+	geo.top_art_spacing = is_4k ? 192 : 96;	// space between top of theme and artwork
+    geo.top_bg_h = is_4k ? 320 : 160;		// height of offset color background
+    geo.timeline_h = is_4k ? 36 : 18;       // height of timeline
 
+	if (is_4k) {
+		settingsImg	 	= gdi.Image(pref.setting_4k_img);	// settings image
+		propertiesImg   = gdi.Image(pref.prop_4k_img);  	// properties image
+		ratingsImg	  	= gdi.Image(pref.rating_4k_img);	// rating image
+		playlistImg	 	= gdi.Image(pref.list_4k_img);  	// playlist image
+		lyricsImg 		= gdi.Image(pref.lyrics_4k_img);	// lyrics image
+	} else {
+		settingsImg	 	= gdi.Image(pref.settng_img);	// settings image
+		propertiesImg   = gdi.Image(pref.prop_img);  	// properties image
+		ratingsImg	  	= gdi.Image(pref.rating_img);	// rating image
+		playlistImg	 	= gdi.Image(pref.list_img);  	// playlist image
+		lyricsImg 		= gdi.Image(pref.lyrics_img);	// lyrics image
+	}
+}
 
 var playedTimesRatios = [];
 var lfmPlayedTimesRatios = [];	// remove this
@@ -103,22 +129,22 @@ pref.prop_img		= fb.ProfilePath + 'georgia/images/properties.png';
 pref.list_img		= fb.ProfilePath + 'georgia/images/playlist.png';
 pref.lyrics_img		= fb.ProfilePath + 'georgia/images/lyrics.png';
 pref.rating_img		= fb.ProfilePath + 'georgia/images/star.png';
+
+pref.setting_4k_img = fb.ProfilePath + 'georgia/images/4k/settings.png';
+pref.prop_4k_img	= fb.ProfilePath + 'georgia/images/4k/properties.png';
+pref.list_4k_img	= fb.ProfilePath + 'georgia/images/4k/playlist.png';
+pref.lyrics_4k_img	= fb.ProfilePath + 'georgia/images/4k/lyrics.png';
+pref.rating_4k_img	= fb.ProfilePath + 'georgia/images/4k/star.png';
+
 pref.divider_img	= fb.ProfilePath + 'georgia/images/divider.png';
 pref.last_fm_img	= fb.ProfilePath + 'georgia/images/last-fm-red-36.png';
 pref.last_fmw_img   = fb.ProfilePath + 'georgia/images/last-fm-36.png';
-pref.label_base  	= fb.ProfilePath + 'images\\recordlabel\\';		// location of the record label logos for the bottom right corner
-pref.logo_base   	= fb.ProfilePath + 'images\\band logos\\';		// location of band logos for the bottom left corner
-pref.logo_hq	   	= fb.ProfilePath + 'images\\band logos HQ\\';	// location of High-Qualiy band logos for the bottom left corner
-pref.logo_color  	= fb.ProfilePath + 'images\\band logos color\\';
-pref.codec_base		= fb.ProfilePath + 'images\\codec logos\\';
-pref.flags_base		= fb.ProfilePath + 'images\\flags\\32\\';			// location of artist country flags
-
-// location where MultiChannel recordings are available (for notification purposes when playing 2ch Version). Just add more comma delimited entries to this list if needed
-tf.MultiCh_paths	= Array( // simply add, change or re-order entries
-	"H:\\Audio\\Multichannel\\%directoryname% '['ac3']'\\*.ac3",
-	"H:\\Audio\\Multichannel\\%directoryname% '['dts']'\\*.dts",
-	"H:\\Audio\\Multichannel\\%directoryname% '['flac']'\\*.flac"
-);
+pref.label_base  	= fb.ProfilePath + 'images/recordlabel/';		// location of the record label logos for the bottom right corner
+pref.logo_base   	= fb.ProfilePath + 'images/band logos/';		// location of band logos for the bottom left corner
+pref.logo_hq	   	= fb.ProfilePath + 'images/band logos HQ/';	// location of High-Qualiy band logos for the bottom left corner
+pref.logo_color  	= fb.ProfilePath + 'images/band logos color/';
+pref.codec_base		= fb.ProfilePath + 'images/codec logos/';
+pref.flags_base		= fb.ProfilePath + 'images/flags/';			// location of artist country flags
 
 // MOUSE WHEEL SEEKING SPEED
 pref.mouse_wheel_seek_speed = 5; // seconds per wheel step
@@ -239,7 +265,6 @@ var lastFmWhiteImg  = gdi.Image(pref.last_fmw_img); // white Last.fm logo image
 var shadow_image	= null;							// shadow behind the artwork + discart
 var labelShadowImg  = null;							// shadow behind labels
 var playlist_shadow = null;							// shadow behind the playlist
-var mediaTypeImg	= null;							// codec image (i.e. DTS, Dolby Digital, etc.)
 var flagImgs		= [];							// array of flag images
 var rotatedCD		= null;							// drawing cdArt rotated is slow, so first draw it rotated into the rotatedCD image, and then draw rotatedCD image unrotated
 var disc_art_loading;								// for on_load_image_done()
@@ -279,7 +304,7 @@ var nextPrevAlpha = 255;	// full alpha for next/prev icons which will be decreme
 var showTimeElapsed = true;	// this will alternate while paused to make the elapsed time blink
 var bandLogoHQ = false;		// if true will partially remove the 10 pixel "gutter" around the image that fanart.tv requires around their high-rez images so that logos use more of the available space.
 var t_interval; 			// milliseconds between screen updates
-var settingsY = 0;			// location of settings button
+// var settingsY = 0;			// location of settings button
 var lastLeftEdge = 0;		// the left edge of the record labels. Saved so we don't have to recalculate every on every on_paint unless size has changed
 var displayPlaylist = pref.start_Playlist;
 var displayLyrics = 0;
@@ -292,7 +317,6 @@ var last_path;
 var lastDiscNumber;
 var lastVinylSide;
 var currentLastPlayed = '';
-var multiChannelAvailable = false;	// display if there's a multi-channel version of the mp3 available
 
 // Lyrics Variables
 var len_seconds = fb.Titleformat("%length_seconds%");
@@ -381,6 +405,9 @@ var art_cache_max_size = 10;
 var cdartPath = '';
 var album_art_path = '';
 
+var last_accent_col = undefined;
+var progressAlphaCol = undefined;
+
 // Call initialization function
 on_init();
 
@@ -392,15 +419,14 @@ function on_paint(gr) {
 	gr.SetSmoothingMode(SmoothingMode.None);
 
 	// Background
-	var topBarHeight = 160;
 	if (!albumart && noArtwork) {
 		albumart_size.x = Math.floor(ww*0.33);	// if there's no album art info panel takes up 1/3 screen
-		albumart_size.y = 96;
+		albumart_size.y = geo.top_art_spacing;
 		albumart_size.h = wh - albumart_size.y - geo.lower_bar_h - 32;
 		setTheme(blueTheme.colors);
 	}
-	gr.FillSolidRect(0, topBarHeight, ww, wh - topBarHeight, col.bg);
-	gr.FillSolidRect(0, 0, ww, topBarHeight, col.menu_bg);
+	gr.FillSolidRect(0, geo.top_bg_h, ww, wh - geo.top_bg_h, col.bg);
+	gr.FillSolidRect(0, 0, ww, geo.top_bg_h, col.menu_bg);
 
 	gr.SetSmoothingMode(SmoothingMode.AntiAlias);
 	gr.SetInterpolationMode(InterpolationMode.HighQualityBicubic);
@@ -468,18 +494,19 @@ function on_paint(gr) {
 		gr.SetSmoothingMode(SmoothingMode.AntiAlias);
 	}
 
-	var textLeft = Math.round(Math.min(0.015 * ww, 20));
+	var textLeft = Math.round(Math.min(0.015 * ww, is_4k ? 40 : 20));
 	if (str.artist) {
 		height = gr.CalcTextHeight(str.artist, ft.artist);
-		var artistY =  albumart_size.y - height - 8;
+		var artistY =  albumart_size.y - height - (is_4k ? 16 : 8);
 		gr.DrawString(str.artist, ft.artist, col.title, textLeft, artistY, displayPlaylist ? ww / 2 - 20 : ww-200, height, StringFormat(0,0,4));
 		if (pref.show_flags) {
-			width = Math.min(gr.CalcTextWidth(str.artist, ft.artist), ww-200);
-			var flagWidths = 0;
+			width = Math.max(gr.MeasureString(str.artist, ft.artist, 0, 0, 0, 0).Width);
+            var flagWidths = 0;
+            var flagsLeft = textLeft + width + (is_4k ? 30 : 15);
 			for (i=0; i<flagImgs.length; i++) {
-				gr.DrawImage(flagImgs[i], Math.round(textLeft+width+15 + i*2 + flagWidths), Math.round(artistY + 1 + height / 2 - flagImgs[i].height / 2),
+				gr.DrawImage(flagImgs[i], flagsLeft, Math.round(artistY + 1 + height / 2 - flagImgs[i].height / 2),
 					flagImgs[i].width,flagImgs[i].height, 0,0,flagImgs[i].width,flagImgs[i].height)
-				flagWidths += flagImgs[i].width;
+                flagsLeft += flagImgs[i].width + (is_4k ? 10 : 5);
 			}
 		}
 	}
@@ -493,77 +520,78 @@ function on_paint(gr) {
 
 		if (showExtraDrawTiming) drawTextGrid = fb.CreateProfiler("on_paint -> textGrid");
 
-		if (str.year) {
-			height = gr.CalcTextHeight(str.year, ft.year);
-			gr.DrawString(str.year, ft.year, col.title, ww - textLeft * 2 - text_width, 62, text_width, height, StringFormat(StringAlignment.Far));
-		}
 		if (str.trackInfo) {
 			gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
-			gr.DrawString(str.trackInfo, ft.track_info, col.title, ww - textLeft * 2 - text_width, 62 + height + 2, text_width, 25, StringFormat(StringAlignment.Far));
+			var trackInfoHeight = gr.MeasureString(str.trackInfo, ft.track_info, 0, 0, 0, 0).Height;
+			gr.DrawString(str.trackInfo, ft.track_info, col.title, ww - textLeft * 2 - text_width, geo.top_bg_h - trackInfoHeight - 15, text_width, trackInfoHeight, StringFormat(StringAlignment.Far));
 			gr.SetTextRenderingHint(TextRenderingHint.AntiAlias);
+		}
+		if (str.year) {
+			height = gr.MeasureString(str.year, ft.year, 0, 0, 0, 0).Height;
+			gr.DrawString(str.year, ft.year, col.title, ww - textLeft * 2 - text_width, geo.top_bg_h - trackInfoHeight - height - 20, text_width, height, StringFormat(StringAlignment.Far));
 		}
 
 		if (gridSpace > 120) {
-            top = (albumart_size.y ? albumart_size.y : 96) + 15;
+            top = (albumart_size.y ? albumart_size.y : geo.top_art_spacing) + (is_4k ? 30 : 15);
 
 			if (str.title) {
 				ft.title = ft.title_lrg;
-                ft.tracknum = ft.tracknum_lrg;
-                var trackNumWidth = 0;
+				ft.tracknum = ft.tracknum_lrg;
+				var title_spacing = is_4k ? 16 : 8;
+				var trackNumWidth = 0;
                 if (str.tracknum) {
-                    trackNumWidth = gr.MeasureString(str.tracknum, ft.title, 0, 0, 0, 0).Width + 8;
+                    trackNumWidth = gr.MeasureString(str.tracknum, ft.tracknum, 0, 0, 0, 0).Width + title_spacing;
                 }
                 txtRec = gr.MeasureString(str.title, ft.title, 0, 0, text_width - trackNumWidth, wh);
 				if (txtRec.lines > 2) {
                     ft.title = ft.title_med;
                     ft.tracknum = ft.tracknum_med;
                     if (str.tracknum) {
-                        trackNumWidth = gr.MeasureString(str.tracknum, ft.tracknum, 0, 0, 0, 0).Width + 8;
+                        trackNumWidth = gr.MeasureString(str.tracknum, ft.tracknum, 0, 0, 0, 0).Width + title_spacing;
                     }
                     txtRec = gr.MeasureString(str.title, ft.title, 0, 0, text_width - trackNumWidth, wh);
 					if (txtRec.lines > 2) {
                         ft.title = ft.title_sml;
                         ft.tracknum = ft.tracknum_sml;
                         if (str.tracknum) {
-                            trackNumWidth = gr.MeasureString(str.tracknum, ft.tracknum, 0, 0, 0, 0).Width + 8;
+                            trackNumWidth = gr.MeasureString(str.tracknum, ft.tracknum, 0, 0, 0, 0).Width + title_spacing;
                         }
                         txtRec = gr.MeasureString(str.title, ft.title, 0, 0, text_width - trackNumWidth, wh);
 					}
 				}
+				var tracknumHeight = gr.MeasureString(str.tracknum, ft.tracknum, 0, 0, 0, 0).Height;
+				var heightAdjustment = Math.ceil((tracknumHeight - gr.MeasureString(str.title, ft.title, 0, 0, 0, 0).Height) / 2);
 				var numLines = Math.min(2, txtRec.lines);
 				height = gr.CalcTextHeight(str.title, ft.title) * numLines + 3;
 
-                trackNumWidth = Math.ceil(trackNumWidth);
-                gr.DrawString(str.tracknum, ft.tracknum, col.title, textLeft, top, trackNumWidth, height);
+				trackNumWidth = Math.ceil(trackNumWidth);
+				gr.DrawString(str.tracknum, ft.tracknum, col.title, textLeft, top - heightAdjustment, trackNumWidth, height);
+				// gr.DrawRect(textLeft, top, trackNumWidth, height, 1, rgb(255,0,0));
                 gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);    // thicker fonts can use anti-alias
                 gr.DrawString(str.title, ft.title, col.title, textLeft + trackNumWidth, top, text_width - trackNumWidth, height, g_string_format.trim_ellipsis_word);
+				// gr.DrawRect(textLeft, top, text_width - trackNumWidth, height, 1, rgb(255,0,0));
 
-				top += height + 12;
+				top += height + (is_4k ? 20 : 12);
 				gr.SetTextRenderingHint(TextRenderingHint.AntiAlias);
-			}
-
-			timelineHeight = 18;
-			if (ww > 1920) {
-				timelineHeight = 22;
 			}
 
 			//Timeline playcount bars
 			if (fb.IsPlaying || fb.IsPaused) {
-				var extraLeftSpace = 2;	// add a little space to the left so songs that were played a long time ago show more in the "added" stage
+				var extraLeftSpace = is_4k ? 6 : 3;	// add a little space to the left so songs that were played a long time ago show more in the "added" stage
 				gr.SetSmoothingMode(SmoothingMode.None); // disable smoothing
 				width = albumart_size.x - extraLeftSpace - 1;	// albumart_size.x set even if no art. Subtract 1 because we want the timeline stop 1 pixel short of art
 
-				gr.FillSolidRect(0, top, width + extraLeftSpace, timelineHeight, col.tl_added);
+				gr.FillSolidRect(0, top, width + extraLeftSpace, geo.timeline_h, col.tl_added);
 				if (tl_firstPlayedRatio >= 0 && tl_lastPlayedRatio >= 0) {
 					x1 = Math.floor(width* tl_firstPlayedRatio) + extraLeftSpace;
 					x2 = Math.floor(width* tl_lastPlayedRatio) + extraLeftSpace;
-					gr.FillSolidRect(x1, top, width - x1 + extraLeftSpace, timelineHeight, col.tl_played);
-					gr.FillSolidRect(x2, top, width - x2 + extraLeftSpace, timelineHeight, col.tl_unplayed);
+					gr.FillSolidRect(x1, top, width - x1 + extraLeftSpace, geo.timeline_h, col.tl_played);
+					gr.FillSolidRect(x2, top, width - x2 + extraLeftSpace, geo.timeline_h, col.tl_unplayed);
 				}
-				for (i=0; i < playedTimesRatios.length; i++) {
+				for (i = 0; i < playedTimesRatios.length; i++) {
 					x = Math.floor(width * playedTimesRatios[i]) + extraLeftSpace;
 					if (!isNaN(x)) {
-						gr.DrawLine(x, top, x, top + timelineHeight, 2, col.tl_play);
+						gr.DrawLine(x, top, x, top + geo.timeline_h, is_4k ? 3 : 2, col.tl_play);
 					} else {
 						// console.log('Played Times Error! ratio: ' + playedTimesRatios[i], 'x: ' + x);
 					}
@@ -571,7 +599,7 @@ function on_paint(gr) {
 				gr.SetSmoothingMode(SmoothingMode.AntiAlias);
 			}
 
-			top += timelineHeight + 12;
+			top += geo.timeline_h + (is_4k ? 20 : 12);
 
 			if (str.album) {
 				ft.album = ft.album_lrg;
@@ -588,27 +616,31 @@ function on_paint(gr) {
 
 				gr.DrawString(str.album, ft.album, col.title, textLeft, top, text_width, height, g_string_format.trim_ellipsis_word);
 
-				top += height + 10;
+				top += height + (is_4k ? 20 : 10);
 			}
 
 			// Tag grid
-			labelWidth = calculateGridMaxTextWidth(gr, str.grid, ft.grd_key_lg);
-			// console.log(labelWidth, text_width / 3, )
-			if (labelWidth < text_width / 3) {
-				grid_key_ft = ft.grd_key_lg;
-				grid_val_ft = ft.grd_val_lg;
-				col1_width = labelWidth;
+			grid_key_ft = ft.grd_key_lrg;
+            col1_width = calculateGridMaxTextWidth(gr, str.grid, grid_key_ft);
+			if (col1_width < text_width / 3) {
+                grid_val_ft = ft.grd_val_lrg;
 			} else {
-				grid_key_ft = ft.grd_key;
-				grid_val_ft = ft.grd_val;
-				labelWidth = calculateGridMaxTextWidth(gr, str.grid, ft.grd_key);
-				if (labelWidth < text_width / 3) {
-					col1_width = labelWidth;
-				} else {
-                    col1_width = Math.floor(text_width / 3);
-				}
+                grid_key_ft = ft.grd_key_med;
+                col1_width = calculateGridMaxTextWidth(gr, str.grid, grid_key_ft);
+                if (col1_width < text_width / 3) {
+                    grid_val_ft = ft.grd_val_med;
+                } else {
+                    grid_key_ft = ft.grd_key_sml;
+                    grid_val_ft = ft.grd_val_sml;
+                    col1_width = calculateGridMaxTextWidth(gr, str.grid, grid_key_ft);
+                    if (col1_width > text_width / 3) {
+                        col1_width = Math.floor(text_width / 3);
+                    }
+                }
 			}
-			col2_width = text_width - 10 - col1_width;
+			var column_margin = is_4k ? 20 : 10;
+			var col2_width = text_width - column_margin - col1_width;
+			var col2_left = textLeft + col1_width + column_margin;
 
 			// TODO: should probably test this out fully
 			// if (calcBrightness(col.primary) > 190) {
@@ -635,13 +667,14 @@ function on_paint(gr) {
 					txtRec = gr.MeasureString(value, grid_val_ft, 0, 0, col2_width, wh);
 					cell_height = txtRec.Height + 5;
 					if (dropShadow) {
-						gr.DrawString(value, grid_val_ft, col.extraDarkAccent, textLeft + col1_width + 9.5, top + 0.5, col2_width, cell_height, StringFormat(0,0,4));
-						gr.DrawString(value, grid_val_ft, col.extraDarkAccent, textLeft + col1_width + 10.5, top + 0.5, col2_width, cell_height, StringFormat(0,0,4));
-						gr.DrawString(value, grid_val_ft, col.extraDarkAccent, textLeft + col1_width + 9.5, top - 0.5, col2_width, cell_height, StringFormat(0,0,4));
-						gr.DrawString(value, grid_val_ft, col.extraDarkAccent, textLeft + col1_width + 10.5, top - 0.5, col2_width, cell_height, StringFormat(0,0,4));
+						var border_w = is_4k ? 1 : 0.5;
+						gr.DrawString(value, grid_val_ft, col.extraDarkAccent, col2_left + border_w, top + border_w, col2_width, cell_height, StringFormat(0,0,4));
+						gr.DrawString(value, grid_val_ft, col.extraDarkAccent, col2_left - border_w, top + border_w, col2_width, cell_height, StringFormat(0,0,4));
+						gr.DrawString(value, grid_val_ft, col.extraDarkAccent, col2_left + border_w, top - border_w, col2_width, cell_height, StringFormat(0,0,4));
+						gr.DrawString(value, grid_val_ft, col.extraDarkAccent, col2_left - border_w, top - border_w, col2_width, cell_height, StringFormat(0,0,4));
 					}
 					gr.DrawString(key, grid_key_ft, col.grid_key, textLeft, top, col1_width, cell_height, g_string_format.trim_ellipsis_char);	// key
-                    gr.DrawString(value, grid_val_ft, grid_val_col, textLeft + col1_width + 10, top, col2_width, cell_height, StringFormat(0,0,4));
+                    gr.DrawString(value, grid_val_ft, grid_val_col, col2_left, top, col2_width, cell_height, StringFormat(0,0,4));
 
 					if (playCountVerifiedByLastFm && showLastFmImage) {
 						var lastFmLogo = lastFmImg;
@@ -650,7 +683,7 @@ function on_paint(gr) {
 							lastFmLogo = lastFmWhiteImg;
 						}
 						var heightRatio = (cell_height - 12) / lastFmImg.height;
-						gr.DrawImage(lastFmLogo, textLeft + col1_width + txtRec.Width + 20, top + 3, Math.round(lastFmLogo.width * heightRatio), cell_height - 12,
+						gr.DrawImage(lastFmLogo, col2_left + txtRec.Width + 20, top + 3, Math.round(lastFmLogo.width * heightRatio), cell_height - 12,
 							0, 0, lastFmLogo.width, lastFmLogo.height);
 					}
 					top += cell_height + 5;
@@ -666,10 +699,10 @@ function on_paint(gr) {
 		showExtraDrawTiming && (drawBandLogos = fb.CreateProfiler("on_paint -> band logos"));
 		if (bandLogo) {
             // max width we'll draw is 1/2 the full size because the HQ images are just so big
-			logoWidth = Math.min(bandLogoHQ ? bandLogo.width / 2 : bandLogo.width * 1.5, albumart_size.x-ww*0.05);
+			logoWidth = Math.min(bandLogoHQ ? (is_4k ? bandLogo.width : bandLogo.width / 2) : bandLogo.width * 1.5, albumart_size.x-ww*0.05);
 			heightScale = logoWidth / bandLogo.width;   // width is fixed to logoWidth, so scale height accordingly
             logoTop = Math.round(albumart_size.y + albumart_size.h - (heightScale * bandLogo.height)) - 4;
-            if (!bandLogoHQ) {
+            if (!bandLogoHQ || is_4k) {
                 logoTop -= 20;
             }
             gr.DrawImage(bandLogo, Math.round(albumart_size.x/2 - logoWidth/2), logoTop, Math.round(logoWidth), Math.round(bandLogo.height*heightScale),
@@ -677,31 +710,20 @@ function on_paint(gr) {
 		}
 		if (showExtraDrawTiming) drawBandLogos.Print();
 
-		if (multiChannelAvailable && pref.check_multich) {
-			gr.DrawString("Multi-Ch Format Available",ft.small_font,col.grid_val, 0.8*ww, settingsY+settingsImg.height+10, 0.19*ww, 60, StringFormat(StringAlignment.Far, 0));
-		} else if (mediaTypeImg) {
-			if (albumart_scaled) {
-				mediaWidth = Math.min(100, ww - (albumart_size.x + albumart_scaled.width) - 10)
-				mediaLeft = Math.round(Math.max(albumart_size.x + albumart_scaled.width + 5, ww*.975-mediaWidth-2));
-			} else {
-				mediaWidth = 100;
-				mediaLeft = Math.round(ww*.975-mediaWidth-2);
-			}
-			gr.DrawImage(mediaTypeImg, mediaLeft, settingsY+settingsImg.height+15, mediaWidth, mediaTypeImg.Height*(mediaWidth/mediaTypeImg.Width), 0,0,mediaTypeImg.Width,mediaTypeImg.Height, 0, logoAlpha);
-		}
 
 		// RECORD LABEL drawing code
 		// this section should draw in 3ms or less always
 		if (recordLabels.length > 0) {
 			var rightSideGap = 20,  // how close last label is to right edge
                 labelSpacing = 0,
-                leftEdgeGap = art_off_center ? 20 : 40, // space between art and label
+				leftEdgeGap = art_off_center ? 20 : 40, // space between art and label
+				maxLabelWidth = is_4k ? 400 : 200;
 				leftEdgeWidth = 30; // how far label background extends on left
 			if (showExtraDrawTiming) drawLabelTime = fb.CreateProfiler("on_paint -> record labels");
 			totalLabelWidth = 0;
 			for (i=0; i<recordLabels.length; i++) {
 				if (recordLabels[i].width > 200)
-					totalLabelWidth += 200;
+					totalLabelWidth += maxLabelWidth;
 				else
 					totalLabelWidth += recordLabels[i].width;
 			}
@@ -719,7 +741,7 @@ function on_paint(gr) {
 						var radius = cdCenter.y - cdart_size.y;
 
 						while (true) {
-							allLabelsWidth = Math.max(Math.min(Math.round((ww-leftEdge-rightSideGap)/recordLabels.length), 200), 50);
+							allLabelsWidth = Math.max(Math.min(Math.round((ww-leftEdge-rightSideGap)/recordLabels.length), maxLabelWidth), 50);
 							//console.log("leftEdge = " + leftEdge + ", ww-leftEdge-10 = " + (ww-leftEdge-10) + ", allLabelsWidth=" + allLabelsWidth);
 							labelWidth = (allLabelsWidth > recordLabels[0].width) ? recordLabels[0].width : allLabelsWidth;
 							labelHeight = Math.round(recordLabels[0].height*labelWidth/recordLabels[0].width);	// width is based on height scale
@@ -751,7 +773,7 @@ function on_paint(gr) {
 				 	labelSpacing = Math.min(12,Math.max(3,Math.round((labelAreaWidth/(recordLabels.length-1))*0.048)));	// spacing should be proportional, and between 3 and 12 pixels
 				}
 				// console.log('labelAreaWidth = ' + labelAreaWidth + ", labelSpacing = " + labelSpacing);
-				allLabelsWidth = Math.max(Math.min(Math.round((labelAreaWidth-(labelSpacing*(recordLabels.length-1)))/recordLabels.length), 200), 50); 	// allLabelsWidth must be between 50 and 200 pixels wide
+				allLabelsWidth = Math.max(Math.min(Math.round((labelAreaWidth-(labelSpacing*(recordLabels.length-1)))/recordLabels.length), maxLabelWidth), 50); 	// allLabelsWidth must be between 50 and 200 pixels wide
 				var labelX = leftEdge;
 				topEdge = albumart_size.y + albumart_size.h - labelHeight - 20;
 				var origLabelHeight = labelHeight;
@@ -815,9 +837,8 @@ function on_paint(gr) {
 		width = 0;
 	}
 
-	var stxt = gr.MeasureString(str.tracknum, ft.lower_bar, 0, 0, ww, wh);
-	trackNumWidth = stxt.Width;
-	stxt = gr.MeasureString(str.title, ft.lower_bar, 0, 0, ww, wh);
+	trackNumWidth = gr.MeasureString(str.tracknum, ft.lower_bar, 0, 0, 0, 0).Width;
+	var stxt = gr.MeasureString(str.title, ft.lower_bar, 0, 0, ww, wh);
 	titleWidth = stxt.Width;
 	var ft_lower_bold = ft.lower_bar_bold;
 	var ft_lower = ft.lower_bar
@@ -828,29 +849,42 @@ function on_paint(gr) {
 		stxt = gr.MeasureString(str.tracknum, ft.lower_bar_sml_bold, 0, 0, ww, wh);
 		trackNumWidth = stxt.Width;
 	}
-	gr.DrawString(str.tracknum, ft_lower_bold, col.now_playing, pbLeft, lowerBarTop, 0.95*ww-width,0.5*geo.lower_bar_h,StringFormat(0,0,4,0x00001000));
+	gr.DrawString(str.tracknum, ft_lower_bold, col.now_playing, pbLeft, lowerBarTop, 0.95*ww-width, stxt.Height, StringFormat(0,0,4,0x00001000));
 	width += trackNumWidth;
-	gr.DrawString('  '+str.title, ft_lower, col.now_playing, pbLeft + trackNumWidth, lowerBarTop, 0.95*ww-width,0.5*geo.lower_bar_h,StringFormat(0,0,4,0x00001000));
+	gr.DrawString('  '+str.title, ft_lower, col.now_playing, pbLeft + trackNumWidth, lowerBarTop, 0.95*ww-width, stxt.Height, StringFormat(0,0,4,0x00001000));
 
 	// Progress bar/Seekbar
-	var pbTop = Math.round(lowerBarTop + stxt.Height) + 8;
+	var pbTop = Math.round(lowerBarTop + stxt.Height) + (is_4k ? 16 : 8);
 	gr.SetSmoothingMode(SmoothingMode.None); // disable smoothing
 	gr.FillSolidRect(pbLeft, pbTop, Math.round(0.95*ww), geo.prog_bar_h, col.progress_bar);
 	if (fb.PlaybackLength > 0) {
 		if (ww > 600) {
-			gr.DrawString(str.length, ft_lower, col.now_playing, 0.725*ww, lowerBarTop, 0.25*ww,0.5*geo.lower_bar_h, StringFormat(2,0));
+			gr.DrawString(str.length, ft_lower, col.now_playing, 0.725*ww, lowerBarTop, 0.25*ww, stxt.Height, StringFormat(2,0));
 			width = gr.CalcTextWidth('  '+str.length, ft_lower);
-			gr.DrawString(str.time, ft_lower_bold, col.now_playing, 0.725*ww, lowerBarTop, 0.25*ww-width,0.5*geo.lower_bar_h, StringFormat(2,0));
+			gr.DrawString(str.time, ft_lower_bold, col.now_playing, 0.725*ww, lowerBarTop, 0.25*ww-width, stxt.Height, StringFormat(2,0));
 			width += gr.CalcTextWidth('  '+str.time, ft_lower_bold);
-			gr.DrawString(str.disc, ft_lower, col.now_playing, 0.725*ww, lowerBarTop, 0.25*ww-width,0.5*geo.lower_bar_h, StringFormat(2,0));
+			gr.DrawString(str.disc, ft_lower, col.now_playing, 0.725*ww, lowerBarTop, 0.25*ww-width, stxt.Height, StringFormat(2,0));
 		}
 
-		if (progressMoved || Math.floor(0.95*(ww-2)*(fb.PlaybackTime / fb.PlaybackLength)) > progressLength)
-			progressLength = Math.floor(0.95*(ww-2)*(fb.PlaybackTime / fb.PlaybackLength));
-		progressMoved = false;
-		gr.FillSolidRect(pbLeft, pbTop, progressLength, geo.prog_bar_h, col.progress_fill);
-		// gr.DrawRect(pbLeft, pbTop, progressLength, geo.prog_bar_h - 1, 1, col.accent);
-		gr.DrawLine(progressLength + pbLeft, pbTop, progressLength + pbLeft, pbTop + geo.prog_bar_h - 1, 1, col.accent);
+        var progressStationary = false;
+        /* in some cases the progress bar would move backwards at the end of a song while buffering/streaming was occurring.
+            This created strange looking jitter so now the progress bar can only increase unless the user seeked in the track. */
+		if (progressMoved || Math.floor(0.95 * ww * (fb.PlaybackTime / fb.PlaybackLength)) > progressLength) {
+            progressLength = Math.floor(0.95 * ww * (fb.PlaybackTime / fb.PlaybackLength));
+        } else {
+            progressStationary = true;
+        }
+        progressMoved = false;
+        gr.FillSolidRect(pbLeft, pbTop, progressLength, geo.prog_bar_h, col.progress_fill);
+        gr.DrawLine(progressLength + pbLeft, pbTop, progressLength + pbLeft, pbTop + geo.prog_bar_h - 1, 1, col.accent);
+        if (progressStationary && fb.IsPlaying && !fb.IsPaused) {
+            if (col.accent !== last_accent_col || progressAlphaCol === undefined) {
+                var c = new Color(col.accent);
+                progressAlphaCol = rgba(c.r, c.g, c.b, 100);    // fake anti-aliased edge so things look a little smoother
+                last_accent_col = col.accent;
+            }
+            gr.DrawLine(progressLength + pbLeft + 1, pbTop, progressLength + pbLeft + 1, pbTop + geo.prog_bar_h - 1, 1, progressAlphaCol);
+        }
 	} else if (ww > 600) {	// streaming, but still want to show time
 		gr.DrawString(str.time, ft.lower_bar, col.now_playing,Math.floor(0.725*ww), lowerBarTop, 0.25*ww,0.5*geo.lower_bar_h,StringFormat(2,0));
 	}
@@ -858,12 +892,18 @@ function on_paint(gr) {
 
 	if (displayPlaylist) {
         showExtraDrawTiming && (drawPlaylist = fb.CreateProfiler('on_paint -> playlist'));
+        if (!playlist_shadow) {
+            playlist_shadow = createShadowRect(playlist.w + 2 * geo.aa_shadow, playlist.h); // extend shadow past edge
+        }
+        gr.DrawImage(playlist_shadow, playlist.x - geo.aa_shadow, playlist.y - geo.aa_shadow, playlist.w + 2*geo.aa_shadow, playlist.h + 2*geo.aa_shadow,
+            0, 0, playlist_shadow.width, playlist_shadow.height);
         playlist.on_paint(gr);
         showExtraDrawTiming && drawPlaylist.Print();
 	}
 
-	if (showDrawTiming)
-		drawStuff.Print();
+	if (showDrawTiming) {
+        drawStuff.Print();
+    }
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1004,8 +1044,6 @@ function onSettingsMenu(x, y) {
 	_menu.AppendMenuItem(MF_STRING, 18, 'Show Artist Country Flags');
 	_menu.CheckMenuItem(18, pref.show_flags);
 	_menu.AppendMenuSeparator();
-	_menu.AppendMenuItem(MF_STRING, 20, 'Look for multi-channel version of album on disc');
-	_menu.CheckMenuItem(20, pref.check_multich);
 	_menu.AppendMenuItem(MF_STRING, 21, 'Update Progress Bar frequently (higher CPU)');
 	_menu.CheckMenuItem(21, pref.freq_update);
 	_menu.AppendMenuSeparator();
@@ -1065,12 +1103,6 @@ function onSettingsMenu(x, y) {
 			pref.show_flags = !pref.show_flags;
 			LoadCountryFlags();
 			RepaintWindow();
-			break;
-		case 20:
-			pref.check_multich = !pref.check_multich;
-			if (pref.check_multich)
-				CheckForMultiChannelVersion();
-			window.RepaintRect(0.5*ww, settingsY+settingsImg.height+10, 0.5*ww, 60);
 			break;
 		case 21:
 			pref.freq_update = !pref.freq_update;
@@ -1146,6 +1178,20 @@ function on_init() {
 	g_playtimer = null;
 }
 
+var sizeInitialized = false;
+var last_size = undefined;
+
+function checkFor4k(w) {
+	if (w > 3000) {
+		is_4k = true;
+	} else {
+		is_4k = false;
+	}
+	if (last_size !== is_4k) {
+		sizeInitialized = false;
+	}
+}
+
 // window size changed
 function on_size() {
 	console.log("in on_size()");
@@ -1156,14 +1202,24 @@ function on_size() {
 
 	if (ww <= 0 || wh <= 0) return;
 
+	checkFor4k(ww);
+
 	if (ww > 1920) {
 		geo.prog_bar_h = 14;
+	}
+
+	if (!sizeInitialized) {
+		createFonts();
+		setGeometry();
+		if (fb.IsPlaying) {
+			LoadCountryFlags();	// wrong size flag gets loaded on 4k systems
+		}
+		sizeInitialized = true;
 	}
 
 	lastLeftEdge = 0;
 
 	ResizeArtwork(true);
-
 	createButtonImages();
 	createButtonObjects(ww, wh);
 
@@ -1178,7 +1234,7 @@ function on_size() {
 		refresh_lyrics();
 	}
 
-	// listOnSize();
+    playlist_shadow = disposeImg(playlist_shadow);
 	if (displayPlaylist) {
 		playlist.on_size(ww, wh);
 	}
@@ -1251,12 +1307,6 @@ function on_playback_new_track(metadb) {
 		}
 	}
 
-	// check if a MultiChannel version of the album currently playing is available in your library.
-	// this theme assumes that the path of the current album is exactly the same, just in a different location. It could be easily modified to append a different tag on the end of the folder (i.e. "artist-2012-album [dts]")
-	if (pref.check_multich) {
-		CheckForMultiChannelVersion();
-	}
-
 	last_path = current_path;								// for art caching purposes
 	lastDiscNumber = $('$if2(%discnumber%,0)');				// for art caching purposes
 	lastVinylSide = $('$if2(" + tf.vinyl_side + ",ZZ)');
@@ -1308,7 +1358,7 @@ function on_metadb_changed(handle_list, fromhook) {
             else
                 tracknum = fb.TitleFormat(tf.tracknum).Eval();
 
-            str.tracknum = tracknum;
+            str.tracknum = tracknum.trim();
             str.title = title;
             str.artist = artist;
             str.year = $('$year($if2(%original release date%,%date%)))');
@@ -1361,11 +1411,10 @@ function on_metadb_changed(handle_list, fromhook) {
             }
 
 			lastPlayed = $(tf.last_played);
-			// console.log($date(currentLastPlayed), $date(lastPlayed), $date(currentLastPlayed) !== $date(lastPlayed));
-            calcDateRatios($date(currentLastPlayed) !== $date(lastPlayed), currentLastPlayed);	// last_played has probably changed and we want to update the date bar
-            if (lastPlayed.length) {
-                today = new Date().toISOString().split('T')[0];
-                if (!currentLastPlayed.length || $date(lastPlayed) !== today) {
+			calcDateRatios($date(currentLastPlayed) !== $date(lastPlayed), currentLastPlayed);	// last_played has probably changed and we want to update the date bar
+			if (lastPlayed.length) {
+				today = dateToYMD(new Date());
+				if (!currentLastPlayed.length || $date(lastPlayed) !== today) {
                     currentLastPlayed = lastPlayed;
                     console.log('currentLastPlayed:', currentLastPlayed);
                 }
@@ -1724,7 +1773,6 @@ function on_playback_stop(reason) {
 		albumart_scaled = disposeImg(albumart_scaled);
 	}
 	bandLogo = disposeImg(bandLogo);
-	mediaTypeImg = disposeImg(mediaTypeImg);
 	while (flagImgs.length > 0)
 		disposeImg(flagImgs.pop());
     rotatedCD = disposeImg(rotatedCD);
@@ -1803,26 +1851,30 @@ function clearUIVariables() {
 var max_width = 1200;
 var max_height = 1600;
 function encache(img, path) {
-	var h = img.Height;
-	var w = img.Width;
-	if (h > max_width || w > max_height) {
-		var scale_factor = w / max_width;
-		if (scale_factor < w / max_height) {
-			scale_factor = w / max_height;
-		}
-		h = Math.min(h / scale_factor);
-		w = Math.min(w / scale_factor);
-	}
-	art_cache[path] = img.Resize(w, h);
-	img.Dispose();
-	art_cache_indexes.push(path);
-	if (art_cache_indexes.length > art_cache_max_size) {
-		var remove = art_cache_indexes.shift();
-		console.log('deleting cached img:', remove)
-		disposeImg(art_cache[remove]);
-		delete art_cache[remove];
-	}
-	return art_cache[path];
+    try {
+        var h = img.Height;
+        var w = img.Width;
+        if (h > max_width || w > max_height) {
+            var scale_factor = w / max_width;
+            if (scale_factor < w / max_height) {
+                scale_factor = w / max_height;
+            }
+            h = Math.min(h / scale_factor);
+            w = Math.min(w / scale_factor);
+        }
+        art_cache[path] = img.Resize(w, h);
+        img.Dispose();
+        art_cache_indexes.push(path);
+        if (art_cache_indexes.length > art_cache_max_size) {
+            var remove = art_cache_indexes.shift();
+            console.log('deleting cached img:', remove)
+            disposeImg(art_cache[remove]);
+            delete art_cache[remove];
+        }
+    } catch (e) {
+        console.log('<Error: Image could not be properly parsed: ' + path + '>');
+    }
+	return art_cache[path] || img;
 }
 
 function AttemptToLoadCachedImage(path) {
@@ -1959,8 +2011,8 @@ function timerTick(id) {
 }
 
 function createShadowRect(width, height) {
-	shadow = gdi.CreateImage(width + 2*geo.aa_shadow, height + 2*geo.aa_shadow);
-	shimg = shadow.GetGraphics();
+	var shadow = gdi.CreateImage(width + 2*geo.aa_shadow, height + 2*geo.aa_shadow);
+	var shimg = shadow.GetGraphics();
 	shimg.FillRoundRect(geo.aa_shadow, geo.aa_shadow, width, height, 0.5*geo.aa_shadow, 0.5*geo.aa_shadow, col.aa_shadow);
 	shadow.ReleaseGraphics(shimg);
 	shadow.StackBlur(geo.aa_shadow);
@@ -1994,16 +2046,6 @@ function createDropShadow() {
 		}
 	}
 
-	try {
-		playlist_shadow = gdi.CreateImage(Math.floor(ww*0.5+40), wh - (btns[30].y + btns[30].h) - geo.lower_bar_h + 20);
-		if (playlist_shadow) {
-			shimg = playlist_shadow.GetGraphics();
-			shimg.FillRoundRect(15, 15, playlist_shadow.width-20, playlist_shadow.height-50, 10, 10, col.aa_shadow);
-			playlist_shadow.ReleaseGraphics(shimg);
-			playlist_shadow.StackBlur(geo.aa_shadow);
-		}
-	} catch(e) {}
-
 	if (showDebugTiming) shadow.Print();
 }
 
@@ -2015,10 +2057,10 @@ function SetProgressBarRefresh()
 			t_interval = Math.abs(Math.ceil(1000/((0.95*ww)/fb.PlaybackLength)));	// we want to update the progress bar for every pixel so divide total time by number of pixels in progress bar
 			while (t_interval>500)														// we want even multiples of the base t_interval, so that the progress bar always updates as smoothly as possible
 				t_interval = Math.floor(t_interval/2);
-			while (t_interval<35)
+			while (t_interval<25)
 				t_interval*=2;
 		} else {
-			t_interval = 1000;	// for slow computers, only update once a second
+			t_interval = 333;	// for slow computers, only update 3x a second
 		}
 
 		if (showDebugTiming)
@@ -2058,7 +2100,7 @@ function calcDateRatios(dontUpdateLastPlayed, currentLastPlayed) {
 	var added = 	    toTime($('$if2(%added_enhanced%,%added%)'));
 	var first_played =  toTime($('[%first_played_enhanced%]'));
 	var last_played	=   $('[%last_played_enhanced%]');
-	var today = new Date().toISOString().split('T')[0];
+	var today = dateToYMD(new Date());
 	// console.log('today:', today);
 	if (dontUpdateLastPlayed && $date(last_played) === today) {
 		last_played = new Date(toDatetime(currentLastPlayed)).getTime();
@@ -2189,9 +2231,7 @@ function CreateRotatedCDImage() {
 function ResizeArtwork(resetCDPosition) {
 	if (albumart) {
 		// Size for big albumart
-		// var album_scale = Math.min((displayPlaylist ? 0.47*ww : 0.95*ww) / albumart.Width, 0.935*(wh-geo.lower_bar_h-32) / albumart.Height);
-		var album_scale = Math.min((displayPlaylist ? 0.47*ww : 0.75*ww) / albumart.Width, (wh - 96 - geo.lower_bar_h - 32) / albumart.Height);
-		// album_scale = Math.min(album_scale, 2);
+		var album_scale = Math.min((displayPlaylist ? 0.47*ww : 0.75*ww) / albumart.Width, (wh - geo.top_art_spacing - geo.lower_bar_h - 32) / albumart.Height);
 		if (displayPlaylist) {
             xCenter = 0.25*ww;
         } else if (ww/wh < 1.40) {		 // when using a roughly 4:3 display the album art crowds, so move it slightly off center
@@ -2200,19 +2240,19 @@ function ResizeArtwork(resetCDPosition) {
             xCenter = 0.5*ww;
             art_off_center = false;
             if (album_scale == 0.75*ww / albumart.Width) {
-                xCenter += 40;
+                xCenter += 0.1*ww;
                 art_off_center = true;  // TODO: We should probably suppress labels in this case
             }
         }
 		albumart_size.w = Math.floor(albumart.Width * album_scale);											// width
 		albumart_size.h = Math.floor(albumart.Height * album_scale);										// height
 		albumart_size.x = Math.floor(xCenter-0.5 * albumart_size.w);										// left
-		if (album_scale !== (wh - 96 - geo.lower_bar_h - 32) / albumart.Height) {
+		if (album_scale !== (wh - geo.top_art_spacing - geo.lower_bar_h - 32) / albumart.Height) {
 			// restricted by width
-            var y = 96 + Math.floor(((wh - 96 - geo.lower_bar_h - 32) / 2) - albumart_size.h / 2);
+            var y = geo.top_art_spacing + Math.floor(((wh - geo.top_art_spacing - geo.lower_bar_h - 32) / 2) - albumart_size.h / 2);
             albumart_size.y = Math.min(y, 160);
 		} else {
-            albumart_size.y = 32 + 32 + 32;		// height of menu bar + spacing + height of Artist text         // top
+            albumart_size.y = geo.top_art_spacing;		// height of menu bar + spacing + height of Artist text (32+32+32)	// top
         }
 		if (btns[34] && albumart_size.x+albumart_size.w > btns[34].x-50) {
 			albumart_size.y += 16 - pref.show_transport*6;
@@ -2250,7 +2290,7 @@ function LoadCountryFlags() {
 		disposeImg(flagImgs.pop());
 	}
 	for (i=0; i<$('$meta_num('+tf.artist_country+')'); i++) {
-			path = $(pref.flags_base) + $('$meta(' + tf.artist_country + ',' + i +')').replace(/ /g,'-') + '.png';
+			path = $(pref.flags_base) + (is_4k ? '64\\' : '32\\') + $('$meta(' + tf.artist_country + ',' + i +')').replace(/ /g,'-') + '.png';
 			var fImg = gdi.Image(path);
 			fImg && flagImgs.push(fImg);
 	}
@@ -2375,18 +2415,6 @@ function RepaintWindow() {
 	window.Repaint();
 }
 
-function CheckForMultiChannelVersion() {
-	var folder_list = [];
-	for(k = 0;k<tf.MultiCh_paths.length; k++) {
-		folder_list = folder_list.concat(utils.Glob(fb.TitleFormat(tf.MultiCh_paths[k]).Eval()).toArray());
-	}
-	if (folder_list.length > 0)
-		multiChannelAvailable = true;
-	else
-		multiChannelAvailable = false;
-	window.RepaintRect(0.5*ww, settingsY+settingsImg.height+10, 0.5*ww, 60);
-}
-
 function createHyperlinks() {
 	hyperlinks = [];
 	// hyperlinks.push(new Hyperlink($('%artist%'), ft.album_sml, col.grid_key, 'artist', Math.round(ww/2), 44));
@@ -2406,10 +2434,10 @@ function createButtonObjects(ww, wh) {
 		var add = 0;
 		var count = pref.show_random_button ? 6 : 5;
 
-		var y = 5; //barY + 5;
-		var w = 32;
+		var y = is_4k ? 20 : 10;
+		var w = is_4k ? 64 : 32;
 		var h = w;
-		var p = 5;	// space between buttons
+		var p = is_4k ? 10 : 5;	// space between buttons
 		var x = (ww - w * count - p * (count-1)) / 2;
 
 		count = 0;
@@ -2516,119 +2544,116 @@ function createButtonImages() {
 			Stop: {
 				ico: g_guifx.stop,
 				font: ft.guifx,
-			   	type: "playback",
+			   	type: 'transport',
 				w: 30,
 				h: 30
 			},
 			Previous: {
 				ico: g_guifx.previous,
 				font: ft.guifx,
-				type: "playback",
+				type: 'transport',
 				w: 30,
 				h: 30
 			},
 			Play: {
 				ico: g_guifx.play,
 				font: ft.guifx,
-				type: "playback",
+				type: 'transport',
 				w: 30,
 				h: 30
 			},
 			Pause: {
 				ico: g_guifx.pause,
 				font: ft.guifx,
-				type: "playback",
+				type: 'transport',
 				w: 30,
 				h: 30
 			},
 			Next: {
 				ico: g_guifx.next,
 				font: ft.guifx,
-				type: "playback",
+				type: 'transport',
 				w: 30,
 				h: 30
 			},
 			PlaybackRandom: {
 				ico: g_guifx.shuffle,
 				font: ft.guifx,
-				type: "playback",
+				type: 'transport',
 				w: 30,
 				h: 30
 			},
 			Reload: {
 				ico: g_guifx.power,
 				font: ft.guifx,
-				type: "playback",
+				type: 'transport',
 				w: 30,
 				h: 30
 			},
 			Minimize: {
 				ico: "0",
-				font: fontMarlett,
+				font: ft.Marlett,
 				type: "caption",
 				w: 22,
 				h: 22
 			},
 			Maximize: {
 				ico: "2",
-				font: fontMarlett,
+				font: ft.Marlett,
 				type: "caption",
 				w: 22,
 				h: 22
 			},
 			Close: {
 				ico: "r",
-				font: fontMarlett,
+				font: ft.Marlett,
 				type: "caption",
 				w: 22,
 				h: 22
 			},
 			File: {
 				ico: "File",
-				font: fontSegoeUi,
+				font: ft.SegoeUi,
 				type: "menu"
 			},
 			Edit: {
 				ico: "Edit",
-				font: fontSegoeUi,
+				font: ft.SegoeUi,
 				type: "menu"
 			},
 			View: {
 				ico: "View",
-				font: fontSegoeUi,
+				font: ft.SegoeUi,
 				type: "menu"
 			},
 			Playback: {
 				ico: "Playback",
-				font: fontSegoeUi,
+				font: ft.SegoeUi,
 				type: "menu"
 			},
 			Library: {
 				ico: "Library",
-				font: fontSegoeUi,
+				font: ft.SegoeUi,
 				type: "menu"
 			},
 			Help: {
 				ico: "Help",
-				font: fontSegoeUi,
+				font: ft.SegoeUi,
 				type: "menu"
 			},
 			Playlists: {
 				ico: "Playlists",
-				font: fontSegoeUi,
+				font: ft.SegoeUi,
 				type: "menu"
 			},
 			Options: {
 				ico: "Options",
-				font: fontSegoeUi,
+				font: ft.SegoeUi,
 				type: "menu"
 			},
 
 
 			Playlist: {
-				/*ico: "Playlist",
-				font: fontSegoeUi,
-				type: "menu"*/
 				ico: playlistImg,
 				type: "image",
 				w: playlistImg.width,
@@ -2655,7 +2680,6 @@ function createButtonImages() {
 			Settings: {
 				ico: settingsImg,
 				type: "image",
-				id: "settings",
 				w: settingsImg.width,
 				h: settingsImg.height
 			},
@@ -2673,19 +2697,31 @@ function createButtonImages() {
 
 	for (var i in btn) {
 
-		if (btn[i].type == "menu") {
+		if (btn[i].type === 'menu') {
 			var img = gdi.CreateImage(100, 100);
 			g = img.GetGraphics();
 
-			btn[i].w = Math.ceil(g.MeasureString(btn[i].ico, btn[i].font, 0, 0, 0, 0).Width) + 17;
+			var measurements = g.MeasureString(btn[i].ico, btn[i].font, 0, 0, 0, 0);
+			btn[i].w = Math.ceil(measurements.Width + 20);
 			img.ReleaseGraphics(g);
 			img.Dispose();
-			btn[i].h = 21;
+			btn[i].h = Math.ceil(measurements.Height + 5);
 		}
 
-		var w = btn[i].w,
+		var w = btn[i].w
 			h = btn[i].h,
 			lw = 2;
+
+		if (is_4k && btn[i].type === 'transport') {
+			w *= 2;
+			h *= 2;
+		} else if (is_4k && btn[i].type !== 'menu') {
+			w = Math.round(btn[i].w * 1.5);
+			h = Math.round(btn[i].h * 1.6);
+		} else if (is_4k) {
+			w += 20;
+			h += 10;
+		}
 
 		var stateImages = []; //0=normal, 1=hover, 2=down;
 
@@ -2694,7 +2730,7 @@ function createButtonImages() {
 			var img = gdi.CreateImage(w, h);
 			g = img.GetGraphics();
 			g.SetSmoothingMode(SmoothingMode.AntiAlias);
-			if (btn[i].type !== 'playback') {
+			if (btn[i].type !== 'transport') {
 				g.SetTextRenderingHint(TextRenderingHint.AntiAlias);    // positions playback icons weirdly
 			}
 
@@ -2703,10 +2739,7 @@ function createButtonImages() {
 			var captionIcoColor = RGB(140, 142, 144);
 			var playbackIcoColor = RGB(150, 152, 154);
 			var playbackEllypseColor = RGB(80, 80, 80);
-			if (btn[i].id == "settings")
-				var iconAlpha = 150;
-			else
-				var iconAlpha = 140;
+			var iconAlpha = 140;
 
 			if (s == 1) {
 				menuTextColor = RGB(180, 182, 184);
@@ -2714,10 +2747,7 @@ function createButtonImages() {
 				captionIcoColor = RGB(190, 192, 194);
 				playbackIcoColor = RGB(190, 192, 194);
 				playbackEllypseColor = RGB(190, 195, 200);
-				if (btn[i].id == "settings")
-					iconAlpha = 230;
-				else
-					iconAlpha = 215;
+				iconAlpha = 215;
 			} else if (s == 2) {
 				menuTextColor = RGB(120, 122, 124);
 				menuRectColor = RGB(110, 112, 114);
@@ -2733,7 +2763,7 @@ function createButtonImages() {
 				g.DrawString(btn[i].ico, btn[i].font, menuTextColor, 0, 0, w, h - 1, StringFormat(1, 1));
 			} else if (btn[i].type == 'caption') {
 				g.DrawString(btn[i].ico, btn[i].font, captionIcoColor, 0, 0, w, h, StringFormat(1, 1));
-			} else if (btn[i].type == 'playback') {
+			} else if (btn[i].type == 'transport') {
 				g.DrawEllipse(Math.floor(lw / 2) + 1, Math.floor(lw / 2) + 1, w - lw - 2, h - lw - 2, lw, playbackEllypseColor);
 				g.DrawString(btn[i].ico, btn[i].font, playbackIcoColor, (i == 'Stop' || i == 'OpenExplorer') ? 0 : 1, 0, w, h, StringFormat(1, 1));
 			} else if (btn[i].type == 'image') {
