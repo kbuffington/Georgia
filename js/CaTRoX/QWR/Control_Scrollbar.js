@@ -12,7 +12,7 @@ g_properties.add_properties(
 );
 
 // SCROLLBAR
-// SCROLLBARPARTS 
+// SCROLLBARPARTS
 SBP_ARROWBTN = 1;
 SBP_THUMBBTNHORZ = 2;
 SBP_THUMBBTNVERT = 3;
@@ -24,7 +24,7 @@ SBP_GRIPPERHORZ = 8;
 SBP_GRIPPERVERT = 9;
 SBP_SIZEBOX = 10;
 
-// ARROWBTNSTATES 
+// ARROWBTNSTATES
 ABS_UPNORMAL = 1;
 ABS_UPHOT = 2;
 ABS_UPPRESSED = 3;
@@ -402,7 +402,7 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
             return;
         }
 
-        var fontSegoeUi = gdi.font('Segoe UI Symbol', 15);
+        var fontSegoeUi = g_pl_fonts.scrollbar;
 
         var ico_back_colors =
             [
@@ -644,7 +644,7 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
 /** @constructor */
 function ScrollBarPart(x, y, w, h, img_src) {
     this.repaint = function () {
-        window.RepaintRect(this.x, this.y, this.w, this.h);
+		window.RepaintRect(this.x, this.y, this.w, this.h);
     };
 
     this.trace = function (x, y) {

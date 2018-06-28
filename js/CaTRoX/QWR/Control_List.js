@@ -399,14 +399,14 @@ List.prototype.scrollbar_redraw_callback = function () {
 List.prototype.initialize_scrollbar = function () {
     this.is_scrollbar_available = false;
 
-    var scrollbar_x = this.x + this.w - g_properties.scrollbar_w - g_properties.scrollbar_right_pad;
-    var scrollbar_y = this.y + g_properties.scrollbar_top_pad;
-    var scrollbar_h = this.h - (g_properties.scrollbar_bottom_pad + g_properties.scrollbar_top_pad);
+    var scrollbar_x = this.x + this.w - playlist_geo.scrollbar_w - playlist_geo.scrollbar_right_pad;
+    var scrollbar_y = this.y + playlist_geo.scrollbar_top_pad;
+    var scrollbar_h = this.h - (playlist_geo.scrollbar_bottom_pad + playlist_geo.scrollbar_top_pad);
 
     if (this.scrollbar) {
         this.scrollbar.reset();
     }
-    this.scrollbar = new ScrollBar(scrollbar_x, scrollbar_y, g_properties.scrollbar_w, scrollbar_h, this.row_h, _.bind(this.scrollbar_redraw_callback,this));
+    this.scrollbar = new ScrollBar(scrollbar_x, scrollbar_y, playlist_geo.scrollbar_w, scrollbar_h, this.row_h, _.bind(this.scrollbar_redraw_callback,this));
 };
 
 /**
@@ -464,7 +464,7 @@ List.prototype.update_list_w_size = function () {
         if (this.is_scrollbar_visible) {
             this.list_w -= this.scrollbar.w + 2;
         }
-        this.scrollbar.set_x(this.w - g_properties.scrollbar_w - g_properties.scrollbar_right_pad);
+        this.scrollbar.set_x(this.w - playlist_geo.scrollbar_w - playlist_geo.scrollbar_right_pad);
     }
 
 	// TODO: Mordred - override this elsewhere
