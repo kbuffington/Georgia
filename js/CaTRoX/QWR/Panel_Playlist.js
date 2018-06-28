@@ -78,28 +78,54 @@ var g_drop_effect = {
     scroll: 0x80000000
 };
 
+var is_4k_playlist = false;
+var playlistFontsCreated = false;
+var playlist_geo = {};
+
+function createPlaylistFonts() {
+	function font(name, size, style) {
+		return gdi.Font(name, is_4k_playlist ? Math.min(size * 2) : size, style);
+	}
+	g_pl_fonts = {
+		title_normal:   font('Segoe Ui', 12),
+		title_selected: font('Segoe Ui', 12),
+		title_playing:  font('Segoe Ui', 12),
+
+		artist_normal:          font('Segoe Ui Semibold', 18),
+		artist_playing:         font('Segoe Ui Semibold', 18, g_font_style.underline),
+		artist_normal_compact:  font('Segoe Ui Semibold', 15),
+		artist_playing_compact: font('Segoe Ui Semibold', 15, g_font_style.underline),
+
+		playcount:      font('Segoe Ui', 9),
+		album:          font('Segoe Ui Semibold', 15),
+		date:           font('Segoe UI Semibold', 20, g_font_style.italic),
+		date_compact:   font('Segoe UI Semibold', 15),
+		info:           font('Segoe Ui', 11),
+		cover:          font('Segoe Ui Semibold', 11),
+		rating_not_set: font('Segoe Ui Symbol', 14),
+        rating_set:     font('Segoe Ui Symbol', 16),
+        scrollbar:      font('Segoe Ui Symbol', 15),
+
+        font_awesome:	font('FontAwesome', 14),
+
+		dummy_text: font('Segoe Ui', 16)
+	};
+}
+
+function rescalePlaylist() {
+	var font_size = is_4k_playlist.toString();
+	if (playlistFontsCreated && playlistFontsCreated == font_size) {
+		return;	// don't redo fonts
+	}
+	createPlaylistFonts();
+	playlist_geo.scrollbar_w = is_4k_playlist ? g_properties.scrollbar_w * 2 : g_properties.scrollbar_w;
+	playlist_geo.scrollbar_right_pad = is_4k_playlist ? g_properties.scrollbar_right_pad * 2 : g_properties.scrollbar_right_pad;
+	playlist_geo.scrollbar_top_pad = is_4k_playlist ? g_properties.scrollbar_top_pad * 2 : g_properties.scrollbar_top_pad;
+    playlist_geo.scrollbar_bottom_pad = is_4k_playlist ? g_properties.scrollbar_bottom_pad * 2 : g_properties.scrollbar_bottom_pad;
+}
+
 //---> Fonts
-var g_pl_fonts = {
-    title_normal:   gdi.Font('Segoe Ui', 12),
-    title_selected: gdi.Font('Segoe Ui', 12),
-    title_playing:  gdi.Font('Segoe Ui', 12),
-
-    artist_normal:          gdi.Font('Segoe Ui Semibold', 18),
-    artist_playing:         gdi.Font('Segoe Ui Semibold', 18, g_font_style.underline),
-    artist_normal_compact:  gdi.Font('Segoe Ui Semibold', 15),
-    artist_playing_compact: gdi.Font('Segoe Ui Semibold', 15, g_font_style.underline),
-
-    playcount:      gdi.Font('Segoe Ui', 9),
-    album:          gdi.Font('Segoe Ui Semibold', 15),
-    date:           gdi.Font('Segoe UI Semibold', 20, g_font_style.italic),
-    date_compact:   gdi.Font('Segoe UI Semibold', 15),
-    info:           gdi.Font('Segoe Ui', 11),
-    cover:          gdi.Font('Segoe Ui Semibold', 11),
-    rating_not_set: gdi.Font('Segoe Ui Symbol', 14),
-    rating_set:     gdi.Font('Segoe Ui Symbol', 16),
-
-    dummy_text: gdi.Font('Segoe Ui', 16)
-};
+rescalePlaylist();
 
 var g_pl_colors = {};
 //---> Common
@@ -358,6 +384,12 @@ function PlaylistPanel(x, y) {
 
     // PlaylistPanel.on_size
     this.on_size = function (w, h) {
+		if (ww > 3000) {
+			is_4k_playlist = true;
+		} else {
+			is_4k_playlist = false;
+		}
+		rescalePlaylist();
         var x = Math.round(ww *.5);
         var y = btns[30].y + btns[30].h + 10 + listTop;
         var playlist_w = w - x;
@@ -657,7 +689,7 @@ function PlaylistPanel(x, y) {
      * @const
      * @type {number}
      */
-    var playlist_info_h = 24;
+    var playlist_info_h = g_properties.row_h + 4;
     /**
      * @const
      * @type {number}
@@ -3367,39 +3399,6 @@ function DiscHeader(parent, x, y, w, h, idx) {
     BaseHeader.call(this, parent, x, y, w, h, idx);
 
     /** @override */
-    this.initialize_items_old = function (rows_to_process) {
-        this.sub_items = [];
-        if (!rows_to_process.length) {
-            return 0;
-        }
-        var tfo = fb.TitleFormat('$ifgreater(%totaldiscs%,1,%discnumber%,)[%discsubtitle%]');
-        this.disc_title = tfo.EvalWithMetadb(_.head(rows_to_process).metadb);
-        if (this.disc_title === '') {
-            this.dont_draw = true;
-        }
-        for (i=0, len = rows_to_process.length; i < len; ++i) {
-            var item = rows_to_process[i];
-            var cur_cd = tfo.EvalWithMetadb(item.metadb);
-            if (this.disc_title !== cur_cd) {
-                break;
-            }
-            item.idx_in_header = i;
-            // noinspection JSBitwiseOperatorUsage
-            item.is_odd = !(i & 1);
-            item.parent = this;
-
-            this.sub_items.push(item);
-        }
-
-        _.dispose(tfo);
-
-        if (this.sub_items.length) {
-            this.metadb = this.sub_items[0].metadb;
-        }
-        return this.sub_items.length;
-    };
-
-    /** @override */
     this.initialize_items = function (rows_with_data) {
         this.sub_items = [];
         if (!rows_with_data.length) {
@@ -3435,8 +3434,8 @@ function DiscHeader(parent, x, y, w, h, idx) {
             gr.FillSolidRect(this.x, this.y + 1, this.w, this.h - 1, g_pl_colors.row_alternate);
         }
 
-        var cur_x = this.x + 18;
-        var right_pad = 10;
+        var cur_x = this.x + (is_4k_playlist ? 36 : 18);
+        var right_pad = is_4k_playlist ? 20 : 10;
         var testRect = false;
 
         var title_font = g_pl_fonts.title_normal;
@@ -3590,66 +3589,6 @@ function Header(parent, x, y, w, h, idx) {
     BaseHeader.call(this, parent, x, y, w, h, idx);
 
     /** @override */
-    this.initialize_items_old = function (rows_to_process) {
-        this.sub_items = [];
-        if (!rows_to_process.length) {
-            return 0;
-        }
-
-        var query = grouping_handler.get_query();
-        if (query && grouping_handler.show_cd()) {
-            query = query.replace(/%discnumber%/, '').replace(/%totaldiscs%/, '');
-        }
-
-        var tfo = fb.TitleFormat(query ? query : ''); // workaround a bug, because of which '' is sometimes treated as null :\
-        var owned_rows = [];
-
-        // TODO: replace with EvalWithMetadbs somehow
-
-        var group = tfo.EvalWithMetadb(_.head(rows_to_process).metadb);
-        for (i = 0, len = rows_to_process.length; i < len; ++i) {
-            var item = rows_to_process[i];
-            var cur_group = tfo.EvalWithMetadb(item.metadb);
-            if (group !== cur_group) {
-                break;
-            }
-            item.idx_in_header = i;
-            if (g_properties.show_header) {
-                // noinspection JSBitwiseOperatorUsage
-                item.is_odd = !(i & 1);
-            }
-            item.parent = this;
-            owned_rows.push(item);
-        }
-
-        _.dispose(tfo);
-
-        metadb = _.head(owned_rows).metadb;
-
-        var sub_headers = create_cd_headers(owned_rows);
-        if (sub_headers.length) {
-            this.sub_items = sub_headers;
-        }
-        else {
-            this.sub_items = owned_rows;
-
-            for (i = 0, len = owned_rows.length; i < len; ++i) {
-                var item = owned_rows[i];
-                item.idx_in_header = i;
-                if (g_properties.show_header) {
-                    // noinspection JSBitwiseOperatorUsage
-                    item.is_odd = !(i & 1);
-                }
-                item.parent = this;
-            }
-        }
-
-        this.initialize_hyperlinks();
-
-        return owned_rows.length;
-    };
-
-    /** @override */
     this.initialize_items = function (rows_with_data) {
         this.sub_items = [];
 
@@ -3708,29 +3647,6 @@ function Header(parent, x, y, w, h, idx) {
         return DiscHeader.create_headers(that, that.x, 0, that.w, g_properties.row_h, prepared_rows, rows_to_proccess_count);
     }
 
-    function create_cd_headers_old(rows) {
-        var rows_copy = _.clone(rows);
-        var header_idx = 0;
-        var headers = [];
-        while (rows_copy.length) {
-            var header = new DiscHeader(that, that.x, 0, that.w, g_properties.row_h, header_idx);
-            var processed_items = header.initialize_items(rows_copy);
-
-            rows_copy.reverse();
-            rows_copy.length = rows_copy.length - processed_items; ///< much faster then _.drop or slice, since it does not create a new array
-            rows_copy.reverse();
-
-            headers.push(header);
-            ++header_idx;
-        }
-
-        var has_cd = _.some(headers, function (item) {
-            return item.disc_title !== '';
-        });
-
-        return has_cd ? headers : [];
-    }
-
     /** @override */
     this.draw = function (gr, top, bottom) {
         // drawProfiler = fb.CreateProfiler('Header.draw items:' + this.sub_items.length);
@@ -3781,12 +3697,12 @@ function Header(parent, x, y, w, h, idx) {
         }
 
         if (this.is_playing()) {
-            var p = 6;  // from art below
+            var p = is_4k_playlist ? 12 : 6;  // from art below
             if (this.has_selected_items()) {
-                grClip.FillSolidRect(0, p, 8, this.h - p * 2, col.accent);
+                grClip.FillSolidRect(0, p, is_4k_playlist ? 16 : 8, this.h - p * 2, col.accent);
                 // grClip.FillGradRect(5, p, this.w / 2, this.h - p * 2, 180, g_pl_colors.row_selected, col.accent);
             } else {
-                grClip.FillSolidRect(0, p, 8, this.h - p * 2, col.darkAccent);
+                grClip.FillSolidRect(0, p, is_4k_playlist ? 16 : 8, this.h - p * 2, col.darkAccent);
                 // grClip.FillGradRect(5, p, this.w / 2, this.h - p * 2, 180, g_pl_colors.background, col.darkAccent);
             }
         }
@@ -3799,7 +3715,7 @@ function Header(parent, x, y, w, h, idx) {
 
         //************************************************************//
 
-        var left_pad = 10;
+        var left_pad = is_4k_playlist ? 20 : 10;
 
         //---> Artbox
         if (g_properties.show_album_art) {
@@ -3811,28 +3727,29 @@ function Header(parent, x, y, w, h, idx) {
             }
 
             if (art !== null || !g_properties.auto_album_art) {
-                var p = 6;
+				var p = is_4k_playlist ? 12 : 6;
+				var spacing = is_4k_playlist ? 4 : 2;
 
-                var art_box_size = this.h - p * 2;
+                var art_box_size = art_max_size + spacing * 2;
                 var art_box_x = p * 3;
                 var art_box_y = p;
                 var art_box_w = art_box_size;
                 var art_box_h = art_box_size;
 
                 if (art) {
-                    var art_x = art_box_x + 2;
-                    var art_y = art_box_y + 2;
+                    var art_x = art_box_x + spacing;
+                    var art_y = art_box_y + spacing;
                     var art_h = art.Height;
                     var art_w = art.Width;
                     if (art_h > art_w) {
-                        art_box_w = art_w + 4;
+                        art_box_w = art_w + spacing * 2;
                     }
                     else {
-                        art_box_h = art_h + 4;
+                        art_box_h = art_h + spacing * 2;
                         art_y += Math.round((art_max_size - art_h) / 2);
-                        art_box_y = art_y - 2;
+                        art_box_y = art_y - spacing;
                     }
-                    grClip.DrawImage(art, art_x, art_y, art_w, art_h, 0, 0, art_w, art_h, 0, 220);
+					grClip.DrawImage(art, art_x, art_y, art_w, art_h, 0, 0, art_w, art_h, 0, 220);
                 }
                 else if (!this.is_art_loaded()) {
                     grClip.DrawString('LOADING', g_pl_fonts.cover, line_color, art_box_x, art_box_y, art_box_size, art_box_size, g_string_format.align_center);
@@ -4230,6 +4147,7 @@ function Header(parent, x, y, w, h, idx) {
     };
 
     this.initialize_hyperlinks = function (gr) {
+		var right_edge = is_4k_playlist ? 10 : 5;
         hyperlinks_initialized = true;
         var date_font = g_pl_fonts.date;
         var artist_font = g_pl_fonts.artist_normal;
@@ -4239,13 +4157,13 @@ function Header(parent, x, y, w, h, idx) {
         var date_text = _.tf(date_query, metadb);
         if (date_text) {
             var date_w = Math.ceil(gr.MeasureString(date_text, date_font, 0, 0, 0, 0).Width + 5);
-            var date_x = -date_w - 5;
-            var date_y = Math.floor((this.h / 2) - 17);
+            var date_x = -date_w - right_edge;
+            var date_y = Math.floor((this.h / 2) - (is_4k_playlist ? 34 : 17));
 
             hyperlinks.date = new Hyperlink(date_text, date_font, 'date', date_x, date_y, this.w);
         }
 
-        var left_pad = 16 + this.h;
+        var left_pad = (is_4k_playlist ? 32 : 16) + this.h;
         if (!_.startsWith(metadb.RawPath, 'http')) {
             // don't create for radio
             var artist_text = _.tf(grouping_handler.get_title_query(), metadb);
@@ -4266,7 +4184,7 @@ function Header(parent, x, y, w, h, idx) {
         // var label_string = $('$if2(%label%,[%publisher%])', metadb).replace(/, /g,' \u2022 ');
         var label_string = _.tf('$if2(%label%,[%publisher%])', metadb).replace(', Inc.', '= Inc.');
         var labels = label_string.split(', ');
-        var label_left = -5;    // -5 offset from right edge
+        var label_left = -right_edge;    // -5 offset from right edge
         label_y = Math.round(2 * this.h / 3);
         for (var i = labels.length - 1; i >= 0; --i) {
             labels[i] = labels[i].replace('= Inc.', ', Inc.');
@@ -4359,7 +4277,7 @@ function Header(parent, x, y, w, h, idx) {
      * @const
      * @type {number}
      */
-    var art_max_size = that.h - 16;
+    var art_max_size = that.h - (is_4k_playlist ? 32 : 16);
 
     /** @type {IFbMetadbHandle} */
     var metadb;
@@ -4499,12 +4417,13 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
 
         var is_radio = _.startsWith(this.metadb.RawPath, 'http');
 
-        var cur_x = this.x + 18;
-        var right_pad = 10;
+		var right_spacing = is_4k_playlist ? 36 : 18;
+        var cur_x = this.x + right_spacing;
+        var right_pad = is_4k_playlist ? 20 : 10;
         var testRect = false;
 
         if (_.tf('$ifgreater(%totaldiscs%,1,true,false)', this.metadb) != 'false') {
-            cur_x += 20;
+            cur_x += is_4k_playlist ? 40 : 20;
         }
 
         //---> LENGTH
@@ -4513,7 +4432,7 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
                 length_text = _.tf('[%length%]', this.metadb);
             }
 
-            var length_w = 50;
+            var length_w = is_4k_playlist ? 80 : 50;
             if (length_text) {
                 var length_x = this.x + this.w - length_w - right_pad;
 
@@ -4539,9 +4458,13 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
                     count_text = '';
                 }
                 else {
-                    count_text = (is_radio ? '' : _.tf('%play_count%', this.metadb));
-                    if (count_text) {
-                        count_text = _.toNumber(count_text) === 0 ? '' : (count_text + ' |');
+                    count_text = _.tf('%play_count%', this.metadb);
+                    if (count_text != '0') {
+                        count_text = _.tf('[$max(%play_count%, %lastfm_play_count%)]', this.metadb);
+                        count_text = !_.toNumber(count_text) ? '' : (count_text + ' |');
+                    } else {
+                        // don't want to show lastfm play count if track hasn't been played locally
+                        count_text = '';
                     }
                 }
             }
@@ -4585,7 +4508,7 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
 			}if (this.is_playing) {
                 track_num_query = '      ';
             }
-            var title_query = track_num_query + '  %title%';
+            var title_query = track_num_query + '  %title%[ \'(\'%original artist%\' cover)\']';
             title_text = (fb.IsPlaying && this.is_playing && is_radio) ? _.tfe(title_query) : _.tf(title_query, metadb);
         }
 
@@ -4801,7 +4724,7 @@ function Rating(x, y, max_w, h, metadb) {
             return;
         }
 
-        var new_rating = Math.floor((x - this.x) / 14) + 1;
+        var new_rating = Math.floor((x - this.x) / btn_w) + 1;
         var current_rating = this.get_rating();
 
         if (g_properties.use_rating_from_tags) {
@@ -4849,7 +4772,7 @@ function Rating(x, y, max_w, h, metadb) {
      * @const
      * @type {number}
      */
-    var btn_w = 14;
+    var btn_w = is_4k_playlist ? 28 : 14;
 
     /**
      * @const
@@ -5966,13 +5889,13 @@ function PlaylistManager(x, y, w, h) {
 
         if (plman.IsPlaylistLocked(plman.ActivePlaylist)) {
             // Position above scrollbar for eye candy
-            var sbar_x = x + w - g_properties.scrollbar_w - g_properties.scrollbar_right_pad;
+            var sbar_x = x + w - playlist_geo.scrollbar_w - playlist_geo.scrollbar_right_pad;
             var lock_text = '\uf023';
             var lock_w = Math.ceil(
                 /** @type {!number} */
-                gr.MeasureString(lock_text, gdi.Font('Font Awesome 5 Free Solid', 14), 0, 0, 0, 0).Width
+                gr.MeasureString(lock_text, g_pl_fonts.font_awesome, 0, 0, 0, 0).Width
             );
-            gr.DrawString(lock_text, gdi.Font('Font Awesome 5 Free Solid', 14), text_color, sbar_x + Math.round((g_properties.scrollbar_w - lock_w) / 2), y, lock_w, h, g_string_format.align_center);
+            gr.DrawString(lock_text, g_pl_fonts.font_awesome, text_color, sbar_x + Math.round((playlist_geo.scrollbar_w - lock_w) / 2), y, lock_w, h, g_string_format.align_center);
 
             right_pad += lock_w;
         }
