@@ -138,8 +138,11 @@ var Color = (function() {
 			return this._red === this._green && this._red === this._blue;
 		},
 		get val() {
-			return this._decimal;
-		},
+			return this._decimal | (this._alpha << 24);
+        },
+        get rawVal() {
+            return this._decimal;
+        },
 		get isCloseToGreyscale() {
 			var threshold = 6;
             avg = Math.round((this._red + this._green + this._blue) / 3);
