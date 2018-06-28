@@ -26,6 +26,22 @@ function StringFormat() {
 	return ((h_align << 28) | (v_align << 24) | (trimming << 20) | flags);
 }
 
+function getAlpha(color) {
+	return ((color >> 24) & 0xff);
+}
+
+function getRed(color) {
+	return ((color >> 16) & 0xff);
+}
+
+function getGreen(color) {
+	return ((color >> 8) & 0xff);
+}
+
+function getBlue(color) {
+	return (color & 0xff);
+}
+
 function RGB(r, g, b) { return (0xff000000 | (r << 16) | (g << 8) | (b)); }
 function RGBA(r, g, b, a) { return ((a << 24) | (r << 16) | (g << 8) | (b)); }
 function colToRgb(c, showPrefix) {
@@ -40,6 +56,7 @@ function colToRgb(c, showPrefix) {
 		return prefix + '(' + getRed(c) + ', ' + getGreen(c) + ', ' + getBlue(c) + ')';
 	}
 }
+
 function calcBrightness(c) {
 	var r = getRed(c);
 	var g = getGreen(c);
@@ -107,6 +124,13 @@ function $date(dateStr) {
     return $('$date(' + dateStr + ')');
 }
 
+function dateToYMD(date) {
+    var d = date.getDate();
+    var m = date.getMonth() + 1; //Month from 0 to 11
+    var y = date.getFullYear();
+    return '' + y + '-' + (m<=9 ? '0' + m : m) + '-' + (d <= 9 ? '0' + d : d);
+}
+
 function toDatetime(dateTimeStr) {
 	// convert FB datetime string into one that we can call new Date() on
     return dateTimeStr.replace(' ', 'T') + pref.time_zone;
@@ -141,6 +165,10 @@ function printColorObj(obj) {
 		console.log('\t\t' + propName + ': ' + colToRgb(propValue, true) + ',\t\t// #' + toPaddedHexString(0xffffff & propValue, 6));
 	}
 	console.log('\t},\n\thint: [' + colToRgb(obj.primary, true) + ']');
+}
+
+function colorToHSLString(col) {
+    return leftPad(col.hue, 3) + ' '  + leftPad(col.saturation, 3) + ' ' + leftPad(col.lightness,3);
 }
 
 function toPaddedHexString(num, len) {
