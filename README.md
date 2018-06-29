@@ -20,7 +20,7 @@ I run the theme in Columns UI with a super simple setup using the JScript Panel,
 7. *(Optional Step)* This theme also makes heavy use of [the foo_enhanced_playcount](https://www.foobar2000.org/components/view/foo_enhanced_playcount) component. I recommend installing that as well, otherwise the timeline will not be as interesting. You'll probably also want [foo_playcount](https://www.foobar2000.org/components/view/foo_playcount) if you don't have that one yet.
 8. Now add JScript Panel to a new theme. If you're using CUI I recommend the setup I'm [using](https://imgur.com/nJ71Vn1) but feel free to configure it how you want. Typically it will look best if the panel takes up the majority of foobar. Close foobar's properties.
 9. Now right click on the JScript panel and select Configure. In the dialog that opens up, first make sure the Script Engine is set to "Chakra". Now select all the text in the text box and replace it with the contents of [Georgia.txt](https://github.com/kbuffington/Georgia/blob/master/Georgia.txt). It should look something like [this](https://imgur.com/3Ekc1HL). Hit OK and if you followed the instructions, the theme should have loaded working properly. If it didn't, most likely file paths are wrong. Check the console for more information.
- 
+
 
 ### Theme Highlights and Secrets
 
@@ -31,13 +31,13 @@ I run the theme in Columns UI with a super simple setup using the JScript Panel,
 * The playlist has Hyperlinks! Mouse over Artist, Year, Genre, or Record Label and you should see a line appear underneath. Clicking on it will search your library for all songs with those values. These hyperlinks are also multi-value aware in case you have multiple genres or record labels listed.
 * And lots more...
 
-### Image Packs ***(Download Links coming soon!)***
+### Image Packs
 
 These packs will all need to be extracted to a folder called images in the foobar profile folder
 
-* **Record Labels**: Extract to `.../AppData/Roaming/foobar2000/images/`
-* **Artist Logos**: Extract to `.../AppData/Roaming/foobar2000/images/`
-* **Flags**: Extract to `.../AppData/Roaming/foobar2000/images/`
+* **[Record Labels](https://github.com/kbuffington/georgia-image-packs/raw/master/artistlogos-2018-06-29.rar)**: Extract to `.../AppData/Roaming/foobar2000/images/`
+* **[Artist Logos](https://github.com/kbuffington/georgia-image-packs/raw/master/flags.rar)**: Extract to `.../AppData/Roaming/foobar2000/images/`
+* **[Flags](https://github.com/kbuffington/georgia-image-packs/raw/master/recordlabel.rar)**: Extract to `.../AppData/Roaming/foobar2000/images/`
 
 ### Thanks
 
