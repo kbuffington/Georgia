@@ -140,8 +140,7 @@ pref.divider_img	= fb.ProfilePath + 'georgia/images/divider.png';
 pref.last_fm_img	= fb.ProfilePath + 'georgia/images/last-fm-red-36.png';
 pref.last_fmw_img   = fb.ProfilePath + 'georgia/images/last-fm-36.png';
 pref.label_base  	= fb.ProfilePath + 'images/recordlabel/';		// location of the record label logos for the bottom right corner
-pref.logo_base   	= fb.ProfilePath + 'images/band logos/';		// location of band logos for the bottom left corner
-pref.logo_hq	   	= fb.ProfilePath + 'images/band logos HQ/';	// location of High-Qualiy band logos for the bottom left corner
+pref.logo_hq	   	= fb.ProfilePath + 'images/artistlogos/';	// location of High-Qualiy band logos for the bottom left corner
 pref.logo_color  	= fb.ProfilePath + 'images/band logos color/';
 pref.codec_base		= fb.ProfilePath + 'images/codec logos/';
 pref.flags_base		= fb.ProfilePath + 'images/flags/';			// location of artist country flags
@@ -272,6 +271,7 @@ var album_art_loading;								// for on_load_image_done()
 var retrieveThemeColorsWhenLoaded = false;			// only load theme colors on first image in aa_array
 var newTrackFetchingArtwork = false;				// only load theme colors when newTrackFetchingArtwork = true
 var noArtwork = false;								// only use default theme when noArtwork was found
+var themeColorSet = false;                          // when no artwork, don't set themeColor every redraw
 var playCountVerifiedByLastFm = false;				// show Last.fm image when we %lastfm_play_count% > 0
 var pauseBorderWidth = 2;
 var art_off_center   = false;                       // if true, album art has been shifted 40 pixels to the right
@@ -419,11 +419,14 @@ function on_paint(gr) {
 	gr.SetSmoothingMode(SmoothingMode.None);
 
 	// Background
-	if (!albumart && noArtwork) {
+	if (!albumart && fb.IsPlaying) {	// should we remove noArtwork bool?
 		albumart_size.x = Math.floor(ww*0.33);	// if there's no album art info panel takes up 1/3 screen
 		albumart_size.y = geo.top_art_spacing;
 		albumart_size.h = wh - albumart_size.y - geo.lower_bar_h - 32;
-		setTheme(blueTheme.colors);
+        if (!themeColorSet) {
+            setTheme(blueTheme.colors);
+            themeColorSet = true;
+        }
 	}
 	gr.FillSolidRect(0, geo.top_bg_h, ww, wh - geo.top_bg_h, col.bg);
 	gr.FillSolidRect(0, 0, ww, geo.top_bg_h, col.menu_bg);
@@ -511,7 +514,7 @@ function on_paint(gr) {
 		}
 	}
 
-	if (!displayPlaylist && fb.IsPlaying) {
+	if ((!displayPlaylist || (!albumart && noArtwork)) && fb.IsPlaying) {
 		if (albumart)
 			gridSpace = Math.round(albumart_size.x-geo.aa_shadow-textLeft);
 		else
@@ -520,9 +523,10 @@ function on_paint(gr) {
 
 		if (showExtraDrawTiming) drawTextGrid = fb.CreateProfiler("on_paint -> textGrid");
 
+		var trackInfoHeight = 0;
 		if (str.trackInfo) {
 			gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
-			var trackInfoHeight = gr.MeasureString(str.trackInfo, ft.track_info, 0, 0, 0, 0).Height;
+			trackInfoHeight = gr.MeasureString(str.trackInfo, ft.track_info, 0, 0, 0, 0).Height;
 			gr.DrawString(str.trackInfo, ft.track_info, col.title, ww - textLeft * 2 - text_width, geo.top_bg_h - trackInfoHeight - 15, text_width, trackInfoHeight, StringFormat(StringAlignment.Far));
 			gr.SetTextRenderingHint(TextRenderingHint.AntiAlias);
 		}
@@ -694,7 +698,7 @@ function on_paint(gr) {
 
 	}	/* if (!displayPlaylist) */
 
-	if (!displayPlaylist) {
+	if (!displayPlaylist || (!albumart && noArtwork)) {
 		// BAND LOGO drawing code
 		showExtraDrawTiming && (drawBandLogos = fb.CreateProfiler("on_paint -> band logos"));
 		if (bandLogo) {
@@ -1021,11 +1025,11 @@ function onSettingsMenu(x, y) {
 	_menu.AppendMenuItem(pref.display_cdart ? MF_STRING : MF_DISABLED, 5, 'Rotate CD Art on track change');
 	_menu.CheckMenuItem(5, pref.rotate_cdart);
 
-	_rotationMenu.AppendMenuItem(MF_STRING, 30, '2 degrees');
-	_rotationMenu.AppendMenuItem(MF_STRING, 31, '3 degrees');
-	_rotationMenu.AppendMenuItem(MF_STRING, 32, '4 degrees');
-	_rotationMenu.AppendMenuItem(MF_STRING, 33, '5 degrees');
-	_rotationMenu.CheckMenuRadioItem(30, 33, parseInt(pref.rotation_amt)+28);
+	_rotationMenu.AppendMenuItem(MF_STRING, 130, '2 degrees');
+	_rotationMenu.AppendMenuItem(MF_STRING, 131, '3 degrees');
+	_rotationMenu.AppendMenuItem(MF_STRING, 132, '4 degrees');
+	_rotationMenu.AppendMenuItem(MF_STRING, 133, '5 degrees');
+	_rotationMenu.CheckMenuRadioItem(130, 133, parseInt(pref.rotation_amt)+128);
     _rotationMenu.AppendTo(_menu, MF_STRING, 'CD Art Rotation Amount');
 
 	_menu.AppendMenuItem(pref.display_cdart ? MF_STRING : MF_DISABLED, 6, 'Display CD Art above cover');
@@ -1046,7 +1050,10 @@ function onSettingsMenu(x, y) {
 	_menu.AppendMenuSeparator();
 	_menu.AppendMenuItem(MF_STRING, 21, 'Update Progress Bar frequently (higher CPU)');
 	_menu.CheckMenuItem(21, pref.freq_update);
-	_menu.AppendMenuSeparator();
+    _menu.AppendMenuSeparator();
+    _menu.AppendMenuItem(MF_STRING, 30, 'Follow Hyperlinks only if CTRL-key is down');
+    _menu.CheckMenuItem(30, pref.hyperlinks_ctrl);
+    _menu.AppendMenuSeparator();
 
 	/* TODO: Remove this before release */
 	_debugMenu.AppendMenuItem(MF_STRING, 90, 'Show debug output');
@@ -1107,15 +1114,18 @@ function onSettingsMenu(x, y) {
 		case 21:
 			pref.freq_update = !pref.freq_update;
 			SetProgressBarRefresh();
-			break;
-		case 30:
-		case 31:
-		case 32:
-		case 33:
+            break;
+        case 30:
+            pref.hyperlinks_ctrl = !pref.hyperlinks_ctrl;
+            break;
+		case 130:
+		case 131:
+		case 132:
+		case 133:
 			pref.rotation_amt = (idx-28) % 360;
 			CreateRotatedCDImage();
 			RepaintWindow();
-			break;
+            break;
 		case 90:
 			pref.show_debug_log = !pref.show_debug_log;
 			break;
@@ -1246,9 +1256,15 @@ function on_playback_new_track(metadb) {
 	if (showDebugTiming) newTrackTime = fb.CreateProfiler('on_playback_new_track');
 	start_timer = 0;
 	lastLeftEdge = 0;
-	newTrackFetchingArtwork = true;
+    newTrackFetchingArtwork = true;
+    themeColorSet = false;
 
-	current_path = $('%directoryname%');
+	isSpotify = !!$('%path%').match(/^spotify\:/);
+	if (!isSpotify) {
+		current_path = $('%directoryname%');
+	} else {
+		current_path = '';
+	}
 
 	SetProgressBarRefresh();
 
@@ -1300,8 +1316,7 @@ function on_playback_new_track(metadb) {
 		bandLogoHQ = false;
 
 		var path = testBandLogo(pref.logo_hq, bandStr, true) ||		// try 800x310 white
-					testBandLogo(pref.logo_color, bandStr, true) ||	// try 800x310 color
-					testBandLogo(pref.logo_base, bandStr, false);	// try 160x79
+					testBandLogo(pref.logo_color, bandStr, true);	// try 800x310 color
 		if (path) {
 			bandLogo = gdi.Image(path);
 		}
@@ -2351,7 +2366,7 @@ function fetchNewArtwork(metadb) {
 	aa_list = [];
 	var disc_art_exists = true;
 
-	if (pref.display_cdart) {			// we must attempt to load CD/vinyl art first so that the shadow is drawn correctly
+	if (pref.display_cdart && !isSpotify) {			// we must attempt to load CD/vinyl art first so that the shadow is drawn correctly
 		cdartPath = $(pref.vinylside_path);					// try vinyl%vinyl disc%.png first
 		if (!utils.FileTest(cdartPath, 'e')) {
 			cdartPath = $(pref.vinyl_path);					// try vinyl.png
@@ -2381,30 +2396,36 @@ function fetchNewArtwork(metadb) {
 	}
 	if (showDebugTiming) artworkTime.Print();
 
-	for (k = 0; k < tf.glob_paths.length; k++) {
-		aa_list = aa_list.concat(utils.Glob($(tf.glob_paths[k])).toArray());
-	}
-	pattern = /(cd|vinyl)([0-9]*|[a-h])\.png/i;
-	aa_list = _.remove(_.uniq(aa_list), function (path) {
-		return !pattern.test(path);
-	});
-	// remove duplicates
-
-	if (aa_list.length) {
-		noArtwork = false;
-		if (aa_list.length > 1 && pref.aa_glob) {
-			globTimer = window.SetTimeout(function() {
-				doRotateImage();
-			}, pref.t_aa_glob * 1000);
-		}
-		albumArtIndex = 0;
-		glob_image(albumArtIndex); // display first image
-	} else {
-		noArtwork = true;
-		albumart = null;
+	if (isSpotify) {
+		albumart = utils.GetAlbumArtV2(metadb);
+		getThemeColors(albumart);
 		ResizeArtwork(true);
-		debugLog("Repainting on_playback_new_track due to no cover image");
-		RepaintWindow();
+	} else {
+		for (k = 0; k < tf.glob_paths.length; k++) {
+			aa_list = aa_list.concat(utils.Glob($(tf.glob_paths[k])).toArray());
+		}
+		pattern = /(cd|vinyl)([0-9]*|[a-h])\.png/i;
+		aa_list = _.remove(_.uniq(aa_list), function (path) {
+			return !pattern.test(path);
+		});
+		// remove duplicates
+
+		if (aa_list.length) {
+			noArtwork = false;
+			if (aa_list.length > 1 && pref.aa_glob) {
+				globTimer = window.SetTimeout(function() {
+					doRotateImage();
+				}, pref.t_aa_glob * 1000);
+			}
+			albumArtIndex = 0;
+			glob_image(albumArtIndex); // display first image
+		} else {
+			noArtwork = true;
+			albumart = null;
+			ResizeArtwork(true);
+			debugLog("Repainting on_playback_new_track due to no cover image");
+			RepaintWindow();
+		}
 	}
 	if (showDebugTiming) artworkTime.Print();
 }
@@ -2432,7 +2453,7 @@ function createButtonObjects(ww, wh) {
 	//---> Transport buttons
 	if (pref.show_transport) {
 		var add = 0;
-		var count = pref.show_random_button ? 6 : 5;
+		var count = 4 + (pref.show_random_button ? 1 : 0) + (pref.show_reload_button ? 1 : 0);
 
 		var y = is_4k ? 20 : 10;
 		var w = is_4k ? 64 : 32;
@@ -2448,8 +2469,10 @@ function createButtonObjects(ww, wh) {
 		btns[++count] = new Button(x + (w + p) * count, y, w, h, "Next", btnImg.Next);
 		if (pref.show_random_button) {
 			btns[++count] = new Button(x + (w + p) * count, y, w, h, "Playback/Random", btnImg.PlaybackRandom, "Play Random Song");
-		}
-		btns[++count] = new Button(x + (w + p) * count, y, w, h, "Reload", btnImg.Reload);
+        }
+        if (pref.show_reload_button) {
+            btns[++count] = new Button(x + (w + p) * count, y, w, h, "Reload", btnImg.Reload);
+        }
 	}
 
 	//---> Caption buttons

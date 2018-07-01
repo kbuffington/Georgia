@@ -69,7 +69,7 @@ themeList.push({
 
 
 function setTheme(theme) {
-	// theme.primary = rgb(192,192,160); // testing conflicts
+    // theme.primary = rgb(192,192,160); // testing conflicts
 	if (colorDistance(theme.primary, col.bg, true) < 45) {
 		console.log('>>> Theme primary color is too close to bg color. Adjusting.');
 		// darken theme.primary because it's too close to col.bg
@@ -145,6 +145,7 @@ function getThemeColorsJson(image, maxColorsToPull, maxColors) {
 		colorsWeighted = JSON.parse(image.GetColourSchemeJson(maxColorsToPull));
 		colorsWeighted.forEach(function (c, i) {
 			colorsWeighted[i].col = new Color(c.col);
+			console.log(colorsWeighted[i].col.getRGB(true,true), colorsWeighted[i].col.val);
 		});
 
 		console.log('idx      color        bright  freq   weight');
@@ -203,19 +204,20 @@ function getThemeColors(image) {
 		}
 	} else {
 		calculatedColor = getThemeColorsJson(image, 14, 3);
-		// calculatedColor = 0xffb04030;
 	}
 	if (!isNaN(calculatedColor)) {
 		var color = new Color(calculatedColor);
 		while (color.brightness >= 200) {
 			calculatedColor = shadeColor(calculatedColor, 3);
 			console.log(' >> Shading: ', colToRgb(calculatedColor), ' - brightness: ', color.brightness);
+			color = new Color(calculatedColor);
 		}
 		while (!color.isGreyscale && color.brightness <= 17) {
 			calculatedColor = tintColor(calculatedColor, 3);
 			console.log(' >> Tinting: ', colToRgb(calculatedColor), ' - brightness: ', color.brightness);
+			color = new Color(calculatedColor);
 		}
-		if (pref.generate_theme && color.brightness > 17) {
+		if (color.brightness > 17) {
 			var tObj = {
 				primary: calculatedColor,
 				darkAccent: shadeColor(calculatedColor, 30),
@@ -276,7 +278,7 @@ function colorDistance(a, b, log) {
 	// var distance = Math.sqrt((2 + rho/256) * deltaR + 4 * deltaG + (2 + (255 - rho)/256) * deltaB);
 	var distance = Math.sqrt(2 * deltaR + 4 * deltaG + 3 * deltaB + (rho * (deltaR - deltaB))/256);
 	if (log === true) {
-		console.log(aCol.getRGB(), bCol.getRGB(), distance);
+		console.log('distance:', aCol.getRGB(), bCol.getRGB(), distance);
 	}
 	return distance;
 }

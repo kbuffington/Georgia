@@ -13,16 +13,17 @@ pref.add_properties(
 		rotate_cdart:		['Art: Rotate CD art on new track', true],		// true: rotate cdArt based on track number. i.e. rotationAmt = %tracknum% * x degrees
 		cdart_ontop:		['Art: Show CD art above front cover', false],	// true: display cdArt above front cover
 		show_debug_log:		['Debug: Show Debug Output', false],		// true: show debug output in console
-		hide_cursor:    	['Hide Cursor when stationary', true],		// true: hide cursor when not moving, false: don't
-		generate_theme:		['Theme: Generate custom theme from artwork', true],      // true: generate a new theme for artwork, false: use built in themes
+		hide_cursor:    	['Hide Cursor when stationary', false],		// true: hide cursor when not moving, false: don't
 		show_flags:			['Show country flags', true],				// true: show the artist country flags
 		// check_multich:		['Check for MultiChannel version', false],	// true: search paths in tf.MultiCh_paths to see if there is a multichannel version of the current album available
 		use_vinyl_nums:		['Use vinyl style numbering (e.g. A1)',true],	// true: if the tags specified in tf.vinyl_side and tf.vinyl_tracknum are set, then we'll show vinyl style track numbers (i.e. "B2." instead of "04.")
 		start_Playlist:		['Display playlist on startup', false],		// true: show the playlist window when the theme starts up
 		show_transport:		['Show transport controls', true],			// true: show the play/pause/next/prev/random buttons at the top of the screen
 		show_random_button: ['Show Random Button', true],				// true: show random button in transport controls, ignored if transport not shown
-		freq_update:		['Frequent progress bar updates', true],	// true: update progress bar multiple times a second. Smoother, but uses more CPU
-		time_zone:          ['Time-zone (formatted +/-HH:MM, e.g. -06:00)', '+00:00'],  // used to create accurate timezone offsets. "Z", "-06:00", "+06:00", etc. are all valid values
+        show_reload_button: ['Show Reload Button', false],              // true: show a button that reloads the theme when clicked. Useful for debugging only
+        freq_update:		['Frequent progress bar updates', true],	// true: update progress bar multiple times a second. Smoother, but uses more CPU
+        time_zone:          ['Time-zone (formatted +/-HH:MM, e.g. -06:00)', '+00:00'],  // used to create accurate timezone offsets. "Z", "-06:00", "+06:00", etc. are all valid values
+        hyperlinks_ctrl:    ['Playlist: Hyperlinks require CTRL Key', false], // true: clicking on hyperlinks only works if CTRL key is held down
 
 		lyrics_line_height:	['Lyrics: Line height', 24],
 		lyrics_normal_color:['Lyrics: Text Color', 'RGBA(255, 255, 255, 255);'],
@@ -139,10 +140,10 @@ tf.lyrics		= "[$if2(%LYRICS%,$if2(%LYRIC%,$if2(%UNSYNCED LYRICS%,%UNSYNCED LYRIC
 
 // GLOB PICTURES
 tf.glob_paths = Array( // simply add, change or re-order entries as needed
-	"$replace(%path%,%filename_ext%,)folder*",
-	"$replace(%path%,%filename_ext%,)*.jpg",
-	"$replace(%path%,%filename_ext%,)*.png",
-	"$replace(%path%,%directoryname%\\%filename_ext%,)folder*"	// all folder images in parent directory
+	'$replace(%path%,%filename_ext%,)folder*',
+	'$replace(%path%,%filename_ext%,)*.jpg',
+	'$replace(%path%,%filename_ext%,)*.png',
+	'$replace(%path%,%directoryname%\\%filename_ext%,)folder*'	// all folder images in parent directory
 );
 
 tf.lyr_path = Array( // simply add, change or re-order entries as needed
