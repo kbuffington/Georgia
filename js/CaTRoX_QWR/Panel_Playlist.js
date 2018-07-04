@@ -1261,6 +1261,10 @@ function Playlist(x, y) {
             item.reset_queried_data();
         });
 
+        this.cnt.sub_items.forEach(function(header) {
+            header.reset_hyperlinks();
+        });
+
         this.repaint();
     };
 
@@ -4268,6 +4272,11 @@ function Header(parent, x, y, w, h, idx) {
         for (h in hyperlinks) {
             hyperlinks[h].set_w(w);
         }
+    }
+
+    this.reset_hyperlinks = function () {
+        hyperlinks_initialized = false;
+        hyperlinks = {};
     }
 
     //private:
