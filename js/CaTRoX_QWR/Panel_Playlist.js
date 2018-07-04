@@ -1616,12 +1616,19 @@ function Playlist(x, y) {
                 if (modifiers.ctrl && modifiers.shift) {
                     queue_handler.flush();
                 }
-                else if (selection_handler.selected_items_count() === 1) {
+                else if (selection_handler.selected_items_count() >= 1) {
+                    var rows = this.cnt.rows;
                     if (modifiers.ctrl) {
-                        queue_handler.add_row(focused_item);
+                        indexes = selection_handler.get_selected_items();
+                        indexes.forEach(function (idx) {
+                            queue_handler.add_row(rows[idx]);
+                        });
                     }
                     else if (modifiers.shift) {
-                        queue_handler.remove_row(focused_item);
+                        indexes = selection_handler.get_selected_items();
+                        indexes.forEach(function (idx) {
+                            queue_handler.remove_row(rows[idx]);
+                        });
                     }
                 }
             }, this));
@@ -1685,8 +1692,6 @@ function Playlist(x, y) {
         trace_initialize_list_performance && profiler_part.reset();
 
         var rows_metadb = plman.GetPlaylistItems(cur_playlist_idx);
-        // this.cnt.rows = initialize_rows(rows_metadb);
-        // this.cnt.rows = initialize_rows(plman.GetPlaylistItems(cur_playlist_idx), plman.PlaylistItemCount(cur_playlist_idx));
         this.cnt.rows = initialize_rows(plman.GetPlaylistItems(cur_playlist_idx));
 
         trace_initialize_list_performance && console.log('Rows initialized in ' + profiler_part.Time + 'ms');
@@ -1710,7 +1715,6 @@ function Playlist(x, y) {
         trace_initialize_list_performance && profiler_part.reset();
 
         Header.grouping_handler.set_active_playlist(plman.GetPlaylistName(cur_playlist_idx));
-        // this.cnt.sub_items = create_headers(this.cnt.rows);
         this.cnt.sub_items = create_headers(this.cnt.rows, rows_metadb);
 
         trace_initialize_list_performance && console.log('Headers initialized in ' + profiler_part.Time + 'ms');
@@ -4881,6 +4885,10 @@ function SelectionHandler(cnt_arg, cur_playlist_idx_arg) {
     this.selected_items_count = function () {
         return selected_indexes.length;
     };
+
+    this.get_selected_items = function () {
+        return selected_indexes;
+    }
 
     this.perform_internal_drag_n_drop = function () {
         this.enable_drag();
