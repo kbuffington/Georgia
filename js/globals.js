@@ -139,29 +139,29 @@ tf.grid = [ // simply add, change or remove entries to change grid layout
 tf.lyrics		= "[$if2(%LYRICS%,$if2(%LYRIC%,$if2(%UNSYNCED LYRICS%,%UNSYNCED LYRIC%)))]";
 
 // GLOB PICTURES
-tf.glob_paths = Array( // simply add, change or re-order entries as needed
+tf.glob_paths = [ // simply add, change or re-order entries as needed
 	'$replace(%path%,%filename_ext%,)folder*',
 	'$replace(%path%,%filename_ext%,)*.jpg',
 	'$replace(%path%,%filename_ext%,)*.png',
 	'$replace(%path%,%directoryname%\\%filename_ext%,)folder*'	// all folder images in parent directory
-);
+];
 
-tf.lyr_path = Array( // simply add, change or re-order entries as needed
+tf.lyr_path = [ // simply add, change or re-order entries as needed
 	"$replace($replace(%path%,%filename_ext%,),\,\\)",
 	fb.ProfilePath+"lyrics\\",
-	"\\\\Ripley\\Dirs\\lyrics\\"
-);
+	// "\\\\Ripley\\Dirs\\lyrics\\"
+];
 tf.lyr_artist	= "$replace(%artist%,'/','_',':','_','\"','_')";	// we need to strip some special characters so we can't use just use tf.artist
 tf.lyr_title 	= "$replace(%title%,'/','_',':','_','\"','_')"; 	// we need to strip special characters so we can't just use tf.title
-tf.lyr_filename	= Array( // filename to search for of lyrics files. Both .lrc and .txt will be searched for each entry in this list
+tf.lyr_filename	= [ 	// filenames to look for lyrics files. Both .lrc and .txt will be searched for each entry in this list
 	tf.lyr_artist + " - " + tf.lyr_title,
 	tf.lyr_artist + " -" + tf.lyr_title
-);
+];
 
-tf.labels = Array(	// Array of fields to test for publisher. Add, change or re-order as needed.
+tf.labels = [	// Array of fields to test for publisher. Add, change or re-order as needed.
 	"label",				// DO NOT put %s around the field names because we are using $meta() calls
 	"publisher"
-);
+];
 
 // CD-ART SETTINGS
 // we expect cd-art will be in .png with transparent background, best found at fanart.tv.

@@ -70,23 +70,25 @@ themeList.push({
 
 function setTheme(theme) {
     // theme.primary = rgb(192,192,160); // testing conflicts
-	if (colorDistance(theme.primary, col.bg, true) < 45) {
-		console.log('>>> Theme primary color is too close to bg color. Adjusting.');
+	var themeCol = new Color(theme.primary);
+	if (colorDistance(theme.primary, col.bg, true) < (themeCol.isCloseToGreyscale ? 60 : 45)) {
+		console.log('>>> Theme primary color is too close to bg color. Shading theme color.');
 		// darken theme.primary because it's too close to col.bg
 		theme.primary = shadeColor(theme.primary, 5);
+        themeCol = new Color(theme.primary);
 	}
 	col.info_bg = theme.primary;
 
-	col.progress_bar = rgb(125,125,125);
-	if (colorDistance(theme.primary, col.progress_bar, true) < 45) {
+    col.progress_bar = rgb(125,125,125);
+	if (colorDistance(theme.primary, col.progress_bar, true) < (themeCol.isCloseToGreyscale ? 60 : 45)) {
 		// progress fill is too close in color to bg
 		console.log('>>> Theme primary color is too close to progress bar. Adjusting progress_bar');
-		if (calcBrightness(theme.primary) < 125) {
+		if (themeCol.brightness < 125) {
 			col.progress_bar = rgb(138,138,138);
 		} else {
 			col.progress_bar = rgb(112,112,112);
 		}
-	}
+    }
 	col.progress_fill = theme.primary;
 	col.tl_added = theme.darkAccent;
 	col.tl_played = theme.accent;
@@ -98,8 +100,7 @@ function setTheme(theme) {
 	col.darkAccent = theme.darkAccent;
 	col.accent = theme.accent;
 	col.lightAccent = theme.lightAccent;
-	col.grid_key = theme.gridCol ? theme.gridCol : rgb(255,255,255);
-	col.grid_val = theme.gridCol ? theme.gridCol : rgb(255,255,255);
+	col.info_text = theme.gridCol ? theme.gridCol : rgb(255,255,255);
 }
 
 function registerTheme(theme) {
@@ -145,7 +146,6 @@ function getThemeColorsJson(image, maxColorsToPull, maxColors) {
 		colorsWeighted = JSON.parse(image.GetColourSchemeJson(maxColorsToPull));
 		colorsWeighted.forEach(function (c, i) {
 			colorsWeighted[i].col = new Color(c.col);
-			console.log(colorsWeighted[i].col.getRGB(true,true), colorsWeighted[i].col.val);
 		});
 
 		console.log('idx      color        bright  freq   weight');
@@ -164,7 +164,8 @@ function getThemeColorsJson(image, maxColorsToPull, maxColors) {
 			} else if (col.isCloseToGreyscale) {
 				console.log(' -', col.getRGB(true,true), leftPad(col.brightness, 4), ' ', leftPad(parseFloat(c.freq*100).toFixed(2),5) + '%', '   grey');
 			} else {
-				console.log(' -', col.getRGB(true,true), leftPad(col.brightness, 4), ' ', leftPad(parseFloat(c.freq*100).toFixed(2),5) + '%', leftPad(parseFloat(c.weight).toFixed(2), 7));
+				console.log(' -', col.getRGB(true,true), leftPad(col.brightness, 4), ' ', leftPad(parseFloat(c.freq*100).toFixed(2),5) + '%',
+					(c.freq < minFrequency) ? '   freq' : ' bright');
 			}
 		});
 
@@ -207,7 +208,7 @@ function getThemeColors(image) {
 	}
 	if (!isNaN(calculatedColor)) {
 		var color = new Color(calculatedColor);
-		while (color.brightness >= 200) {
+		while (color.brightness > 200) {
 			calculatedColor = shadeColor(calculatedColor, 3);
 			console.log(' >> Shading: ', colToRgb(calculatedColor), ' - brightness: ', color.brightness);
 			color = new Color(calculatedColor);
@@ -228,9 +229,12 @@ function getThemeColors(image) {
 			};
 			if (color.brightness < 40) {
 				tObj.darkAccent = shadeColor(calculatedColor, 35);
-				tObj.accent = tintColor(calculatedColor, 12);
-				tObj.lightAccent = tintColor(calculatedColor, 25);
-			}
+				tObj.accent = tintColor(calculatedColor, 10);
+				tObj.lightAccent = tintColor(calculatedColor, 20);
+            }
+            // if (color.brightness > 200) {
+            //     tObj.gridCol = rgb(42,42,42);
+            // }
 			// printColorObj(tObj);
 			setTheme(tObj);
 		} else {
@@ -275,10 +279,9 @@ function colorDistance(a, b, log) {
 	var deltaG = Math.pow(aCol.g - bCol.g, 2);
 	var deltaB = Math.pow(aCol.b - bCol.b, 2);
 
-	// var distance = Math.sqrt((2 + rho/256) * deltaR + 4 * deltaG + (2 + (255 - rho)/256) * deltaB);
 	var distance = Math.sqrt(2 * deltaR + 4 * deltaG + 3 * deltaB + (rho * (deltaR - deltaB))/256);
 	if (log === true) {
-		console.log('distance:', aCol.getRGB(), bCol.getRGB(), distance);
+		console.log('distance from:', aCol.getRGB(), 'to:', bCol.getRGB(), '=', distance);
 	}
 	return distance;
 }

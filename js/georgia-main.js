@@ -69,10 +69,8 @@ var menu_font = gdi.Font("Calibri", 12, 0);
 
 // COLORS
 col.progres_bar_text = RGB(0,0,0);
-col.title		= RGB(255,255,255);
-col.artist		= RGB(192,192,192);
-col.grid_key  	= RGB(255,255,255);
-col.grid_val  	= RGB(255,255,255);
+col.artist      = RGB(255,255,255);
+col.info_text	= RGB(255,255,255);
 col.now_playing = RGB(0, 0, 0);		// tracknumber, title, and time
 
 col.bg	   		= RGB(205,205,205);
@@ -218,14 +216,6 @@ var dateColorNormal = groupTitleColor;
 // var lineColorSelected = panelsLineColorSelected;
 // var groupTitleColorSelected = groupTitleColor;
 var artAlpha = 220;
-//---> Item Colors
-// var titleColorSelected = groupTitleColorSelected;
-// var titleColorPlaying = col.grid_key; // RGB(255, 165, 0); old was yellow
-// var titleColorNormal = panelsNormalTextColor;
-// var ratingColorRated = titleColorNormal;
-// var countColorNormal = RGB(120, 122, 124);
-// var countColorSelected = titleColorSelected;
-// var countColorPlaying = titleColorPlaying;
 //---> Row Colors
 var rowColorSelected = RGB(40, 40, 40);
 var rowColorAlternate = RGB(40, 40, 40);
@@ -268,6 +258,7 @@ var flagImgs		= [];							// array of flag images
 var rotatedCD		= null;							// drawing cdArt rotated is slow, so first draw it rotated into the rotatedCD image, and then draw rotatedCD image unrotated
 var disc_art_loading;								// for on_load_image_done()
 var album_art_loading;								// for on_load_image_done()
+var isStreaming		= false;						// is the song from a streaming source?
 var retrieveThemeColorsWhenLoaded = false;			// only load theme colors on first image in aa_array
 var newTrackFetchingArtwork = false;				// only load theme colors when newTrackFetchingArtwork = true
 var noArtwork = false;								// only use default theme when noArtwork was found
@@ -419,7 +410,7 @@ function on_paint(gr) {
 	gr.SetSmoothingMode(SmoothingMode.None);
 
 	// Background
-	if (!albumart && fb.IsPlaying) {	// should we remove noArtwork bool?
+	if (!albumart && noArtwork) {	// we use noArtwork to prevent flashing of blue default theme
 		albumart_size.x = Math.floor(ww*0.33);	// if there's no album art info panel takes up 1/3 screen
 		albumart_size.y = geo.top_art_spacing;
 		albumart_size.h = wh - albumart_size.y - geo.lower_bar_h - 32;
@@ -436,7 +427,7 @@ function on_paint(gr) {
 
 	// BIG ALBUMART
 	if (albumart && albumart_scaled) {
-		if (showExtraDrawTiming) drawArt = fb.CreateProfiler("on_paint -> artwork");
+		if (showExtraDrawTiming) drawArt = fb.CreateProfiler('on_paint -> artwork');
 		if (!shadow_image) {	// when switching views, the drop shadow won't get created initially which is very jarring when it suddenly appears later, so create it if we don't have it.
 			createDropShadow();
 		}
@@ -448,7 +439,7 @@ function on_paint(gr) {
 		}
 		if (!pref.cdart_ontop || displayLyrics) {
             if (rotatedCD && !displayPlaylist && pref.display_cdart) {
-                if (showExtraDrawTiming) drawCD = fb.CreateProfiler("cdart");
+                if (showExtraDrawTiming) drawCD = fb.CreateProfiler('cdart');
                 gr.DrawImage(rotatedCD, cdart_size.x, cdart_size.y, cdart_size.w, cdart_size.h, 0,0,rotatedCD.width,rotatedCD.height,0);
                 if (showExtraDrawTiming) drawCD.Print();
             }
@@ -456,7 +447,7 @@ function on_paint(gr) {
 		} else {	// draw cdart on top of front cover
 			gr.DrawImage(albumart_scaled, albumart_size.x, albumart_size.y, albumart_size.w, albumart_size.h, 0, 0, albumart_scaled.width, albumart_scaled.height);
             if (rotatedCD && !displayPlaylist && pref.display_cdart) {
-                if (showExtraDrawTiming) drawCD = fb.CreateProfiler("cdart");
+                if (showExtraDrawTiming) drawCD = fb.CreateProfiler('cdart');
                 gr.DrawImage(rotatedCD, cdart_size.x, cdart_size.y, cdart_size.w, cdart_size.h, 0,0,rotatedCD.width,rotatedCD.height,0);
                 if (showExtraDrawTiming) drawCD.Print();
             }
@@ -501,7 +492,7 @@ function on_paint(gr) {
 	if (str.artist) {
 		height = gr.CalcTextHeight(str.artist, ft.artist);
 		var artistY =  albumart_size.y - height - (is_4k ? 16 : 8);
-		gr.DrawString(str.artist, ft.artist, col.title, textLeft, artistY, displayPlaylist ? ww / 2 - 20 : ww-200, height, StringFormat(0,0,4));
+		gr.DrawString(str.artist, ft.artist, col.artist, textLeft, artistY, displayPlaylist ? ww / 2 - 20 : ww-200, height, StringFormat(0,0,4));
 		if (pref.show_flags) {
 			width = Math.max(gr.MeasureString(str.artist, ft.artist, 0, 0, 0, 0).Width);
             var flagWidths = 0;
@@ -515,24 +506,21 @@ function on_paint(gr) {
 	}
 
 	if ((!displayPlaylist || (!albumart && noArtwork)) && fb.IsPlaying) {
-		if (albumart)
-			gridSpace = Math.round(albumart_size.x-geo.aa_shadow-textLeft);
-		else
-			gridSpace = .97*ww;
+		gridSpace = Math.round(albumart_size.x-geo.aa_shadow-textLeft);
 		text_width = gridSpace;
 
-		if (showExtraDrawTiming) drawTextGrid = fb.CreateProfiler("on_paint -> textGrid");
+		if (showExtraDrawTiming) drawTextGrid = fb.CreateProfiler('on_paint -> textGrid');
 
 		var trackInfoHeight = 0;
 		if (str.trackInfo) {
 			gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
 			trackInfoHeight = gr.MeasureString(str.trackInfo, ft.track_info, 0, 0, 0, 0).Height;
-			gr.DrawString(str.trackInfo, ft.track_info, col.title, ww - textLeft * 2 - text_width, geo.top_bg_h - trackInfoHeight - 15, text_width, trackInfoHeight, StringFormat(StringAlignment.Far));
+			gr.DrawString(str.trackInfo, ft.track_info, col.artist, ww - textLeft * 2 - text_width, geo.top_bg_h - trackInfoHeight - 15, text_width, trackInfoHeight, StringFormat(StringAlignment.Far));
 			gr.SetTextRenderingHint(TextRenderingHint.AntiAlias);
 		}
 		if (str.year) {
 			height = gr.MeasureString(str.year, ft.year, 0, 0, 0, 0).Height;
-			gr.DrawString(str.year, ft.year, col.title, ww - textLeft * 2 - text_width, geo.top_bg_h - trackInfoHeight - height - 20, text_width, height, StringFormat(StringAlignment.Far));
+			gr.DrawString(str.year, ft.year, col.artist, ww - textLeft * 2 - text_width, geo.top_bg_h - trackInfoHeight - height - 20, text_width, height, StringFormat(StringAlignment.Far));
 		}
 
 		if (gridSpace > 120) {
@@ -569,10 +557,10 @@ function on_paint(gr) {
 				height = gr.CalcTextHeight(str.title, ft.title) * numLines + 3;
 
 				trackNumWidth = Math.ceil(trackNumWidth);
-				gr.DrawString(str.tracknum, ft.tracknum, col.title, textLeft, top - heightAdjustment, trackNumWidth, height);
+				gr.DrawString(str.tracknum, ft.tracknum, col.info_text, textLeft, top - heightAdjustment, trackNumWidth, height);
 				// gr.DrawRect(textLeft, top, trackNumWidth, height, 1, rgb(255,0,0));
                 gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);    // thicker fonts can use anti-alias
-                gr.DrawString(str.title, ft.title, col.title, textLeft + trackNumWidth, top, text_width - trackNumWidth, height, g_string_format.trim_ellipsis_word);
+                gr.DrawString(str.title, ft.title, col.info_text, textLeft + trackNumWidth, top, text_width - trackNumWidth, height, g_string_format.trim_ellipsis_word);
 				// gr.DrawRect(textLeft, top, text_width - trackNumWidth, height, 1, rgb(255,0,0));
 
 				top += height + (is_4k ? 20 : 12);
@@ -618,7 +606,7 @@ function on_paint(gr) {
 				var numLines = Math.min(2, txtRec.lines);
 				height = gr.CalcTextHeight(str.album, ft.album) * numLines;
 
-				gr.DrawString(str.album, ft.album, col.title, textLeft, top, text_width, height, g_string_format.trim_ellipsis_word);
+				gr.DrawString(str.album, ft.album, col.info_text, textLeft, top, text_width, height, g_string_format.trim_ellipsis_word);
 
 				top += height + (is_4k ? 20 : 10);
 			}
@@ -648,25 +636,23 @@ function on_paint(gr) {
 
 			// TODO: should probably test this out fully
 			// if (calcBrightness(col.primary) > 190) {
-			// 	col.grid_key = col.extraDarkAccent;
-			// 	col.grid_val = col.extraDarkAccent;
 			// } else {
-			// 	col.grid_key = rgb(255,255,255);
-			// 	col.grid_val = rgb(255,255,255);
 			// }
 
 			for (k=0, i=0; k < str.grid.length; k++) {
 				var key   = str.grid[k].label;
 				var value = str.grid[k].val;
-				var showLastFmImage = false;
+                var showLastFmImage = false;
+                var dropShadow = false;
+                var grid_val_col = col.info_text;
 
 				if (value.length) {
 					switch (key) {
 						case 'Rating':  	grid_val_col = col.rating; dropShadow = true; break;
 						case 'Mood':		grid_val_col = col.mood; dropShadow = true; break;
-						case 'Hotness':		grid_val_col = col.hotness; dropShadow = true; break;
-						case 'Play Count':	showLastFmImage = true; break;
-						default:			grid_val_col = col.grid_val; dropShadow = false; break;
+                        case 'Hotness':		grid_val_col = col.hotness; dropShadow = true; break;
+                        case 'Play Count':	showLastFmImage = true; break;
+						default:			break;
 					}
 					txtRec = gr.MeasureString(value, grid_val_ft, 0, 0, col2_width, wh);
 					cell_height = txtRec.Height + 5;
@@ -677,12 +663,11 @@ function on_paint(gr) {
 						gr.DrawString(value, grid_val_ft, col.extraDarkAccent, col2_left + border_w, top - border_w, col2_width, cell_height, StringFormat(0,0,4));
 						gr.DrawString(value, grid_val_ft, col.extraDarkAccent, col2_left - border_w, top - border_w, col2_width, cell_height, StringFormat(0,0,4));
 					}
-					gr.DrawString(key, grid_key_ft, col.grid_key, textLeft, top, col1_width, cell_height, g_string_format.trim_ellipsis_char);	// key
+					gr.DrawString(key, grid_key_ft, col.info_text, textLeft, top, col1_width, cell_height, g_string_format.trim_ellipsis_char);	// key
                     gr.DrawString(value, grid_val_ft, grid_val_col, col2_left, top, col2_width, cell_height, StringFormat(0,0,4));
 
 					if (playCountVerifiedByLastFm && showLastFmImage) {
 						var lastFmLogo = lastFmImg;
-						// if (getBlue(col.primary) < 20 && getGreen(col.primary) < 20 && Math.abs(getRed(col.primary) - 185) < 52) {
 						if (colorDistance(col.primary, rgb(185,0,0), false) < 125) {
 							lastFmLogo = lastFmWhiteImg;
 						}
@@ -732,7 +717,7 @@ function on_paint(gr) {
 					totalLabelWidth += recordLabels[i].width;
 			}
 			if (!lastLeftEdge) {	// we don't want to recalculate this every screen refresh
-				console.log('recalculating lastLeftEdge');
+				debugLog('recalculating lastLeftEdge');
 				labelShadowImg = disposeImg(labelShadowImg);
 				labelWidth = Math.round(totalLabelWidth / recordLabels.length);
 				labelHeight = Math.round(recordLabels[0].height * labelWidth/recordLabels[0].width);	// might be recalc'd below
@@ -1259,8 +1244,9 @@ function on_playback_new_track(metadb) {
     newTrackFetchingArtwork = true;
     themeColorSet = false;
 
-	isSpotify = !!$('%path%').match(/^spotify\:/);
-	if (!isSpotify) {
+	isStreaming = !metadb.RawPath.match(/^file\:\/\//);
+	console.log(isStreaming);
+	if (!isStreaming) {
 		current_path = $('%directoryname%');
 	} else {
 		current_path = '';
@@ -1392,10 +1378,6 @@ function on_metadb_changed(handle_list, fromhook) {
             }
             str.trackInfo = $(codec + '[ | %replaygain_album_gain%]');
 
-            // if (fb.IsPlaying || fb.IsPaused) {
-            // 	str.tracknum = tracknum;
-            // 	str.title = title;
-            // }
             str.disc = fb.TitleFormat(tf.disc).Eval();
 
             h = Math.floor(fb.PlaybackLength/3600);
@@ -1419,7 +1401,8 @@ function on_metadb_changed(handle_list, fromhook) {
                 }
             }
 
-            if ($('%lastfm_play_count%') != '0') {
+			var lastfm_count = $('%lastfm_play_count%');
+			if (lastfm_count !== '0' && lastfm_count !== '?') {
                 playCountVerifiedByLastFm = true;
             } else {
                 playCountVerifiedByLastFm = false;
@@ -2113,8 +2096,8 @@ function calcDateRatios(dontUpdateLastPlayed, currentLastPlayed) {
 	playedTimesRatios = [];
 	lfmPlayedTimesRatios = [];
 	var added = 	    toTime($('$if2(%added_enhanced%,%added%)'));
-	var first_played =  toTime($('[%first_played_enhanced%]'));
-	var last_played	=   $('[%last_played_enhanced%]');
+	var first_played =  toTime($('$if2(%first_played_enhanced%,%first_played%)'));
+	var last_played	=   $('$if2(%last_played_enhanced%,%last_played%)');
 	var today = dateToYMD(new Date());
 	// console.log('today:', today);
 	if (dontUpdateLastPlayed && $date(last_played) === today) {
@@ -2125,13 +2108,17 @@ function calcDateRatios(dontUpdateLastPlayed, currentLastPlayed) {
 	}
 
 	var lfmPlayedTimes = [];
+	var playedTimes = [];
 	if (componentEnhancedPlaycount) {
 		var raw = $('[%played_times_js%]', fb.GetNowPlaying());
 		var lastfm = $('[%lastfm_played_times_js%]', fb.GetNowPlaying());
 		lfmPlayedTimes = parseJson(lastfm, 'lastfm: ');
+		playedTimes = parseJson(raw, 'foobar: ');
+	} else {
+		playedTimes.push(first_played);
+		playedTimes.push(last_played);
 	}
 
-	playedTimes = parseJson(raw, 'foobar: ');
 
 	if (added && first_played) { //(first_played || lfmPlayedTimes.length)) {
 		age = calcAge(added, false);
@@ -2272,7 +2259,6 @@ function ResizeArtwork(resetCDPosition) {
 		if (btns[34] && albumart_size.x+albumart_size.w > btns[34].x-50) {
 			albumart_size.y += 16 - pref.show_transport*6;
         }
-        console.log(albumart_size.x, albumart_size.x + albumart_size.w, ww - (albumart_size.x + albumart_size.w), albumart_size.w);
 
 		if (albumart_scaled) {
 			albumart_scaled.Dispose();
@@ -2366,7 +2352,7 @@ function fetchNewArtwork(metadb) {
 	aa_list = [];
 	var disc_art_exists = true;
 
-	if (pref.display_cdart && !isSpotify) {			// we must attempt to load CD/vinyl art first so that the shadow is drawn correctly
+	if (pref.display_cdart && !isStreaming) {			// we must attempt to load CD/vinyl art first so that the shadow is drawn correctly
 		cdartPath = $(pref.vinylside_path);					// try vinyl%vinyl disc%.png first
 		if (!utils.FileTest(cdartPath, 'e')) {
 			cdartPath = $(pref.vinyl_path);					// try vinyl.png
@@ -2396,7 +2382,8 @@ function fetchNewArtwork(metadb) {
 	}
 	if (showDebugTiming) artworkTime.Print();
 
-	if (isSpotify) {
+	if (isStreaming) {
+		cdart = disposeCDImg(cdart);
 		albumart = utils.GetAlbumArtV2(metadb);
 		getThemeColors(albumart);
 		ResizeArtwork(true);
@@ -2419,6 +2406,9 @@ function fetchNewArtwork(metadb) {
 			}
 			albumArtIndex = 0;
 			glob_image(albumArtIndex); // display first image
+		} else if (albumart = utils.GetAlbumArtV2(metadb)) {
+			getThemeColors(albumart);
+			ResizeArtwork(true);
 		} else {
 			noArtwork = true;
 			albumart = null;
@@ -2438,7 +2428,6 @@ function RepaintWindow() {
 
 function createHyperlinks() {
 	hyperlinks = [];
-	// hyperlinks.push(new Hyperlink($('%artist%'), ft.album_sml, col.grid_key, 'artist', Math.round(ww/2), 44));
 }
 
 function createButtonObjects(ww, wh) {
