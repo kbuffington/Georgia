@@ -668,7 +668,7 @@ function on_paint(gr) {
 
 					if (playCountVerifiedByLastFm && showLastFmImage) {
 						var lastFmLogo = lastFmImg;
-						if (colorDistance(col.primary, rgb(185,0,0), false) < 125) {
+						if (colorDistance(col.primary, rgb(185,0,0), false) < 132) {
 							lastFmLogo = lastFmWhiteImg;
 						}
 						var heightRatio = (cell_height - 12) / lastFmImg.height;
@@ -835,8 +835,13 @@ function on_paint(gr) {
 		// we don't have room for all the text so use a smaller font and recalc size
 		ft_lower_bold =  ft.lower_bar_sml_bold;
 		ft_lower = ft.lower_bar_sml;
-		stxt = gr.MeasureString(str.tracknum, ft.lower_bar_sml_bold, 0, 0, ww, wh);
-		trackNumWidth = stxt.Width;
+        stxt = gr.MeasureString(str.tracknum, ft.lower_bar_sml_bold, 0, 0, ww, wh);
+        trackNumWidth = stxt.Width;
+        if (str.disc !== '') {
+            width = gr.CalcTextWidth(str.disc+'   '+str.time+'   '+str.length, ft_lower);
+        } else {
+            width = gr.CalcTextWidth(' '+str.time+'   '+str.length, ft_lower);
+        }
 	}
 	gr.DrawString(str.tracknum, ft_lower_bold, col.now_playing, pbLeft, lowerBarTop, 0.95*ww-width, stxt.Height, StringFormat(0,0,4,0x00001000));
 	width += trackNumWidth;
@@ -986,7 +991,39 @@ function onRatingMenu(x, y) {
 	menu_down = false;
 }
 
-//function Show_Menu_Settings(entry, x, y) {
+function GetTimezoneMenuItem() {
+    var timezone = pref.time_zone.trim();
+    var isNegative = timezone[0] === '-' ? true : false;
+    timezone = timezone.replace('-','').replace('+','');
+    timezone = timezone.split(':');
+
+    var hours = parseInt(timezone[0]);
+    var mins = parseInt(timezone[1]);
+
+    if (mins > 0 || hours > 12) {    // not in our timezone menu list
+        return 0;
+    }
+    return 140 + 12 + (isNegative ? -hours : hours);
+}
+
+function SetTimezoneFromMenuItem(menu_idx) {
+    var index = menu_idx - 140;
+    var timezone = '';
+
+    if (index > 12) {
+        timezone = '+';
+        timezone += leftPad(index - 12, 2, '0');
+        timezone += ':00';
+    } else {
+        timezone = '-';
+        timezone += leftPad(12 - index, 2, '0');
+        timezone += ':00';
+    }
+
+    console.log('Setting timezone to', timezone);
+    pref.time_zone = timezone;
+}
+
 function onSettingsMenu(x, y) {
 	var MF_SEPARATOR = 0x00000800;
 	var MF_STRING = 0x00000000;
@@ -1000,7 +1037,8 @@ function onSettingsMenu(x, y) {
 	// Settings
 	var _menu = window.CreatePopupMenu();
 	var _rotationMenu = window.CreatePopupMenu();
-	var _debugMenu = window.CreatePopupMenu();
+    var _debugMenu = window.CreatePopupMenu();
+    var _timeZoneMenu = window.CreatePopupMenu();
 
 	//var pbo = fb.PlaybackOrder;
 	_menu.AppendMenuItem(MF_STRING, 1, 'Cycle Through All Artwork');
@@ -1036,9 +1074,40 @@ function onSettingsMenu(x, y) {
 	_menu.AppendMenuItem(MF_STRING, 21, 'Update Progress Bar frequently (higher CPU)');
 	_menu.CheckMenuItem(21, pref.freq_update);
     _menu.AppendMenuSeparator();
+
+    _timeZoneMenu.AppendMenuItem(MF_STRING, 140, 'GMT -12:00');
+    _timeZoneMenu.AppendMenuItem(MF_STRING, 141, 'GMT -11:00');
+    _timeZoneMenu.AppendMenuItem(MF_STRING, 142, 'GMT -10:00');
+    _timeZoneMenu.AppendMenuItem(MF_STRING, 143, 'GMT -9:00');
+    _timeZoneMenu.AppendMenuItem(MF_STRING, 144, 'GMT -8:00');
+    _timeZoneMenu.AppendMenuItem(MF_STRING, 145, 'GMT -7:00');
+    _timeZoneMenu.AppendMenuItem(MF_STRING, 146, 'GMT -6:00');
+    _timeZoneMenu.AppendMenuItem(MF_STRING, 147, 'GMT -5:00');
+    _timeZoneMenu.AppendMenuItem(MF_STRING, 148, 'GMT -4:00');
+    _timeZoneMenu.AppendMenuItem(MF_STRING, 149, 'GMT -3:00');
+    _timeZoneMenu.AppendMenuItem(MF_STRING, 150, 'GMT -2:00');
+    _timeZoneMenu.AppendMenuItem(MF_STRING, 151, 'GMT -1:00');
+    _timeZoneMenu.AppendMenuItem(MF_STRING, 152, 'GMT +0:00');
+    _timeZoneMenu.AppendMenuItem(MF_STRING, 153, 'GMT +1:00');
+    _timeZoneMenu.AppendMenuItem(MF_STRING, 154, 'GMT +2:00');
+    _timeZoneMenu.AppendMenuItem(MF_STRING, 155, 'GMT +3:00');
+    _timeZoneMenu.AppendMenuItem(MF_STRING, 156, 'GMT +4:00');
+    _timeZoneMenu.AppendMenuItem(MF_STRING, 157, 'GMT +5:00');
+    _timeZoneMenu.AppendMenuItem(MF_STRING, 158, 'GMT +6:00');
+    _timeZoneMenu.AppendMenuItem(MF_STRING, 159, 'GMT +7:00');
+    _timeZoneMenu.AppendMenuItem(MF_STRING, 160, 'GMT +8:00');
+    _timeZoneMenu.AppendMenuItem(MF_STRING, 161, 'GMT +9:00');
+    _timeZoneMenu.AppendMenuItem(MF_STRING, 162, 'GMT +10:00');
+    _timeZoneMenu.AppendMenuItem(MF_STRING, 163, 'GMT +11:00');
+    _timeZoneMenu.AppendMenuItem(MF_STRING, 164, 'GMT +12:00');
+    _timeZoneMenu.CheckMenuRadioItem(140, 164, GetTimezoneMenuItem());
+    _timeZoneMenu.AppendTo(_menu, MF_STRING, 'Time-Zone');
+
+    _menu.AppendMenuSeparator();
     _menu.AppendMenuItem(MF_STRING, 30, 'Follow Hyperlinks only if CTRL-key is down');
     _menu.CheckMenuItem(30, pref.hyperlinks_ctrl);
     _menu.AppendMenuSeparator();
+
 
 	/* TODO: Remove this before release */
 	_debugMenu.AppendMenuItem(MF_STRING, 90, 'Show debug output');
@@ -1128,7 +1197,34 @@ function onSettingsMenu(x, y) {
 			break;
 		case 101:
 			fb.RunMainMenuCommand("File/Restart");
-			break;
+            break;
+        case 140:
+        case 141:
+        case 142:
+        case 143:
+        case 144:
+        case 145:
+        case 146:
+        case 147:
+        case 148:
+        case 149:
+        case 150:
+        case 151:
+        case 152:
+        case 153:
+        case 154:
+        case 155:
+        case 156:
+        case 157:
+        case 158:
+        case 159:
+        case 160:
+        case 161:
+        case 162:
+        case 163:
+        case 164:
+            SetTimezoneFromMenuItem(idx);
+            break;
 	}
 	_menu.Dispose();
 
