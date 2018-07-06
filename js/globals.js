@@ -52,7 +52,7 @@ tf.add_properties(
 	{
 		// added:          ['Tag Fields: Added', '$ifgreater($if(%lastfm_added%,$replace($date(%lastfm_added%),-,),999999999),$replace($date(%added%),-,),[%added%],[%lastfm_added%])'],
 		added:          ['Tag Fields: Added', '[$if2(%added_enhanced%,%added%)]'],
-		artist:			['Tag Fields: Artist String', '%artist%'],
+		artist:			['Tag Fields: Artist String', '$if3(%artist%,%composer%,%performer%,%album artist%)'],
 		artist_country: ['Tag Fields: Country', '%artistcountry%'],	// we call meta_num(artistcountry) so don't wrap this in % signs
 		disc:			['Tag Fields: Disc String', '$ifgreater(%totaldiscs%,1,CD %discnumber%/%totaldiscs%,)'],
 		disc_subtitle: 	['Tag Fields: Disc Subtitle', '%discsubtitle%'],
