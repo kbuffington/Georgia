@@ -83,44 +83,44 @@ var playlistFontsCreated = false;
 var playlist_geo = {};
 
 function createPlaylistFonts() {
-	function font(name, size, style) {
-		return gdi.Font(name, is_4k_playlist ? Math.min(size * 2) : size, style);
-	}
-	g_pl_fonts = {
-		title_normal:   font('Segoe Ui', 12),
-		title_selected: font('Segoe Ui', 12),
-		title_playing:  font('Segoe Ui', 12),
+    function font(name, size, style) {
+        return gdi.Font(name, is_4k_playlist ? Math.min(size * 2) : size, style);
+    }
+    g_pl_fonts = {
+        title_normal:   font('Segoe Ui', 12),
+        title_selected: font('Segoe Ui', 12),
+        title_playing:  font('Segoe Ui', 12),
 
-		artist_normal:          font('Segoe Ui Semibold', 18),
-		artist_playing:         font('Segoe Ui Semibold', 18, g_font_style.underline),
-		artist_normal_compact:  font('Segoe Ui Semibold', 15),
-		artist_playing_compact: font('Segoe Ui Semibold', 15, g_font_style.underline),
+        artist_normal:          font('Segoe Ui Semibold', 18),
+        artist_playing:         font('Segoe Ui Semibold', 18, g_font_style.underline),
+        artist_normal_compact:  font('Segoe Ui Semibold', 15),
+        artist_playing_compact: font('Segoe Ui Semibold', 15, g_font_style.underline),
 
-		playcount:      font('Segoe Ui', 9),
-		album:          font('Segoe Ui Semibold', 15),
-		date:           font('Segoe UI Semibold', 20, g_font_style.italic),
-		date_compact:   font('Segoe UI Semibold', 15),
-		info:           font('Segoe Ui', 11),
-		cover:          font('Segoe Ui Semibold', 11),
-		rating_not_set: font('Segoe Ui Symbol', 14),
+        playcount:      font('Segoe Ui', 9),
+        album:          font('Segoe Ui Semibold', 15),
+        date:           font('Segoe UI Semibold', 20, g_font_style.italic),
+        date_compact:   font('Segoe UI Semibold', 15),
+        info:           font('Segoe Ui', 11),
+        cover:          font('Segoe Ui Semibold', 11),
+        rating_not_set: font('Segoe Ui Symbol', 14),
         rating_set:     font('Segoe Ui Symbol', 16),
         scrollbar:      font('Segoe Ui Symbol', 15),
 
         font_awesome:	font('FontAwesome', 14),
 
-		dummy_text: font('Segoe Ui', 16)
-	};
+        dummy_text: font('Segoe Ui', 16)
+    };
 }
 
 function rescalePlaylist() {
-	var font_size = is_4k_playlist.toString();
-	if (playlistFontsCreated && playlistFontsCreated == font_size) {
-		return;	// don't redo fonts
-	}
-	createPlaylistFonts();
-	playlist_geo.scrollbar_w = is_4k_playlist ? g_properties.scrollbar_w * 2 : g_properties.scrollbar_w;
-	playlist_geo.scrollbar_right_pad = is_4k_playlist ? g_properties.scrollbar_right_pad * 2 : g_properties.scrollbar_right_pad;
-	playlist_geo.scrollbar_top_pad = is_4k_playlist ? g_properties.scrollbar_top_pad * 2 : g_properties.scrollbar_top_pad;
+    var font_size = is_4k_playlist.toString();
+    if (playlistFontsCreated && playlistFontsCreated == font_size) {
+        return;	// don't redo fonts
+    }
+    createPlaylistFonts();
+    playlist_geo.scrollbar_w = is_4k_playlist ? g_properties.scrollbar_w * 2 : g_properties.scrollbar_w;
+    playlist_geo.scrollbar_right_pad = is_4k_playlist ? g_properties.scrollbar_right_pad * 2 : g_properties.scrollbar_right_pad;
+    playlist_geo.scrollbar_top_pad = is_4k_playlist ? g_properties.scrollbar_top_pad * 2 : g_properties.scrollbar_top_pad;
     playlist_geo.scrollbar_bottom_pad = is_4k_playlist ? g_properties.scrollbar_bottom_pad * 2 : g_properties.scrollbar_bottom_pad;
 }
 
@@ -384,12 +384,12 @@ function PlaylistPanel(x, y) {
 
     // PlaylistPanel.on_size
     this.on_size = function (w, h) {
-		if (ww > 3000) {
-			is_4k_playlist = true;
-		} else {
-			is_4k_playlist = false;
-		}
-		rescalePlaylist();
+        if (ww > 3000) {
+            is_4k_playlist = true;
+        } else {
+            is_4k_playlist = false;
+        }
+        rescalePlaylist();
         var x = Math.round(ww *.5);
         var y = btns[30].y + btns[30].h + 10 + listTop;
         var playlist_w = w - x;
@@ -3735,8 +3735,8 @@ function Header(parent, x, y, w, h, idx) {
             }
 
             if (art !== null || !g_properties.auto_album_art) {
-				var p = is_4k_playlist ? 12 : 6;
-				var spacing = is_4k_playlist ? 4 : 2;
+                var p = is_4k_playlist ? 12 : 6;
+                var spacing = is_4k_playlist ? 4 : 2;
 
                 var art_box_size = art_max_size + spacing * 2;
                 var art_box_x = p * 3;
@@ -3757,7 +3757,7 @@ function Header(parent, x, y, w, h, idx) {
                         art_y += Math.round((art_max_size - art_h) / 2);
                         art_box_y = art_y - spacing;
                     }
-					grClip.DrawImage(art, art_x, art_y, art_w, art_h, 0, 0, art_w, art_h, 0, 220);
+                    grClip.DrawImage(art, art_x, art_y, art_w, art_h, 0, 0, art_w, art_h, 0, 220);
                 }
                 else if (!this.is_art_loaded()) {
                     grClip.DrawString('LOADING', g_pl_fonts.cover, line_color, art_box_x, art_box_y, art_box_size, art_box_size, g_string_format.align_center);
@@ -4155,7 +4155,7 @@ function Header(parent, x, y, w, h, idx) {
     };
 
     this.initialize_hyperlinks = function (gr) {
-		var right_edge = is_4k_playlist ? 10 : 5;
+        var right_edge = is_4k_playlist ? 10 : 5;
         hyperlinks_initialized = true;
         var date_font = g_pl_fonts.date;
         var artist_font = g_pl_fonts.artist_normal;
@@ -4409,7 +4409,11 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
             title_font = g_pl_fonts.title_playing;
             count_color = g_pl_colors.count_playing;
 
-            gr.FillSolidRect(this.x, this.y, this.w, this.h, this.is_selected() ? col.accent : col.darkAccent);
+            var bg_color = this.is_selected() ? col.accent : col.darkAccent;
+            gr.FillSolidRect(this.x, this.y, this.w, this.h, bg_color);
+            if (colorDistance(bg_color, title_artist_color) < 150) {
+                title_artist_color = title_color;
+            }
         }
 
         //--->
@@ -4430,7 +4434,7 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
 
         var is_radio = _.startsWith(this.metadb.RawPath, 'http');
 
-		var right_spacing = is_4k_playlist ? 36 : 18;
+        var right_spacing = is_4k_playlist ? 36 : 18;
         var cur_x = this.x + right_spacing;
         var right_pad = is_4k_playlist ? 20 : 10;
         var testRect = false;
@@ -4517,8 +4521,8 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
             // Mordred's track query
             var track_num_query = '$if(%tracknumber%,%tracknumber%,$pad_right(' + (this.idx_in_header + 1) + ',2,0)).';
             if (pref.use_vinyl_nums) {
-				track_num_query = tf.vinyl_track;
-			}if (this.is_playing) {
+                track_num_query = tf.vinyl_track;
+            }if (this.is_playing) {
                 track_num_query = '      ';
             }
             var title_query = track_num_query + '  %title%[ \'(\'%original artist%\' cover)\']';
@@ -4527,13 +4531,21 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
 
         //---> TITLE ARTIST init
         if (_.isNil(title_artist_text)) {
-            title_artist_text = _.tf('[  \u25AA  %track artist%]', metadb);
-            title_artist_text = _.tf('[  \u25AA  $if($strcmp(' + tf.artist + ',%artist%),$ifgreater($len(%album artist%),1,$ifgreater($len(%track artist%),1,%track artist%,),),' + tf.artist + ')]', metadb);
+            var pattern = '^' + _.tf('%album artist%', metadb) + ' ';
+            var regex = new RegExp(pattern);
+            // title_artist_text = _.tf('[$if($strcmp(' + tf.artist + ',%artist%),$ifgreater($len(%album artist%),1,$ifgreater($len(%track artist%),1,%track artist%,),),' + tf.artist + ')]', metadb);
+            title_artist_text = _.tf('[$if($strcmp(' + tf.artist + ',%artist%),$if(%album artist%,$if(%track artist%,%track artist%,),),' + tf.artist + ')]', metadb);
+            if (title_artist_text.length) {
+                // if tf.artist evaluates to something different than %album artist% strip %artist% from the start of the string
+                // i.e. tf.artist = "Metallica feat. Iron Maiden" then we want title_artist_text = "feat. Iron Maiden"
+                title_artist_text = title_artist_text.replace(regex, '');
+                title_artist_text = '  \u25AA  ' + title_artist_text;
+            }
         }
 
         //---> TITLE draw
         {
-            var title_w = this.w - right_pad - 22;
+            var title_w = this.w - right_pad - (is_4k_playlist ? 44 : 22);
 
             var title_text_format = g_string_format.v_align_center | g_string_format.trim_ellipsis_char | g_string_format.no_wrap;
             gr.DrawString(title_text + (title_artist_text ? '' : queue_text), title_font, title_color, cur_x, this.y, title_w, this.h, title_text_format);
