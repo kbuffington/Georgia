@@ -113,7 +113,8 @@ function calcAgeDateString(date) {
 		} catch (e) {
 			console.log(e);
 			console.log('date:', date, 'days:', days, 'then:', then);
-			fail();
+			// fail();
+			str = '';
 		}
 	}
 
