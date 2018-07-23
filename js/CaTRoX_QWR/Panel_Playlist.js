@@ -4531,9 +4531,8 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
 
         //---> TITLE ARTIST init
         if (_.isNil(title_artist_text)) {
-            var pattern = '^' + _.tf('%album artist%', metadb) + ' ';
+            var pattern = '^' + _.tf('%album artist%', metadb).replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&") + ' ';
             var regex = new RegExp(pattern);
-            // title_artist_text = _.tf('[$if($strcmp(' + tf.artist + ',%artist%),$ifgreater($len(%album artist%),1,$ifgreater($len(%track artist%),1,%track artist%,),),' + tf.artist + ')]', metadb);
             title_artist_text = _.tf('[$if($strcmp(' + tf.artist + ',%artist%),$if(%album artist%,$if(%track artist%,%track artist%,),),' + tf.artist + ')]', metadb);
             if (title_artist_text.length) {
                 // if tf.artist evaluates to something different than %album artist% strip %artist% from the start of the string
