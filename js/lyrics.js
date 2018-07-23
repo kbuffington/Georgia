@@ -14,7 +14,7 @@ sentence = function () {
 // Lyrics Functions
 
 function refresh_lyrics() {
-	if(fb.IsPlaying||fb.IsPaused) {
+	if (fb.IsPlaying || fb.IsPaused) {
 		if (showLyricsTiming) refresh_lyrics_time = fb.CreateProfiler("refresh_lyrics");
 		console.log("in refresh_lyrics() - g_lyrics_status = " + g_lyrics_status);
 		g_scroll = 0;
@@ -43,8 +43,6 @@ function updateLyricsPositionOnScreen() {
 		lyrPos = 0;
 		g_scroll = 0;
 		g_is_scrolling = false;
-		//get_lyrics();
-		//change_focus();
 		refresh_lyrics();
 		console.log("updatePosition: lyrPos = " + lyrPos + ' - Could set timerTick() - g_lyrics_status = ' + g_lyrics_status);
 		if (g_lyrics_status > 0) {
@@ -459,7 +457,7 @@ function get_lyrics() {
 	tag = fb.Titleformat(tf["lyrics"]).Eval();
 	if(tag.length>0) {
 		bool_tag = true;
-		if(tag.substring(0,1)=="[") g_lyrics_status = 1; else g_lyrics_status = 2;
+		if (tag.substring(0,1)=="[") g_lyrics_status = 1; else g_lyrics_status = 2;
 	} else {
 		// check files
 		i = 0;

@@ -100,7 +100,7 @@ function setGeometry() {
 	geo.lower_bar_h = is_4k ? 160 : 80;		// height of song title and time + progress bar area
 	geo.top_art_spacing = is_4k ? 192 : 96;	// space between top of theme and artwork
     geo.top_bg_h = is_4k ? 320 : 160;		// height of offset color background
-    geo.timeline_h = is_4k ? 36 : 18;       // height of timeline
+	geo.timeline_h = is_4k ? 36 : 18;       // height of timeline
 	if (!pref.show_progress_bar) {
 		geo.lower_bar_h -= geo.prog_bar_h * 2;
 	}
@@ -455,10 +455,9 @@ function on_paint(gr) {
                 if (showExtraDrawTiming) drawCD.Print();
             }
 		}
-		if (displayLyrics && albumart_scaled) {
+		if (displayLyrics && albumart_scaled && fb.IsPlaying) {
 			gr.FillSolidRect(albumart_size.x-1,albumart_size.y-1,albumart_size.w+1,albumart_size.h+1,RGBA(0,0,0,155));
-			if(fb.IsPlaying||fb.IsPaused)
-				show_lyrics(gr, g_tab, Math.floor(lyrPos - pref.lyrics_h_padding));
+			show_lyrics(gr, g_tab, Math.floor(lyrPos - pref.lyrics_h_padding));
 		}
 		if (fb.IsPaused) {
 			gr.FillRoundRect(albumart_size.x+0.5*(albumart_size.w-geo.pause_size), albumart_size.y+0.5*(albumart_size.h-geo.pause_size),geo.pause_size,geo.pause_size,
@@ -854,7 +853,7 @@ function on_paint(gr) {
 	var pbTop = Math.round(lowerBarTop + stxt.Height) + (is_4k ? 16 : 8);
 	gr.SetSmoothingMode(SmoothingMode.None); // disable smoothing
 	if (pref.show_progress_bar) {
-	gr.FillSolidRect(pbLeft, pbTop, Math.round(0.95*ww), geo.prog_bar_h, col.progress_bar);
+		gr.FillSolidRect(pbLeft, pbTop, Math.round(0.95*ww), geo.prog_bar_h, col.progress_bar);
 	}
 	if (fb.PlaybackLength > 0) {
 		if (ww > 600) {
@@ -866,25 +865,25 @@ function on_paint(gr) {
 		}
 
 		if (pref.show_progress_bar) {
-        var progressStationary = false;
-        /* in some cases the progress bar would move backwards at the end of a song while buffering/streaming was occurring.
-            This created strange looking jitter so now the progress bar can only increase unless the user seeked in the track. */
-		if (progressMoved || Math.floor(0.95 * ww * (fb.PlaybackTime / fb.PlaybackLength)) > progressLength) {
-            progressLength = Math.floor(0.95 * ww * (fb.PlaybackTime / fb.PlaybackLength));
-        } else {
-            progressStationary = true;
-        }
-        progressMoved = false;
-        gr.FillSolidRect(pbLeft, pbTop, progressLength, geo.prog_bar_h, col.progress_fill);
-        gr.DrawLine(progressLength + pbLeft, pbTop, progressLength + pbLeft, pbTop + geo.prog_bar_h - 1, 1, col.accent);
-        if (progressStationary && fb.IsPlaying && !fb.IsPaused) {
-            if (col.accent !== last_accent_col || progressAlphaCol === undefined) {
-                var c = new Color(col.accent);
-                progressAlphaCol = rgba(c.r, c.g, c.b, 100);    // fake anti-aliased edge so things look a little smoother
-                last_accent_col = col.accent;
-            }
-            gr.DrawLine(progressLength + pbLeft + 1, pbTop, progressLength + pbLeft + 1, pbTop + geo.prog_bar_h - 1, 1, progressAlphaCol);
-        }
+			var progressStationary = false;
+			/* in some cases the progress bar would move backwards at the end of a song while buffering/streaming was occurring.
+				This created strange looking jitter so now the progress bar can only increase unless the user seeked in the track. */
+			if (progressMoved || Math.floor(0.95 * ww * (fb.PlaybackTime / fb.PlaybackLength)) > progressLength) {
+				progressLength = Math.floor(0.95 * ww * (fb.PlaybackTime / fb.PlaybackLength));
+			} else {
+				progressStationary = true;
+			}
+			progressMoved = false;
+			gr.FillSolidRect(pbLeft, pbTop, progressLength, geo.prog_bar_h, col.progress_fill);
+			gr.DrawLine(progressLength + pbLeft, pbTop, progressLength + pbLeft, pbTop + geo.prog_bar_h - 1, 1, col.accent);
+			if (progressStationary && fb.IsPlaying && !fb.IsPaused) {
+				if (col.accent !== last_accent_col || progressAlphaCol === undefined) {
+					var c = new Color(col.accent);
+					progressAlphaCol = rgba(c.r, c.g, c.b, 100);    // fake anti-aliased edge so things look a little smoother
+					last_accent_col = col.accent;
+				}
+				gr.DrawLine(progressLength + pbLeft + 1, pbTop, progressLength + pbLeft + 1, pbTop + geo.prog_bar_h - 1, 1, progressAlphaCol);
+			}
 		}
 	} else if (ww > 600) {	// streaming, but still want to show time
 		gr.DrawString(str.time, ft.lower_bar, col.now_playing,Math.floor(0.725*ww), lowerBarTop, 0.25*ww,0.5*geo.lower_bar_h,StringFormat(2,0));
@@ -910,21 +909,25 @@ function on_paint(gr) {
 
 function show_lyrics(gr, tab, posy) {
 	var i, k, text_colour;
-	divider_spacing = 10;
+	divider_spacing = is_4k ? 80 : 40;
+	divider_height = is_4k ? 20 : 10;
 
  	if (showDebugTiming)
 		show_lyricsTime = fb.CreateProfiler("show_lyrics");
 	gr.SetTextRenderingHint(TextRenderingHint.AntiAlias);
 	var g_txt_align = cc_stringformat;
 
-	if (dividerImg && dividerImg.width<(albumart_size.w-10) && posy-divider_spacing-dividerImg.height>=albumart_size.y+pref.lyrics_h_padding)
-		gr.DrawImage(dividerImg, albumart_size.x+(albumart_size.w-dividerImg.width)/2, posy-divider_spacing-dividerImg.height, dividerImg.width, dividerImg.height, 0,0,dividerImg.width,dividerImg.height, 180);
-	for(i=0;i<tab.length;i++) {
-		if(posy >= albumart_size.y + pref.lyrics_h_padding && posy < albumart_size.h - pref.lyrics_h_padding) {
-			if(i==focus && g_lyrics_status==1) {
+	if (dividerImg && dividerImg.width < (albumart_size.w-10) && posy-divider_spacing-dividerImg.height>=albumart_size.y+pref.lyrics_h_padding) {
+		// gr.DrawImage(dividerImg, albumart_size.x+(albumart_size.w-dividerImg.width)/2, posy-divider_spacing-dividerImg.height, dividerImg.width, dividerImg.height, 0,0,dividerImg.width,dividerImg.height, 180);
+		gr.FillRoundRect(albumart_size.x + Math.floor(albumart_size.w * .2) - 1, posy-divider_spacing-divider_height + 1, Math.floor(albumart_size.w * 0.6), divider_height, divider_height/2, divider_height/2, col.darkAccent);
+		gr.FillRoundRect(albumart_size.x + Math.floor(albumart_size.w * .2), posy-divider_spacing-divider_height, Math.floor(albumart_size.w * 0.6), divider_height, divider_height/2, divider_height/2, col.info_bg);
+	}
+	for (i=0; i<tab.length; i++) {
+		if (posy >= albumart_size.y + pref.lyrics_h_padding && posy < albumart_size.h - pref.lyrics_h_padding) {
+			if (i==focus && g_lyrics_status==1) {
 				text_colour = g_txt_highlightcolour;
 			} else {
-				if(g_lyrics_status==0) {
+				if (g_lyrics_status==0) {
 					text_colour = g_txt_highlightcolour;
 				} else {
 					text_colour = g_txt_normalcolour;
@@ -939,9 +942,12 @@ function show_lyrics(gr, tab, posy) {
 		}
 		posy = Math.floor(posy+pref.lyrics_line_height+((tab[i].total_lines-1)*pref.lyrics_line_height));
 	}
-	posy+=divider_spacing;
-	if (dividerImg && dividerImg.width<(albumart_size.w-10) && posy<albumart_size.h- pref.lyrics_h_padding)
-		gr.DrawImage(dividerImg, albumart_size.x+(albumart_size.w-dividerImg.width)/2, posy, dividerImg.width, dividerImg.height, 0,0,dividerImg.width,dividerImg.height);
+	posy += divider_spacing;
+	if (dividerImg && dividerImg.width<(albumart_size.w-10) && posy<albumart_size.h- pref.lyrics_h_padding) {
+		// gr.DrawImage(dividerImg, albumart_size.x+(albumart_size.w-dividerImg.width)/2, posy, dividerImg.width, dividerImg.height, 0,0,dividerImg.width,dividerImg.height);
+		gr.FillRoundRect(albumart_size.x + Math.floor(albumart_size.w * .2) - 1, posy + 1, Math.floor(albumart_size.w * 0.6), divider_height, divider_height/2, divider_height/2, col.darkAccent);
+		gr.FillRoundRect(albumart_size.x + Math.floor(albumart_size.w * .2), posy, Math.floor(albumart_size.w * 0.6), divider_height, divider_height/2, divider_height/2, col.info_bg);
+	}
 
 	if (showDebugTiming)
 		show_lyricsTime.Print();
@@ -1118,7 +1124,7 @@ function onSettingsMenu(x, y) {
 
 
 	/* TODO: Remove this before release */
-	_debugMenu.AppendMenuItem(MF_STRING, 90, 'Show debug output');
+	_debugMenu.AppendMenuItem(MF_STRING, 90, 'Enable debug output');
 	_debugMenu.CheckMenuItem(90, pref.show_debug_log);
 	_debugMenu.AppendMenuItem(MF_STRING, 91, 'Show draw timing');
 	_debugMenu.CheckMenuItem(91, showDrawTiming);
@@ -1126,7 +1132,9 @@ function onSettingsMenu(x, y) {
 	_debugMenu.CheckMenuItem(92, showExtraDrawTiming);
 	_debugMenu.AppendMenuItem(MF_STRING, 93, 'Show debug timing');
 	_debugMenu.CheckMenuItem(93, showDebugTiming);
-	_debugMenu.AppendTo(_menu, MF_STRING, 'Debug Logging');
+	_debugMenu.AppendMenuItem(MF_STRING, 94, 'Show Reload button');
+	_debugMenu.CheckMenuItem(94, pref.show_reload_button);
+	_debugMenu.AppendTo(_menu, MF_STRING, 'Debug Settings');
 	_menu.AppendMenuSeparator();
 	_menu.AppendMenuItem(MF_STRING, 100, 'Lock Right Click...');
 	_menu.CheckMenuItem(100, pref.locked);
@@ -1205,6 +1213,9 @@ function onSettingsMenu(x, y) {
 			break;
 		case 93:
 			showDebugTiming = !showDebugTiming;
+			break;
+		case 94:
+			pref.show_reload_button = !pref.show_reload_button;
 			break;
 		case 100:
 			pref.locked = !pref.locked;
@@ -1497,7 +1508,10 @@ function on_metadb_changed(handle_list, fromhook) {
                 if (val) {
                     if (tf.grid[k].age) {
                         val = $('$date(' + val + ')');  // never show time
-                        val += ' (' + calcAgeDateString(val) + ')';
+                        var age = calcAgeDateString(val);
+                        if (age) {
+                            val += ' (' + age + ')';
+                        }
                     }
                     str.grid.push({
                         age: tf.grid[k].age,
@@ -2394,11 +2408,11 @@ function ResizeArtwork(resetCDPosition) {
 function LoadCountryFlags() {
 	while (flagImgs.length) {
 		disposeImg(flagImgs.pop());
-	}
-	for (i=0; i<$('$meta_num('+tf.artist_country+')'); i++) {
-			path = $(pref.flags_base) + (is_4k ? '64\\' : '32\\') + $('$meta(' + tf.artist_country + ',' + i +')').replace(/ /g,'-') + '.png';
-			var fImg = gdi.Image(path);
-			fImg && flagImgs.push(fImg);
+    }
+	for (i=0; i < $('$meta_num(' + tf.artist_country + ')'); i++) {
+        path = $(pref.flags_base) + (is_4k ? '64\\' : '32\\') + $('$meta(' + tf.artist_country + ',' + i +')').replace(/ /g,'-') + '.png';
+        var fImg = gdi.Image(path);
+        fImg && flagImgs.push(fImg);
 	}
 }
 
