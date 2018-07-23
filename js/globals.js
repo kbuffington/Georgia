@@ -1,6 +1,14 @@
+var globals = PanelProperties.get_instance();
+var pref    = PanelProperties.get_instance(); // preferences
+var tf      = PanelProperties.get_instance(); // titleformating strings
 
-var pref = PanelProperties.get_instance(); // preferences
-var tf	 = PanelProperties.get_instance(); // titleformating strings
+var currentVersion = '0.9.9';
+
+globals.add_properties(
+	{
+		version: ['_theme_version (do not hand edit!)', 'NONE']
+	}
+)
 
 // THEME PREFERENCES/PROPERTIES EXPLANATIONS - After initial run, these values are changed in Options Menu or by Right Click >> Properties and not here!
 pref.add_properties(
@@ -18,6 +26,7 @@ pref.add_properties(
 		// check_multich:		['Check for MultiChannel version', false],	// true: search paths in tf.MultiCh_paths to see if there is a multichannel version of the current album available
 		use_vinyl_nums:		['Use vinyl style numbering (e.g. A1)',true],	// true: if the tags specified in tf.vinyl_side and tf.vinyl_tracknum are set, then we'll show vinyl style track numbers (i.e. "B2." instead of "04.")
 		start_Playlist:		['Display playlist on startup', false],		// true: show the playlist window when the theme starts up
+		show_progress_bar:  ['Show Progress Bar', true],				// true: show progress bar, otherwise hide it (useful is using another panel for this)
 		show_transport:		['Show transport controls', true],			// true: show the play/pause/next/prev/random buttons at the top of the screen
 		show_random_button: ['Show Random Button', true],				// true: show random button in transport controls, ignored if transport not shown
         show_reload_button: ['Show Reload Button', false],              // true: show a button that reloads the theme when clicked. Useful for debugging only
@@ -25,13 +34,13 @@ pref.add_properties(
         time_zone:          ['Time-zone (formatted +/-HH:MM, e.g. -06:00)', '+00:00'],  // used to create accurate timezone offsets. "Z", "-06:00", "+06:00", etc. are all valid values
         hyperlinks_ctrl:    ['Playlist: Hyperlinks require CTRL Key', false], // true: clicking on hyperlinks only works if CTRL key is held down
 
-		lyrics_line_height:	['Lyrics: Line height', 24],
+		lyrics_line_height:	['Lyrics: Line height', 32],
 		lyrics_normal_color:['Lyrics: Text Color', 'RGBA(255, 255, 255, 255);'],
 		lyrics_focus_color: ['Lyrics: Text Highlite Color', 'RGBA(255, 241, 150, 255);'],
-		lyrics_h_padding:	['Lyrics: Padding Between Lines', 20],
+		lyrics_h_padding:	['Lyrics: Padding Between Lines', 24],
 		lyrics_glow:		['Lyrics: Glow enabled', true],
 		lyrics_text_shadow: ['Lyrics: Text Shadow', true],
-		lyrics_font_size:	['Lyrics: Font Size', 16],
+		lyrics_font_size:	['Lyrics: Font Size', 20],
 	}
 );
 
@@ -40,7 +49,7 @@ if (pref.t_aa_glob < 5) {
 }
 
 // Lyrics variables
-var g_font = gdi.Font('segoe ui', pref.lyrics_font_size, 1);
+var g_font = gdi.Font('HelveticaNeueLT Std', pref.lyrics_font_size, 1);
 
 // lyrics color definitions
 var g_txt_normalcolour = eval(pref.lyrics_normal_color);
@@ -58,7 +67,6 @@ tf.add_properties(
 		disc_subtitle: 	['Tag Fields: Disc Subtitle', '%discsubtitle%'],
 		year:			['Tag Fields: Year', '$puts(d,$if2(%original release date%,%date%))$if($strcmp($year($get(d)),$get(d)),$get(d),)'],
 		date:			['Tag Fields: Date', '$puts(d,$if2(%original release date%,%date%))$if($strcmp($year($get(d)),$get(d)),,$get(d))'],
-		// last_played:	['Tag Fields: Last Played', '$ifgreater($if(%lastfm_last_played%,$replace($date(%lastfm_last_played%),-,),0),$replace($date(%last_played%),-,),[%lastfm_last_played%],[%last_played%])'],
 		last_played:	['Tag Fields: Last Played', '[$if2(%last_played_enhanced%,%last_played%)]'],
 		title:			['Tag Fields: Song Title String', "%title%[ '('%original artist%' cover)'][ '['%translation%']']"],
 		vinyl_side:		['Tag Fields: Vinyl Side', '%vinyl side%'],			// the tag used for determining what side a song appears on for vinyl releases - i.e. song A1 has a %vinyl side% of "A"
@@ -109,16 +117,16 @@ In one line for adding to properties:
 $ifgreater($meta_num(ArtistFilter),1,$puts(mArtist,$meta(ArtistFilter,0))$if($put(comma,$sub($strstr($get(mArtist),', '),1)),$puts(mArtist,$substr($get(mArtist),$add($get(comma),3),$len($get(mArtist))) $substr($get(mArtist),0,$get(comma))),)$if($get(mArtist),$if($or($stricmp($get(mArtist),'Soundtrack'),$stricmp($get(mArtist),'Various Artists')),,$get(mArtist)$if($stricmp($get(mArtist),%artist%),$puts(feat,1),)$puts(mArtist,$meta(ArtistFilter,1))$if($put(comma,$sub($strstr($get(mArtist),', '),1)),$puts(mArtist,$substr($get(mArtist),$add($get(comma),3),$len($get(mArtist))) $substr($get(mArtist),0,$get(comma))),)$if($get(mArtist),$if($or($stricmp($get(mArtist),'Soundtrack'),$stricmp($get(mArtist),'Various Artists')),,$if($get(feat), feat. ,', ')$get(mArtist)$puts(mArtist,$meta(ArtistFilter,2))$if($put(comma,$sub($strstr($get(mArtist),', '),1)),$puts(mArtist,$substr($get(mArtist),$add($get(comma),3),$len($get(mArtist))) $substr($get(mArtist),0,$get(comma))),)$if($get(mArtist),$if($or($stricmp($get(mArtist),'Soundtrack'),$stricmp($get(mArtist),'Various Artists')),,$ifequal($meta_num(ArtistFilter),3,' & ',', ')$get(mArtist)$puts(mArtist,$meta(ArtistFilter,3))$if($put(comma,$sub($strstr($get(mArtist),', '),1)),$puts(mArtist,$substr($get(mArtist),$add($get(comma),3),$len($get(mArtist))) $substr($get(mArtist),0,$get(comma))),)$if($get(mArtist),$if($or($stricmp($get(mArtist),'Soundtrack'),$stricmp($get(mArtist),'Various Artists')),,$ifequal($meta_num(ArtistFilter),4,' & ',', ')$get(mArtist))))))))),%artist%)
 */
 
-tf.grid = [ // simply add, change or remove entries to change grid layout
-	// { label: 'Title',        val: tf.title },
-	{ label: 'Disc',		 val: "$if("+ tf.disc_subtitle +",[Disc %discnumber% - ]"+ tf.disc_subtitle +")" },
-	{ label: 'Release Type', val: "$if($strstr(%releasetype%,Album),,[%releasetype%])" },
-	{ label: 'Year',         val: tf.year },
-	{ label: 'Release Date', val: tf.date, age: true },
+// Info grid. Simply add, change, reorder, or remove entries to change grid layout
+tf.grid = [
+	{ label: 'Disc',		 val: '$if('+ tf.disc_subtitle +',[Disc %discnumber% - ]'+ tf.disc_subtitle +')' },
+	{ label: 'Release Type', val: '$if($strstr(%releasetype%,Album),,[%releasetype%])' },
+	{ label: 'Year',         val: tf.year },            // tf.year is used if the date is YYYY
+	{ label: 'Release Date', val: tf.date, age: true }, // tf.date is used if the date is YYYY-MM-DD
 	{ label: 'Edition', 	 val: tf.edition },
 	{ label: 'Label',		 val: '[%label%]' },
 	{ label: 'Catalog #',    val: '[%catalognumber%]' },
-	{ label: 'Track',		 val: "$if(%tracknumber%,$num(%tracknumber%,1)$if(%totaltracks%,/$num(%totaltracks%,1))$ifgreater(%totaldiscs%,1,   CD %discnumber%/$num(%totaldiscs%,1),)" },
+	{ label: 'Track',		 val: '$if(%tracknumber%,$num(%tracknumber%,1)$if(%totaltracks%,/$num(%totaltracks%,1))$ifgreater(%totaldiscs%,1,   CD %discnumber%/$num(%totaldiscs%,1),)' },
 	{ label: 'Genre',		 val: '[%genre%]' },
 	{ label: 'Style',		 val: '[%style%]' },
 	{ label: 'Release',		 val: '[%release%]' },
@@ -127,16 +135,11 @@ tf.grid = [ // simply add, change or remove entries to change grid layout
 	{ label: 'Last Played',  val: '[' + tf.last_played + ']', age: true },
 	{ label: 'URL',		     val: "$if(%source webpage url%,$left($put(url,$replace(%source webpage url%,'http://',,www.,)),$sub($strchr($get(url),/),1)))$if($and(%source webpage url%,%www%),', ')$if(%www%,$left($put(url,$replace(%www%,'http://',,www.,)),$sub($strchr($get(url),/),1)))" },
 	{ label: 'Hotness',	     val: "$puts(X,5)$puts(Y,$div(%_dynamic_rating%,400))$repeat($repeat(I,$get(X))   ,$div($get(Y),$get(X)))$repeat(I,$mod($get(Y),$get(X)))$ifgreater(%_dynamic_rating%,0,   $replace($div(%_dynamic_rating%,1000)'.'$mod($div(%_dynamic_rating%,100),10),0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9),)" },
-	{ label: 'Play Count',   val: "$if($or(%play_count%,%lastfm_play_count%),$puts(X,5)$puts(Y,$max(%play_count%,%lastfm_play_count%))$repeat($repeat(I,$get(X)) ,$div($get(Y),$get(X)))$repeat(I,$mod($get(Y),$get(X)))   $get(Y))" },
-	// { label: 'Last.fm Count',val: '[%lastfm_play_count%]' },
-	// { label: 'Played Times', val: '[' + tf.played_times + ']' },
-	// { label: 'Last.fm Plays',val: '[' + tf.last_fm_plays + ']' },
-	{ label: 'Rating', 	     val: "$if(%rating%,$repeat(\u2605 ,%rating%))" },
-	{ label: 'Mood',		 val: "$if(%mood%,$puts(X,5)$puts(Y,$mul(5,%mood%))$repeat($repeat(I,$get(X))   ,$div($get(Y),$get(X)))$repeat(I,$mod($get(Y),$get(X)))$replace(%mood%,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9))" },
-	// { label: 'lp', val: '$ifgreater($if(%lastfm_last_played%,$replace($date(%lastfm_last_played%),-,),0),$replace($date(%last_played%),-,),%lastfm_last_played%,%last_played%)' },
-	//val: "$put(LP,$left(%last_played%,4)) $put(LFP,$left(%lastfm_last_played%,4)) $ifgreater($num($get(LP),4),$num($get(LFP),4),%last_played%,%lastfm_last_played%)"}
+	{ label: 'Play Count',   val: '$if($or(%play_count%,%lastfm_play_count%),$puts(X,5)$puts(Y,$max(%play_count%,%lastfm_play_count%))$repeat($repeat(I,$get(X)) ,$div($get(Y),$get(X)))$repeat(I,$mod($get(Y),$get(X)))   $get(Y))' },
+	{ label: 'Rating', 	     val: '$if(%rating%,$repeat(\u2605 ,%rating%))' },
+	{ label: 'Mood',		 val: '$if(%mood%,$puts(X,5)$puts(Y,$mul(5,%mood%))$repeat($repeat(I,$get(X))   ,$div($get(Y),$get(X)))$repeat(I,$mod($get(Y),$get(X)))$replace(%mood%,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9))' },
 ];
-tf.lyrics		= "[$if2(%LYRICS%,$if2(%LYRIC%,$if2(%UNSYNCED LYRICS%,%UNSYNCED LYRIC%)))]";
+tf.lyrics		= '[$if3(%LYRICS%,%LYRIC%,%UNSYNCED LYRICS%,%UNSYNCED LYRIC%)]';
 
 // GLOB PICTURES
 tf.glob_paths = [ // simply add, change or re-order entries as needed
@@ -147,20 +150,20 @@ tf.glob_paths = [ // simply add, change or re-order entries as needed
 ];
 
 tf.lyr_path = [ // simply add, change or re-order entries as needed
-	"$replace($replace(%path%,%filename_ext%,),\,\\)",
+	'$replace($replace(%path%,%filename_ext%,),\,\\)',
 	fb.ProfilePath+"lyrics\\",
 	// "\\\\Ripley\\Dirs\\lyrics\\"
 ];
 tf.lyr_artist	= "$replace(%artist%,'/','_',':','_','\"','_')";	// we need to strip some special characters so we can't use just use tf.artist
 tf.lyr_title 	= "$replace(%title%,'/','_',':','_','\"','_')"; 	// we need to strip special characters so we can't just use tf.title
 tf.lyr_filename	= [ 	// filenames to look for lyrics files. Both .lrc and .txt will be searched for each entry in this list
-	tf.lyr_artist + " - " + tf.lyr_title,
-	tf.lyr_artist + " -" + tf.lyr_title
+	tf.lyr_artist + ' - ' + tf.lyr_title,
+	tf.lyr_artist + ' -' + tf.lyr_title
 ];
 
 tf.labels = [	// Array of fields to test for publisher. Add, change or re-order as needed.
-	"label",				// DO NOT put %s around the field names because we are using $meta() calls
-	"publisher"
+	'label',	// DO NOT put %s around the field names because we are using $meta() calls
+	'publisher'
 ];
 
 // CD-ART SETTINGS
@@ -172,3 +175,29 @@ pref.cdart_path		= "$replace(%path%,%filename_ext%,)cd.png";											// cdart 
 pref.cdart_amount	= 0.48;		// show 48% of the CD image if it will fit on the screen
 
 pref.display_menu	= true;		// true: show the menu bar at the top of the theme (only useful in CUI); false: don't show menu bar
+
+function versionCheck(version, storedVersion) {
+	if (version !== storedVersion) {
+		// this function clears default values which have changed
+		switch (storedVersion) {
+			case '0.9.5':
+            case '0.9.5.1':
+            case '0.9.6':
+            case 'NONE':
+				pref.lyrics_line_height = null;
+                pref.lyrics_font_size = null;
+                window.SetProperty('user.list.pad.bottom', null);
+                window.SetProperty('user.list.pad.left', null);
+                window.SetProperty('user.list.pad.right', null);
+                window.SetProperty('user.list.pad.top', null);
+
+				// after all previous versions have fallen through
+				globals.version = currentVersion;
+				window.Reload();
+				break;
+		}
+	}
+}
+
+versionCheck(currentVersion, globals.version);
+

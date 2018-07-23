@@ -7,10 +7,10 @@ g_script_list.push('Control_List.js');
 
 g_properties.add_properties(
     {
-        list_left_pad:   ['user.list.pad.left', 0],
-        list_top_pad:    ['user.list.pad.top', 0],
-        list_right_pad:  ['user.list.pad.right', 0],
-        list_bottom_pad: ['user.list.pad.bottom', 0],
+        list_left_pad:   ['Playlist: padding left', 0],
+        list_top_pad:    ['Playlist: padding top', 0],
+        list_right_pad:  ['Playlist: padding right', 0],
+        list_bottom_pad: ['Playlist: padding bottom', 15],
 
         show_scrollbar:       ['user.scrollbar.show', true],
         scrollbar_right_pad:  ['user.scrollbar.pad.right', 0],
