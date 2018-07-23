@@ -29,6 +29,7 @@ I run the theme in Columns UI with a super simple setup using the JScript Panel,
 * The theme is vinyl friendly! If the "Use Vinyl Style Numbering if Available" option is checked, the theme will look for `%vinyl side%` and `%vinyl tracknumber%` fields (configurable in the properties page!) and if it finds them you your track numbers will look like "A1" and "B4" instead of "01". Also sometimes fanart.tv has vinylArt available for albums. You can save those files as `vinyl.png` or `vinylA.png`, `vinylB.png` and the correct images will be used.
 * Theme includes a "timeline" bar between the Title and Album Name which is a graphical representation of the songs lifetime in your library. If you're using foo_playcount and foo_enhanced_playcount the timeline bar it will look something like [this](https://imgur.com/2tChYuD). The left edge is when the song was first added to your library and the right edge is the current moment in time. The darker bar on the left is the time between added and first played, and the light bar on the right is time between last_played and today. If you have foo_enhanced_playcount, every song play in it's database will be reflected as a vertical line. If you play the song multiple times on the same day (and all plays map to the same pixel) that line will get darker.
 * The playlist has Hyperlinks! Mouse over Artist, Year, Genre, or Record Label and you should see a line appear underneath. Clicking on it will search your library for all songs with those values. These hyperlinks are also multi-value aware in case you have multiple genres or record labels listed.
+* Check out the options menu. It will allow you to easily change many visual settings, and configure certain theme settings. These options will be updated frequently as the theme is developed.
 * And lots more...
 
 ### Image Packs
@@ -39,7 +40,7 @@ These packs will all need to be extracted to a folder called `images` which you 
 * **[Artist Logos](https://github.com/kbuffington/georgia-image-packs/raw/master/flags.rar)**: Extract to `.../AppData/Roaming/foobar2000/images/`
 * **[Flags](https://github.com/kbuffington/georgia-image-packs/raw/master/recordlabel.rar)**: Extract to `.../AppData/Roaming/foobar2000/images/`
 
-Image pack repo: https://github.com/kbuffington/georgia-image-packs
+Image pack repo: https://github.com/kbuffington/georgia-image-packs - I recommend starring this repo. I'll be releasing incremental updates of the image packs every month.
 
 ### Thanks
 
