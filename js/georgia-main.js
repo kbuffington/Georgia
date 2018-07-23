@@ -96,11 +96,14 @@ col.aa_shadow = RGBA(000,000,000,64);
 function setGeometry() {
 	geo.aa_shadow = is_4k ? 16 : 8; 		// size of albumart shadow
 	geo.pause_size = is_4k ? 300 : 150;
-	geo.prog_bar_h = is_4k ? 24 : 12;		// height of progress bar
+	geo.prog_bar_h = is_4k ? 24 : (ww > 1920 ? 14 : 12);		// height of progress bar
 	geo.lower_bar_h = is_4k ? 160 : 80;		// height of song title and time + progress bar area
 	geo.top_art_spacing = is_4k ? 192 : 96;	// space between top of theme and artwork
     geo.top_bg_h = is_4k ? 320 : 160;		// height of offset color background
     geo.timeline_h = is_4k ? 36 : 18;       // height of timeline
+	if (!pref.show_progress_bar) {
+		geo.lower_bar_h -= geo.prog_bar_h * 2;
+	}
 
 	if (is_4k) {
 		settingsImg	 	= gdi.Image(pref.setting_4k_img);	// settings image
@@ -850,7 +853,9 @@ function on_paint(gr) {
 	// Progress bar/Seekbar
 	var pbTop = Math.round(lowerBarTop + stxt.Height) + (is_4k ? 16 : 8);
 	gr.SetSmoothingMode(SmoothingMode.None); // disable smoothing
+	if (pref.show_progress_bar) {
 	gr.FillSolidRect(pbLeft, pbTop, Math.round(0.95*ww), geo.prog_bar_h, col.progress_bar);
+	}
 	if (fb.PlaybackLength > 0) {
 		if (ww > 600) {
 			gr.DrawString(str.length, ft_lower, col.now_playing, 0.725*ww, lowerBarTop, 0.25*ww, stxt.Height, StringFormat(2,0));
@@ -860,6 +865,7 @@ function on_paint(gr) {
 			gr.DrawString(str.disc, ft_lower, col.now_playing, 0.725*ww, lowerBarTop, 0.25*ww-width, stxt.Height, StringFormat(2,0));
 		}
 
+		if (pref.show_progress_bar) {
         var progressStationary = false;
         /* in some cases the progress bar would move backwards at the end of a song while buffering/streaming was occurring.
             This created strange looking jitter so now the progress bar can only increase unless the user seeked in the track. */
@@ -879,6 +885,7 @@ function on_paint(gr) {
             }
             gr.DrawLine(progressLength + pbLeft + 1, pbTop, progressLength + pbLeft + 1, pbTop + geo.prog_bar_h - 1, 1, progressAlphaCol);
         }
+		}
 	} else if (ww > 600) {	// streaming, but still want to show time
 		gr.DrawString(str.time, ft.lower_bar, col.now_playing,Math.floor(0.725*ww), lowerBarTop, 0.25*ww,0.5*geo.lower_bar_h,StringFormat(2,0));
 	}
@@ -1061,8 +1068,12 @@ function onSettingsMenu(x, y) {
 
 	_menu.AppendMenuItem(MF_STRING, 12, 'Display playlist on startup');
 	_menu.CheckMenuItem(12, pref.start_Playlist);
-	_menu.AppendMenuItem(MF_STRING, 13, 'Show transport controls');
+	_menu.AppendMenuItem(MF_STRING, 13, 'Show Transport Controls');
 	_menu.CheckMenuItem(13, pref.show_transport);
+	_menu.AppendMenuItem(MF_STRING, 14, 'Show Progress Bar');
+	_menu.CheckMenuItem(14, pref.show_progress_bar);
+	_menu.AppendMenuItem(MF_STRING, 15, 'Update Progress Bar frequently (higher CPU)');
+	_menu.CheckMenuItem(15, pref.freq_update);
 	_menu.AppendMenuSeparator();
 
 	_menu.AppendMenuItem(MF_STRING, 17, 'Use Vinyl Style Numbering if Available');
@@ -1071,9 +1082,6 @@ function onSettingsMenu(x, y) {
 	_menu.AppendMenuItem(MF_STRING, 18, 'Show Artist Country Flags');
 	_menu.CheckMenuItem(18, pref.show_flags);
 	_menu.AppendMenuSeparator();
-	_menu.AppendMenuItem(MF_STRING, 21, 'Update Progress Bar frequently (higher CPU)');
-	_menu.CheckMenuItem(21, pref.freq_update);
-    _menu.AppendMenuSeparator();
 
     _timeZoneMenu.AppendMenuItem(MF_STRING, 140, 'GMT -12:00');
     _timeZoneMenu.AppendMenuItem(MF_STRING, 141, 'GMT -11:00');
@@ -1156,6 +1164,16 @@ function onSettingsMenu(x, y) {
 			ResizeArtwork(true);
 			RepaintWindow();
 			break;
+		case 14:
+			pref.show_progress_bar = !pref.show_progress_bar;
+			setGeometry();
+			ResizeArtwork(true);
+			RepaintWindow();
+			break;
+		case 15:
+			pref.freq_update = !pref.freq_update;
+			SetProgressBarRefresh();
+			break;
 		case 17:
 			pref.use_vinyl_nums = !pref.use_vinyl_nums;
 			RepaintWindow();
@@ -1165,10 +1183,6 @@ function onSettingsMenu(x, y) {
 			LoadCountryFlags();
 			RepaintWindow();
 			break;
-		case 21:
-			pref.freq_update = !pref.freq_update;
-			SetProgressBarRefresh();
-            break;
         case 30:
             pref.hyperlinks_ctrl = !pref.hyperlinks_ctrl;
             break;
@@ -1294,10 +1308,6 @@ function on_size() {
 	if (ww <= 0 || wh <= 0) return;
 
 	checkFor4k(ww);
-
-	if (ww > 1920) {
-		geo.prog_bar_h = 14;
-	}
 
 	if (!sizeInitialized) {
 		createFonts();
@@ -1569,7 +1579,7 @@ function on_mouse_lbtn_down(x, y, m) {
 	}
 
 	// clicking on progress bar
-	if(y>=wh-0.5*geo.lower_bar_h && y<=wh-0.5*geo.lower_bar_h+geo.prog_bar_h && x >= 0.025*ww && x < 0.975*ww) {
+	if (pref.show_progress_bar && y >= wh-0.5*geo.lower_bar_h && y <= wh-0.5*geo.lower_bar_h+geo.prog_bar_h && x >= 0.025*ww && x < 0.975*ww) {
 		var v = (x-0.025*ww) / (0.95*ww);
 		v = (v < 0) ? 0 : (v < 1) ? v : 1;
 		if (fb.PlaybackTime != v*fb.PlaybackLength) fb.PlaybackTime = v*fb.PlaybackLength;
@@ -1577,7 +1587,6 @@ function on_mouse_lbtn_down(x, y, m) {
 	}
 
 	buttonEventHandler(x, y, m);
-	// hyperlinkEventHandler(x, y, m);
 
 	if (displayPlaylist && playlist.mouse_in_this(x, y)) {
 		trace_call && console.log(qwr_utils.function_name());
