@@ -745,11 +745,12 @@ function Playlist(x, y) {
         }
 
         if (this.is_scrollbar_available) {
+            var gradiantHeight = is_4k_playlist ? 20 : 10;
             if (!this.scrollbar.is_scrolled_up) {
-                gr.FillGradRect(this.list_x, this.list_y - 1, this.list_w, 9, 270, _.RGBtoRGBA(g_theme.colors.panel_back, 0), _.RGBtoRGBA(g_theme.colors.panel_back, 200));
+                gr.FillGradRect(this.list_x, this.list_y - 1, this.list_w, gradiantHeight, 270, _.RGBtoRGBA(g_theme.colors.panel_back, 0), _.RGBtoRGBA(g_theme.colors.panel_back, 200));
             }
             if (!this.scrollbar.is_scrolled_down) {
-                gr.FillGradRect(this.list_x, this.list_y + this.list_h - 8, this.list_w, 9, 90, _.RGBtoRGBA(g_theme.colors.panel_back, 0), _.RGBtoRGBA(g_theme.colors.panel_back, 200));
+                gr.FillGradRect(this.list_x, this.list_y + this.list_h - (gradiantHeight - 1), this.list_w, gradiantHeight, 90, _.RGBtoRGBA(g_theme.colors.panel_back, 0), _.RGBtoRGBA(g_theme.colors.panel_back, 200));
             }
         }
 
