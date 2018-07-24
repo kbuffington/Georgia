@@ -3909,6 +3909,14 @@ function Header(parent, x, y, w, h, idx) {
             }
 
             var track_count = this.sub_items.length;
+            var has_discs = false;
+            if (_.isInstanceOf(this.sub_items[0], DiscHeader)) {
+                track_count = 0;
+                has_discs = true;
+                _.forEach(this.sub_items, function(discHeader) {
+                    track_count += discHeader.sub_items.length
+                });
+            }
             var genre_text_w = 0;
             if (!is_radio && grouping_handler.get_query_name() !== 'artist') {
                 var genre_text = _.tf('[%genre%]', metadb).replace(/, /g,' \u2022 ');
@@ -3927,8 +3935,11 @@ function Header(parent, x, y, w, h, idx) {
                     }
                 }
             }
-            var disc_number = (grouping_handler.show_cd() && _.tf('[%totaldiscs%]', metadb) !== '1') ? _.tf('[ | Disc: %discnumber%/%totaldiscs%]', metadb) : '';
-            var info_text = _.tf(codec + disc_number + '[ | %replaygain_album_gain%]', metadb) + (is_radio ? '' : ' | ' + track_count + (track_count === 1 ? ' Track' : ' Tracks'));
+            var disc_number = (!grouping_handler.show_cd() && _.tf('[%totaldiscs%]', metadb) !== '1') ? _.tf('[ | Disc: %discnumber%[/%totaldiscs%]]', metadb) : '';
+            var track_text = is_radio ? '' : ' | ' +
+                    (grouping_handler.show_cd() && has_discs ? this.sub_items.length + ' Discs - ' : '') +
+                    track_count + (track_count === 1 ? ' Track' : ' Tracks');
+            var info_text = _.tf(codec + disc_number + '[ | %replaygain_album_gain%]', metadb) + track_text;
             if (genre_text_w) {
                 info_text = '| ' + info_text;
             }
