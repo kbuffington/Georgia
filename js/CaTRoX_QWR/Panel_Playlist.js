@@ -3527,9 +3527,7 @@ DiscHeader.prototype.constructor = Header;
  * @return {Array<Array>} Has the following format Array<[row,row_data]>
  */
 DiscHeader.prepare_initialization_data = function (rows_to_process, rows_metadb) {
-    // var tfo = fb.TitleFormat("$if2([%discnumber%]','[%subtitle%],)");
-    // var tfo = fb.TitleFormat('$ifgreater(%totaldiscs%,1,%discnumber%,)[%discsubtitle%]');
-    var tfo = fb.TitleFormat('[Disc %discnumber% $if('+ tf.disc_subtitle+', \u2014 ,) ]['+ tf.disc_subtitle +']');
+    var tfo = fb.TitleFormat('$ifgreater(%totaldiscs%,1,[Disc %discnumber% $if('+ tf.disc_subtitle+', \u2014 ,) ],)['+ tf.disc_subtitle +']');
     var disc_data = tfo.EvalWithMetadbs(rows_metadb).toArray();
     _.dispose(tfo);
 
