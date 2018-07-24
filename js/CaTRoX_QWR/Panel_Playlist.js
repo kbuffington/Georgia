@@ -4212,7 +4212,7 @@ function Header(parent, x, y, w, h, idx) {
             label_left -= 6;  // spacing between labels
         }
 
-        var genre_string = _.tf('%genre%', metadb);
+        var genre_string = _.tf('[%genre%]', metadb);
         var genres = genre_string.split(', ');
         var genre_left = left_pad;
         var genre_y = label_y;
