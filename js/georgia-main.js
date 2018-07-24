@@ -918,7 +918,6 @@ function show_lyrics(gr, tab, posy) {
 	var g_txt_align = cc_stringformat;
 
 	if (dividerImg && dividerImg.width < (albumart_size.w-10) && posy-divider_spacing-dividerImg.height>=albumart_size.y+pref.lyrics_h_padding) {
-		// gr.DrawImage(dividerImg, albumart_size.x+(albumart_size.w-dividerImg.width)/2, posy-divider_spacing-dividerImg.height, dividerImg.width, dividerImg.height, 0,0,dividerImg.width,dividerImg.height, 180);
 		gr.FillRoundRect(albumart_size.x + Math.floor(albumart_size.w * .2) - 1, posy-divider_spacing-divider_height + 1, Math.floor(albumart_size.w * 0.6), divider_height, divider_height/2, divider_height/2, col.darkAccent);
 		gr.FillRoundRect(albumart_size.x + Math.floor(albumart_size.w * .2), posy-divider_spacing-divider_height, Math.floor(albumart_size.w * 0.6), divider_height, divider_height/2, divider_height/2, col.info_bg);
 	}
@@ -1286,6 +1285,7 @@ function on_init() {
 	last_pb = fb.PlaybackOrder;
 
 	if (fb.IsPlaying || fb.IsPaused) {
+		on_size();
 		on_playback_new_track(fb.GetNowPlaying());
 	}
 
