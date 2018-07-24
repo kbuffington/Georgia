@@ -3773,7 +3773,7 @@ function Header(parent, x, y, w, h, idx) {
         }
 
         //************************************************************//
-        var is_radio = _.startsWith(metadb.RawPath, 'http');
+        var is_radio = _.startsWith(metadb.RawPath, 'http') || _.startsWith(metadb.Path, 'spotify');
 
         // part1: artist
         // part2: album + line + Date OR line
