@@ -133,7 +133,6 @@ tf.grid = [
 	{ label: 'Codec',   	 val: "[$if($not($strstr(%codec%,'MP3')),%codec% $replace($replace($replace($info(channel_mode), + LFE,),' front, ','/'),' rear surround channels',$if($strstr($info(channel_mode),' + LFE'),.1,.0)))]" },
 	{ label: 'Added', 		 val: '[' + tf.added + ']', age: true },
 	{ label: 'Last Played',  val: '[' + tf.last_played + ']', age: true },
-	{ label: 'URL',		     val: "$if(%source webpage url%,$left($put(url,$replace(%source webpage url%,'http://',,www.,)),$sub($strchr($get(url),/),1)))$if($and(%source webpage url%,%www%),', ')$if(%www%,$left($put(url,$replace(%www%,'http://',,www.,)),$sub($strchr($get(url),/),1)))" },
 	{ label: 'Hotness',	     val: "$puts(X,5)$puts(Y,$div(%_dynamic_rating%,400))$repeat($repeat(I,$get(X))   ,$div($get(Y),$get(X)))$repeat(I,$mod($get(Y),$get(X)))$ifgreater(%_dynamic_rating%,0,   $replace($div(%_dynamic_rating%,1000)'.'$mod($div(%_dynamic_rating%,100),10),0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9),)" },
 	{ label: 'Play Count',   val: '$if($or(%play_count%,%lastfm_play_count%),$puts(X,5)$puts(Y,$max(%play_count%,%lastfm_play_count%))$repeat($repeat(I,$get(X)) ,$div($get(Y),$get(X)))$repeat(I,$mod($get(Y),$get(X)))   $get(Y))' },
 	{ label: 'Rating', 	     val: '$if(%rating%,$repeat(\u2605 ,%rating%))' },
