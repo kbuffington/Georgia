@@ -55,7 +55,6 @@ Hyperlink.prototype.trace = function (x, y) {
 Hyperlink.prototype.draw = function (gr, color) {
 	var font = this.state === HyperlinkStates.Hovered ? this.hoverFont : this.font;
 	gr.DrawString(this.text, font, color, this.x, this.y_offset, this.w, this.h);
-	// gr.DrawRect(this.x, this.y_offset, this.w, this.h, 1, rgb(255,0,0))
 }
 
 Hyperlink.prototype.repaint = function() {

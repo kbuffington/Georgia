@@ -6,10 +6,10 @@
 //<editor-fold desc="Global constants">
 
 var g_theme = {};
-g_theme.name = 'CaTRoX (QWR Edition)';
-g_theme.version = '4.2.1';
-g_theme.folder_name = 'CaTRoX';
-g_theme.script_folder = 'themes\\' + g_theme.folder_name + '\\Scripts\\';
+g_theme.name = 'Georgia';
+// g_theme.version = '4.2.1';
+// g_theme.folder_name = 'CaTRoX';
+// g_theme.script_folder = 'themes\\' + g_theme.folder_name + '\\Scripts\\';
 
 g_theme.colors = {};
 g_theme.colors.pss_back = _.RGB(25, 25, 25);
