@@ -1419,6 +1419,7 @@ function on_playback_new_track(metadb) {
 			$('$if2(%discnumber%,0)') != lastDiscNumber || $('$if2(' + tf.vinyl_side + ',ZZ)') != lastVinylSide) {
 		fetchNewArtwork(metadb);
 	}
+	dontLoadFromCache = false;
 	CreateRotatedCDImage();	// we need to always setup the rotated image because it rotates on every track
 
 	/* code to retrieve record label logos */
@@ -1996,6 +1997,7 @@ function on_playback_stop(reason) {
     if (displayPlaylist) {
         playlist.on_playback_stop(reason);
 	}
+	dontLoadFromCache = true;
 }
 
 function on_playback_starting(cmd, is_paused) {
@@ -2172,7 +2174,7 @@ function refresh_seekbar() {
 function doRotateImage() {
 	debugLog("Repainting in doRotateImate: " + albumArtIndex);
 	albumArtIndex = (albumArtIndex + 1) % aa_list.length;
-	glob_image(albumArtIndex);
+	glob_image(albumArtIndex, true);
 	lastLeftEdge = 0;
 	RepaintWindow();
 	globTimer = window.SetTimeout(function() {
@@ -2619,7 +2621,7 @@ function fetchNewArtwork(metadb) {
 				}, pref.t_aa_glob * 1000);
 			}
 			albumArtIndex = 0;
-			glob_image(albumArtIndex); // display first image
+			glob_image(albumArtIndex, !dontLoadFromCache); // display first image
 		} else if (albumart = utils.GetAlbumArtV2(metadb)) {
 			getThemeColors(albumart);
 			ResizeArtwork(true);
