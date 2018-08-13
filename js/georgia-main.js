@@ -717,15 +717,20 @@ function on_paint(gr) {
                 labelSpacing = 0,
 				leftEdgeGap = art_off_center ? 20 : 40, // space between art and label
 				maxLabelWidth = is_4k ? 400 : 200;
-				leftEdgeWidth = 30; // how far label background extends on left
+				leftEdgeWidth = is_4k ? 45 : 30; // how far label background extends on left
 			if (showExtraDrawTiming) drawLabelTime = fb.CreateProfiler("on_paint -> record labels");
 			totalLabelWidth = 0;
 			for (i=0; i<recordLabels.length; i++) {
-				if (recordLabels[i].width > 200)
+				if (recordLabels[i].width > maxLabelWidth) {
 					totalLabelWidth += maxLabelWidth;
-				else
+				} else {
+					if (is_4k && recordLabels[i].width < 200) {
+						totalLabelWidth += recordLabels[i].width * 2;
+					} else {
 						totalLabelWidth += recordLabels[i].width;
 					}
+				}
+			}
 			if (!lastLeftEdge) {	// we don't want to recalculate this every screen refresh
 				debugLog('recalculating lastLeftEdge');
 				labelShadowImg = disposeImg(labelShadowImg);
@@ -742,7 +747,8 @@ function on_paint(gr) {
 						while (true) {
 							allLabelsWidth = Math.max(Math.min(Math.round((ww-leftEdge-rightSideGap)/recordLabels.length), maxLabelWidth), 50);
 							//console.log("leftEdge = " + leftEdge + ", ww-leftEdge-10 = " + (ww-leftEdge-10) + ", allLabelsWidth=" + allLabelsWidth);
-							labelWidth = (allLabelsWidth > recordLabels[0].width) ? recordLabels[0].width : allLabelsWidth;
+                            var maxWidth = is_4k && recordLabels[0].width < 200 ? recordLabels[0].width * 2 : recordLabels[0].width;
+							labelWidth = (allLabelsWidth > maxWidth) ? maxWidth : allLabelsWidth;
 							labelHeight = Math.round(recordLabels[0].height*labelWidth/recordLabels[0].width);	// width is based on height scale
 							topEdge = Math.round(albumart_size.y + albumart_size.h - labelHeight);
 
@@ -788,7 +794,8 @@ function on_paint(gr) {
 				gr.SetSmoothingMode(SmoothingMode.AntiAlias);
 				for (i=0; i < recordLabels.length; i++) {
 					// allLabelsWidth can never be greater than 200, so if a label image is 161 pixels wide, never draw it wider than 161
-					labelWidth = (allLabelsWidth > recordLabels[i].width) ? recordLabels[i].width : allLabelsWidth;
+					var maxWidth = is_4k && recordLabels[i].width < 200 ? recordLabels[i].width * 2 : recordLabels[i].width;
+					labelWidth = (allLabelsWidth > maxWidth) ? maxWidth : allLabelsWidth;
 					labelHeight = Math.round(recordLabels[i].height * labelWidth / recordLabels[i].width);	// width is based on height scale
 
 					gr.DrawImage(recordLabels[i], labelX, Math.round(topEdge + origLabelHeight/2 - labelHeight/2), labelWidth, labelHeight, 0,0,recordLabels[i].width,recordLabels[i].height);
