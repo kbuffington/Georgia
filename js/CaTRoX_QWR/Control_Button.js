@@ -248,10 +248,21 @@ Button.prototype.onClick = function () {
 				}
 				window.RepaintRect(albumart_size.x-1, albumart_size.y-1, albumart_scaled.width+2, albumart_scaled.height+2);
 			}
-			break;
+            break;
+        case 'ShowLibrary':
+            displayLibrary = !displayLibrary;
+            displayPlaylist = false;
+            if (displayLibrary) {
+				initLibraryPanel();
+                setLibrarySize();
+            }
+            ResizeArtwork(false);
+            window.Repaint();
+            break;
 		case 'Playlist':
 			// we appear to be getting album art way too frequently here -- delete this comment and others when verified this is cool
-			displayPlaylist = !displayPlaylist;
+            displayPlaylist = !displayPlaylist;
+            displayLibrary = false;
 			if (displayPlaylist) {
 				playlist.on_size(ww, wh);
 			}

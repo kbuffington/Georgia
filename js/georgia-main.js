@@ -62,6 +62,7 @@ function createFonts() {
 	ft.guifx 				= font('Guifx v2 Transports', 16, 0);
 	ft.Marlett				= font('Marlett', 13, 0);
 	ft.SegoeUi				= font('Segoe Ui Semibold', 12, 0);
+	ft.library_tree         = font('Segoe UI', 16, 0);
 }
 
 
@@ -110,12 +111,14 @@ function setGeometry() {
 		propertiesImg   = gdi.Image(pref.prop_4k_img);  	// properties image
 		ratingsImg	  	= gdi.Image(pref.rating_4k_img);	// rating image
 		playlistImg	 	= gdi.Image(pref.list_4k_img);  	// playlist image
+		libraryImg	 	= gdi.Image(pref.library_4k_img);  	// library image
 		lyricsImg 		= gdi.Image(pref.lyrics_4k_img);	// lyrics image
 	} else {
 		settingsImg	 	= gdi.Image(pref.settng_img);	// settings image
 		propertiesImg   = gdi.Image(pref.prop_img);  	// properties image
 		ratingsImg	  	= gdi.Image(pref.rating_img);	// rating image
 		playlistImg	 	= gdi.Image(pref.list_img);  	// playlist image
+		libraryImg	 	= gdi.Image(pref.library_img);  // library image
 		lyricsImg 		= gdi.Image(pref.lyrics_img);	// lyrics image
 	}
 }
@@ -128,12 +131,14 @@ pref.bg_image		= fb.ProfilePath + 'georgia/images/wallpaper-blueish.jpg';
 pref.settng_img 	= fb.ProfilePath + 'georgia/images/settings.png';
 pref.prop_img		= fb.ProfilePath + 'georgia/images/properties.png';
 pref.list_img		= fb.ProfilePath + 'georgia/images/playlist.png';
+pref.library_img	= fb.ProfilePath + 'georgia/images/library.png';
 pref.lyrics_img		= fb.ProfilePath + 'georgia/images/lyrics.png';
 pref.rating_img		= fb.ProfilePath + 'georgia/images/star.png';
 
 pref.setting_4k_img = fb.ProfilePath + 'georgia/images/4k/settings.png';
 pref.prop_4k_img	= fb.ProfilePath + 'georgia/images/4k/properties.png';
 pref.list_4k_img	= fb.ProfilePath + 'georgia/images/4k/playlist.png';
+pref.library_4k_img	= fb.ProfilePath + 'georgia/images/4k/library.png';
 pref.lyrics_4k_img	= fb.ProfilePath + 'georgia/images/4k/lyrics.png';
 pref.rating_4k_img	= fb.ProfilePath + 'georgia/images/4k/star.png';
 
@@ -246,11 +251,12 @@ var image_bg		= gdi.Image(pref.bg_image); 	// background image
 var albumart_scaled = null;							// pre-scaled album art to speed up drawing considerably
 var recordLabels	= [];							// array of record label images
 var bandLogo		= null;							// band logo image
-var settingsImg	 	= gdi.Image(pref.settng_img);	// settings image
-var propertiesImg   = gdi.Image(pref.prop_img);  	// properties image
-var ratingsImg	  	= gdi.Image(pref.rating_img);	// rating image
-var playlistImg	 	= gdi.Image(pref.list_img);  	// playlist image
-var lyricsImg 		= gdi.Image(pref.lyrics_img);	// lyrics image
+var settingsImg	 	= null;                         // settings image
+var propertiesImg   = null;                         // properties image
+var ratingsImg	  	= null;                         // rating image
+var playlistImg	 	= null;                         // playlist image
+var libraryImg      = null;                         // library image
+var lyricsImg 		= null;                         // lyrics image
 var dividerImg		= gdi.Image(pref.divider_img);	// end lyrics image
 var lastFmImg       = gdi.Image(pref.last_fm_img);  // Last.fm logo image
 var lastFmWhiteImg  = gdi.Image(pref.last_fmw_img); // white Last.fm logo image
@@ -269,6 +275,7 @@ var themeColorSet = false;                          // when no artwork, don't se
 var playCountVerifiedByLastFm = false;				// show Last.fm image when we %lastfm_play_count% > 0
 var pauseBorderWidth = 2;
 var art_off_center   = false;                       // if true, album art has been shifted 40 pixels to the right
+var dontLoadFromCache = false;                      // always load art from cache unless this is set
 
 //var inShowMenuEntry   = false;
 
@@ -278,7 +285,7 @@ var state		= new Object(); // panel state
 
 var metadb_handle = null; // watch db for tag changes
 // TIMERS
-var timer;		  	// 40ms repaint of progress bar
+var progressTimer;		// 40ms repaint of progress bar
 var globTimer;			// Timer for rotating globs
 var pauseTimer;			// Blinks time display
 var slideTimer;			// Timer for CD Slide out
@@ -301,7 +308,8 @@ var t_interval; 			// milliseconds between screen updates
 // var settingsY = 0;			// location of settings button
 var lastLeftEdge = 0;		// the left edge of the record labels. Saved so we don't have to recalculate every on every on_paint unless size has changed
 var displayPlaylist = pref.start_Playlist;
-var displayLyrics = 0;
+var displayLibrary = true;
+var displayLyrics = false;
 
 var tl_firstPlayedRatio = 0;
 var tl_lastPlayedRatio = 0;
@@ -437,11 +445,11 @@ function on_paint(gr) {
 		shadow_image && gr.DrawImage(shadow_image, -geo.aa_shadow, albumart_size.y - geo.aa_shadow, shadow_image.Width, shadow_image.Height,
 			0, 0, shadow_image.Width, shadow_image.Height);
 		// gr.DrawRect(-geo.aa_shadow, albumart_size.y - geo.aa_shadow, shadow_image.Width, shadow_image.Height, 1, RGBA(0,0,255,125));	// viewing border line
-		if (cdart && !rotatedCD && !displayPlaylist && pref.display_cdart) {
+		if (cdart && !rotatedCD && !displayPlaylist && !displayLibrary && pref.display_cdart) {
 			CreateRotatedCDImage();
 		}
 		if (!pref.cdart_ontop || displayLyrics) {
-            if (rotatedCD && !displayPlaylist && pref.display_cdart) {
+            if (rotatedCD && !displayPlaylist && !displayLibrary && pref.display_cdart) {
                 if (showExtraDrawTiming) drawCD = fb.CreateProfiler('cdart');
                 gr.DrawImage(rotatedCD, cdart_size.x, cdart_size.y, cdart_size.w, cdart_size.h, 0,0,rotatedCD.width,rotatedCD.height,0);
                 if (showExtraDrawTiming) drawCD.Print();
@@ -449,7 +457,7 @@ function on_paint(gr) {
 			gr.DrawImage(albumart_scaled, albumart_size.x, albumart_size.y, albumart_size.w, albumart_size.h, 0, 0, albumart_scaled.width, albumart_scaled.height);
 		} else {	// draw cdart on top of front cover
 			gr.DrawImage(albumart_scaled, albumart_size.x, albumart_size.y, albumart_size.w, albumart_size.h, 0, 0, albumart_scaled.width, albumart_scaled.height);
-            if (rotatedCD && !displayPlaylist && pref.display_cdart) {
+            if (rotatedCD && !displayPlaylist && !displayLibrary && pref.display_cdart) {
                 if (showExtraDrawTiming) drawCD = fb.CreateProfiler('cdart');
                 gr.DrawImage(rotatedCD, cdart_size.x, cdart_size.y, cdart_size.w, cdart_size.h, 0,0,rotatedCD.width,rotatedCD.height,0);
                 if (showExtraDrawTiming) drawCD.Print();
@@ -507,7 +515,7 @@ function on_paint(gr) {
 		}
 	}
 
-	if ((!displayPlaylist || (!albumart && noArtwork)) && fb.IsPlaying) {
+	if (((!displayPlaylist && !displayLibrary) || (!albumart && noArtwork)) && fb.IsPlaying) {
 		gridSpace = Math.round(albumart_size.x-geo.aa_shadow-textLeft);
 		text_width = gridSpace;
 
@@ -683,9 +691,9 @@ function on_paint(gr) {
 		}
 		if (showExtraDrawTiming) drawTextGrid.Print();
 
-	}	/* if (!displayPlaylist) */
+	}	/* if (!displayPlaylist && !displayLibrary) */
 
-	if (!displayPlaylist || (!albumart && noArtwork)) {
+	if ((!displayPlaylist && !displayLibrary) || (!albumart && noArtwork)) {
 		// BAND LOGO drawing code
 		showExtraDrawTiming && (drawBandLogos = fb.CreateProfiler("on_paint -> band logos"));
 		if (bandLogo) {
@@ -716,8 +724,8 @@ function on_paint(gr) {
 				if (recordLabels[i].width > 200)
 					totalLabelWidth += maxLabelWidth;
 				else
-					totalLabelWidth += recordLabels[i].width;
-			}
+						totalLabelWidth += recordLabels[i].width;
+					}
 			if (!lastLeftEdge) {	// we don't want to recalculate this every screen refresh
 				debugLog('recalculating lastLeftEdge');
 				labelShadowImg = disposeImg(labelShadowImg);
@@ -761,7 +769,7 @@ function on_paint(gr) {
 			}
 			if (labelAreaWidth >= 50) {
 				if (recordLabels.length > 1) {
-				 	labelSpacing = Math.min(12,Math.max(3,Math.round((labelAreaWidth/(recordLabels.length-1))*0.048)));	// spacing should be proportional, and between 3 and 12 pixels
+				 	labelSpacing = Math.min(12, Math.max(3, Math.round((labelAreaWidth/(recordLabels.length-1))*0.048)));	// spacing should be proportional, and between 3 and 12 pixels
 				}
 				// console.log('labelAreaWidth = ' + labelAreaWidth + ", labelSpacing = " + labelSpacing);
 				allLabelsWidth = Math.max(Math.min(Math.round((labelAreaWidth-(labelSpacing*(recordLabels.length-1)))/recordLabels.length), maxLabelWidth), 50); 	// allLabelsWidth must be between 50 and 200 pixels wide
@@ -778,10 +786,10 @@ function on_paint(gr) {
 				gr.FillSolidRect(labelX - leftEdgeWidth, topEdge - 20, ww - labelX + leftEdgeWidth, labelHeight + 40, col.info_bg);
 				gr.DrawRect(labelX - leftEdgeWidth, topEdge - 20, ww - labelX + leftEdgeWidth, labelHeight + 40 - 1, 1, col.accent);
 				gr.SetSmoothingMode(SmoothingMode.AntiAlias);
-				for (i=0; i<recordLabels.length; i++) {
+				for (i=0; i < recordLabels.length; i++) {
 					// allLabelsWidth can never be greater than 200, so if a label image is 161 pixels wide, never draw it wider than 161
 					labelWidth = (allLabelsWidth > recordLabels[i].width) ? recordLabels[i].width : allLabelsWidth;
-					labelHeight = Math.round(recordLabels[i].height*labelWidth/recordLabels[i].width);	// width is based on height scale
+					labelHeight = Math.round(recordLabels[i].height * labelWidth / recordLabels[i].width);	// width is based on height scale
 
 					gr.DrawImage(recordLabels[i], labelX, Math.round(topEdge + origLabelHeight/2 - labelHeight/2), labelWidth, labelHeight, 0,0,recordLabels[i].width,recordLabels[i].height);
 					// gr.DrawRect(labelX, topEdge, labelWidth, labelHeight, 1, RGB(255,0,0));	// shows bounding rect of record labels
@@ -791,7 +799,7 @@ function on_paint(gr) {
 			}
 			if (showExtraDrawTiming) drawLabelTime.Print();
 		}
-	}	/* if (!displayPlaylist) */
+	}	/* if (!displayPlaylist && !displayLibrary) */
 
 	// MENUBAR
 	showExtraDrawTiming && (drawMenuBar = fb.CreateProfiler("on_paint -> menu bar"));
@@ -802,7 +810,7 @@ function on_paint(gr) {
 			h = btns[i].h,
 			img = btns[i].img;
 
-		if (!displayPlaylist || i < 40) {
+		if ((!displayPlaylist && !displayLibrary) || i < 40) {
 			if (img) {	// TODO: fix
 				gr.DrawImage(img[0], x, y, w, h, 0, 0, w, h, 0, 255); // normal
 				gr.DrawImage(img[1], x, y, w, h, 0, 0, w, h, 0, btns[i].hoverAlpha);
@@ -899,7 +907,14 @@ function on_paint(gr) {
             0, 0, playlist_shadow.width, playlist_shadow.height);
         playlist.on_paint(gr);
         showExtraDrawTiming && drawPlaylist.Print();
-	}
+	} else if (displayLibrary) {
+		if (typeof libraryPanel !== 'undefined') {
+			libraryPanel.on_paint(gr);
+		} else {
+			// TODO: take this if/else out once this part is done
+			displayLibrary = false;
+		}
+    }
 
 	if (showDrawTiming) {
         drawStuff.Print();
@@ -1349,7 +1364,23 @@ function on_size() {
     playlist_shadow = disposeImg(playlist_shadow);
 	if (displayPlaylist) {
 		playlist.on_size(ww, wh);
-	}
+	} else if (displayLibrary) {
+		initLibraryPanel();
+		setLibrarySize();
+    }
+}
+
+function setLibrarySize() {
+    if (typeof libraryPanel !== 'undefined') {
+        var x = Math.round(ww *.5);
+        var y = btns[30].y + btns[30].h + 10 + listTop;
+        var library_w = ww - x;
+        var library_h = Math.max(0, wh - geo.lower_bar_h - 10 - y - listBottom);
+        libraryPanel.on_size(x, y, library_w, library_h);
+    } else {
+        // TODO: take this if/else out once this part is done
+        displayLibrary = false;
+    }
 }
 
 // new track
@@ -1555,8 +1586,7 @@ function on_metadb_changed(handle_list, fromhook) {
             tag_timer = 0;
         }
 	}
-	createHyperlinks();
-	// refreshScrollbar();
+	// createHyperlinks();
 	if (displayPlaylist) {
 		trace_call && console.log(qwr_utils.function_name());
 		playlist.on_metadb_changed(handle_list, fromhook);
@@ -1588,7 +1618,7 @@ var onMouseLbtnDown = false;
 
 function on_mouse_lbtn_down(x, y, m) {
 	var menu_yOffset = 19;
-	if(y > wh-geo.lower_bar_h) {
+	if (y > wh-geo.lower_bar_h) {
 		g_drag = 1;
 	}
 
@@ -1605,6 +1635,9 @@ function on_mouse_lbtn_down(x, y, m) {
 	if (displayPlaylist && playlist.mouse_in_this(x, y)) {
 		trace_call && console.log(qwr_utils.function_name());
 		playlist.on_mouse_lbtn_down(x, y, m);
+	} else if (displayLibrary && library.mouse_in_this(x, y)) {
+		trace_call && console.log(qwr_utils.function_name());
+		library.on_mouse_lbtn_down(x, y, m);
 	}
 }
 
@@ -1617,6 +1650,9 @@ function on_mouse_lbtn_up(x, y, m) {
 		playlist.on_mouse_lbtn_up(x, y, m);
 
 		qwr_utils.EnableSizing(m);
+	} else if (displayLibrary && library.mouse_in_this(x, y)) {
+		trace_call && console.log(qwr_utils.function_name());
+		library.on_mouse_lbtn_up(x, y, m);
 	} else {
 
 		if (just_dblclicked) {
@@ -1624,7 +1660,7 @@ function on_mouse_lbtn_up(x, y, m) {
 			just_dblclicked = false;
 		} else {
 			if ((albumart && albumart_size.x <= x && albumart_size.y <= y && albumart_size.x+albumart_size.w >= x && albumart_size.y+albumart_size.h >= y) ||
-				(!displayPlaylist && 0.5*(ww-geo.pause_size) <= x && 0.5*(wh-geo.pause_size) <= y && 0.5*(ww-geo.pause_size)+geo.pause_size >=x  && 0.5*(wh-geo.pause_size)+geo.pause_size >= y)) {
+				(!displayPlaylist && !displayLibrary && 0.5*(ww-geo.pause_size) <= x && 0.5*(wh-geo.pause_size) <= y && 0.5*(ww-geo.pause_size)+geo.pause_size >=x  && 0.5*(wh-geo.pause_size)+geo.pause_size >= y)) {
 				fb.PlayOrPause();
 			}
 		}
@@ -1637,7 +1673,7 @@ function on_mouse_lbtn_up(x, y, m) {
 }
 
 function on_mouse_lbtn_dblclk(x, y, m) {
-	if (!displayPlaylist) {
+	if (!displayPlaylist && !displayLibrary) {
 		// re-initialise the panel
 		just_dblclicked = true;
 		if (fb.IsPlaying || fb.IsPaused)
@@ -1647,12 +1683,12 @@ function on_mouse_lbtn_dblclk(x, y, m) {
 		}
 	}
 	buttonEventHandler(x, y, m);
-	// hyperlinkEventHandler(x, y, m);
-	// rowMouseEventHandler(x, y, m);
-	// scrollbarMouseEventHandler(x, y);
-	if (displayPlaylist) {
+    if (displayPlaylist) {
 		trace_call && console.log(qwr_utils.function_name());
 		playlist.on_mouse_lbtn_dblclk(x, y, m);
+	} else if (displayLibrary) {
+		trace_call && console.log(qwr_utils.function_name());
+		library.on_mouse_lbtn_dblclk(x, y, m);
 	}
 }
 
@@ -1660,6 +1696,9 @@ function on_mouse_rbtn_down(x, y, m) {
 	if (displayPlaylist && playlist.mouse_in_this(x, y)) {
 		trace_call && console.log(qwr_utils.function_name());
 		playlist.on_mouse_rbtn_down(x, y, m);
+	} else if (displayLibrary) {
+		// trace_call && console.log(qwr_utils.function_name());
+		// library.on_mouse_rbtn_down(x, y, m);
 	}
 }
 
@@ -1667,6 +1706,9 @@ function on_mouse_rbtn_up(x, y, m) {
 	if (displayPlaylist && playlist.mouse_in_this(x, y)) {
 		trace_call && console.log(qwr_utils.function_name());
 		return playlist.on_mouse_rbtn_up(x, y, m);
+	} else if (displayLibrary) {
+		trace_call && console.log(qwr_utils.function_name());
+		library.on_mouse_rbtn_up(x, y, m);
 	}
 	return pref.locked;
 }
@@ -1704,6 +1746,8 @@ function on_mouse_move(x, y, m) {
 
 			qwr_utils.DisableSizing(m);
 			playlist.on_mouse_move(x, y, m);
+		} else if (displayLibrary && library.mouse_in_this(x, y)) {
+			library.on_mouse_move(x, y, m);
 		}
 	}
 }
@@ -1717,6 +1761,9 @@ function on_mouse_wheel(delta) {
 	if (displayPlaylist) {
 		trace_call && console.log(qwr_utils.function_name());
 		playlist.on_mouse_wheel(delta);
+	} else if (displayLibrary) {
+		trace_call && console.log(qwr_utils.function_name());
+		library.on_mouse_wheel(delta);
 	}
 }
 // =================================================== //
@@ -1727,6 +1774,8 @@ function on_mouse_leave() {
 
 	if (displayPlaylist) {
 		playlist.on_mouse_leave();
+	} else if (displayLibrary) {
+		library.on_mouse_leave();
 	}
 }
 
@@ -1779,9 +1828,35 @@ function on_playlist_items_selection_change() {
 	}
 }
 
+function on_library_items_added(handle_list) {
+	if (displayLibrary) {
+		trace_call && console.log(qwr_utils.function_name());
+		library.on_library_items_added(handle_list);
+	}
+}
+
+function on_library_items_removed(handle_list) {
+	if (displayLibrary) {
+		trace_call && console.log(qwr_utils.function_name());
+		library.on_library_items_removed(handle_list);
+	}
+}
+
+function on_library_items_changed(handle_list) {
+	if (displayLibrary) {
+		trace_call && console.log(qwr_utils.function_name());
+		library.on_library_items_changed(handle_list);
+	}
+}
+
 function on_item_focus_change(playlist_arg, from, to) {
-	trace_call && console.log(qwr_utils.function_name());
-	playlist.on_item_focus_change(playlist_arg, from, to);
+	if (displayPlaylist) {
+		trace_call && console.log(qwr_utils.function_name());
+		playlist.on_item_focus_change(playlist_arg, from, to);
+	} else if (displayLibrary) {
+		trace_call && console.log(qwr_utils.function_name());
+		library.on_item_focus_change();
+	}
 }
 
 function on_key_down(vkey) {
@@ -1797,6 +1872,9 @@ function on_key_down(vkey) {
 		}
 
 		playlist.on_key_down(vkey);
+	} else if (displayLibrary) {
+		trace_call && console.log(qwr_utils.function_name());
+		library.on_key_down(vkey);
 	}
 
 	switch (vkey) {
@@ -1821,6 +1899,13 @@ function on_key_down(vkey) {
 }
 // =================================================== //
 
+function on_char(code) {
+    if (displayLibrary) {
+        trace_call && console.log(qwr_utils.function_name());
+		library.on_char(code);
+    }
+}
+
 function on_playback_queue_changed(origin) {
 	trace_call && console.log(qwr_utils.function_name());
 	playlist.on_playback_queue_changed(origin);
@@ -1833,16 +1918,16 @@ function on_playback_pause(state) {
 		window.RepaintRect(btns[2].x, btns[2].y, btns[2].w, btns[2].h);	// redraw play/pause button
 	}
 	if (state) {	// pausing
-		if (timer) window.ClearInterval(timer);
-		timer = 0;
+		if (progressTimer) window.ClearInterval(progressTimer);
+		progressTimer = 0;
 		// fadeAlpha = 255;	// make text visible again on pause
         window.RepaintRect(0.015*ww, 0.12*wh, Math.max(albumart_size.x-0.015*ww,0.015*ww), wh-geo.lower_bar_h-0.12*wh);
 	} else {		// unpausing
 		if (pauseTimer > 0) window.ClearInterval(pauseTimer);
 		showTimeElapsed = true;
-		if (timer > 0) window.ClearInterval(timer);	// clear to avoid multiple timers which can happen depending on the playback state when theme is loaded
+		if (progressTimer > 0) window.ClearInterval(progressTimer);	// clear to avoid multiple progressTimers which can happen depending on the playback state when theme is loaded
 		debugLog("on_playback_pause: creating refresh_seekbar() interval with delay = " + t_interval);
-		timer = window.SetInterval(function() {
+		progressTimer = window.SetInterval(function() {
 			refresh_seekbar();
 		}, t_interval);
 	}
@@ -1881,7 +1966,7 @@ function on_playback_stop(reason) {
         }
 		createButtonObjects(ww, wh);	// switch pause button to play
 	}
-	timer && window.ClearInterval(timer);
+	progressTimer && window.ClearInterval(progressTimer);
 	if (globTimer)
 		window.ClearTimeout(globTimer);
 	if (albumart && ((pref.aa_glob && aa_list.length != 1) || (!pref.cache_images || last_path == ''))) {
@@ -1903,7 +1988,7 @@ function on_playback_stop(reason) {
     }
     if (displayPlaylist) {
         playlist.on_playback_stop(reason);
-    }
+	}
 }
 
 function on_playback_starting(cmd, is_paused) {
@@ -2142,7 +2227,7 @@ function createDropShadow() {
 	if (showDebugTiming) shadow = fb.CreateProfiler("createDropShadow");
 	if (albumart && albumart_size.w > 0) {
 		disposeImg(shadow_image);
-		if (cdart && !displayPlaylist && pref.display_cdart)
+		if (cdart && !displayPlaylist && !displayLibrary && pref.display_cdart)
 			shadow_image = gdi.CreateImage(cdart_size.x+cdart_size.w+2*geo.aa_shadow, albumart_size.h+2*geo.aa_shadow);
 		else
 			shadow_image = gdi.CreateImage(albumart_size.x + albumart_size.w + 2*geo.aa_shadow, albumart_size.h + 2*geo.aa_shadow);
@@ -2183,10 +2268,10 @@ function SetProgressBarRefresh()
 		if (showDebugTiming)
 			console.log("Progress bar will update every " + t_interval + "ms or " + 1000/t_interval + " times per second.");
 
-		timer && window.ClearInterval(timer);
-		timer = null;
-		if (!fb.IsPaused) {	// only create timer if actually playing
-			timer = window.SetInterval(function() {
+		progressTimer && window.ClearInterval(progressTimer);
+		progressTimer = null;
+		if (!fb.IsPaused) {	// only create progressTimer if actually playing
+			progressTimer = window.SetInterval(function() {
 				refresh_seekbar();
 			}, t_interval);
 		}
@@ -2282,8 +2367,11 @@ function calcDateRatios(dontUpdateLastPlayed, currentLastPlayed) {
 	}
 }
 
-function glob_image(index) {
-	var temp_albumart = AttemptToLoadCachedImage(aa_list[index]);
+function glob_image(index, loadFromCache) {
+	var temp_albumart;
+	if (loadFromCache) {
+		temp_albumart = AttemptToLoadCachedImage(aa_list[index]);
+	}
 	if (temp_albumart) {
 		// albumart = disposeImg(albumart);
 		albumart = temp_albumart;
@@ -2353,7 +2441,7 @@ function ResizeArtwork(resetCDPosition) {
 	if (albumart) {
 		// Size for big albumart
 		var album_scale = Math.min((displayPlaylist ? 0.47*ww : 0.75*ww) / albumart.Width, (wh - geo.top_art_spacing - geo.lower_bar_h - 32) / albumart.Height);
-		if (displayPlaylist) {
+		if (displayPlaylist || displayLibrary) {
             xCenter = 0.25*ww;
         } else if (ww/wh < 1.40) {		 // when using a roughly 4:3 display the album art crowds, so move it slightly off center
 			xCenter = 0.56*ww;  // TODO: check if this is still needed?
@@ -2657,10 +2745,14 @@ function createButtonObjects(ww, wh) {
 	var w = img[0].width;
 	x -= (w + 10);
 	btns[33] = new Button(x, y, w, h, 'Lyrics', img, 'Display Lyrics');
+	var img = btnImg.ShowLibrary;
+	var w = img[0].width;
+	x -= (w + 10);
+	btns[34] = new Button(x, y, w, h, 'ShowLibrary', img, 'Show Library');
 	var img = btnImg.Playlist;
 	var w = img[0].width;
 	x -= (w + 10);
-	btns[34] = new Button(x, y, w, h, 'Playlist', img, 'Show Playlist');
+	btns[35] = new Button(x, y, w, h, 'Playlist', img, 'Show Playlist');
 	/* if a new image button is added to the left of playlist we need to update the ResizeArtwork code */
 }
 
@@ -2785,32 +2877,38 @@ function createButtonImages() {
 
 
 			Playlist: {
-				ico: playlistImg,
-				type: "image",
-				w: playlistImg.width,
-				h: playlistImg.height
-			},
+                ico: playlistImg,
+                type: 'image',
+                w: playlistImg.width,
+                h: playlistImg.height
+            },
+            ShowLibrary: {
+                ico: libraryImg,
+                type: 'image',
+                w: libraryImg.width,
+                h: libraryImg.height
+            },
 			Lyrics: {
 				ico: lyricsImg,
-				type: "image",
+				type: 'image',
 				w: lyricsImg.width,
 				h: lyricsImg.height
 			},
 			Rating: {
 				ico: ratingsImg,
-				type: "image",
+				type: 'image',
 				w: ratingsImg.width,
 				h: ratingsImg.height
 			},
 			Properties: {
 				ico: propertiesImg,
-				type: "image",
+				type: 'image',
 				w: propertiesImg.width,
 				h: propertiesImg.height
 			},
 			Settings: {
 				ico: settingsImg,
-				type: "image",
+				type: 'image',
 				w: settingsImg.width,
 				h: settingsImg.height
 			},
@@ -2926,5 +3024,4 @@ function resizeDone() {
 		getAlbumArt();
 	}
 }
-
 
