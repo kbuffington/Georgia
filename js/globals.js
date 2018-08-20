@@ -49,8 +49,6 @@ if (pref.t_aa_glob < 5) {
 }
 
 // Lyrics variables
-var g_font = gdi.Font('HelveticaNeueLT Std', pref.lyrics_font_size, 1);
-
 // lyrics color definitions
 var g_txt_normalcolour = eval(pref.lyrics_normal_color);
 var g_txt_highlightcolour = eval(pref.lyrics_focus_color);

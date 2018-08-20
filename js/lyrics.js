@@ -222,26 +222,20 @@ function calc_lines(ctab) {
 		gp = tmp_img.GetGraphics();
 		for (i=0; i<ctab.length; i++) {
 			// calc sentence #lines to display / window.width
-			strInfo = gp.MeasureString(ctab[i].text, g_font, 0, 0, albumart_size.w-(pref.lyrics_h_padding*2), albumart_size.h);
+			strInfo = gp.MeasureString(ctab[i].text, ft.lyrics, 0, 0, albumart_size.w-(pref.lyrics_h_padding*2), albumart_size.h);
 			lineh = strInfo.Height;
 			if (strInfo.Width > linew) {
-				linew= strInfo.Width;
+				linew = strInfo.Width;
 			}
 			ctab[i].total_lines = Math.ceil(lineh/pref.lyrics_line_height); // <-- think this is the same as the following code:
-			//ctab[i].total_lines = (lineh/LINE_HEIGHT) > Math.floor(lineh/LINE_HEIGHT) ? Math.floor(lineh/LINE_HEIGHT) + 1 : Math.floor(lineh/LINE_HEIGHT);
-			/* remove this when we verify that everything works properly with multiple line sentences
-			ctab[i].ante_lines = 0;
-			for(j=0;j<i;j++) {
-				ctab[i].ante_lines += ctab[j].total_lines;
-			}
-			console.log("ctab[i].ante_lines: " + ctab[i].ante_lines + " prev_lines: " + g_tab_length);
-			*/
+
 			ctab[i].ante_lines = g_tab_length;	// this should always be the number of lines before the current
 			g_tab_length += ctab[i].total_lines;
 		}
 		lyricsWidth = Math.ceil(linew + 4);		// refresh a little wider than the lyrics need to avoid errors
-		if (dividerImg && dividerImg.width > lyricsWidth && dividerImg.width < albumart_size.w-(pref.lyrics_h_padding*2)) {
-			lyricsWidth = dividerImg.width;
+		var lyricsDividerWidth = Math.floor(albumart_size.w * 0.6) + 4;
+		if (lyricsWidth < lyricsDividerWidth) {
+			lyricsWidth = lyricsDividerWidth;
 		}
 		//console.log("albumart_size.w=" + albumart_size.w + " linew = " + linew);
 		tmp_img.ReleaseGraphics(gp);

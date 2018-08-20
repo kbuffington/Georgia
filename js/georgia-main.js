@@ -63,10 +63,9 @@ function createFonts() {
 	ft.Marlett				= font('Marlett', 13, 0);
 	ft.SegoeUi				= font('Segoe Ui Semibold', 12, 0);
 	ft.library_tree         = font('Segoe UI', 16, 0);
+	ft.lyrics               = font('HelveticaNeueLT Std', pref.lyrics_font_size, 1);
 }
 
-
-var menu_font = gdi.Font("Calibri", 12, 0);
 
 // COLORS
 col.progres_bar_text = RGB(0,0,0);
@@ -202,18 +201,7 @@ if (playlistFontSize < 7) {
 	playlistFontSize = 7;
 	window.SetProperty("Playlist: Font Size", playlistFontSize);
 }
-var titleFontNormal = gdi.font("Segoe Ui Symbol", playlistFontSize, 0);
-var titleFontSelected = gdi.font("Segoe Ui", playlistFontSize, 0);
-var titleFontPlaying = gdi.font("Segoe Ui Semibold", playlistFontSize, 0);
-var artistFont = gdi.font("Segoe Ui Semibold", playlistFontSize + 6, 0);
-var playCountFont = gdi.font("Segoe Ui", playlistFontSize - 3, 0);
-var albumFont = gdi.font("Segoe Ui", playlistFontSize + 3, 0);
-var dateFontSizeDifference = 8;
-var dateFont = gdi.font("Segoe UI Semibold", playlistFontSize + dateFontSizeDifference, 2);
-var infoFont = gdi.font("Segoe Ui", playlistFontSize-1, 0);
-var coverFont = gdi.font("Segoe Ui", playlistFontSize, 0);
-var ratingFontNotRated = gdi.font("Segoe Ui Symbol", playlistFontSize + 2);
-var ratingFontRated = gdi.font("Segoe Ui Symbol", playlistFontSize + 4);
+
 //---> Group Colors
 var groupTitleColor = RGB(190, 192, 194);
 var artistColorNormal = groupTitleColor;
@@ -956,10 +944,10 @@ function show_lyrics(gr, tab, posy) {
 			}
 			lineHeight = tab[i].total_lines*pref.lyrics_line_height;
 			// maybe redo this to use albumart_size.x+(albumart_size.w-lyricsWidth)/2  and  lyricsWidth
-			pref.lyrics_glow &&   gr.DrawString(tab[i].text, g_font, g_txt_shadowcolor, albumart_size.x+(albumart_size.w-lyricsWidth)/2-1, posy, lyricsWidth, lineHeight, g_txt_align);
-			pref.lyrics_glow &&   gr.DrawString(tab[i].text, g_font, g_txt_shadowcolor, albumart_size.x+(albumart_size.w-lyricsWidth)/2,   posy-1, lyricsWidth, lineHeight, g_txt_align);
-			pref.lyrics_text_shadow && gr.DrawString(tab[i].text, g_font, g_txt_shadowcolor, albumart_size.x+(albumart_size.w-lyricsWidth)/2+2, posy+2, lyricsWidth, lineHeight, g_txt_align);
-						   gr.DrawString(tab[i].text, g_font, text_colour, albumart_size.x+(albumart_size.w-lyricsWidth)/2, posy, lyricsWidth, lineHeight, g_txt_align);
+			pref.lyrics_glow &&   gr.DrawString(tab[i].text, ft.lyrics, g_txt_shadowcolor, albumart_size.x+(albumart_size.w-lyricsWidth)/2-1, posy, lyricsWidth, lineHeight, g_txt_align);
+			pref.lyrics_glow &&   gr.DrawString(tab[i].text, ft.lyrics, g_txt_shadowcolor, albumart_size.x+(albumart_size.w-lyricsWidth)/2,   posy-1, lyricsWidth, lineHeight, g_txt_align);
+			pref.lyrics_text_shadow && gr.DrawString(tab[i].text, ft.lyrics, g_txt_shadowcolor, albumart_size.x+(albumart_size.w-lyricsWidth)/2+2, posy+2, lyricsWidth, lineHeight, g_txt_align);
+						   gr.DrawString(tab[i].text, ft.lyrics, text_colour, albumart_size.x+(albumart_size.w-lyricsWidth)/2, posy, lyricsWidth, lineHeight, g_txt_align);
 		}
 		posy = Math.floor(posy+pref.lyrics_line_height+((tab[i].total_lines-1)*pref.lyrics_line_height));
 	}
