@@ -308,7 +308,7 @@ var t_interval; 			// milliseconds between screen updates
 // var settingsY = 0;			// location of settings button
 var lastLeftEdge = 0;		// the left edge of the record labels. Saved so we don't have to recalculate every on every on_paint unless size has changed
 var displayPlaylist = pref.start_Playlist;
-var displayLibrary = true;
+var displayLibrary = false;
 var displayLyrics = false;
 
 var tl_firstPlayedRatio = 0;
@@ -2756,8 +2756,8 @@ function createButtonObjects(ww, wh) {
 	btns[33] = new Button(x, y, w, h, 'Lyrics', img, 'Display Lyrics');
 	var img = btnImg.ShowLibrary;
 	var w = img[0].width;
-	x -= (w + 10);
-	btns[34] = new Button(x, y, w, h, 'ShowLibrary', img, 'Show Library');
+	// x -= (w + 10);
+	// btns[34] = new Button(x, y, w, h, 'ShowLibrary', img, 'Show Library');
 	var img = btnImg.Playlist;
 	var w = img[0].width;
 	x -= (w + 10);
