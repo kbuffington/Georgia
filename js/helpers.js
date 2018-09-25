@@ -173,7 +173,14 @@ function colorToHSLString(col) {
 }
 
 function toPaddedHexString(num, len) {
-    return ("000000" + num.toString(16)).substr(-6)
+    return padNumber(num, len, 16);
+}
+
+function padNumber(num, len, base) {
+    if (!base) {
+        base = 10;
+    }
+    return ('000000' + num.toString(base)).substr(-len);
 }
 
 function leftPad(val, size, ch) {

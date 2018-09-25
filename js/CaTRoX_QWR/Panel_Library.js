@@ -8,6 +8,16 @@ if (!window.GetProperty("SYSTEM.Chakra Checked", false) && !Date.now) {
 	fb.ShowPopupMessage("Use the 'Chakra' script engine if possible (requires IE9 or later) - it's faster. Select in the JScript panel configuration window (shift + right click)", "Library Tree");
 	window.SetProperty("SYSTEM.Chakra Checked", true);
 }
+
+var libraryProps = PanelProperties.get_instance(); // library Preferences
+var prefix = GetPropertyPrefix();
+libraryProps.add_properties({
+	rememberTree: [prefix + 'Tree: Remember State', true],
+	fullLine: [prefix + 'Text Whole Line Clickable', false],
+	searchMode: [prefix + 'Search: Hide-0, SearchOnly-1, Search+Filter-2', 2],
+	tooltips: [prefix + 'Tooltips', false],
+});
+
 if (!("Version" in utils) || utils.Version < 2100) fb.ShowPopupMessage("Requires: JScript Panel 2.1.0+", "Library Tree");
 String.prototype.strip = function() {return this.replace(/[\.,\!\?\:;'\u2019"\-_\u2010\s+]/g, "").toLowerCase();}
 if (!String.prototype.trim) {String.prototype.trim = function () {return this.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, '');};}
@@ -21,15 +31,12 @@ function userinterface() {
 	}
 	this.scale = dpi < 121 ? 1 : dpi / 120;
 	this.zoomUpd = window.GetProperty("SYSTEM.Zoom Update", false);
-	var alpha = window.GetProperty(" Cover Opacity (0-100)", 10),
-		autoFill = window.GetProperty(" Cover Auto-Fill", true),
-		blend = "",
-		blurImg = false,
+	var blurImg = false,
 		custom_col = window.GetProperty("_CUSTOM COLOURS/FONTS: USE", false),
 		cust_icon_font = window.GetProperty("_Custom.Font Icon [Node] (Name,Style[0or1])", "Segoe UI Symbol,0"),
 		k = 0,
 		lightBg = false,
-		icon = window.GetProperty(" Node: Custom Icon: +|- // Examples","| // (+)|(−) | | | | | | | | |").trim(),
+		// icon = window.GetProperty(" Node: Custom Icon: +|- // Examples","| // (+)|(−) | | | | | | | | |").trim(),
 		icon_f_name= "Segoe UI",
 		icon_f_style = 0,
 		iconcol_c = "",
@@ -58,17 +65,19 @@ function userinterface() {
     this.backcolsel = "";
     this.backcoltrans = "";
     this.bg = false;
-    this.blur_blend = window.GetProperty("SYSTEM.Blur Blend Theme", false);
-    this.blur_dark = window.GetProperty("SYSTEM.Blur Dark Theme", false);
-    this.blur_light = window.GetProperty("SYSTEM.Blur Light Theme", false);
-    var blur_tmp = window.GetProperty("ADV.Image Blur Background Level (0-100)", 90),
-        blurAutofill = window.GetProperty("ADV.Image Blur Background Auto-Fill", false);
-    this.blurLevel = this.blur_blend ? 91.05 - Math.max(Math.min(blur_tmp, 90), 1.05) : Math.max(Math.min(blur_tmp * 2, 254), 0);
-    this.blur = this.blur_blend || this.blur_dark || this.blur_light;
-    this.collapse = "";
-    this.blurAlpha = window.GetProperty("ADV.Image Blur Background Opacity (0-100)", 30);
-    this.blurAlpha = Math.min(Math.max(this.blurAlpha, 0), 100) / 30;
-    var changeBrightness = function (r, g, b, percent){return RGB(Math.min(Math.max(r + (256 - r) * percent / 100, 0), 255), Math.min(Math.max(g + (256 - g) * percent / 100, 0), 255), Math.min(Math.max(b + (256 - b) * percent / 100, 0), 255));}
+    // this.blur_blend = window.GetProperty("SYSTEM.Blur Blend Theme", false);
+    // this.blur_dark = window.GetProperty("SYSTEM.Blur Dark Theme", false);
+    // this.blur_light = window.GetProperty("SYSTEM.Blur Light Theme", false);
+    // var blur_tmp = window.GetProperty("ADV.Image Blur Background Level (0-100)", 90),
+    //     blurAutofill = window.GetProperty("ADV.Image Blur Background Auto-Fill", false);
+    // this.blurLevel = this.blur_blend ? 91.05 - Math.max(Math.min(blur_tmp, 90), 1.05) : Math.max(Math.min(blur_tmp * 2, 254), 0);
+	// this.blur = this.blur_blend || this.blur_dark || this.blur_light;
+	this.collapse = "";
+    // this.blurAlpha = window.GetProperty("ADV.Image Blur Background Opacity (0-100)", 30);
+    // this.blurAlpha = Math.min(Math.max(this.blurAlpha, 0), 100) / 30;
+    var changeBrightness = function (r, g, b, percent) {
+    	return RGB(Math.min(Math.max(r + (256 - r) * percent / 100, 0), 255), Math.min(Math.max(g + (256 - g) * percent / 100, 0), 255), Math.min(Math.max(b + (256 - b) * percent / 100, 0), 255));
+    }
     this.countscol = "";
     this.expand =  "";
     this.ct = false;
@@ -77,7 +86,7 @@ function userinterface() {
     this.font;
     this.framecol = "";
     this.icon_font;
-    this.icon_pad = window.GetProperty(" Node: Custom Icon: Vertical Padding", -2);
+    this.icon_pad = -2; //window.GetProperty(" Node: Custom Icon: Vertical Padding", -2);
     this.icon_w = 17;
     this.iconcol_c = "";
     this.iconcol_e = "";
@@ -111,9 +120,7 @@ function userinterface() {
 		var trace = true;
 		if (trace) console.log("Library Tree" + ": " + message);
 	};
-	alpha = alpha * 2.55;
-	alpha = Math.min(Math.max(alpha, 0), 255);
-    if (custom_col) {if (cust_icon_font.length) {cust_icon_font = cust_icon_font.split(","); try {var st = Math.round(parseFloat(cust_icon_font[1])); if (!st) st = 0; var font_test = gdi.Font(cust_icon_font[0], 16, st); icon_f_name = cust_icon_font[0]; icon_f_style = st;} catch (e) {this.trace("JScript Panel is unable to use your node icon font. Using Segoe UI instead");}}}
+	if (custom_col) {if (cust_icon_font.length) {cust_icon_font = cust_icon_font.split(","); try {var st = Math.round(parseFloat(cust_icon_font[1])); if (!st) st = 0; var font_test = gdi.Font(cust_icon_font[0], 16, st); icon_f_name = cust_icon_font[0]; icon_f_style = st;} catch (e) {this.trace("JScript Panel is unable to use your node icon font. Using Segoe UI instead");}}}
     try {
 		var win_node = parseFloat(window.GetProperty("ADV.Node [Default]: Themed 0 or 1", "0").replace(/\s+/g, "").charAt(0));
 		if (isNaN(win_node)) win_node = 0;
@@ -262,7 +269,15 @@ function userinterface() {
         this.iconcol_e = set_custom_col(window.GetProperty("_Custom.Colour Node Expand", ""), 1); iconcol_e = this.iconcol_e;
         this.iconcol_h = set_custom_col(window.GetProperty("_Custom.Colour Node Highlight", ""), 1); iconcol_h = this.iconcol_h;
         this.backcoltrans = set_custom_col(window.GetProperty("_Custom.Colour Transparent Fill", ""), 1);
-        this.blur = this.blur_blend || this.blur_dark || this.blur_light; if (this.blur_dark) {this.bg_color_light = RGBA(0, 0, 0, Math.min(160 / this.blurAlpha, 255)); this.bg_color_dark = RGBA(0, 0, 0, Math.min(80 / this.blurAlpha, 255));} if (this.blur_light) {this.bg_color_light = RGBA(255, 255, 255, Math.min(160 / this.blurAlpha, 255)); this.bg_color_dark = RGBA(255, 255, 255, Math.min(205 / this.blurAlpha, 255));}
+        this.blur = this.blur_blend || this.blur_dark || this.blur_light;
+        if (this.blur_dark) {
+        	this.bg_color_light = RGBA(0, 0, 0, Math.min(160 / this.blurAlpha, 255));
+        	this.bg_color_dark = RGBA(0, 0, 0, Math.min(80 / this.blurAlpha, 255));
+        }
+        if (this.blur_light) {
+        	this.bg_color_light = RGBA(255, 255, 255, Math.min(160 / this.blurAlpha, 255));
+        	this.bg_color_dark = RGBA(255, 255, 255, Math.min(205 / this.blurAlpha, 255));
+        }
         if (this.dui) { // custom colour mapping: DUI colours can be remapped by changing the numbers (0-3)
             if (this.backcol === "") this.backcol = window.GetColourDUI(1);
             if (this.backcolsel === "") this.backcolsel = this.blur_dark ? RGBA(255, 255, 255, 36) : this.blur_light ? RGBA(0, 0, 0, 36) : window.GetColourDUI(3);
@@ -298,24 +313,6 @@ function userinterface() {
     this.get_colors();
 
     this.get_font = function() {
-        // var cust_f = window.GetProperty("_Custom.Font (Name,Size,Style[0-4])", "Segoe UI,16,0");
-        // if (custom_col && cust_f.length) {
-		// 	cust_f = cust_f.split(",");
-		// 	try {
-		// 		this.font = gdi.Font(cust_f[0], Math.round(parseFloat(cust_f[1])), Math.round(parseFloat(cust_f[2])));
-		// 	} catch (e) {}}
-		// else if (this.dui)
-		// 	this.font = window.GetFontDUI(2);
-		// else
-		// 	this.font = window.GetFontCUI(0);
-        // try {
-		// 	this.font.Name;
-		// 	this.font.Size;
-		// 	this.font.Style;
-		// } catch (e) {
-		// 	this.font = gdi.Font("Segoe UI", 16, 0);
-		// 	this.trace("JScript Panel is unable to use your default font. Using Segoe UI at default size & style instead");
-		// }
 		this.font = ft.library_tree;
         orig_font_sz = window.GetProperty("SYSTEM.Font Size", 16);
 		if (this.font.Size != orig_font_sz)
@@ -324,7 +321,7 @@ function userinterface() {
 		window.SetProperty("SYSTEM.Font Size", this.font.Size);
 		if (!this.zoomUpd && window.GetProperty("SYSTEM.Software Notice Checked"))
 			window.SetProperty(" Zoom Node Size (%)", window.GetProperty(" Zoom Node Size (%)", 100) / this.scale);
-        zoom = window.GetProperty(" Zoom Font Size (%)", 100);
+		zoom = window.GetProperty(" Zoom Font Size (%)", 100);
         zoom_node = window.GetProperty(" Zoom Node Size (%)", 100);
         zoom_font_sz = Math.max(Math.round(orig_font_sz * zoom / 100), 1);
 		// this.node_sz = this.node_style ? Math.round(ui.node_sz * zoom_node / 100) : Math.round(orig_font_sz * zoom_node / 100);
@@ -389,8 +386,13 @@ function userinterface() {
                 this.font = gdi.Font(this.font.Name, zoom_font_sz, this.font.Style);
                 this.s_font = gdi.Font(this.font.Name, this.font.Size, 2);
                 this.j_font = gdi.Font(this.font.Name, this.font.Size * 1.5, 1);
-                this.calc_text(); p.on_size(); jS.on_size();
-                library_tree.create_tooltip(); if (p.s_show || this.scrollbar_show) but.refresh(true); sbar.reset();
+                this.calc_text();
+                p.on_size();
+                jS.on_size();
+                library_tree.create_tooltip();
+				if (libraryProps.searchMode || this.scrollbar_show)
+					but.refresh(true);
+                sbar.reset();
                 window.Repaint(); window.SetProperty(" Zoom Font Size (%)", Math.round(zoom_font_sz / orig_font_sz * 100));
             } else {this.node_sz += step; this.calc_text(); p.on_size(); window.Repaint();}
         } else {
@@ -403,33 +405,83 @@ function userinterface() {
     }
 
     this.block = function() {return this.w <= 10 || this.h <= 10 || !window.IsVisible;}
-    this.blur_img = function(image) {
-        if (!this.w || !this.h) return; blurImg = gdi.CreateImage(this.w, this.h), gb = blurImg.GetGraphics();
-        if (!this.blur && autoFill || this.blur && blurAutofill) {var s1 = image.Width / this.w, s2 = image.Height / this.h; if (!this.blur && autoFill && Math.abs(s1 / s2 - 1) < 0.05) {var imgx = 0,imgy = 0, imgw = image.Width, imgh = image.Height;} else {if (s1 > s2) {var imgw = Math.round(this.w * s2), imgh = image.Height, imgx = Math.round((image.Width - imgw) / 2), imgy = 0;} else {var imgw = image.Width, imgh = Math.round(this.h * s1), imgx = 0, imgy = Math.round((image.Height - imgh) / 8);}}}
-        switch (true) {
-            case this.blur:
-                gb.SetInterpolationMode(0); if (blurAutofill) image = image.Clone(imgx, imgy, imgw, imgh);
-                if (this.blur_blend) {
-                    var iSmall = image.Resize(this.w * this.blurLevel / 100, this.h * this.blurLevel / 100, 2), iFull = iSmall.resize(this.w, this.h, 2), offset = 90 - this.blurLevel;
-                    // gb.DrawImage(iFull, 0 - offset, 0 - offset, this.w + offset * 2, this.h + offset * 2, 0, 0, iFull.Width, iFull.Height, 0, 63 * ui.blurAlpha);
-                    gb.DrawImage(iFull, this.x - offset, this.y - offset, this.w + offset * 2, this.h + offset * 2, 0, 0, iFull.Width, iFull.Height, 0, 63 * ui.blurAlpha);
-                } else {
-                    gb.DrawImage(image, this.x, this.y, this.w, this.h, 0, 0, image.Width, image.Height); if (this.blurLevel > 1) blurImg.StackBlur(this.blurLevel);
-                    var colorScheme_array = blurImg.GetColourScheme(1).toArray(), light_cover = get_textselcol(colorScheme_array[0], true) == 50 ? true : false;
-                    gb.FillSolidRect(this.x, this.y, this.w, this.h, light_cover ? this.bg_color_light : this.bg_color_dark);
-                } break;
-            case !this.blur:
-                if (autoFill) gb.DrawImage(image, this.x, this.y, this.w, this.h, imgx, imgy, imgw, imgh, 0, alpha);
-                else {var s = Math.min(this.h / image.Height, this.w / image.Width); var tw = Math.round(image.Width * s); var th = Math.round(image.Height * s); gb.DrawImage(image, (this.w - tw) / 2, (this.h - th) / 2, tw, th, 0, 0, image.Width, image.Height, 0, alpha);}
-                break;
-        }
-        blurImg.ReleaseGraphics(gb); window.Repaint();
-    }
-    this.blurChange = function(n) {
-        this.blur_dark = false; this.blur_blend = false; this.blur_light = false; this.imgBg = false; switch (n) {case 2: this.blur_dark = true; break; case 3: this.blur_blend = true; break; case 4: this.blur_light = true; break; case 5: this.imgBg = true; break;}
-        var blur_tmp = window.GetProperty("ADV.Image Blur Background Level (0-100)"); this.blurLevel = this.blur_blend ? 91.05 - Math.max(Math.min(blur_tmp, 90), 1.05) : Math.max(Math.min(blur_tmp * 2, 254), 0); window.SetProperty("SYSTEM.Blur Blend Theme", this.blur_blend); window.SetProperty("SYSTEM.Blur Dark Theme", this.blur_dark); window.SetProperty("SYSTEM.Blur Light Theme", this.blur_light); window.SetProperty("SYSTEM.Image Background", this.imgBg); this.blurReset(true);
-    }
-    this.blurReset = function(clear) {if (blurImg) blurImg.Dispose(); blurImg = false; image_path_o = ""; if (clear) on_colours_changed(); this.on_playback_new_track();}
+    // this.blur_img = function(image) {
+	// 	console.log('this.blur_img');
+	// 	if (!this.w || !this.h)
+	// 		return;
+	// 	var blurImg = gdi.CreateImage(this.w, this.h),
+	// 		gb = blurImg.GetGraphics();
+    //     if (!this.blur && autoFill || this.blur && blurAutofill) {
+	// 		var s1 = image.Width / this.w, s2 = image.Height / this.h;
+	// 		if (!this.blur && autoFill && Math.abs(s1 / s2 - 1) < 0.05) {
+	// 			var imgx = 0,imgy = 0, imgw = image.Width, imgh = image.Height;
+	// 		} else {
+	// 			if (s1 > s2) {
+	// 				var imgw = Math.round(this.w * s2), imgh = image.Height, imgx = Math.round((image.Width - imgw) / 2), imgy = 0;
+	// 			} else {
+	// 				var imgw = image.Width, imgh = Math.round(this.h * s1), imgx = 0, imgy = Math.round((image.Height - imgh) / 8);
+	// 			}
+	// 		}
+	// 	}
+    //     if (this.blur) {
+	// 		gb.SetInterpolationMode(0);
+	// 		if (blurAutofill)
+	// 			image = image.Clone(imgx, imgy, imgw, imgh);
+	// 		if (this.blur_blend) {
+	// 			var iSmall = image.Resize(this.w * this.blurLevel / 100, this.h * this.blurLevel / 100, 2),
+	// 				iFull = iSmall.resize(this.w, this.h, 2),
+	// 				offset = 90 - this.blurLevel;
+	// 			// gb.DrawImage(iFull, 0 - offset, 0 - offset, this.w + offset * 2, this.h + offset * 2, 0, 0, iFull.Width, iFull.Height, 0, 63 * ui.blurAlpha);
+	// 			console.log(this.x - offset, this.y - offset, this.w + offset * 2, this.h + offset * 2, ' - ', iFull.Width, iFull.Height, 63 * ui.blurAlpha);
+	// 			gb.DrawImage(iFull, this.x - offset, this.y - offset, this.w + offset * 2, this.h + offset * 2, 0, 0, iFull.Width, iFull.Height, 0, 63 * ui.blurAlpha);
+	// 		} else {
+	// 			gb.DrawImage(image, this.x, this.y, this.w, this.h, 0, 0, image.Width, image.Height); if (this.blurLevel > 1) blurImg.StackBlur(this.blurLevel);
+	// 			var colorScheme_array = blurImg.GetColourScheme(1).toArray(),
+	// 				light_cover = get_textselcol(colorScheme_array[0], true) == 50 ? true : false;
+	// 			gb.FillSolidRect(this.x, this.y, this.w, this.h, light_cover ? this.bg_color_light : this.bg_color_dark);
+	// 		}
+	// 	} else {
+	// 		if (autoFill) {
+	// 			gb.DrawImage(image, this.x, this.y, this.w, this.h, imgx, imgy, imgw, imgh, 0, alpha);
+	// 		}
+	// 		else {
+	// 			var s = Math.min(this.h / image.Height, this.w / image.Width);
+	// 			var tw = Math.round(image.Width * s);
+	// 			var th = Math.round(image.Height * s);
+	// 			gb.DrawImage(image, (this.w - tw) / 2, (this.h - th) / 2, tw, th, 0, 0, image.Width, image.Height, 0, alpha);
+	// 		}
+    //     }
+	// 	blurImg.ReleaseGraphics(gb);
+	// 	window.Repaint();
+    // }
+    // this.blurChange = function (n) {
+    // 	this.blur_dark = false;
+    // 	this.blur_blend = false;
+    // 	this.blur_light = false;
+    // 	this.imgBg = false;
+    // 	switch (n) {
+    // 		case 2:
+    // 			this.blur_dark = true;
+    // 			break;
+    // 		case 3:
+    // 			this.blur_blend = true;
+    // 			break;
+    // 		case 4:
+    // 			this.blur_light = true;
+    // 			break;
+    // 		case 5:
+    // 			this.imgBg = true;
+    // 			break;
+    // 	}
+    // 	var blur_tmp = window.GetProperty("ADV.Image Blur Background Level (0-100)");
+    // 	this.blurLevel = this.blur_blend ? 91.05 - Math.max(Math.min(blur_tmp, 90), 1.05) : Math.max(Math.min(blur_tmp * 2, 254), 0);
+    // 	window.SetProperty("SYSTEM.Blur Blend Theme", this.blur_blend);
+    // 	window.SetProperty("SYSTEM.Blur Dark Theme", this.blur_dark);
+    // 	window.SetProperty("SYSTEM.Blur Light Theme", this.blur_light);
+    // 	window.SetProperty("SYSTEM.Image Background", this.imgBg);
+    // 	this.blurReset(true);
+    // }
+    // this.blurReset = function(clear) {if (blurImg) blurImg.Dispose(); blurImg = false; image_path_o = ""; if (clear) on_colours_changed(); this.on_playback_new_track();}
     this.create_images = function() {var cc = StringFormat(1, 1), font1 = gdi.Font("Segoe UI", 270, 1), font2 = gdi.Font("Segoe UI", 120, 1), font3 = gdi.Font("Segoe UI", 200, 1), font4 = gdi.Font("Segoe UI", 90, 1), gb, tcol = !this.blur_dark && !this.blur_light ? this.textcol : this.dui ? window.GetColourDUI(0) : window.GetColourCUI(0); noimg = ["COVER", "SELECTION"]; for (var i = 0; i < noimg.length; i++) {var n = noimg[i]; noimg[i] = gdi.CreateImage(500, 500); gb = noimg[i].GetGraphics(); gb.SetSmoothingMode(2); if (!this.blur_dark && !this.blur_light) {gb.FillSolidRect(0, 0, 500, 500, tcol); gb.FillGradRect(-1, 0, 505, 500, 90, this.backcol & 0xbbffffff, this.backcol, 1.0);} gb.SetTextRenderingHint(3); gb.DrawString("NO", i ? font3 : font1, tcol & 0x25ffffff, 0, 0, 500, 275, cc); gb.DrawString(n, i ? font4 : font2, tcol & 0x20ffffff, 2.5, 175, 500, 275, cc); gb.FillSolidRect(60, 388, 380, 50, tcol & 0x15ffffff); noimg[i].ReleaseGraphics(gb);} this.get = true;}; this.create_images();
     this.draw = function(gr) {
         try {
@@ -443,28 +495,98 @@ function userinterface() {
         } catch (e) {}
     }
     this.focus_changed = function(ms) {k++; if (k == 1) {this.on_playback_new_track(); timer.reset(timer.focus, timer.focusi); timer.focus = window.SetTimeout(function() {k = 0; timer.focus = false;}, ms); return;} timer.reset(timer.focus, timer.focusi); timer.focus = window.SetTimeout(function() {ui.on_playback_new_track(); k = 0; timer.focus = false;}, ms);}
-    this.get_album_art_done = function(image, image_path) {if (image_path_o == image_path && blurImg && image) return window.Repaint(); image_path_o = image_path; if (!image) image = stub(0); if (!image) {if (blurImg) blurImg.Dispose(); blurImg = false; return;} this.blur_img(image);}
-    this.get_img_fallback = function() {if (sbar.draw_timer || !this.get) return; this.grab_f_img(); this.get = false;}
-    this.grab_f_img = function(handle) {if (!handle) handle = fb.IsPlaying ? fb.GetNowPlaying() : fb.GetFocusItem(); if (handle) return utils.GetAlbumArtAsync(window.ID, handle, 0); if (fb.IsPlaying) return; image = stub(1); if (!image) {if (blurImg) blurImg.Dispose(); blurImg = false; return;} this.blur_img(image);}
-    this.on_playback_new_track = function(handle) {if (!this.blur && !this.imgBg) return; if (this.block()) this.get = true; else {this.grab_f_img(handle); this.get = false;}}
-    var stub = function(n) {image_path_o = n ? "noitem" : "stub"; return noimg[n].Clone(0, 0, noimg[n].Width, noimg[n].Height);}
+    // this.get_album_art_done = function (image, image_path) {
+    // 	console.log('library.get_album_art_done');
+    // 	if (image_path_o == image_path && blurImg && image) {
+    // 		return window.Repaint();
+    // 	}
+    // 	image_path_o = image_path;
+    // 	if (!image)
+    // 		image = stub(0);
+    // 	if (!image) {
+    // 		if (blurImg)
+    // 			blurImg.Dispose();
+    // 		blurImg = false;
+    // 		return;
+    // 	}
+    // 	this.blur_img(image);
+    // }
+    this.get_img_fallback = function () {
+    	if (sbar.draw_timer || !this.get) return;
+    	this.grab_f_img();
+    	this.get = false;
+    }
+    this.grab_f_img = function (handle) {
+    	if (!handle) handle = fb.IsPlaying ? fb.GetNowPlaying() : fb.GetFocusItem();
+    	if (handle)
+    		return utils.GetAlbumArtAsync(window.ID, handle, 0);
+    	if (fb.IsPlaying)
+    		return;
+    	image = stub(1);
+    	if (!image) {
+    		if (blurImg) blurImg.Dispose();
+    		blurImg = false;
+    		return;
+    	}
+    	this.blur_img(image);
+    }
+    this.on_playback_new_track = function (handle) {
+		console.log('library.on_playback_new_track');
+		if (!this.blur && !this.imgBg) return;
+		console.log('this.block', this.block());
+		if (this.block()) this.get = true;
+    	else {
+			console.log('get_f_img');
+    		this.grab_f_img(handle);
+    		this.get = false;
+    	}
+    }
+    var stub = function (n) {
+    	image_path_o = n ? "noitem" : "stub";
+    	return noimg[n].Clone(0, 0, noimg[n].Width, noimg[n].Height);
+    }
 }
 // var ui = new userinterface();
 
-function on_colours_changed() {ui.reset_colors(); ui.get_colors(); if (ui.node_style) library_tree.create_images(); if (p.s_show) {but.create_images(); but.refresh();} ui.create_images(); ui.blurReset(); window.Repaint();}
+function on_colours_changed() {ui.reset_colors(); ui.get_colors(); if (ui.node_style) library_tree.create_images(); if (libraryProps.searchMode) {but.create_images(); but.refresh();} ui.create_images(); ui.blurReset(); window.Repaint();}
 function on_font_changed() {
 	ui.get_font();
 	sbar.reset();
 	p.on_size();
 	library_tree.create_tooltip();
-	if (p.s_show || ui.scrollbar_show)
+	if (libraryProps.searchMode || ui.scrollbar_show)
 		but.refresh(true);
 	window.Repaint();
 }
 
+function GetPropertyPrefix() {
+	var prefix = ' ';
+    var propertiesSet = window.GetProperty(' Scroll - Mouse Wheel: Page Scroll', '<not_set>');
+    if (propertiesSet === '<not_set>') {
+        prefix = 'Library: ';
+        window.SetProperty(' Scroll - Mouse Wheel: Page Scroll', null);
+    }
+	return prefix;
+}
+
 function scrollbar() {
-    var smoothness = 1 - window.GetProperty("ADV.Scroll: Smooth Scroll Level 0-1", 0.6561); smoothness = Math.max(Math.min(smoothness, 0.99), 0.01); this.bar_timer = false; this.count = -1; this.draw_timer = false; this.hover = false; this.s1 = 0; this.s2 = 0; this.scroll_step = window.GetProperty(" Scroll - Mouse Wheel: Page Scroll", true); this.smooth = window.GetProperty(" Scroll: Smooth Scroll", true); this.timer_but = false;
-    this.alpha = !ui.scr_col ? 75 : (!ui.scr_type ? 68 : 51); this.init = true; var alpha1 = this.alpha, alpha2 = !ui.scr_col ? 128 : (!ui.scr_type ? 119 : 85), inStep = ui.scr_type && ui.scr_col ? 12 : 18;
+	var prefix = GetPropertyPrefix();
+	var smoothness = 1 - 0.70; //window.GetProperty("ADV.Scroll: Smooth Scroll Level 0-1", 0.6561);
+	smoothness = Math.max(Math.min(smoothness, 0.99), 0.01);
+	this.bar_timer = false;
+	this.count = -1;
+	this.draw_timer = false;
+	this.hover = false;
+	this.s1 = 0;
+	this.s2 = 0;
+	this.scroll_step = window.GetProperty(prefix + "Scroll - Mouse Wheel: Page Scroll", true);
+	this.smooth = window.GetProperty(prefix + "Scroll: Smooth Scroll", true);
+	this.timer_but = false;
+	this.alpha = !ui.scr_col ? 75 : (!ui.scr_type ? 68 : 51);
+	this.init = true;
+	var alpha1 = this.alpha,
+		alpha2 = !ui.scr_col ? 128 : (!ui.scr_type ? 119 : 85),
+		inStep = ui.scr_type && ui.scr_col ? 12 : 18;
     this.x = 0;
     this.y = 0;
     this.w = 0;
@@ -483,9 +605,7 @@ function scrollbar() {
         this.y = Math.round(y);
         this.w = w;
         this.h = h;
-        this.rows_drawn = rows_drawn;
-		if (!p.autofit)
-			this.rows_drawn = Math.floor(this.rows_drawn);
+		this.rows_drawn = Math.floor(rows_drawn);
 		this.row_h = row_h;
 		this.but_h = ui.but_h;
         // draw info
@@ -540,8 +660,7 @@ function scrollbar() {
 
     this.lbtn_dn = function(p_x, p_y) {
 		var x = p_x - this.x; var y = p_y - this.y;
-		console.log('scrollbar lbtn:', p_x, p_y, x, y, this.x, this.y, this.w, this.h);
-        if (x < 0 || x > this.w || y < 0 || y > this.h || this.row_count <= this.rows_drawn) return;
+		if (x < 0 || x > this.w || y < 0 || y > this.h || this.row_count <= this.rows_drawn) return;
         if (y < this.but_h || y > this.h - this.but_h) return;
         if (y < this.bar_y) var dir = 1; // above bar
         else if (y > this.bar_y + this.bar_ht) var dir = -1; // below bar
@@ -565,7 +684,7 @@ function scrollbar() {
         var s = Math.max(0, Math.min(new_scroll, this.scrollable_lines * this.row_h));
         if (s == this.scroll) return; this.scroll = s;
         if (this.smooth) {if (!this.draw_timer) this.scroll_timer();}
-        if (!this.smooth) {this.delta = this.scroll; this.bar_y = this.but_h + this.scrollbar_travel * (this.delta * this.ratio) / (this.row_count * this.row_h); p.tree_paint(); lib_manager.treeState(false, lib_manager.rememberTree);}
+        if (!this.smooth) {this.delta = this.scroll; this.bar_y = this.but_h + this.scrollbar_travel * (this.delta * this.ratio) / (this.row_count * this.row_h); p.tree_paint(); lib_manager.treeState(false, libraryProps.rememberTree);}
     }
 
     this.smooth_scroll = function() {
@@ -573,7 +692,7 @@ function scrollbar() {
         if (Math.abs(this.scroll - this.delta) > 0.5) {
             this.s1 += (this.scroll - this.s1) * smoothness; this.s2 += (this.s1 - this.s2) * smoothness; this.delta += (this.s2 - this.delta) * smoothness;
             this.bar_y = this.but_h + this.scrollbar_travel * (this.delta * this.ratio) / (this.row_count * this.row_h); p.tree_paint();
-        } else if (this.draw_timer) {window.ClearTimeout(this.draw_timer); this.draw_timer = false; lib_manager.treeState(false, lib_manager.rememberTree);}
+        } else if (this.draw_timer) {window.ClearTimeout(this.draw_timer); this.draw_timer = false; lib_manager.treeState(false, libraryProps.rememberTree);}
     }
 
     this.but = function(dir) {
@@ -581,49 +700,75 @@ function scrollbar() {
         if (!this.timer_but) {var that = this; this.timer_but = window.SetInterval(function() {if (that.count > 6) {that.check_scroll(that.scroll + (dir * -that.row_h));} else that.count++;}, 40);}
     }
 }
-// var sbar = new scrollbar();
 
 function panel_operations() {
-    var def_ppt = window.GetProperty(" View by Folder Structure: Name // Pattern", "View by Folder Structure // Pattern Not Configurable");
-    var DT_LEFT = 0x00000000, DT_CENTER = 0x00000001, DT_RIGHT = 0x00000002, DT_VCENTER = 0x00000004, DT_SINGLELINE = 0x00000020, DT_CALCRECT = 0x00000400, DT_NOPREFIX = 0x00000800, DT_END_ELLIPSIS = 0x00008000, grps = [], i = 0, sort = "", js_stnd = window.GetProperty("ADV.Scrollbar Height Always Full", true); js_stnd = !js_stnd ? 2 : 0;
+    var prefix = GetPropertyPrefix();
+    var def_ppt = window.GetProperty(prefix + "View by Folder Structure: Name // Pattern", "View by Folder Structure // Pattern Not Configurable");
+    var DT_LEFT = 0x00000000,
+    	DT_CENTER = 0x00000001,
+    	DT_RIGHT = 0x00000002,
+    	DT_VCENTER = 0x00000004,
+    	DT_SINGLELINE = 0x00000020,
+    	DT_CALCRECT = 0x00000400,
+    	DT_NOPREFIX = 0x00000800,
+    	DT_END_ELLIPSIS = 0x00008000,
+    	grps = [],
+    	i = 0,
+    	js_stnd = window.GetProperty("ADV.Scrollbar Height Always Full", true);
+	js_stnd = !js_stnd ? 2 : 0;
+
     var view_ppt = [
-        window.GetProperty(" View 01: Name // Pattern", "View by Artist // %artist%|%album%|[[%discnumber%.]%tracknumber%. ][%track artist% - ]%title%"),
-        window.GetProperty(" View 02: Name // Pattern", "View by Album Artist // %album artist%|%album%|[[%discnumber%.]%tracknumber%. ][%track artist% - ]%title%"),
-        window.GetProperty(" View 03: Name // Pattern", "View by Album Artist - Album // [%album artist% - ]['['%date%']' ]%album%|[[%discnumber%.]%tracknumber%. ][%track artist% - ]%title%"),
-        window.GetProperty(" View 04: Name // Pattern", "View by Album // %album%[ '['%album artist%']']|[[%discnumber%.]%tracknumber%. ][%track artist% - ]%title%"),
-        window.GetProperty(" View 05: Name // Pattern", "View by Genre // %<genre>%|[%album artist% - ]%album%|[[%discnumber%.]%tracknumber%. ][%track artist% - ]%title%"),
-        window.GetProperty(" View 06: Name // Pattern", "View by Year // %date%|[%album artist% - ]%album%|[[%discnumber%.]%tracknumber%. ][%track artist% - ]%title%")
+        window.GetProperty(prefix + "View 01: Name // Pattern", "View by Artist // %artist%|%album%|[[%discnumber%.]%tracknumber%. ][%track artist% - ]%title%"),
+        window.GetProperty(prefix + "View 02: Name // Pattern", "View by Album Artist // %album artist%|%album%|[[%discnumber%.]%tracknumber%. ][%track artist% - ]%title%"),
+        window.GetProperty(prefix + "View 03: Name // Pattern", "View by Album Artist - Album // [%album artist% - ][$year(%date%) - ]%album%|[[%discnumber%.]%tracknumber%. ][%track artist% - ]%title%"),
+        window.GetProperty(prefix + "View 04: Name // Pattern", "View by Album // %album%[ '['%album artist%']']|[[%discnumber%.]%tracknumber%. ][%track artist% - ]%title%"),
+        window.GetProperty(prefix + "View 05: Name // Pattern", "View by Genre // %<genre>%|[%album artist% - ]%album%|[[%discnumber%.]%tracknumber%. ][%track artist% - ]%title%"),
+        window.GetProperty(prefix + "View 06: Name // Pattern", "View by Year // $year(%date%)|[%album artist% - ]%album%|[[%discnumber%.]%tracknumber%. ][%track artist% - ]%title%")
     ];
-    var nm = "", ppt_l = view_ppt.length + 1; for (i = ppt_l; i < ppt_l + 93; i++) {nm = window.GetProperty(" View " + (i < 10 ? "0" + i : i) + ": Name // Pattern"); if (nm && nm != " // ") view_ppt.push(window.GetProperty(" View " + (i < 10 ? "0" + i : i) + ": Name // Pattern"));}
-    if (!window.GetProperty("SYSTEM.View Update", false)) {i = view_ppt.length + 1; window.SetProperty(" View " + (i < 10 ? "0" + i : i) + ": Name // Pattern", null); view_ppt.push(window.GetProperty(" View " + (i < 10 ? "0" + i : i) + ": Name // Pattern", "View by Path // $directory_path(%path%)|%filename_ext%$nodisplay{%subsong%}")); window.SetProperty("SYSTEM.View Update", true);}
+	var nm = "",
+		ppt_l = view_ppt.length + 1;
+	for (i = ppt_l; i < ppt_l + 93; i++) {
+		nm = window.GetProperty(prefix + "View " + padNumber(i, 2) + ": Name // Pattern");
+		if (nm && nm != " // ") view_ppt.push(window.GetProperty(prefix + "View " + padNumber(i, 2) + ": Name // Pattern"));
+	}
+    if (!window.GetProperty("SYSTEM.View Update", false)) {
+		i = view_ppt.length + 1;
+		window.SetProperty(prefix + "View " + padNumber(i, 2) + ": Name // Pattern", null);
+		view_ppt.push(window.GetProperty(prefix + "View " + padNumber(i, 2) + ": Name // Pattern", "View by Path // $directory_path(%path%)|%filename_ext%$nodisplay{%subsong%}"));
+		window.SetProperty("SYSTEM.View Update", true);
+	}
 
     var filter_ppt = [
-        window.GetProperty(" View Filter 01: Name // Query", "Filter // Query Not Configurable"),
-        window.GetProperty(" View Filter 02: Name // Query", "Lossless // \"$info(encoding)\" IS lossless"),
-        window.GetProperty(" View Filter 03: Name // Query", "Lossy // \"$info(encoding)\" IS lossy"),
-        window.GetProperty(" View Filter 04: Name // Query", "Missing Replaygain // %replaygain_track_gain% MISSING"),
-        window.GetProperty(" View Filter 05: Name // Query", "Never Played // %play_count% MISSING"),
-        window.GetProperty(" View Filter 06: Name // Query", "Played Often // %play_count% GREATER 9"),
-        window.GetProperty(" View Filter 07: Name // Query", "Recently Added // %added% DURING LAST 2 WEEKS"),
-        window.GetProperty(" View Filter 08: Name // Query", "Recently Played // %last_played% DURING LAST 2 WEEKS"),
-        window.GetProperty(" View Filter 09: Name // Query", "Top Rated // %rating% IS 5")
+        window.GetProperty(prefix + "View Filter 01: Name // Query", "Filter // Query Not Configurable"),
+        window.GetProperty(prefix + "View Filter 02: Name // Query", "Lossless // \"$info(encoding)\" IS lossless"),
+        window.GetProperty(prefix + "View Filter 03: Name // Query", "Lossy // \"$info(encoding)\" IS lossy"),
+        window.GetProperty(prefix + "View Filter 04: Name // Query", "Missing Replaygain // %replaygain_track_gain% MISSING"),
+        window.GetProperty(prefix + "View Filter 05: Name // Query", "Never Played // %play_count% MISSING"),
+        window.GetProperty(prefix + "View Filter 06: Name // Query", "Played Often // %play_count% GREATER 9 OR %lastfm_play_count% GREATER 9"),
+        window.GetProperty(prefix + "View Filter 07: Name // Query", "Recently Added // %added% DURING LAST 2 WEEKS"),
+        window.GetProperty(prefix + "View Filter 08: Name // Query", "Recently Played // %last_played% DURING LAST 2 WEEKS"),
+        window.GetProperty(prefix + "View Filter 09: Name // Query", "Top Rated // %rating% IS 5")
     ];
-    var filt_l = filter_ppt.length + 1; for (i = filt_l; i < filt_l + 90; i++) {nm = window.GetProperty(" View Filter " + (i < 10 ? "0" + i : i) + ": Name // Query"); if (nm && nm != " // ") filter_ppt.push(window.GetProperty(" View Filter " + (i < 10 ? "0" + i : i) + ": Name // Query"));}
+    var filt_l = filter_ppt.length + 1;
+    for (i = filt_l; i < filt_l + 90; i++) {
+
+        nm = window.GetProperty(prefix + "View Filter " + padNumber(i, 2) + ": Name // Query");
+        if (nm && nm != " // ") {
+            filter_ppt.push(window.GetProperty(prefix + "View Filter " + padNumber(i, 2) + ": Name // Query"));
+        }
+    }
 
     this.cc = DT_CENTER | DT_VCENTER | DT_CALCRECT | DT_NOPREFIX; this.l = DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_CALCRECT | DT_NOPREFIX; this.lc = DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX | DT_END_ELLIPSIS; this.rc = DT_RIGHT | DT_VCENTER | DT_CALCRECT | DT_NOPREFIX; this.s_lc = StringFormat(0, 1)
     this.f_w = []; this.f_h = 0; this.filter_x1 = 0; this.filt = []; this.folder_view = 10; this.grp = []; this.grp_sort = ""; this.grp_split = []; this.grp_split_clone = []; this.grp_split_orig = []; this.f_menu = []; this.menu = []; this.multi_value = []; this.m_x = 0; this.m_y = 0; this.pos = -1; this.s_cursor = false; this.s_search = false; this.s_txt = ""; this.s_x = 0; this.s_h = 0; this.s_w1 = 0; this.s_w2 = 0; this.tf = "";
-    this.autofit = window.GetProperty(" Auto Fit", true);
-    if (window.GetProperty(" Node: Show All Music")) window.SetProperty(" Node: Root Hide-0 All Music-1 View Name-2", 1);
+    if (window.GetProperty(" Node: Show All Music"))
+		window.SetProperty(" Node: Root Hide-0 All Music-1 View Name-2", 1);
     this.base = window.GetProperty(" Node: Root Hide-0 All Music-1 View Name-2", 0); this.base = Math.max(Math.min(this.base, 2), 0);
     this.syncType = window.GetProperty(" Library Sync: Auto-0, Initialisation Only-1", 0);
-    this.s_show = window.GetProperty(" Search: Hide-0, SearchOnly-1, Search+Filter-2", 2);
-    if (!this.s_show) this.autofit = true;
     if (!ui.zoomUpd && window.GetProperty("SYSTEM.Software Notice Checked")) window.SetProperty(" Zoom Filter Size (%)", window.GetProperty(" Zoom Filter Size (%)", 100) / ui.scale);
     this.scale = Math.max(window.GetProperty(" Zoom Filter Size (%)", 100) / 100, 0.7); window.SetProperty(" Zoom Filter Size (%)", this.scale * 100);
     this.f_font = gdi.Font("Segoe UI", this.scale > 1.05 ? Math.floor(11 * ui.scale * this.scale) : 11 * ui.scale * this.scale, 1);
     this.f_but_ft = gdi.Font("Segoe UI", this.scale > 1.05 ? Math.floor(9 * ui.scale * this.scale) : 9 * ui.scale * this.scale, 1);
     this.filter_by = window.GetProperty("SYSTEM.Filter By", 0);
-    this.full_line = window.GetProperty(" Text Whole Line Clickable", false);
     this.pn_h_auto = window.GetProperty("ADV.Height Auto [Expand/Collapse With Root]", false) && this.base; this.init = true;
     this.pn_h_max = window.GetProperty("ADV.Height Auto-Expand", 578); this.pn_h_min = window.GetProperty("ADV.Height Auto-Collapse", 100);
     if (this.pn_h_auto) {this.pn_h = window.GetProperty("SYSTEM.Height", 578); window.MaxHeight = window.MinHeight = this.pn_h;}
@@ -635,7 +780,7 @@ function panel_operations() {
     this.show_counts = window.GetProperty(" Node: Item Counts Hide-0 Tracks-1 Sub-Items-2", 1);
     this.show_tracks = window.GetProperty(" Node: Show Tracks", true);
     this.sort = function(li) {switch (this.view_by) {case this.folder_view: li.OrderByRelativePath(); break; default: var tfo = fb.TitleFormat(this.grp_sort); li.OrderByFormat(tfo, 1); tfo.Dispose(); break;}}
-    var paint_y = Math.floor(this.s_show || !ui.scrollbar_show ? this.s_h : 0);
+    var paint_y = Math.floor(libraryProps.searchMode || !ui.scrollbar_show ? this.s_h : 0);
     this.tree_paint = function() {window.RepaintRect(ui.x, ui.y + paint_y, ui.w, ui.h - paint_y + 1);}
     this.view_by = window.GetProperty("SYSTEM.View By", 1);
     this.calc_text = function() {
@@ -647,16 +792,38 @@ function panel_operations() {
 		}
         this.f_sw = g.CalcTextWidth("   ▼", this.f_but_ft);
         this.filter_x1 = ui.x + ui.w - ui.margin - this.f_w[this.filter_by] - this.f_sw;
-        this.s_w2 = this.s_show > 1 ? this.filter_x1 - this.s_x - 11 : this.s_w1 - Math.round(ui.row_h * 0.75) - this.s_x + 1;
+        this.s_w2 = libraryProps.searchMode > 1 ? this.filter_x1 - this.s_x - 11 : this.s_w1 - Math.round(ui.row_h * 0.75) - this.s_x + 1;
         im.ReleaseGraphics(g); im.Dispose();
     }
 
     this.fields = function(view, filter) {
-        this.filt = []; this.folder_view = 10; this.grp = []; this.grp_sort = ""; this.multi_process = false; this.multi_swap = false; this.filter_by = filter; this.mv_sort = ""; this.view = ""; this.view_by = view;
-        for (i = 0; i < view_ppt.length; i++) {if (view_ppt[i].indexOf("//") != -1) {grps = view_ppt[i].split("//"); this.grp[i] = {name:grps[0].trim(), type:grps[1]}}} grps = [];
-        for (i = 0; i < filter_ppt.length; i++) {if (filter_ppt[i].indexOf("//") != -1) {grps = filter_ppt[i].split("//"); this.filt[i] = {name:grps[0].trim(), type:grps[1].trim()}}}
-        i = this.grp.length; while (i--) if (!this.grp[i] || this.grp[i].name == "" || this.grp[i].type == "") this.grp.splice(i, 1);
-        i = this.filt.length; while (i--) if (!this.filt[i] || this.filt[i].name == "" || this.filt[i].type == "") this.filt.splice(i, 1);
+		this.filt = [];
+		this.folder_view = 10;
+		this.grp = [];
+		this.grp_sort = "";
+		this.multi_process = false;
+		this.multi_swap = false;
+		this.filter_by = filter;
+		this.mv_sort = "";
+		this.view = "";
+		this.view_by = view;
+        for (i = 0; i < view_ppt.length; i++) {
+			if (view_ppt[i].indexOf("//") != -1) {
+				grps = view_ppt[i].split("//");
+				this.grp[i] = { name:grps[0].trim(), type:grps[1] };
+			}
+		}
+		grps = [];
+        for (i = 0; i < filter_ppt.length; i++) {
+			if (filter_ppt[i].indexOf("//") != -1) {
+				grps = filter_ppt[i].split("//");
+				this.filt[i] = { name:grps[0].trim(), type:grps[1].trim() };
+			}
+		}
+		i = this.grp.length;
+		while (i--) if (!this.grp[i] || this.grp[i].name == "" || this.grp[i].type == "") this.grp.splice(i, 1);
+		i = this.filt.length;
+		while (i--) if (!this.filt[i] || this.filt[i].name == "" || this.filt[i].type == "") this.filt.splice(i, 1);
         this.grp[this.grp.length] = {name: def_ppt.split("//")[0].trim(), type: ""}
         this.folder_view = this.grp.length - 1; this.filter_by = Math.min(this.filter_by, this.filt.length - 1); this.view_by = Math.min(this.view_by, this.grp.length - 1);
         if (this.grp[this.view_by].type.indexOf("%<") != -1) this.multi_process = true;
@@ -690,37 +857,61 @@ function panel_operations() {
             while(this.grp_sort.indexOf("$nodisplay{") != -1) {var ix1 = this.grp_sort.indexOf("$nodisplay{"), ix2 = this.grp_sort.indexOf("}", ix1); this.grp_sort = replaceAt(this.grp_sort, ix2, " "); this.grp_sort = this.grp_sort.replace("$nodisplay{", "");}
         } window.SetProperty("SYSTEM.Filter By", filter); window.SetProperty("SYSTEM.View By", view);
         this.baseName = this.base == 2 ? this.grp[this.view_by].name : "All Music";
-        this.f_menu = []; this.menu = []; for (i = 0; i < this.grp.length; i++) this.menu.push(this.grp[i].name);
+		this.f_menu = [];
+		this.menu = [];
+		for (i = 0; i < this.grp.length; i++) this.menu.push(this.grp[i].name);
         for (i = 0; i < this.filt.length; i++) this.f_menu.push(this.filt[i].name);
         this.calc_text();
     }
     this.fields(this.view_by, this.filter_by);
 
-    var k = 1; for (i = 0; i < 100; i++) {nm = window.GetProperty(" View " + (i < 10 ? "0" + i : i) + ": Name // Pattern"); if (nm && nm != " // ") {window.SetProperty(" View " + (k < 10 ? "0" + k : k) + ": Name // Pattern", nm); k += 1} else window.SetProperty(" View " + (i < 10 ? "0" + i : i) + ": Name // Pattern", null);}
-    for (i = k; i < k + 5; i++) window.SetProperty(" View " + (i < 10 ? "0" + i : i) + ": Name // Pattern", " // ");
-    k = 1; for (i = 0; i < 100; i++) {nm = window.GetProperty(" View Filter " + (i < 10 ? "0" + i : i) + ": Name // Query"); if (nm && nm != " // ") {window.SetProperty(" View Filter " + (k < 10 ? "0" + k : k) + ": Name // Query", nm); k += 1} else window.SetProperty(" View Filter " + (i < 10 ? "0" + i : i) + ": Name // Query", null);}
-    for (i = k; i < k + 5; i++) window.SetProperty(" View Filter " + (i < 10 ? "0" + i : i) + ": Name // Query", " // ");
+    var propCount = 0;
+    for (i = 1; i < 100; i++) {
+		var val = window.GetProperty(prefix + "View " + padNumber(i, 2) + ": Name // Pattern");
+		// console.log(i, prefix + "View " + padNumber(i, 2), val);
+        if (val && val != " // ") {
+			propCount++;
+            window.SetProperty(prefix + "View " + padNumber(propCount, 2) + ": Name // Pattern", val);
+        } else {
+			window.SetProperty(prefix + "View " + padNumber(i, 2) + ": Name // Pattern", null);
+        }
+    }
+    for (i = propCount + 1; i < propCount + 3; i++) {
+        window.SetProperty(prefix + "View " + padNumber(i, 2) + ": Name // Pattern", " // ");
+    }
+    propCount = 0;
+    for (i = 1; i < 100; i++) {
+        var val = window.GetProperty(prefix + "View Filter " + padNumber(i, 2) + ": Name // Query");
+        if (val && val != " // ") {
+            propCount++;
+            window.SetProperty(prefix + "View Filter " + padNumber(propCount, 2) + ": Name // Query", val);
+        } else window.SetProperty(prefix + "View Filter " + padNumber(i, 2) + ": Name // Query", null);
+    }
+    for (i = propCount + 1; i < propCount + 3; i++) {
+        window.SetProperty(prefix + "View Filter " + padNumber(i, 2) + ": Name // Query", " // ");
+    }
 
     this.on_size = function() {
         this.filter_x1 = ui.x + ui.w - ui.margin - this.f_w[this.filter_by] - this.f_sw;
 		this.s_x = ui.x + Math.round(ui.margin + ui.row_h);
 		this.s_y = ui.y;
         this.s_w1 = ui.w - ui.margin;
-        this.s_w2 = this.s_show > 1 ? this.filter_x1 - this.s_x - 11 : this.s_w1 - Math.round(ui.row_h * 0.75) - this.s_x + 1;
-        this.ln_sp = this.s_show && !ui.local ? Math.floor(ui.row_h * 0.1) : 0;
-        this.s_h = this.s_show ? ui.row_h + (!ui.local ? this.ln_sp * 2 : 0) : ui.margin;
+        this.s_w2 = libraryProps.searchMode > 1 ? this.filter_x1 - this.s_x - 11 : this.s_w1 - Math.round(ui.row_h * 0.75) - this.s_x + 1;
+        this.ln_sp = libraryProps.searchMode && !ui.local ? Math.floor(ui.row_h * 0.1) : 0;
+        this.s_h = libraryProps.searchMode ? ui.row_h + (!ui.local ? this.ln_sp * 2 : 0) : ui.margin;
         this.s_sp = this.s_h - this.ln_sp;
-        this.sp = ui.h - this.s_h - (this.s_show ? 0 : ui.margin);
+        this.sp = ui.h - this.s_h - (libraryProps.searchMode ? 0 : ui.margin);
         this.rows = this.sp / ui.row_h;
-        if (this.autofit) {this.rows = Math.floor(this.rows); this.sp = ui.row_h * this.rows;}
+		this.rows = Math.floor(this.rows);
+		this.sp = ui.row_h * this.rows;
         this.node_y = Math.round((ui.row_h - ui.node_sz) / 1.75);
-        var sbar_top = !ui.scr_type ? 5 : this.s_show ? 3 : 0, sbar_bot = !ui.scr_type ? 5 : 0;
+        var sbar_top = !ui.scr_type ? 5 : libraryProps.searchMode ? 3 : 0, sbar_bot = !ui.scr_type ? 5 : 0;
         this.sbar_o = [ui.arrow_pad, Math.max(Math.floor(ui.scr_but_w * 0.2), 3) + ui.arrow_pad * 2, 0][ui.scr_type];
         this.sbar_x = ui.x + ui.w - ui.sbar_sp;
         var top_corr = [this.sbar_o - (ui.but_h - ui.scr_but_w) / 2, this.sbar_o, 0][ui.scr_type];
         var bot_corr = [(ui.but_h - ui.scr_but_w) / 2 - this.sbar_o, -this.sbar_o, 0][ui.scr_type];
-        var sbar_y = ui.y + (ui.scr_type < js_stnd || this.s_show ? this.s_sp + 1 : 0) + sbar_top + top_corr;
-        var sbar_h = ui.scr_type < js_stnd && this.autofit ?
+        var sbar_y = ui.y + (ui.scr_type < js_stnd || libraryProps.searchMode ? this.s_sp + 1 : 0) + sbar_top + top_corr;
+        var sbar_h = ui.scr_type < js_stnd && true ?
                 this.sp + 1 - sbar_top - sbar_bot + bot_corr * 2 :
                 ui.y + ui.h - sbar_y - sbar_bot + bot_corr;
         if (ui.scr_type == 2) {
@@ -740,14 +931,32 @@ function v_keys() {
 // var v = new v_keys();
 
 function library_manager() {
+	var prefix = GetPropertyPrefix();
     var exp = [], full_list, full_list_need_sort = false, node = [], node_s = [],  scr = [], sel = [];
     this.allmusic = []; this.init = false; this.list; this.none = ""; this.node = []; this.process = false; this.root = []; this.time = fb.CreateProfiler(); this.upd = 0, this.upd_search = false;
     var prefix = window.GetProperty("ADV.$swapbranchprefix. Prefixes to Swap (| Separator)", "A|The").split("|");
-    this.rememberTree = window.GetProperty(" Tree: Remember State", true) ? 1 : 0;
-    if (this.rememberTree) {exp = JSON.parse(window.GetProperty("SYSTEM.Remember.Exp",JSON.stringify(exp))); this.process = window.GetProperty("SYSTEM.Remember.Proc", false); scr = JSON.parse(window.GetProperty("SYSTEM.Remember.Scr",JSON.stringify(scr))); sel = JSON.parse(window.GetProperty("SYSTEM.Remember.Sel",JSON.stringify(sel))); p.s_txt = window.GetProperty("SYSTEM.Remember.Search Text", "");} else {window.SetProperty("SYSTEM.Remember.Exp",JSON.stringify(exp)); window.SetProperty("SYSTEM.Remember.Scr",JSON.stringify(scr)); window.SetProperty("SYSTEM.Remember.Sel",JSON.stringify(sel)); window.SetProperty("SYSTEM.Remember.Search Text", "");}
-    var arraysIdentical = function(a, b) {var i = a.length; if (i != b.length) return false; while (i--) if (a[i] !== b[i]) return false; return true;}
+    // libraryProps.rememberTree = window.GetProperty();
+    if (libraryProps.rememberTree) {
+    	exp = JSON.parse(window.GetProperty("SYSTEM.Remember.Exp", JSON.stringify(exp)));
+    	this.process = window.GetProperty("SYSTEM.Remember.Proc", false);
+    	scr = JSON.parse(window.GetProperty("SYSTEM.Remember.Scr", JSON.stringify(scr)));
+    	sel = JSON.parse(window.GetProperty("SYSTEM.Remember.Sel", JSON.stringify(sel)));
+    	p.s_txt = window.GetProperty("SYSTEM.Remember.Search Text", "");
+    } else {
+    	window.SetProperty("SYSTEM.Remember.Exp", JSON.stringify(exp));
+    	window.SetProperty("SYSTEM.Remember.Scr", JSON.stringify(scr));
+    	window.SetProperty("SYSTEM.Remember.Sel", JSON.stringify(sel));
+    	window.SetProperty("SYSTEM.Remember.Search Text", "");
+    }
+    var arraysIdentical = function (a, b) {
+    	var i = a.length;
+    	if (i != b.length) return false;
+    	while (i--)
+    		if (a[i] !== b[i]) return false;
+    	return true;
+    }
     var binaryInsert = function(arr, item) {var min = 0, max = arr.length, index = Math.floor((min + max) / 2); while (max > min) {if (sort(item, arr[index]) < 0) max = index; else min = index + 1; index = Math.floor((min + max) / 2);} return index;}
-    this.checkTree = function() {if (!this.upd && !(this.init && this.rememberTree)) return; this.init = false; timer.reset(timer.update, timer.updatei); this.time.Reset(); library_tree.subCounts =  {"standard": {}, "search": {}, "filter": {}}; this.rootNodes(this.upd == 2 ? 2 : 1, this.process); this.upd = 0;}
+    this.checkTree = function() {if (!this.upd && !(this.init && libraryProps.rememberTree)) return; this.init = false; timer.reset(timer.update, timer.updatei); this.time.Reset(); library_tree.subCounts =  {"standard": {}, "search": {}, "filter": {}}; this.rootNodes(this.upd == 2 ? 2 : 1, this.process); this.upd = 0;}
     this.removed_f = function(handle_list) {var j = handle_list.Count; while (j--) {var i = this.list.Find(handle_list.Item(j)); if (i != -1) {this.list.RemoveById(i); node.splice(i, 1);}}}
     this.removed_s = function(handle_list) {var j = handle_list.Count; while (j--) {var i = p.list.Find(handle_list.Item(j)); if (i != -1) {p.list.RemoveById(i); node_s.splice(i, 1);}}}
     var sort = function (a, b) {return a.toString().replace(/^\?/,"").replace(/(\d+)/g, function (n) {return ('0000' + n).slice(-5)}).localeCompare(b.toString().replace(/^\?/,"").replace(/(\d+)/g, function (n) {return ('0000' + n).slice(-5)}));}
@@ -767,9 +976,9 @@ function library_manager() {
                 }
                 ix = library_tree.get_ix(0, p.s_h + ui.row_h / 2, true, false); tr = 0; var l = Math.min(Math.floor(ix + p.rows), library_tree.tree.length);
                 if (ix != -1) {scr = []; for (i = ix; i < l; i++) {tr = library_tree.tree[i].tr; scr.push({tr:tr, a:library_tree.tree[i].name, b:tr != 0 ? library_tree.tree[library_tree.tree[i].par].name : "", c:tr > 1 ? library_tree.tree[library_tree.tree[library_tree.tree[i].par].par].name : ""})}}
-                tr_sort(exp); if (this.rememberTree) {window.SetProperty("SYSTEM.Remember.Exp",JSON.stringify(exp)); window.SetProperty("SYSTEM.Remember.Proc", this.process); window.SetProperty("SYSTEM.Remember.Scr",JSON.stringify(scr)); window.SetProperty("SYSTEM.Remember.Sel",JSON.stringify(sel));}
+                tr_sort(exp); if (libraryProps.rememberTree) {window.SetProperty("SYSTEM.Remember.Exp",JSON.stringify(exp)); window.SetProperty("SYSTEM.Remember.Proc", this.process); window.SetProperty("SYSTEM.Remember.Scr",JSON.stringify(scr)); window.SetProperty("SYSTEM.Remember.Sel",JSON.stringify(sel));}
             }
-            if (!b || b && !p.reset && this.rememberTree) {window.SetProperty("SYSTEM.Remember.Search Text", p.s_txt); if (state == 1) return;}
+            if (!b || b && !p.reset && libraryProps.rememberTree) {window.SetProperty("SYSTEM.Remember.Search Text", p.s_txt); if (state == 1) return;}
         } catch (e) {}
         if (!handle_list) {
             this.get_library(); this.rootNodes(1, this.process);
@@ -795,7 +1004,7 @@ function library_manager() {
                             break;
                     }
                     if (upd_done) break;
-                    if (p.filter_by > 0 && p.s_show > 1) { // filter: check for addns / removals if not done
+                    if (p.filter_by > 0 && libraryProps.searchMode > 1) { // filter: check for addns / removals if not done
                         var startFilter = this.list.Clone(), new_filter_items = fb.CreateHandleList();
                         try {new_filter_items = fb.GetQueryItems(handle_list, p.filt[p.filter_by].type);} catch (e) {}
                         var newFilter = this.list.Clone();
@@ -808,7 +1017,7 @@ function library_manager() {
                         var startSearch = p.list.Clone(), new_search_items = fb.CreateHandleList();
                         try {new_search_items = fb.GetQueryItems(handle_list, p.s_txt);} catch (e) {}
                         new_search_items.Sort();
-                        if (p.filter_by > 0 && p.s_show > 1) {var newFilt = this.list.Clone(); newFilt.Sort(); new_search_items.MakeIntersection(newFilt); newFilt.Dispose();}
+                        if (p.filter_by > 0 && libraryProps.searchMode > 1) {var newFilt = this.list.Clone(); newFilt.Sort(); new_search_items.MakeIntersection(newFilt); newFilt.Dispose();}
                         var newSearch = p.list.Clone();
                         newSearch.InsertRange(newSearch.Count, new_search_items);
                         startSearch.Sort(); newSearch.Sort(); newSearch.MakeDifference(startSearch);
@@ -828,7 +1037,7 @@ function library_manager() {
     this.get_library = function() {
         this.empty = ""; if (full_list) full_list.Dispose(); if (this.list) this.list.Dispose(); if (p.list) p.list.Dispose(); this.time.Reset(); this.none = ""; this.list = fb.GetLibraryItems(); full_list = this.list.Clone();
         if (!this.list.Count || !fb.IsLibraryEnabled()) {library_tree.tree = []; library_tree.line_l = 0; sbar.set_rows(0); this.empty = "Nothing to show\n\nConfigure Media Library first\n\nFile>Preferences>Media library"; p.tree_paint(); return;}
-        if (p.filter_by > 0 && p.s_show > 1) try {this.list = fb.GetQueryItems(this.list, p.filt[p.filter_by].type)} catch (e) {};
+        if (p.filter_by > 0 && libraryProps.searchMode > 1) try {this.list = fb.GetQueryItems(this.list, p.filt[p.filter_by].type)} catch (e) {};
         if (!this.list.Count) {library_tree.tree = []; library_tree.line_l = 0; sbar.set_rows(0); this.none = "Nothing found"; p.tree_paint(); return;} this.rootNames("", 0);
     }
 
@@ -887,7 +1096,7 @@ function library_manager() {
                 h++;
             }
             if (!scr_pos) {sbar.reset(); p.tree_paint();}} catch (e) {};
-        } else this.treeState(false, this.rememberTree);
+        } else this.treeState(false, libraryProps.rememberTree);
         if (lib_update && !process) {sbar.reset(); p.tree_paint();}
     }
 
@@ -903,7 +1112,7 @@ function library_manager() {
         switch (addType) {
             case 0:
                 full_list.InsertRange(full_list.Count, handle_list); full_list_need_sort = true;
-                if (p.filter_by > 0 && p.s_show > 1) {
+                if (p.filter_by > 0 && libraryProps.searchMode > 1) {
                     var new_filter_items = fb.CreateHandleList();
                     try {new_filter_items = fb.GetQueryItems(handle_list, p.filt[p.filter_by].type);} catch (e) {}
                     this.list.InsertRange(this.list.Count, new_filter_items); p.sort(this.list); new_filter_items.Dispose();
@@ -925,7 +1134,7 @@ function library_manager() {
                 break;
             case 1:
                 var lis = fb.CreateHandleList();
-                if (p.filter_by > 0 && p.s_show > 1) {try {lis = fb.GetQueryItems(handle_list, p.filt[p.filter_by].type);} catch (e) {}} else lis = handle_list; p.sort(lis);
+                if (p.filter_by > 0 && libraryProps.searchMode > 1) {try {lis = fb.GetQueryItems(handle_list, p.filt[p.filter_by].type);} catch (e) {}} else lis = handle_list; p.sort(lis);
                 this.binaryInsert(p.view_by == p.folder_view, lis, this.list, node);
                 if (this.list.Count) this.empty = "";
                 if (p.s_txt) {
@@ -966,7 +1175,7 @@ function library_manager() {
 
     this.removed = function(handle_list) {
         var j = handle_list.Count; while (j--) {var i = this.list.Find(handle_list.Item(j)); if (i != -1) {this.list.RemoveById(i); node.splice(i, 1);}}
-        if (p.filter_by > 0 && p.s_show > 1) {j = handle_list.Count; if (full_list_need_sort) p.sort(full_list); full_list_need_sort = false; while (j--) {i = full_list.Find(handle_list.Item(j)); if (i != -1) full_list.RemoveById(i);}}
+        if (p.filter_by > 0 && libraryProps.searchMode > 1) {j = handle_list.Count; if (full_list_need_sort) p.sort(full_list); full_list_need_sort = false; while (j--) {i = full_list.Find(handle_list.Item(j)); if (i != -1) full_list.RemoveById(i);}}
         else full_list = this.list.Clone();
         if (p.s_txt) {
             j = handle_list.Count; while (j--) {i = p.list.Find(handle_list.Item(j)); if (i != -1) {p.list.RemoveById(i); node_s.splice(i, 1);}}
@@ -980,7 +1189,27 @@ function library_manager() {
 // var lib_manager = new library_manager();
 
 function LibraryTree() {
-    var get_pos = -1, handles = null, is_focused = false, ix_o = 0, last_pressed_coord = {x: undefined, y: undefined}, last_sel = -1, lbtn_dn = false, m_i = -1, m_br = -1, nd= [], row_o = 0, sent = false, tt = "", tooltip = window.GetProperty(" Tooltips", false), tt_c = 0, tt_y = 0, tt_id = -1;
+
+    var get_pos = -1,
+    	handles = null,
+    	is_focused = false,
+    	ix_o = 0,
+    	last_pressed_coord = {
+    		x: undefined,
+    		y: undefined
+    	},
+    	last_sel = -1,
+    	lbtn_dn = false,
+    	m_i = -1,
+    	m_br = -1,
+    	nd = [],
+    	row_o = 0,
+    	sent = false,
+    	tt = "",
+    	//tooltip = window.GetProperty(" Tooltips", false),
+    	tt_c = 0,
+    	tt_y = 0,
+    	tt_id = -1;
     var ap = window.GetProperty(" Playlist: Play On Send From Menu"); ap = ap === false ? false : ap === true ? true : false; var autoplay = window.GetProperty(" Playlist: Play On Enter Or Send From Menu", ap);
     var btn_pl  = window.GetProperty(" Playlist Use: 0 or 1", "General,1,Alt+LeftBtn,1,MiddleBtn,1").replace(/\s+/g, "").split(",");
     if (btn_pl[0] == "LeftBtn") window.SetProperty(" Playlist Use: 0 or 1", "General," + btn_pl[1] + ",Alt+LeftBtn," + btn_pl[3] + ",MiddleBtn," + btn_pl[5]);
@@ -994,7 +1223,9 @@ function LibraryTree() {
     var selection_holder = fb.AcquireUiSelectionHolder(), symb = window.CreateThemeManager("TREEVIEW");
     var im = gdi.CreateImage(ui.node_sz, ui.node_sz), g = im.GetGraphics(); if (ui.node_win) try {symb.SetPartAndStateId(2, 1); symb.SetPartAndStateId(2, 2); symb.DrawThemeBackground(g, 0, 0, ui.node_sz, ui.node_sz);} catch (e) {ui.node_win = 0;} im.ReleaseGraphics(g); im.Dispose();
     this.line_l = 0; this.sel_items = []; this.subCounts =  {"standard": {}, "filter": {}, "search": {}}; this.tree = [];
-    if (!window.GetProperty("SYSTEM.Playlist Checked", false)) fb.ShowPopupMessage("Default playlist: Library View.\n\nChange in panel properties if required.", "Library Tree"); window.SetProperty("SYSTEM.Playlist Checked", true);
+    if (!window.GetProperty("SYSTEM.Playlist Checked", false))
+        fb.ShowPopupMessage("Default playlist: Library View.\n\nChange in panel properties if required.", "Library Tree");
+    window.SetProperty("SYSTEM.Playlist Checked", true);
     var arr_contains = function(arr, item) {for (var i = 0; i < arr.length; i++) if (arr[i] == item) return true; return false;}
     var arr_index = function(arr, item) {var n = -1; for (var i = 0; i < arr.length; i++) if (arr[i] == item) {n = i; break;} return n;}
     var check_node = function(gr) {if (sbar.draw_timer || !ui.node_win) return; try {symb.SetPartAndStateId(2, 1); symb.SetPartAndStateId(2, 2); symb.DrawThemeBackground(gr, -ui.node_sz, -ui.node_sz, ui.node_sz, ui.node_sz);} catch (e) {ui.node_win = 0;}}
@@ -1002,7 +1233,7 @@ function LibraryTree() {
     var num_sort = function(a, b) {return a - b;}
     var sort = function (a, b) {return a.srt.replace(/^\?/,"").replace(/(\d+)/g, function (n) {return ('0000' + n).slice(-5)}).localeCompare(b.srt.replace(/^\?/,"").replace(/(\d+)/g, function (n) {return ('0000' + n).slice(-5)}));}
     var uniq = function(a) {var j = 0, len = a.length, out = [], seen = {}; for (var i = 0; i < len; i++) {var item = a[i]; if (seen[item] !== 1) {seen[item] = 1; out[j++] = item;}} return out.sort(num_sort);}
-    this.add = function(x, y, pl) {if (y < p.s_h) return; var ix = this.get_ix(x, y, true, false); p.pos = ix; if (ix < this.tree.length && ix >= 0) if (this.check_ix(this.tree[ix], x, y, true)) {this.clear(); this.tree[ix].sel = true; this.get_sel_items(); this.load(this.sel_items, true, true, false, pl, false); lib_manager.treeState(false, lib_manager.rememberTree);}}
+    this.add = function(x, y, pl) {if (y < p.s_h) return; var ix = this.get_ix(x, y, true, false); p.pos = ix; if (ix < this.tree.length && ix >= 0) if (this.check_ix(this.tree[ix], x, y, true)) {this.clear(); this.tree[ix].sel = true; this.get_sel_items(); this.load(this.sel_items, true, true, false, pl, false); lib_manager.treeState(false, libraryProps.rememberTree);}}
     this.auto = window.GetProperty(" Node: Auto Collapse", false);
     this.branch_chg = function(br) {var new_br = 0; if (br.tr == 0) {for (var i = 0; i < lib_manager.root.length; i++) {new_br += lib_manager.root[i].child.length; lib_manager.root[i].child = [];}} else {var par = this.tree[br.par]; for (var i = 0; i < par.child.length; i++) {new_br += par.child[i].child.length; par.child[i].child = [];}} return new_br;}
     this.check_row = function(x, y) {m_br = -1; var im = this.get_ix(x, y, true, false); if (im >= this.tree.length || im < 0) return -1; var item = this.tree[im]; if (x < Math.round(ui.pad * item.tr) + ui.icon_w + ui.margin && (!item.track || p.base && item.tr == 0)) m_br = im; return im;}
@@ -1021,65 +1252,115 @@ function LibraryTree() {
     this.setGetPos = function(pos) {m_i = get_pos = pos;}
 
     this.create_tooltip = function() {
-        if (!tooltip) return; if (tt) tt.Dispose(); tt = window.CreateTooltip(ui.font.Name, ui.font.Size, ui.font.Style);
-        tt_y = ui.row_h - window.GetProperty(" Row Vertical Item Padding", 3); tt_y = p.s_h - Math.floor((ui.row_h - tt_y) / 2)
-        tt.SetDelayTime(0, 500); tt.Text = "";
+        if (!libraryProps.tooltips) return;
+        if (tt) tt.Dispose();
+        tt = window.CreateTooltip(ui.font.Name, ui.font.Size, ui.font.Style);
+        tt_y = ui.row_h - window.GetProperty(" Row Vertical Item Padding", 3);
+		tt_y = p.s_h - Math.floor((ui.row_h - tt_y) / 2)
+        tt.SetDelayTime(0, 500);
+        tt.Text = "";
     }
 
     this.activate_tooltip = function(ix, y) {
-        if (tt_id == ix || Math.round(ui.pad * this.tree[ix].tr + ui.margin) + ui.icon_w + (!tooltip || !p.full_line ? this.tree[ix].w : this.tree[ix].tt_w) <= sbar.tree_w - ui.sel) return;
-        if (tt_c == 2) {tt_id = ix; return;}
-        tt_c += 1; tt.Activate(); tt.TrackActivate = true;
+        if (tt_id == ix || Math.round(ui.pad * this.tree[ix].tr + ui.margin) + ui.icon_w + (!libraryProps.tooltips || !libraryProps.fullLine ? this.tree[ix].w : this.tree[ix].tt_w) <= sbar.tree_w - ui.sel) return;
+        if (tt_c == 2) {
+        	tt_id = ix;
+        	return;
+		}
+        tt_c += 1;
+        tt.Activate();
+        tt.TrackActivate = true;
         tt.Text = this.tree[ix].name + this.tree[ix].count;
-        tt.TrackPosition(Math.round(ui.pad * this.tree[ix].tr + ui.margin) + ui.icon_w - ui.tt, this.row(y) * ui.row_h + tt_y);
-        p.tree_paint(); timer.tooltip();
+        tt.TrackPosition(Math.round(ui.x + ui.pad * this.tree[ix].tr + ui.margin + ui.icon_w - ui.tt + 2), Math.round(this.row(y) * ui.row_h + tt_y));
+        p.tree_paint();
+        timer.tooltip();
     }
 
     this.branch = function(br, base, node, block) {
         if (!br || br.track) return; var br_l = br.item.length, folderView = p.view_by == p.folder_view ? true : false, i = 0, k = 0, isTrack = false, l = base ? 0 : p.base ? br.tr : br.tr + 1, n = "", n_o = "#get_branch#", nU = "", pos = -1; if (folderView) base = false; if (base) node = false; var get = !p.s_txt && !base || p.s_txt;
-        switch (p.multi_process) {
-            case false:
-                for (k = 0; k < br_l; k++) {
-                    pos = br.item[k];
-                    try {
-                        if (base) n = lib_manager.node[pos][l];
-                        if (get) {if (l < lib_manager.node[pos].length - 1) n = lib_manager.node[pos][l]; else n = "#get_track#";}
-                        isTrack = p.show_tracks ? false : l < lib_manager.node[pos].length - 2 ? false : true;
-                        if (n == "#get_track#") {n = lib_manager.node[pos][l]; isTrack = true;} nU = n.toUpperCase();
-                        if (n_o != nU) {n_o = nU; br.child[i] = {name:n, sel:false, child:[], track:isTrack, item:[]}; br.child[i].item.push(pos); i++;} else br.child[i - 1].item.push(pos);
-                    } catch (e) {}
-                }
-                break;
-            case true:
-                switch (p.multi_swap) {
-                    case false:
-                        var srt = "";
-                        for (k = 0; k < br_l; k++) {
-                            pos = br.item[k];
-                            try {
-                                if (base) n = lib_manager.node[pos][l];
-                                if (get) {if (l < lib_manager.node[pos].length - 1) n = lib_manager.node[pos][l]; else n = "#get_track#";}
-                                isTrack = p.show_tracks ? false : l < lib_manager.node[pos].length - 2 ? false : true;
-                                if (n == "#get_track#") {n = lib_manager.node[pos][l]; isTrack = true;} nU = n.toUpperCase();
-                                if (n_o != nU) {n_o = nU; n = n.replace(/#!##!#/g, "?"); srt = n; n = n.replace(/#@#.*?#@#/g,""); br.child[i] = {name:n, sel:false, child:[], track:isTrack, item:[], srt:srt}; br.child[i].item.push(pos); i++;} else br.child[i - 1].item.push(pos);
-                            } catch (e) {}
-                        }
-                        break;
-                    case true:
-                        var srt = "";
-                        for (k = 0; k < br_l; k++) {
-                            pos = br.item[k];
-                            try {
-                                if (base) n = lib_manager.node[pos][l];
-                                if (get) {if (l < lib_manager.node[pos].length - 1) n = lib_manager.node[pos][l]; else n = "#get_track#";}
-                                isTrack = p.show_tracks ? false : l < lib_manager.node[pos].length - 2 ? false : true;
-                                if (n == "#get_track#") {n = lib_manager.node[pos][l]; isTrack = true;} nU = n.toUpperCase();
-                                if (n_o != nU) {n_o = nU; n = n.replace(/~#!##!#|#!##!#/g, "?"); n = lib_manager.prefixes(n); srt = n; n = n.replace(/#@#.*?#@#/g,""); br.child[i] = {name:n, sel:false, child:[], track:isTrack, item:[], srt:srt}; br.child[i].item.push(pos); i++;} else br.child[i - 1].item.push(pos);
-                            } catch (e) {}
-                        }
-                        break;
-                }
-                break;
+        if (!p.multi_process) {
+			for (k = 0; k < br_l; k++) {
+				pos = br.item[k];
+				try {
+					if (base) n = lib_manager.node[pos][l];
+					if (get) {if (l < lib_manager.node[pos].length - 1) n = lib_manager.node[pos][l]; else n = "#get_track#";}
+					isTrack = p.show_tracks ? false : l < lib_manager.node[pos].length - 2 ? false : true;
+					if (n == "#get_track#") {n = lib_manager.node[pos][l]; isTrack = true;}
+					nU = n.toUpperCase();
+					if (n_o != nU) {
+						n_o = nU;
+						br.child[i] = {
+							name: n,
+							sel: false,
+							child: [],
+							track: isTrack,
+							item: []
+						};
+						br.child[i].item.push(pos);
+						i++;
+					} else br.child[i - 1].item.push(pos);
+				}
+				catch (e) {}
+			}
+		} else {
+			if (p.multi_swap) {
+				var srt = "";
+				for (k = 0; k < br_l; k++) {
+					pos = br.item[k];
+					try {
+						if (base) n = lib_manager.node[pos][l];
+						if (get) {if (l < lib_manager.node[pos].length - 1) n = lib_manager.node[pos][l]; else n = "#get_track#";}
+						isTrack = p.show_tracks ? false : l < lib_manager.node[pos].length - 2 ? false : true;
+						if (n == "#get_track#") {n = lib_manager.node[pos][l]; isTrack = true;}
+						nU = n.toUpperCase();
+						if (n_o != nU) {
+							n_o = nU;
+							n = n.replace(/~#!##!#|#!##!#/g, "?");
+							n = lib_manager.prefixes(n);
+							srt = n;
+							n = n.replace(/#@#.*?#@#/g, "");
+							br.child[i] = {
+								name: n,
+								sel: false,
+								child: [],
+								track: isTrack,
+								item: [],
+								srt: srt
+							};
+							br.child[i].item.push(pos);
+							i++;
+						} else br.child[i - 1].item.push(pos);
+					} catch (e) {}
+				}
+			} else {
+				var srt = "";
+				for (k = 0; k < br_l; k++) {
+					pos = br.item[k];
+					try {
+						if (base) n = lib_manager.node[pos][l];
+						if (get) {if (l < lib_manager.node[pos].length - 1) n = lib_manager.node[pos][l]; else n = "#get_track#";}
+						isTrack = p.show_tracks ? false : l < lib_manager.node[pos].length - 2 ? false : true;
+						if (n == "#get_track#") {n = lib_manager.node[pos][l]; isTrack = true;}
+						nU = n.toUpperCase();
+						if (n_o != nU) {
+							n_o = nU;
+							n = n.replace(/#!##!#/g, "?");
+							srt = n;
+							n = n.replace(/#@#.*?#@#/g, "");
+							br.child[i] = {
+								name: n,
+								sel: false,
+								child: [],
+								track: isTrack,
+								item: [],
+								srt: srt
+							};
+							br.child[i].item.push(pos);
+							i++;
+						} else br.child[i - 1].item.push(pos);
+					} catch (e) {}
+				}
+			}
         }
         this.buildTree(lib_manager.root, 0, node, true, block);
     }
@@ -1120,7 +1401,7 @@ function LibraryTree() {
             if (!node || node && !full) br.sort(sort);
             i = br.length; while (i--) {if (i != 0 && br[i].name.toUpperCase() == br[i - 1].name.toUpperCase()) {br[i - 1].item.push.apply(br[i - 1].item, br[i].item.slice()); br.splice(i, 1);}}
         }
-        var folderView = p.view_by == p.folder_view ? true : false, par = this.tree.length - 1; if (tr == 0) this.tree = []; br_l = br.length; if (p.show_counts == 2) var type = p.s_txt ? "search" : p.filter_by > 0 && p.s_show > 1 ? "filter" : "standard";
+        var folderView = p.view_by == p.folder_view ? true : false, par = this.tree.length - 1; if (tr == 0) this.tree = []; br_l = br.length; if (p.show_counts == 2) var type = p.s_txt ? "search" : p.filter_by > 0 && libraryProps.searchMode > 1 ? "filter" : "standard";
         for (i = 0; i < br_l; i++) {
             j = this.tree.length; this.tree[j] = br[i];
             this.tree[j].top = !i ? true : false; this.tree[j].bot = i == br_l - 1 ? true : false;
@@ -1259,12 +1540,14 @@ function LibraryTree() {
     }
 
     this.collapseAll = function() {
-        var ic = this.get_ix(0, p.s_h + ui.row_h / 2, true, false), j = this.tree[ic].tr; if (p.base) j -= 1;
+        var ic = this.get_ix(ui.x + 10, ui.y + p.s_h + ui.row_h / 2, true, false),
+            j = this.tree[ic].tr;
+        if (p.base) j -= 1;
         if (this.tree[ic].tr != 0) {var par = this.tree[ic].par, pr_pr = []; for (var m = 1; m < j + 1; m++) {if (m == 1) pr_pr[m] = par; else pr_pr[m] = this.tree[pr_pr[m - 1]].par; ic = pr_pr[m];}}
         var nm = this.tree[ic].name.toUpperCase();
         for (var h = 0; h < this.tree.length; h++)  if (!p.base || this.tree[h].tr) this.tree[h].child = [] ; this.buildTree(lib_manager.root, 0); scr_pos = false;
         for (j = 0; j < this.tree.length; j++) if (this.tree[j].name.toUpperCase() == nm) {sbar.check_scroll(j * ui.row_h); scr_pos = true; break}
-        if (!scr_pos) {sbar.reset(); p.tree_paint();} lib_manager.treeState(false, lib_manager.rememberTree);
+        if (!scr_pos) {sbar.reset(); p.tree_paint();} lib_manager.treeState(false, libraryProps.rememberTree);
     }
 
     this.expand = function(ie, nm) {
@@ -1279,7 +1562,7 @@ function LibraryTree() {
         for (h = 0; h < this.tree.length; h++) {nm_n = (this.tree[h].tr ? this.tree[this.tree[h].par].name : "") + this.tree[h].name; nm_n = nm_n.toUpperCase(); if (nm_n == nm) break;}
         var new_items = this.tree.length - start_l + nodes, s = Math.round(sbar.scroll / ui.row_h + 0.4), n = Math.max(h - s, p.base ? 1 : 0);
         if (n + 1 + new_items > sbar.rows_drawn) {if (new_items > (sbar.rows_drawn - 2)) sbar.check_scroll(h * ui.row_h); else sbar.check_scroll(Math.min(h * ui.row_h,(h + 1 - sbar.rows_drawn + new_items) * ui.row_h));}
-        if (sbar.scroll > h * ui.row_h) sbar.check_scroll(h * ui.row_h); lib_manager.treeState(false, lib_manager.rememberTree);
+        if (sbar.scroll > h * ui.row_h) sbar.check_scroll(h * ui.row_h); lib_manager.treeState(false, libraryProps.rememberTree);
     }
 
     this.draw = function(gr) {
@@ -1289,7 +1572,7 @@ function LibraryTree() {
 				return gr.GdiDrawText(lib_manager.empty, ui.font, ui.textcol, ui.margin, p.s_h, sbar.tree_w, ui.row_h * 5, 0x00000004 | 0x00000400);
 			if (!this.tree.length)
 				return gr.GdiDrawText(lib_manager.none, ui.font, ui.textcol, ui.margin, p.s_h, sbar.tree_w, ui.row_h, 0x00000004 | 0x00000400);
-			var libraryProfiler = fb.CreateProfiler('library_tree');
+            var libraryProfiler = showDrawTiming && fb.CreateProfiler('library_tree');
 			var item_x = 0,
 				item_y = 0,
 				item_w = 0,
@@ -1355,9 +1638,10 @@ function LibraryTree() {
                     item_w = gr.CalcTextWidth(nm, ui.font);
                     sel_x = ui.x + item_x - ui.sel;
                     sel_w = Math.min(item_w + ui.sel * 2, ui.x + sbar.tree_w - sel_x - 1);
-                    if (p.full_line) sel_w = sbar.tree_w - sel_x;
+                    if (libraryProps.fullLine) sel_w = ui.x + sbar.tree_w - sel_x;
                     if (!tt.Text || m_i != i && tt.Text) {
 						gr.FillSolidRect(sel_x, item_y, sel_w, ui.row_h, col.primary ? col.primary : ui.backcolsel);
+						gr.DrawRect(sel_x, item_y, sel_w, ui.row_h, 1, col.lightAccent);
 					}
 				}
 				// draw tree lines
@@ -1420,35 +1704,28 @@ function LibraryTree() {
                 item_x = Math.round(ui.x + ui.pad * this.tree[i].tr + ui.margin);
 				item_w = gr.CalcTextWidth(nm, ui.font);
 				var nodeLineWidth = is_4k ? 4 : 2;
-                if (tooltip && p.full_line) this.tree[i].tt_w = item_w;
-                if (ui.node_style) {
-					// var y2 = ui.y + ui.row_h * i + y1 + Math.floor(ui.node_sz / 2);
-					var y2 = Math.round(ui.y + ui.row_h * (i + 0.5) + p.s_h - sbar.delta) - 1;
-                    if (!this.tree[i].track) {
-						gr.FillSolidRect(item_x + ui.node_sz, y2, ui.l_s1, nodeLineWidth, ui.linecol);
-						draw_node(gr, this.tree[i].child.length < 1 ? m_br != i ? 0 : 2 : m_br != i ? 1 : 3, item_x, item_y + p.node_y);
-                    }
-                    else {
-						gr.FillSolidRect(item_x + ui.l_s2, y2, ui.l_s3, nodeLineWidth, ui.linecol);
-					}
-                } else if (!this.tree[i].track) {
-					// if not using the node_style draw using font
-					gr.SetTextRenderingHint(5);
-					gr.DrawString(this.tree[i].child.length < 1 ? ui.expand : ui.collapse, ui.icon_font, m_br == i && ui.hot ? ui.iconcol_h : this.tree[i].child.length < 1 ? ui.iconcol_e : ui.iconcol_c, item_x, item_y + ui.icon_pad, sbar.tree_w - item_x, ui.row_h, p.s_lc);
+                if (libraryProps.tooltips && libraryProps.fullLine) this.tree[i].tt_w = item_w;
+				var y2 = Math.round(ui.y + ui.row_h * (i + 0.5) + p.s_h - sbar.delta) - 1;
+				if (!this.tree[i].track) {
+					gr.FillSolidRect(item_x + ui.node_sz, y2, ui.l_s1, nodeLineWidth, ui.linecol);
+					draw_node(gr, this.tree[i].child.length < 1 ? m_br != i ? 0 : 2 : m_br != i ? 1 : 3, item_x, item_y + p.node_y);
+				}
+				else {
+					gr.FillSolidRect(item_x + ui.l_s2, y2, ui.l_s3, nodeLineWidth, ui.linecol);
 				}
                 item_x += ui.icon_w;
                 if (!tt.Text) {
 					if (m_i == i) {
 						sel_x = item_x - ui.sel;
 						sel_w = Math.min(item_w + ui.sel * 2, sbar.tree_w - sel_x - 1);
-						if (p.full_line)
-							sel_w = sbar.tree_w - sel_x - 1;
-						gr.FillSolidRect(sel_x, item_y, sel_w, ui.row_h, ui.backcol_h);
-						gr.DrawRect(sel_x, item_y, sel_w, ui.row_h, 1, ui.framecol);
+						if (libraryProps.fullLine)
+							sel_w = ui.x + sbar.tree_w - sel_x - 1;
+						gr.FillSolidRect(sel_x, item_y, sel_w, ui.row_h, col.primary ? col.primary : ui.backcol_h);
+						gr.DrawRect(sel_x, item_y, sel_w, ui.row_h, 1, col.lightAccent);
 					}
 				}
-				if (p.full_line)
-					item_w = sbar.tree_w - item_x;
+				if (libraryProps.fullLine)
+					item_w = ui.x + sbar.tree_w - item_x;
 				this.tree[i].w = item_w;
                 var txt_c = this.tree[i].sel ? ui.textselcol : m_i == i ? ui.textcol_h : ui.textcol;
                 if (!ui.countscol) {
@@ -1457,8 +1734,10 @@ function LibraryTree() {
 					var name_w = gr.CalcTextWidth(this.tree[i].name, ui.font);
 					gr.GdiDrawText(this.tree[i].name, ui.font, txt_c, item_x, item_y, ui.x + sbar.tree_w - item_x - ui.sel, ui.row_h, p.lc);
                     gr.GdiDrawText(this.tree[i].count, ui.font, ui.countscol, item_x + name_w, item_y, ui.x + sbar.tree_w - item_x - ui.sel - name_w, ui.row_h, p.lc);
-				}
-				libraryProfiler.Print();
+                }
+                if (showDrawTiming) {
+                    libraryProfiler.Print();
+                }
 			}
 		} catch (e) {}
     }
@@ -1523,7 +1802,7 @@ function LibraryTree() {
                 if (!item.sel && !v.k(1)) this.get_selection(ix, item.sel);
                 break;
         }
-        lib_manager.treeState(false, lib_manager.rememberTree);
+        lib_manager.treeState(false, libraryProps.rememberTree);
     }
 
     this.lbtn_up = function(x, y) {
@@ -1535,7 +1814,7 @@ function LibraryTree() {
         if (v.k(2) && this.autoFill) return this.add(x, y, alt_lbtn_pl);
         if (!v.k(1)) {this.clear(); if (!item.sel) this.get_selection(ix, item.sel);}
         else this.get_selection(ix, item.sel); p.tree_paint();
-        lib_manager.treeState(false, lib_manager.rememberTree);
+        lib_manager.treeState(false, libraryProps.rememberTree);
         if (this.autoFill) this.send(item, x, y); else this.track(item, x, y);
     }
 
@@ -1583,7 +1862,7 @@ function LibraryTree() {
                     break;
             }
             if (sbar.scroll > ix * ui.row_h) sbar.check_scroll(ix * ui.row_h);
-            lib_manager.treeState(false, lib_manager.rememberTree);
+            lib_manager.treeState(false, libraryProps.rememberTree);
         }
         if (dbl_action || !dbl_action && mp == 1 && !item.child.length) {
             var playlistIndex = plman.FindOrCreatePlaylist(lib_playlist, false);
@@ -1610,21 +1889,34 @@ function LibraryTree() {
     }
 
     this.move = function(x, y) {
-        if (but.Dn) return;
-        var ix = this.get_ix(x, y, false, false); get_pos = this.check_row(x, y); m_i = -1;
-        if (ix != -1) {m_i = ix; if (tooltip) this.activate_tooltip(ix, y);}
+		if (but.Dn) return;
+        var ix = this.get_ix(x, y, false, false);
+        get_pos = this.check_row(x, y);
+		m_i = -1;
+		if (ix !== -1) {
+			m_i = ix;
+			if (libraryProps.tooltips)
+				this.activate_tooltip(ix, y);
+        }
         if (m_i == ix_o && m_br == row_o) return;
-        tt_id = -1; if (tooltip && tt.Text) this.deactivate_tooltip();
+        tt_id = -1;
+        if (libraryProps.tooltips && tt.Text) this.deactivate_tooltip();
         if (!sbar.draw_timer) p.tree_paint();
-        ix_o = m_i; row_o = m_br;
+        ix_o = m_i;
+        row_o = m_br;
     }
 
     this.get_ix = function(x, y, simple, type) {
         var ix;
-        y -= ui.y;  // Mordred: fix row indexing?
-        if (y > p.s_h && y < p.s_h + p.sp) ix = this.row(y + sbar.delta); else ix = -1;
-        if (simple) return ix;
-        if (this.tree.length > ix && ix >= 0 && x < sbar.tree_w && y > p.s_h && y < p.s_h + p.sp && this.check_ix(this.tree[ix], x, y, type)) return ix;
+		y -= ui.y; // Mordred: fix row indexing?
+		x -= ui.x;
+		if (y > p.s_h && y < p.s_h + p.sp) {
+			ix = this.row(y + sbar.delta);
+		} else {
+			ix = -1;
+		}
+		if (simple) return ix;
+		if (this.tree.length > ix && ix >= 0 && x < sbar.tree_w && y > p.s_h && y < p.s_h + p.sp && this.check_ix(this.tree[ix], x + ui.x, y, type)) return ix;
         else return -1;
     }
 
@@ -1646,7 +1938,7 @@ function LibraryTree() {
                 if (this.tree[p.pos].child.length > 0) {var item = this.tree[p.pos]; this.clear_child(item); this.get_selection(item.ix); m_i = p.pos = item.ix;}
                 else {try {var item = this.tree[this.tree[p.pos].par]; this.clear_child(item); this.get_selection(item.ix); m_i = p.pos = item.ix;} catch (e) {return;};}
                 p.tree_paint(); if (this.autoFill) this.load(this.sel_items, true, false, false, this.gen_pl, false);
-                sbar.set_rows(this.tree.length); if (sbar.scroll > p.pos * ui.row_h) sbar.check_scroll(p.pos * ui.row_h); lib_manager.treeState(false, lib_manager.rememberTree);
+                sbar.set_rows(this.tree.length); if (sbar.scroll > p.pos * ui.row_h) sbar.check_scroll(p.pos * ui.row_h); lib_manager.treeState(false, libraryProps.rememberTree);
                 break;
             case v.right:
                 if (!(p.pos >= 0) && get_pos != -1) p.pos = get_pos
@@ -1661,12 +1953,12 @@ function LibraryTree() {
                 if (row + item.child.length > sbar.rows_drawn) {
                     if (item.child.length > (sbar.rows_drawn - 2)) sbar.check_scroll(p.pos * ui.row_h);
                     else sbar.check_scroll(Math.min(p.pos * ui.row_h,(p.pos + 1 - sbar.rows_drawn + item.child.length) * ui.row_h));
-                } lib_manager.treeState(false, lib_manager.rememberTree);
+                } lib_manager.treeState(false, libraryProps.rememberTree);
                 break;
-            case v.pgUp: if (this.tree.length == 0) break; p.pos = Math.round(sbar.scroll / ui.row_h + 0.4) - Math.floor(p.rows); p.pos = Math.max(!p.base ? 0 : 1, p.pos); sbar.wheel(1, true); this.get_selection(this.tree[p.pos].ix); p.tree_paint(); if (this.autoFill) this.load(this.sel_items, true, false, false, this.gen_pl, false); lib_manager.treeState(false, lib_manager.rememberTree); break;
-            case v.pgDn: if (this.tree.length == 0) break; p.pos = Math.round(sbar.scroll / ui.row_h + 0.4); p.pos = p.pos + Math.floor(p.rows) * 2 - 1; p.pos = this.tree.length < p.pos ? this.tree.length - 1 : p.pos; sbar.wheel(-1, true); this.get_selection(this.tree[p.pos].ix); p.tree_paint(); if (this.autoFill) this.load(this.sel_items, true, false, false, this.gen_pl, false); lib_manager.treeState(false, lib_manager.rememberTree); break;
-            case v.home: if (this.tree.length == 0) break; p.pos = !p.base ? 0 : 1; sbar.check_scroll(0); this.get_selection(this.tree[p.pos].ix); p.tree_paint(); if (this.autoFill) this.load(this.sel_items, true, false, false, this.gen_pl, false); lib_manager.treeState(false, lib_manager.rememberTree); break;
-            case v.end: if (this.tree.length == 0) break; p.pos = this.tree.length - 1; sbar.check_scroll((this.tree.length) * ui.row_h); this.get_selection(this.tree[p.pos].ix); p.tree_paint(); if (this.autoFill) this.load(this.sel_items, true, false, false, this.gen_pl, false); lib_manager.treeState(false, lib_manager.rememberTree); break;
+            case v.pgUp: if (this.tree.length == 0) break; p.pos = Math.round(sbar.scroll / ui.row_h + 0.4) - Math.floor(p.rows); p.pos = Math.max(!p.base ? 0 : 1, p.pos); sbar.wheel(1, true); this.get_selection(this.tree[p.pos].ix); p.tree_paint(); if (this.autoFill) this.load(this.sel_items, true, false, false, this.gen_pl, false); lib_manager.treeState(false, libraryProps.rememberTree); break;
+            case v.pgDn: if (this.tree.length == 0) break; p.pos = Math.round(sbar.scroll / ui.row_h + 0.4); p.pos = p.pos + Math.floor(p.rows) * 2 - 1; p.pos = this.tree.length < p.pos ? this.tree.length - 1 : p.pos; sbar.wheel(-1, true); this.get_selection(this.tree[p.pos].ix); p.tree_paint(); if (this.autoFill) this.load(this.sel_items, true, false, false, this.gen_pl, false); lib_manager.treeState(false, libraryProps.rememberTree); break;
+            case v.home: if (this.tree.length == 0) break; p.pos = !p.base ? 0 : 1; sbar.check_scroll(0); this.get_selection(this.tree[p.pos].ix); p.tree_paint(); if (this.autoFill) this.load(this.sel_items, true, false, false, this.gen_pl, false); lib_manager.treeState(false, libraryProps.rememberTree); break;
+            case v.end: if (this.tree.length == 0) break; p.pos = this.tree.length - 1; sbar.check_scroll((this.tree.length) * ui.row_h); this.get_selection(this.tree[p.pos].ix); p.tree_paint(); if (this.autoFill) this.load(this.sel_items, true, false, false, this.gen_pl, false); lib_manager.treeState(false, libraryProps.rememberTree); break;
             case v.enter: if (!this.sel_items.length) return; this.load(this.sel_items, true, false, true, this.gen_pl, false); break;
             case v.dn: case v.up:
             if (this.tree.length == 0) break;
@@ -1679,7 +1971,7 @@ function LibraryTree() {
             if (sbar.rows_drawn - row < 3) sbar.check_scroll((p.pos + 3) * ui.row_h - sbar.rows_drawn * ui.row_h);
             else if (row < 2 && vkey == v.up) sbar.check_scroll((p.pos - 1) * ui.row_h);
             m_i = p.pos; this.get_selection(p.pos); p.tree_paint();
-            if (this.autoFill) this.load(this.sel_items, true, false, false, this.gen_pl, false); lib_manager.treeState(false, lib_manager.rememberTree);
+            if (this.autoFill) this.load(this.sel_items, true, false, false, this.gen_pl, false); lib_manager.treeState(false, libraryProps.rememberTree);
             break;
         }
     }
@@ -1688,8 +1980,8 @@ function LibraryTree() {
         if (index == addIX) {this.get_sel_items(); if (!this.sel_items.length) return; this.load(this.sel_items, true, true, false, this.gen_pl, false);}
         if (index == collapseAllIX) {this.collapseAll();}
         if (index == insertIX) {this.get_sel_items(); if (!this.sel_items.length) return; this.load(this.sel_items, true, true, false, this.gen_pl, true);}
-        if (index == searchClearIX && p.s_show) {sL.clear();}
-        if (index == searchFocusIX && is_focused && p.s_show) {sL.searchFocus();}
+        if (index == searchClearIX && libraryProps.searchMode) {sL.clear();}
+        if (index == searchFocusIX && is_focused && libraryProps.searchMode) {sL.searchFocus();}
     }
 }
 // var library_tree = new LibraryTree();
@@ -1789,7 +2081,7 @@ function searchLibrary() {
         if (code == v.copy || code == v.selAll) return;
         if (!timer.search_cursor) timer.search_cursor = window.SetInterval(function() {p.s_cursor = !p.s_cursor; p.search_paint();}, 530);
         p.search_paint(); lib_manager.upd_search = true; timer.reset(timer.search, timer.searchi);
-        timer.search = window.SetTimeout(function() {lib_manager.time.Reset(); library_tree.subCounts.search = {}; lib_manager.treeState(false, lib_manager.rememberTree); lib_manager.rootNodes(); p.setHeight(true); if (sL.search_auto_expand) {if (!library_tree.tree.length) return timer.search = false; var count = 0, m = p.base ? 1 : 0; for (m; m < library_tree.tree.length; m++) count += library_tree.tree[m].item.length; if (count > expand_limit) return timer.search = false; var n = false; if (p.base && library_tree.tree.length > 1) n = true; m = library_tree.tree.length; while (m--) {library_tree.expandNodes(library_tree.tree[m], !p.base || m ? false : true); if (n && m == 1) break;} if (p.base && library_tree.tree.length == 1) library_tree.line_l = 0; sbar.set_rows(library_tree.tree.length); p.tree_paint(); lib_manager.treeState(false, lib_manager.rememberTree);} timer.search = false;}, 160);
+        timer.search = window.SetTimeout(function() {lib_manager.time.Reset(); library_tree.subCounts.search = {}; lib_manager.treeState(false, libraryProps.rememberTree); lib_manager.rootNodes(); p.setHeight(true); if (sL.search_auto_expand) {if (!library_tree.tree.length) return timer.search = false; var count = 0, m = p.base ? 1 : 0; for (m; m < library_tree.tree.length; m++) count += library_tree.tree[m].item.length; if (count > expand_limit) return timer.search = false; var n = false; if (p.base && library_tree.tree.length > 1) n = true; m = library_tree.tree.length; while (m--) {library_tree.expandNodes(library_tree.tree[m], !p.base || m ? false : true); if (n && m == 1) break;} if (p.base && library_tree.tree.length == 1) library_tree.line_l = 0; sbar.set_rows(library_tree.tree.length); p.tree_paint(); lib_manager.treeState(false, libraryProps.rememberTree);} timer.search = false;}, 160);
     }
 
     this.on_key_down = function(vkey) {
@@ -1855,7 +2147,7 @@ function searchLibrary() {
 				gr.GdiDrawText('Search', ui.s_font, ui.txt_box, p.s_x, p.s_y, p.s_w2, p.s_sp, p.l);
 			}
 			drawcursor(gr);
-            if (p.s_show > 1) {
+            if (libraryProps.searchMode > 1) {
                 var l_x = p.filter_x1 - 9,
                     l_y = p.s_y;
                 gr.gdiDrawText(p.filt[p.filter_by].name, p.f_font, ui.txt_box, p.filter_x1, ui.y, p.f_w[p.filter_by], p.s_sp, p.cc);
@@ -1864,7 +2156,7 @@ function searchLibrary() {
         } catch (e) {}
     }
 }
-// if (p.s_show) var sL = new searchLibrary();
+// if (libraryProps.searchMode) var sL = new searchLibrary();
 
 var j_Search = function() {
     // this is the quick-type search
@@ -1903,7 +2195,7 @@ var j_Search = function() {
                         library_tree.setGetPos(pos);
                         if (library_tree.autoFill)
                             library_tree.get_sel_items();
-                            lib_manager.treeState(false, lib_manager.rememberTree);
+                            lib_manager.treeState(false, libraryProps.rememberTree);
                         break;
                     }
                 }
@@ -1940,10 +2232,10 @@ function LibraryPanel() {
     this.on_paint = function (gr) {
         ui.draw(gr);
         lib_manager.checkTree();
-        if (p.s_show) sL.draw(gr);
+        if (libraryProps.searchMode) sL.draw(gr);
         library_tree.draw(gr);
         if (ui.scrollbar_show) sbar.draw(gr);
-        if (p.s_show || ui.scrollbar_show) but.draw(gr);
+        if (libraryProps.searchMode || ui.scrollbar_show) but.draw(gr);
         jS.draw(gr);
     }
 
@@ -1954,11 +2246,11 @@ function LibraryPanel() {
 		ui.h = height;
 		ui.margin = is_4k ? 20 : 10;
         if (!ui.w || !ui.h) return;
-        ui.blurReset();
+        // ui.blurReset();
         ui.get_font();
         p.on_size();
         library_tree.create_tooltip();
-        if (p.s_show || ui.scrollbar_show) but.refresh(true);
+        if (libraryProps.searchMode || ui.scrollbar_show) but.refresh(true);
         jS.on_size();
     }
 }
@@ -1966,20 +2258,65 @@ function LibraryPanel() {
 // var libraryPanel = new LibraryPanel();
 
 function button_manager() {
-    var arrow_sy = window.GetProperty(" Scrollbar Arrow Custom: Icon // Examples", " // ▲  ⮝    ⯅ ⏫ ⏶ ⤊   "), arrow_symb = 0; if (window.GetProperty(" Scrollbar Arrow Custom", false)) try {arrow_symb = arrow_sy.replace(/\s+/g, "").charAt(0);} catch (e) {arrow_symb = 0} if (!arrow_symb.length) arrow_symb = 0;
+	arrow_symb = 0;
     var custom_col = window.GetProperty("_CUSTOM COLOURS/FONTS: USE", false),
         cust_icon_font = window.GetProperty("_Custom.Font Icon [Scroll] (Name,Style[0or1])", "Segoe UI Symbol,0"),
         icon_f_name= "Segoe UI",
-        icon_f_style = 0,
-        pad = Math.min(Math.max(window.GetProperty(" Scrollbar Arrow Custom: Icon: Vertical Offset %", -24) / 100, -0.5), 0.3);
-    if (custom_col) {if (cust_icon_font.length) {cust_icon_font = cust_icon_font.split(","); try {var st = Math.round(parseFloat(cust_icon_font[1])); if (!st) st = 0; var font_test = gdi.Font(cust_icon_font[0], 16, st); icon_f_name = cust_icon_font[0]; icon_f_style = st;} catch (e) {ui.trace("JScript Panel is unable to use your scroll icon font. Using Segoe UI instead");}}}
-    var b_x, b3 = ["scrollUp", "scrollDn"], but_tt = window.CreateTooltip("Segoe UI", 15 * ui.scale * window.GetProperty(" Zoom Tooltip [Button] (%)", 100) / 100, 0), bx, by, bh, byDn, byUp, fw, hot_o, i, qx, qy, qh, s_img = [], scr = [], scrollBut_x, scrollDn_y, scrollUp_y;
-    this.btns = []; this.b = null; this.Dn = false;
+        icon_f_style = 0;
+        // pad = Math.min(Math.max(window.GetProperty(" Scrollbar Arrow Custom: Icon: Vertical Offset %", -24) / 100, -0.5), 0.3);
+    if (custom_col) {
+        if (cust_icon_font.length) {
+            cust_icon_font = cust_icon_font.split(",");
+            try {
+                var st = Math.round(parseFloat(cust_icon_font[1]));
+                if (!st) st = 0;
+                var font_test = gdi.Font(cust_icon_font[0], 16, st);
+                icon_f_name = cust_icon_font[0]; icon_f_style = st;
+            } catch (e) {
+                ui.trace("JScript Panel is unable to use your scroll icon font. Using Segoe UI instead");
+            }
+        }
+    }
+    var b_x, b3 = ["scrollUp", "scrollDn"],
+    	but_tt = window.CreateTooltip("Segoe UI", 15 * ui.scale * window.GetProperty(" Zoom Tooltip [Button] (%)", 100) / 100, 0),
+    	bx, by, bh, byDn, byUp, fw, hot_o, i, qx, qy, qh, s_img = [],
+    	scr = [],
+    	scrollBut_x, scrollDn_y, scrollUp_y;
+    this.btns = [];
+    this.b = null;
+    this.Dn = false;
     var browser = function(c) {if (!but.run(c)) fb.ShowPopupMessage("Unable to launch your default browser.", "Library Tree");}
     var tooltip = function(n) {if (but_tt.text == n) return; but_tt.text = n; but_tt.activate();}
-    this.lbtn_dn = function(x, y) {this.move(x, y); if (!this.b) return false; this.Dn = this.b; if (ui.scrollbar_show) for (j = 0; j < b3.length; j++) if (this.b == b3[j]) {if (this.btns[this.b].trace(x, y)) this.btns[this.b].down = true; this.btns[this.b].changestate("down");} this.btns[this.b].lbtn_dn(x, y); return true;}
-    this.lbtn_up = function(x, y) {this.Dn = false; if (ui.scrollbar_show) for (j = 0; j < b3.length; j++) this.btns[b3[j]].down = false; if (!this.b) return false; if (ui.scrollbar_show) for (j = 0; j < b3.length; j++) if (this.b == b3[j]) this.btns[this.b].changestate(this.btns[this.b].trace(x, y) ? "hover" : "normal"); this.move(x, y); if (!this.b) return false; this.btns[this.b].lbtn_up(x, y); return true;}
-    this.leave = function() {if (this.b) this.btns[this.b].changestate("normal"); this.b = null; tooltip("");}
+    this.lbtn_dn = function (x, y) {
+    	this.move(x, y);
+    	if (!this.b) return false;
+    	this.Dn = this.b;
+    	if (ui.scrollbar_show)
+    		for (j = 0; j < b3.length; j++)
+    			if (this.b == b3[j]) {
+    				if (this.btns[this.b].trace(x, y)) this.btns[this.b].down = true;
+    				this.btns[this.b].changestate("down");
+    			} this.btns[this.b].lbtn_dn(x, y);
+    	return true;
+    }
+    this.lbtn_up = function (x, y) {
+    	this.Dn = false;
+    	if (ui.scrollbar_show)
+    		for (j = 0; j < b3.length; j++) this.btns[b3[j]].down = false;
+    	if (!this.b) return false;
+    	if (ui.scrollbar_show)
+    		for (j = 0; j < b3.length; j++)
+    			if (this.b == b3[j]) this.btns[this.b].changestate(this.btns[this.b].trace(x, y) ? "hover" : "normal");
+    	this.move(x, y);
+    	if (!this.b) return false;
+    	this.btns[this.b].lbtn_up(x, y);
+    	return true;
+    }
+    this.leave = function () {
+    	if (this.b) this.btns[this.b].changestate("normal");
+    	this.b = null;
+    	tooltip("");
+    }
     this.on_script_unload = function() {tooltip("");}
     this.run = function(c) {try {var WshShell = new ActiveXObject("WScript.Shell"); WshShell.Run(c); return true;} catch (e) {return false;}}
 
@@ -2012,13 +2349,9 @@ function button_manager() {
             g.SetTextRenderingHint(3);
             g.SetSmoothingMode(2);
             if (ui.scr_col) {
-                arrow_symb == 0 ?
-                    g.FillPolygon(col[j], 1, [50 * sc, 0, 100 * sc, 76 * sc, 0, 76 * sc]) :
-                    g.DrawString(arrow_symb, gdi.Font(icon_f_name, sz, icon_f_style), col[j], 0, sz * pad, sz, sz, StringFormat(1, 1));
+				g.FillPolygon(col[j], 1, [50 * sc, 0, 100 * sc, 76 * sc, 0, 76 * sc])
             } else {
-                arrow_symb == 0 ?
-                    g.FillPolygon(RGBA(ui.ct, ui.ct, ui.ct, alpha[j]), 1, [50 * sc, 0, 100 * sc, 76 * sc, 0, 76 * sc]) :
-                    g.DrawString(arrow_symb, gdi.Font(icon_f_name, sz, icon_f_style), RGBA(ui.ct, ui.ct, ui.ct, alpha[j]), 0, sz * pad, sz, sz, StringFormat(1, 1));
+				g.FillPolygon(RGBA(ui.ct, ui.ct, ui.ct, alpha[j]), 1, [50 * sc, 0, 100 * sc, 76 * sc, 0, 76 * sc])
             }
             g.SetSmoothingMode(0);
             scr[j].ReleaseGraphics(g);
@@ -2029,10 +2362,10 @@ function button_manager() {
     this.draw = function(gr) {
         try {
 			for (i in this.btns) {
-				if ((p.s_show == 1 || p.s_show > 1 && !p.s_txt) && i == "s_img") this.btns[i].draw(gr);
-				if (p.s_show == 1 && i == "cross1") this.btns[i].draw(gr);
-				if (p.s_show > 1 && p.s_txt && i == "cross2") this.btns[i].draw(gr);
-				if (p.s_show > 1 && i == "filter") this.btns[i].draw(gr);
+				if ((libraryProps.searchMode == 1 || libraryProps.searchMode > 1 && !p.s_txt) && i == "s_img") this.btns[i].draw(gr);
+				if (libraryProps.searchMode == 1 && i == "cross1") this.btns[i].draw(gr);
+				if (libraryProps.searchMode > 1 && p.s_txt && i == "cross2") this.btns[i].draw(gr);
+				if (libraryProps.searchMode > 1 && i == "filter") this.btns[i].draw(gr);
 				if (ui.scrollbar_show && sbar.scrollable_lines > 0 && (i == "scrollUp" || i == "scrollDn"))  this.btns[i].draw(gr);
 			}
 		} catch (e) {}
@@ -2042,13 +2375,13 @@ function button_manager() {
         else for (j = 0; j < b3.length; j++) if (this.b == b3[j] && this.btns[this.b].down) {this.btns[this.b].changestate("down"); this.btns[this.b].l_dn();}
         var b = null, hand = false;
         for (i in this.btns) {
-            if ((p.s_show == 1 || p.s_show > 1 && !p.s_txt) && i == "s_img" && (!this.Dn || this.Dn == "s_img") && this.btns[i].trace(x, y)) {b = i; hand = true;}
-            if (p.s_show == 1 && i == "cross1" && (!this.Dn || this.Dn == "cross1") && this.btns[i].trace(x, y)) {b = i; hand = true;}
-            if (p.s_show > 1 && p.s_txt && i == "cross2" && (!this.Dn || this.Dn == "cross2") && this.btns[i].trace(x, y)) {b = i; hand = true;}
-            if (p.s_show > 1 && i == "filter" && (!this.Dn || this.Dn == "filter") && this.btns[i].trace(x, y)) {b = i; hand = true;}
+            if ((libraryProps.searchMode == 1 || libraryProps.searchMode > 1 && !p.s_txt) && i == "s_img" && (!this.Dn || this.Dn == "s_img") && this.btns[i].trace(x, y)) {b = i; hand = true;}
+            if (libraryProps.searchMode == 1 && i == "cross1" && (!this.Dn || this.Dn == "cross1") && this.btns[i].trace(x, y)) {b = i; hand = true;}
+            if (libraryProps.searchMode > 1 && p.s_txt && i == "cross2" && (!this.Dn || this.Dn == "cross2") && this.btns[i].trace(x, y)) {b = i; hand = true;}
+            if (libraryProps.searchMode > 1 && i == "filter" && (!this.Dn || this.Dn == "filter") && this.btns[i].trace(x, y)) {b = i; hand = true;}
             if (ui.scrollbar_show && sbar.scrollable_lines > 0) for (j = 0; j < b3.length; j++) if (i == b3[j] && (!this.Dn || this.Dn == b3[j]) && this.btns[i].trace(x, y)) b = i;
         }
-        window.SetCursor(this.Dn && this.Dn != this.b ? 32512 : hand ? 32649 : y < p.s_h && p.s_show && x > qx + qh ? 32513 : 32512);
+        window.SetCursor(this.Dn && this.Dn != this.b ? 32512 : hand ? 32649 : y < p.s_h && libraryProps.searchMode && x > qx + qh ? 32513 : 32512);
         if (this.b == b) return this.b;
         if (b && (!this.Dn || this.Dn == b)) this.btns[b].changestate("hover");
         if (this.b) this.btns[this.b].changestate("normal");
@@ -2105,7 +2438,7 @@ function button_manager() {
                     break;
             }
         }
-        if (p.s_show)  {
+        if (libraryProps.searchMode)  {
             this.btns.s_img = new btn(qx, qy, qh, qh, 3, "", "", "", {normal: s_img[0], hover: s_img[1]}, false, "", function() {browser("\"" + fb.FoobarPath + "doc\\Query Syntax Help.html");}, "", "Open Query Syntax Help");
             this.btns.cross1 = new btn(bx, by, bh, bh, 4, "", "", "", {normal: "85", hover: "192"}, false, "", function() {sL.clear();}, "Clear Search Text");
             this.btns.cross2 = new btn(qx - bh * 0.2, by, bh, bh, 4, "", "", "", {normal: "85", hover: "192"}, false, "", function() {sL.clear();}, "Clear Search Text");
@@ -2121,9 +2454,31 @@ function menu_object() {
     var box = function(n) {return n != null ? 'Unescape("' + encodeURIComponent(n + "") + '")' : "Empty";}
     var InputBox = function(prompt, title, msg) {var vb = new ActiveXObject("ScriptControl"); vb.Language = "VBScript"; var tmp = vb.eval('InputBox(' + [box(prompt), box(title), box(msg)].join(",") + ')'); if (typeof tmp == "undefined") return; if (tmp.length == 254) fb.ShowPopupMessage("Your entry is too long and will be truncated.\n\nEntries are limited to 254 characters.", "Library Tree"); return tmp.trim();}
     var proceed = function(length) {var ns = InputBox("Create m-TAGS in selected music folders\n\nProceed?\n\nm-TAGS creator settings apply", "Create m-TAGS in Selected Folders", "Create " + length + " m-TAGS" + (length ? "" : ": NO FOLDERS SELECTED")); if (!ns) return false; return true;}
-    this.ConfigTypeMenu = function(Menu, StartIndex) {var Index = StartIndex, n = ["Panel Properties"]; if (p.syncType) n.push("Refresh"); if (v.k(0)) n.push("Configure..."); for (var i = 0; i < n.length; i++) {this.NewMenuItem(Index, "Config", i + 1); Menu.AppendMenuItem(MF_STRING, Index, n[i]); Index++;} return Index;}
-    this.OptionsTypeMenu = function(Menu, StartIndex) {var Index = StartIndex; for (i = 0; i < p.menu.length; i++) {this.NewMenuItem(Index, "Options", i + 1); Menu.AppendMenuItem(MF_STRING, Index, p.menu[i]); Index++; if (i == p.menu.length - 1 || i == p.menu.length - 2) Menu.AppendMenuItem(MF_SEPARATOR, 0, 0);} Menu.CheckMenuRadioItem(StartIndex, StartIndex + p.grp.length - 1, StartIndex + p.view_by); return Index;}
-    this.PlaylistTypeMenu = function(Menu, StartIndex) {
+    this.ConfigTypeMenu = function (Menu, StartIndex) {
+    	var Index = StartIndex,
+    		n = ["Panel Properties"];
+    	if (p.syncType) n.push("Refresh");
+    	if (v.k(0)) n.push("Configure...");
+    	for (var i = 0; i < n.length; i++) {
+    		this.NewMenuItem(Index, "Config", i + 1);
+    		Menu.AppendMenuItem(MF_STRING, Index, n[i]);
+    		Index++;
+    	}
+    	return Index;
+    }
+    this.OptionsTypeMenu = function (Menu, StartIndex) {
+		var Index = StartIndex;
+		// console.log(p.menu.toString())
+    	for (i = 0; i < p.menu.length; i++) {
+    		this.NewMenuItem(Index, "Options", i + 1);
+    		Menu.AppendMenuItem(MF_STRING, Index, p.menu[i]);
+    		Index++;
+    		if (i == p.menu.length - 1 || i == p.menu.length - 2) Menu.AppendMenuItem(MF_SEPARATOR, 0, 0);
+    	}
+    	Menu.CheckMenuRadioItem(StartIndex, StartIndex + p.grp.length - 1, StartIndex + p.view_by);
+    	return Index;
+    }
+    this.PlaylistTypeMenu = function (Menu, StartIndex) {
         var Index = StartIndex, n = ["Send to Current Playlist", "Insert in Current Playlist", "Add to Current Playlist", "Copy", "Collapse All", "Expand"];
         for (i = 0; i < 6; i++) {
             this.NewMenuItem(Index, "Playlist", i + 1); Menu.AppendMenuItem(i < 3 && !plman.IsPlaylistLocked(plman.ActivePlaylist) || i == 3 || i == 4 || i == 5 && xp ? MF_STRING : MF_GRAYED, Index, n[i]); if (i == 3) Menu.AppendMenuItem(MF_SEPARATOR, 0, 0); Index++;
@@ -2131,7 +2486,21 @@ function menu_object() {
         return Index;
     }
     this.TagTypeMenu = function(Menu, StartIndex) {var Index = StartIndex; this.NewMenuItem(Index, "Tag", 1); Menu.AppendMenuItem(mtags_installed && p.view.replace(/^\s+/, "") == "$directory_path(%path%)|%filename_ext%" ? MF_STRING : MF_GRAYED, Index, "Create m-TAGS..." + (mtags_installed ? (p.view.replace(/^\s+/, "").toLowerCase() == "$directory_path(%path%)|%filename_ext%" ? "" : " N/A Requires View by Path // $directory_path(%path%)|%filename_ext%$nodisplay{%subsong%}") : " N/A m-TAGS Not Installed")); Index++; return Index;}
-    this.ThemeTypeMenu = function(Menu, StartIndex) {var Index = StartIndex, c = [!ui.blur_dark && !ui.blur_blend && !ui.blur_light && !ui.imgBg, ui.blur_dark, ui.blur_blend, ui.blur_light, ui.imgBg, false], n = ["None", "Dark", "Blend", "Light", "Cover", "Reload"]; for (var i = 0; i < n.length; i++) {this.NewMenuItem(Index, "Theme", i + 1); Menu.AppendMenuItem(MF_STRING, Index, n[i]); Index++; Menu.CheckMenuRadioItem(StartIndex + i, StartIndex + i, StartIndex + i + 1 - c[i]); if (!i || i == 4) Menu.AppendMenuItem(MF_SEPARATOR, 0, 0);} return Index;}
+    this.ThemeTypeMenu = function (Menu, StartIndex) {
+    	var Index = StartIndex,
+    		c = [!ui.blur_dark && !ui.blur_blend && !ui.blur_light && !ui.imgBg, ui.blur_dark, ui.blur_blend, ui.blur_light, ui.imgBg, false],
+			n = ["None", "Dark", "Blend", "Light", "Cover", "Reload"];
+		console.log(c.toString());
+    	for (var i = 0; i < n.length; i++) {
+			console.log(StartIndex + i);
+    		this.NewMenuItem(Index, "Theme", i + 1);
+    		Menu.AppendMenuItem(MF_STRING, Index, n[i]);
+    		Index++;
+    		Menu.CheckMenuRadioItem(StartIndex + i, StartIndex + i, StartIndex + i + 1 - c[i]);
+    		if (!i || i == 4) Menu.AppendMenuItem(MF_SEPARATOR, 0, 0);
+    	}
+    	return Index;
+    }
 
     this.FilterMenu = function(Menu, StartIndex) {
         var Index = StartIndex;
@@ -2178,25 +2547,62 @@ function menu_object() {
     }
 
     this.rbtn_up = function(x, y) {
-        this.r_up = true; var Context = fb.CreateContextMenuManager(), FilterMenu = window.CreatePopupMenu(), idx, Index = 1, menu = window.CreatePopupMenu(), new_sel = false, OptionsMenu = window.CreatePopupMenu(), PlaylistMenu = window.CreatePopupMenu(), ThemeMenu = window.CreatePopupMenu(), show_context = false;
-        var ix = library_tree.get_ix(x, y, true, false), item = library_tree.tree[ix], nm = "", row = -1; xp = false;
+		this.r_up = true;
+		var Context = fb.CreateContextMenuManager(),
+			FilterMenu = window.CreatePopupMenu(),
+			idx,
+			Index = 1,
+			menu = window.CreatePopupMenu(),
+			OptionsMenu = window.CreatePopupMenu(),
+			PlaylistMenu = window.CreatePopupMenu(),
+			ThemeMenu = window.CreatePopupMenu(),
+			show_context = false;
+		var ix = library_tree.get_ix(x, y, true, false),
+			item = library_tree.tree[ix],
+			nm = "",
+			row = -1,
+			xp = false;
         if (y < p.s_h + p.sp && library_tree.tree.length > ix && ix != -1 && (x < Math.round(ui.pad * item.tr) + ui.icon_w + ui.margin && (!item.track || p.base && item.tr == 0) || library_tree.check_ix(item, x, y, true))) {
-            if (!item.sel) {library_tree.clear(); item.sel = true;}
-            library_tree.get_sel_items(); xp = library_tree.tree[ix].item.length > expand_limit || library_tree.tree[ix].track ? false : true;
-            if (xp && library_tree.tree.length) {var count = 0, m = 0; for (m = 0; m < library_tree.tree.length; m++) if (m == ix || library_tree.tree[m].sel) {if (row == -1 || m < row) {row = m; nm = (library_tree.tree[m].tr ? library_tree.tree[library_tree.tree[m].par].name : "") + library_tree.tree[m].name; nm = nm.toUpperCase();} count += library_tree.tree[m].item.length; xp = count <= expand_limit;}}
-            Index = this.PlaylistTypeMenu(menu, Index); menu.AppendMenuSeparator();
-            if (utils.IsKeyPressed(0x10)) {Index = this.TagTypeMenu(menu, Index); menu.AppendMenuSeparator();}
-            show_context = true;
+        	if (!item.sel) {
+        		library_tree.clear();
+        		item.sel = true;
+        	}
+        	library_tree.get_sel_items();
+        	xp = library_tree.tree[ix].item.length > expand_limit || library_tree.tree[ix].track ? false : true;
+        	if (xp && library_tree.tree.length) {
+        		var count = 0,
+        			m = 0;
+        		for (m = 0; m < library_tree.tree.length; m++)
+        			if (m == ix || library_tree.tree[m].sel) {
+        				if (row == -1 || m < row) {
+        					row = m;
+        					nm = (library_tree.tree[m].tr ? library_tree.tree[library_tree.tree[m].par].name : "") + library_tree.tree[m].name;
+        					nm = nm.toUpperCase();
+        				}
+        				count += library_tree.tree[m].item.length;
+        				xp = count <= expand_limit;
+        			}
+        	}
+        	Index = this.PlaylistTypeMenu(menu, Index);
+        	menu.AppendMenuSeparator();
+        	if (utils.IsKeyPressed(0x10)) {
+        		Index = this.TagTypeMenu(menu, Index);
+        		menu.AppendMenuSeparator();
+        	}
+        	show_context = true;
         }
         if (show_context) {
-            Index = this.OptionsTypeMenu(OptionsMenu, Index); OptionsMenu.AppendTo(menu, MF_STRING, "Options");
-            Index = this.ThemeTypeMenu(ThemeMenu, Index); ThemeMenu.AppendTo(OptionsMenu, MF_STRING, "Theme"); OptionsMenu.AppendMenuSeparator();
+			Index = this.OptionsTypeMenu(OptionsMenu, Index);
+			OptionsMenu.AppendTo(menu, MF_STRING, "Options");
+            // Index = this.ThemeTypeMenu(ThemeMenu, Index); ThemeMenu.AppendTo(OptionsMenu, MF_STRING, "Theme"); OptionsMenu.AppendMenuSeparator();
             Index = this.ConfigTypeMenu(OptionsMenu, Index);
             menu.AppendMenuSeparator(); var items = library_tree.getHandles();
             Context.InitContext(items); Context.BuildMenu(menu, 5000, -1);
         } else {
             Index = this.OptionsTypeMenu(menu, Index);
-            Index = this.ThemeTypeMenu(ThemeMenu, Index); ThemeMenu.AppendTo(menu, MF_STRING, "Theme"); menu.AppendMenuSeparator();
+			// Index = this.ThemeTypeMenu(ThemeMenu, Index);
+			// ThemeMenu.AppendTo(menu, MF_STRING, "Theme");
+			// menu.AppendMenuSeparator();
             Index = this.ConfigTypeMenu(menu, Index);
 
         }
@@ -2210,14 +2616,14 @@ function menu_object() {
                         case 1: // Send to Current Playlist
                             library_tree.load(library_tree.sel_items, true, false, true, false, false);
                             p.tree_paint();
-                            lib_manager.treeState(false, lib_manager.rememberTree);
+                            lib_manager.treeState(false, libraryProps.rememberTree);
                             break;
-                        case 4: fb.CopyHandleListToClipboard(items); lib_manager.treeState(false, lib_manager.rememberTree); break;
+                        case 4: fb.CopyHandleListToClipboard(items); lib_manager.treeState(false, libraryProps.rememberTree); break;
                         case 5: library_tree.collapseAll(); break;
                         case 6: library_tree.expand(ix, nm); break;
                         default: // Insert or Add to Current Playlist
                             library_tree.load(library_tree.sel_items, true, true, false, false, i == 2 ? true : false);
-                            lib_manager.treeState(false, lib_manager.rememberTree);
+                            lib_manager.treeState(false, libraryProps.rememberTree);
                             break;
                     }
                     break;
@@ -2252,7 +2658,7 @@ function timers() {
     var timer_arr = ["clear_jsearch", "focus", "jsearch", "search", "search_cursor", "tt", "update"];
     for (var i = 0; i < timer_arr.length; i++) {this[timer_arr[i]] = false; this[timer_arr[i] + "i"] = i;}
     this.reset = function(timer, n) {if (timer) window.ClearTimeout(timer); this[timer_arr[n]] = false;}
-    this.lib = function() {window.SetTimeout(function() {if ((ui.w < 1 || !window.IsVisible) && lib_manager.rememberTree) lib_manager.init = true; lib_manager.get_library(); lib_manager.rootNodes(lib_manager.rememberTree ? 1 : 0, lib_manager.process);}, 5);}
+    this.lib = function() {window.SetTimeout(function() {if ((ui.w < 1 || !window.IsVisible) && libraryProps.rememberTree) lib_manager.init = true; lib_manager.get_library(); lib_manager.rootNodes(libraryProps.rememberTree ? 1 : 0, lib_manager.process);}, 5);}
     this.tooltip = function() {this.reset(this.tt, this.tti); this.tt = window.SetTimeout(function() {library_tree.deactivate_tooltip(); timer.tt = false;}, 5000);}
     this.lib_update = function() {this.reset(this.update, this.updatei); this.update = window.SetTimeout(function() {lib_manager.time.Reset(); library_tree.subCounts =  {"standard": {}, "search": {}, "filter": {}}; lib_manager.rootNodes(2, lib_manager.process); timer.update = false;}, 500);}
 }
@@ -2263,39 +2669,39 @@ function LibraryCallbacks() {
 	this.on_char = function(code) {
         library_tree.on_char(code);
         jS.on_char(code);
-        if (!p.s_show) return;
+        if (!libraryProps.searchMode) return;
         sL.on_char(code);
     }
 	this.on_focus = function(is_focused) {if (!is_focused) {timer.reset(timer.search_cursor, timer.search_cursori); p.s_cursor = false; p.search_paint();} library_tree.on_focus(is_focused);}
-	this.on_get_album_art_done = function(handle, art_id, image, image_path) {ui.get_album_art_done(image, image_path);}
+	// this.on_get_album_art_done = function(handle, art_id, image, image_path) {ui.get_album_art_done(image, image_path);}
 	this.on_metadb_changed = function() {if (!ui.blur && !ui.imgBg || ui.block()) return; ui.on_playback_new_track();}
 	this.on_item_focus_change = function() {if (fb.IsPlaying || !ui.blur && !ui.imgBg) return; if (ui.block()) ui.get = true; else {ui.get = false; ui.focus_changed(250);}}
 	this.on_key_down = function(vkey) {
         library_tree.on_key_down(vkey);
-        if (!p.s_show) return;
+        if (!libraryProps.searchMode) return;
         sL.on_key_down(vkey);
     }
-	this.on_key_up = function(vkey) {if (!p.s_show) return; sL.on_key_up(vkey)}
+	this.on_key_up = function(vkey) {if (!libraryProps.searchMode) return; sL.on_key_up(vkey)}
 	this.on_library_items_added = function(handle_list) {if (p.syncType) return; lib_manager.treeState(false, 2, handle_list, 0);}
 	this.on_library_items_removed = function(handle_list) {if (p.syncType) return; lib_manager.treeState(false, 2, handle_list, 2);}
 	this.on_library_items_changed = function(handle_list) {if (p.syncType) return; lib_manager.treeState(false, 2, handle_list, 1);}
 	this.on_main_menu = function(index) {library_tree.on_main_menu(index);}
 	this.on_mouse_lbtn_dblclk = function(x, y) {but.lbtn_dn(x, y); library_tree.lbtn_dblclk(x, y); }
 	this.on_mouse_lbtn_down = function(x, y) {
-		if (p.s_show || ui.scrollbar_show) {
+		if (libraryProps.searchMode || ui.scrollbar_show) {
 			but.lbtn_dn(x, y);
         }
-		if (p.s_show) {
+		if (libraryProps.searchMode) {
             sL.lbtn_dn(x, y);
         }
 		library_tree.lbtn_dn(x, y);
 		sbar.lbtn_dn(x, y);
 	}
-	this.on_mouse_lbtn_up = function(x, y) {library_tree.lbtn_up(x, y); if (p.s_show) {sL.lbtn_up(); but.lbtn_up(x, y);} sbar.lbtn_up(x, y);}
-	this.on_mouse_leave = function() {if (p.s_show || ui.scrollbar_show) but.leave(); sbar.leave(); library_tree.leave();}
+	this.on_mouse_lbtn_up = function(x, y) {library_tree.lbtn_up(x, y); if (libraryProps.searchMode) {sL.lbtn_up(); but.lbtn_up(x, y);} sbar.lbtn_up(x, y);}
+	this.on_mouse_leave = function() {if (libraryProps.searchMode || ui.scrollbar_show) but.leave(); sbar.leave(); library_tree.leave();}
 	this.on_mouse_mbtn_up = function(x, y) {library_tree.mbtn_up(x, y);}
-	this.on_mouse_move = function(x, y, m) {if (p.m_x == x && p.m_y == y) return; if (p.s_show || ui.scrollbar_show) but.move(x, y); if (p.s_show) sL.move(x, y); library_tree.move(x, y); library_tree.dragDrop(x, y); sbar.move(x, y); p.m_x = x; p.m_y = y;}
-	this.on_mouse_rbtn_up = function(x, y) {if (y < p.s_h && x > p.s_x && x < p.s_x + p.s_w2) {if (p.s_show) sL.rbtn_up(x, y); return true;} else {men.rbtn_up(x, y); return true;}}
+	this.on_mouse_move = function(x, y, m) {if (p.m_x == x && p.m_y == y) return; if (libraryProps.searchMode || ui.scrollbar_show) but.move(x, y); if (libraryProps.searchMode) sL.move(x, y); library_tree.move(x, y); library_tree.dragDrop(x, y); sbar.move(x, y); p.m_x = x; p.m_y = y;}
+	this.on_mouse_rbtn_up = function(x, y) {if (y < p.s_h && x > p.s_x && x < p.s_x + p.s_w2) {if (libraryProps.searchMode) sL.rbtn_up(x, y); return true;} else {men.rbtn_up(x, y); return true;}}
 	this.on_mouse_wheel = function(step) {if (!v.k(3)) sbar.wheel(step, false); else ui.wheel(step);}
 	this.on_notify_data = function(name, info) {switch (name) {case "!!.tags update": lib_manager.treeState(false, 2); break;} if (ui.local) on_notify(name, info);}
 	this.on_playback_new_track = function(handle) {ui.on_playback_new_track(handle);}
@@ -2321,7 +2727,7 @@ function initLibraryPanel() {
 		v = new v_keys();
 		lib_manager = new library_manager();
 		library_tree = new LibraryTree();
-		if (p.s_show) {
+		if (libraryProps.searchMode) {
 			sL = new searchLibrary();
 		}
 		jS = new j_Search();

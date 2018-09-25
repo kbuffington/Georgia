@@ -310,6 +310,7 @@ var lastLeftEdge = 0;		// the left edge of the record labels. Saved so we don't 
 var displayPlaylist = pref.start_Playlist;
 var displayLibrary = false;
 var displayLyrics = false;
+var showLibraryButton = true;   // TODO: Remove once library goes live
 
 var tl_firstPlayedRatio = 0;
 var tl_lastPlayedRatio = 0;
@@ -1103,6 +1104,7 @@ function onSettingsMenu(x, y) {
 	var _menu = window.CreatePopupMenu();
 	var _rotationMenu = window.CreatePopupMenu();
     var _debugMenu = window.CreatePopupMenu();
+	var _libraryMenu = window.CreatePopupMenu();
     var _timeZoneMenu = window.CreatePopupMenu();
 
 	//var pbo = fb.PlaybackOrder;
@@ -1175,7 +1177,15 @@ function onSettingsMenu(x, y) {
     _menu.AppendMenuSeparator();
 
 
-	/* TODO: Remove this before release */
+	_libraryMenu.AppendMenuItem(MF_STRING, 50, 'Remember Library State');
+	_libraryMenu.CheckMenuItem(50, libraryProps.rememberTree);
+	_libraryMenu.AppendMenuItem(MF_STRING, 51, 'Full Line Clickable');
+	_libraryMenu.CheckMenuItem(51, libraryProps.fullLine);
+	_libraryMenu.AppendMenuItem(MF_STRING, 52, 'Show Tooltips');
+	_libraryMenu.CheckMenuItem(52, libraryProps.tooltips);
+	_libraryMenu.AppendTo(_menu, MF_STRING, 'Library Settings');
+	_menu.AppendMenuSeparator();
+
 	_debugMenu.AppendMenuItem(MF_STRING, 90, 'Enable debug output');
 	_debugMenu.CheckMenuItem(90, pref.show_debug_log);
 	_debugMenu.AppendMenuItem(MF_STRING, 91, 'Show draw timing');
@@ -1246,6 +1256,17 @@ function onSettingsMenu(x, y) {
         case 30:
             pref.hyperlinks_ctrl = !pref.hyperlinks_ctrl;
             break;
+		case 50:
+			libraryProps.rememberTree = !libraryProps.rememberTree;
+			break;
+		case 51:
+			libraryProps.fullLine = !libraryProps.fullLine;
+			break;
+		case 52:
+			libraryProps.tooltips = !libraryProps.tooltips;
+			setLibrarySize();
+			break;
+
 		case 130:
 		case 131:
 		case 132:
@@ -1511,6 +1532,8 @@ function on_playback_new_track(metadb) {
 
 	if (displayPlaylist) {
 		playlist.on_playback_new_track(metadb);
+	} else if (displayLibrary) {
+		library.on_playback_new_track(metadb);
 	}
 
 	// Lyrics stuff
@@ -1737,6 +1760,7 @@ function on_mouse_lbtn_dblclk(x, y, m) {
 }
 
 function on_mouse_rbtn_down(x, y, m) {
+	console.log(qwr_utils.function_name());
 	if (displayPlaylist && playlist.mouse_in_this(x, y)) {
 		trace_call && console.log(qwr_utils.function_name());
 		playlist.on_mouse_rbtn_down(x, y, m);
@@ -1747,13 +1771,14 @@ function on_mouse_rbtn_down(x, y, m) {
 }
 
 function on_mouse_rbtn_up(x, y, m) {
+	console.log(qwr_utils.function_name());
 	if (displayPlaylist && playlist.mouse_in_this(x, y)) {
 		trace_call && console.log(qwr_utils.function_name());
 		return playlist.on_mouse_rbtn_up(x, y, m);
-	} else if (displayLibrary) {
+	} else if (displayLibrary && library.mouse_in_this(x, y)) {
 		trace_call && console.log(qwr_utils.function_name());
-		library.on_mouse_rbtn_up(x, y, m);
-	}
+		return library.on_mouse_rbtn_up(x, y, m);
+	} else
 	return pref.locked;
 }
 
@@ -2750,10 +2775,12 @@ function createButtonObjects(ww, wh) {
 	var w = img[0].width;
 	x -= (w + 10);
 	btns[33] = new Button(x, y, w, h, 'Lyrics', img, 'Display Lyrics');
+	if (showLibraryButton) {
 	var img = btnImg.ShowLibrary;
 	var w = img[0].width;
-	// x -= (w + 10);
-	// btns[34] = new Button(x, y, w, h, 'ShowLibrary', img, 'Show Library');
+		x -= (w + 10);
+		btns[34] = new Button(x, y, w, h, 'ShowLibrary', img, 'Show Library');
+	}
 	var img = btnImg.Playlist;
 	var w = img[0].width;
 	x -= (w + 10);
