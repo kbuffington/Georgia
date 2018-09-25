@@ -17,7 +17,7 @@ pref.add_properties(
 		rotation_amt: 		['Art: Degrees to rotate CDart', 3],		// # of degrees to rotate per track change.
 		aa_glob:			['Art: Cycle through all images', true],	// true: use glob, false: use albumart reader (front only)
 		display_cdart: 		['Art: Display CD art', true],				// true: show CD artwork behind album artwork. This artwork is expected to be named cd.png and have transparent backgrounds (can be found at fanart.tv)
-		t_aa_glob:			['Art: Seconds to display each art', 30],	// seconds per image
+		art_rotate_delay:   ['Art: Seconds to display each art', 30],	// seconds per image
 		rotate_cdart:		['Art: Rotate CD art on new track', true],		// true: rotate cdArt based on track number. i.e. rotationAmt = %tracknum% * x degrees
 		cdart_ontop:		['Art: Show CD art above front cover', false],	// true: display cdArt above front cover
 		show_debug_log:		['Debug: Show Debug Output', false],		// true: show debug output in console
@@ -44,8 +44,8 @@ pref.add_properties(
 	}
 );
 
-if (pref.t_aa_glob < 5) {
-	pref.t_aa_glob = 5;
+if (pref.art_rotate_delay < 5) {
+	pref.art_rotate_delay = 5;
 }
 
 // Lyrics variables

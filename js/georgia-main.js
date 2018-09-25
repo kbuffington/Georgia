@@ -401,9 +401,7 @@ var ForAppending = 8;
 
 var fso = new ActiveXObject("Scripting.FileSystemObject");
 
-var art_cache = {};
-var art_cache_indexes = [];
-var art_cache_max_size = 10;
+var art_cache = new ArtCache(10);
 var cdartPath = '';
 var album_art_path = '';
 
@@ -481,13 +479,17 @@ function on_paint(gr) {
 		if (showExtraDrawTiming) drawArt.Print();
 	} else {
 		if (fb.IsPaused) {
-			gr.FillRoundRect(0.5*(ww-geo.pause_size), 0.5*(wh-geo.pause_size),geo.pause_size,geo.pause_size,
+			var offset = 0;
+			if (displayPlaylist || displayLibrary) {
+				offset = ww * 0.167 / -2;    // info takes up 1/3 so use half the difference of 0.5 - .33
+			}
+			gr.FillRoundRect(offset + 0.5*(ww-geo.pause_size), 0.5*(wh-geo.pause_size),geo.pause_size,geo.pause_size,
 				0.1*geo.pause_size,0.1*geo.pause_size,RGBA(0,0,0,150));
-			gr.DrawRoundRect(0.5*(ww-geo.pause_size)+Math.floor(pauseBorderWidth/2), 0.5*(wh-geo.pause_size)+Math.floor(pauseBorderWidth/2),geo.pause_size-pauseBorderWidth,geo.pause_size-pauseBorderWidth,
+			gr.DrawRoundRect(offset + 0.5*(ww-geo.pause_size)+Math.floor(pauseBorderWidth/2), 0.5*(wh-geo.pause_size)+Math.floor(pauseBorderWidth/2),geo.pause_size-pauseBorderWidth,geo.pause_size-pauseBorderWidth,
 				0.1*geo.pause_size,0.1*geo.pause_size, pauseBorderWidth, RGBA(128,128,128,60));
-			gr.FillRoundRect(0.5*ww-0.22*geo.pause_size, 0.5*wh-0.25*geo.pause_size,
+			gr.FillRoundRect(offset + 0.5*ww-0.22*geo.pause_size, 0.5*wh-0.25*geo.pause_size,
 									0.12*geo.pause_size, 0.5*geo.pause_size, 2,2, RGBA(255,255,255,160));
-			gr.FillRoundRect(0.5*ww+0.22*geo.pause_size-0.12*geo.pause_size, 0.5*wh-0.25*geo.pause_size,
+			gr.FillRoundRect(offset + 0.5*ww+0.22*geo.pause_size-0.12*geo.pause_size, 0.5*wh-0.25*geo.pause_size,
 									0.12*geo.pause_size, 0.5*geo.pause_size, 2,2, RGBA(255,255,255,160));
 		}
 	}
@@ -1266,6 +1268,7 @@ function onSettingsMenu(x, y) {
 			break;
 		case 94:
 			pref.show_reload_button = !pref.show_reload_button;
+			window.Reload();
 			break;
 		case 100:
 			pref.locked = !pref.locked;
@@ -1443,7 +1446,7 @@ function on_playback_new_track(metadb) {
 	}
 
 	// Fetch new albumart
-	if (!pref.cache_images || (pref.aa_glob && aa_list.length != 1) || current_path != last_path || albumart == null ||
+	if ((pref.aa_glob && aa_list.length != 1) || current_path != last_path || albumart == null ||
 			$('$if2(%discnumber%,0)') != lastDiscNumber || $('$if2(' + tf.vinyl_side + ',ZZ)') != lastVinylSide) {
 		fetchNewArtwork(metadb);
 	}
@@ -1983,7 +1986,11 @@ function on_playback_pause(state) {
 		}
 	else {
 		debugLog("Repainting on_playback_pause no albumart");
-		window.RepaintRect(0.5*(ww-geo.pause_size), 0.5*(wh-geo.pause_size),geo.pause_size+1,geo.pause_size+1);
+		var offset = 0;
+		if (displayPlaylist || displayLibrary) {
+			offset = ww * 0.167 / -2;    // info takes up 1/3 so use half the difference of 0.5 - .33
+		}
+		window.RepaintRect(offset+0.5*(ww-geo.pause_size), 0.5*(wh-geo.pause_size),geo.pause_size+1,geo.pause_size+1);
     }
 
     if (displayPlaylist) {
@@ -2006,11 +2013,12 @@ function on_playback_stop(reason) {
 			metadb_handle = null;
         }
 		createButtonObjects(ww, wh);	// switch pause button to play
+		dontLoadFromCache = true;
 	}
 	progressTimer && window.ClearInterval(progressTimer);
 	if (globTimer)
 		window.ClearTimeout(globTimer);
-	if (albumart && ((pref.aa_glob && aa_list.length != 1) || (!pref.cache_images || last_path == ''))) {
+	if (albumart && ((pref.aa_glob && aa_list.length != 1) || last_path == '')) {
 		debugLog("disposing artwork");
 		albumart = null;
 		albumart_scaled = disposeImg(albumart_scaled);
@@ -2030,7 +2038,6 @@ function on_playback_stop(reason) {
     if (displayPlaylist) {
         playlist.on_playback_stop(reason);
 	}
-	dontLoadFromCache = true;
 }
 
 function on_playback_starting(cmd, is_paused) {
@@ -2092,58 +2099,14 @@ function clearUIVariables() {
 	}
 }
 
-var max_width = 1200;
-var max_height = 1600;
-function encache(img, path) {
-    try {
-        var h = img.Height;
-        var w = img.Width;
-        if (h > max_width || w > max_height) {
-            var scale_factor = w / max_width;
-            if (scale_factor < w / max_height) {
-                scale_factor = w / max_height;
-            }
-            h = Math.min(h / scale_factor);
-            w = Math.min(w / scale_factor);
-        }
-        art_cache[path] = img.Resize(w, h);
-        img.Dispose();
-        art_cache_indexes.push(path);
-        if (art_cache_indexes.length > art_cache_max_size) {
-            var remove = art_cache_indexes.shift();
-            console.log('deleting cached img:', remove)
-            disposeImg(art_cache[remove]);
-            delete art_cache[remove];
-        }
-    } catch (e) {
-        console.log('<Error: Image could not be properly parsed: ' + path + '>');
-    }
-	return art_cache[path] || img;
-}
-
-function AttemptToLoadCachedImage(path) {
-	var image = null;
-
-	if (art_cache[path]) {
-		debugLog('cache hit: ' + path);
-		return art_cache[path];
-	}
-	return null;
-}
-
 // album art retrieved from GetAlbumArtAsync
 function on_get_album_art_done(metadb, art_id, image, image_path) {
-	if (metadb_handle && metadb_handle.Path == metadb.Path) {
-		albumart_scaled = disposeImg(albumart_scaled);
-		ResizeArtwork(true); // recalculate image positions and recreate shadow image
-		CreateRotatedCDImage();
-		lastLeftEdge = 0;	// recalc label location
-		RepaintWindow(); // calls on_paint()
-	}
-
 	if (displayPlaylist) {
 		trace_call && console.log(qwr_utils.function_name());
 		playlist.on_get_album_art_done(metadb, art_id, image, image_path);
+	} else if (displayLibrary) {
+		// trace_call && console.log(qwr_utils.function_name());
+		// library.on_get_album_art_done(metadb, art_id, image, image_path);
 	}
 }
 
@@ -2152,14 +2115,14 @@ function on_load_image_done(cookie, image) {
 	console.log('on_load_image_done returned');
 	if (cookie == disc_art_loading) {
 		disposeCDImg(cdart);	// delay disposal so we don't get flashing
-		cdart = encache(image, cdartPath);
+		cdart = art_cache.encache(image, cdartPath);
 		ResizeArtwork(true);
 		CreateRotatedCDImage();
 		lastLeftEdge = 0;	// recalc label location
 	}
 	else if (cookie == album_art_loading) {
 		// disposeImg(albumart);	// delay disposal so we don't get flashing
-		albumart = encache(image, album_art_path);
+		albumart = art_cache.encache(image, album_art_path);
 		if (retrieveThemeColorsWhenLoaded && newTrackFetchingArtwork) {
 			getThemeColors(albumart);
 			retrieveThemeColorsWhenLoaded = false;
@@ -2212,7 +2175,7 @@ function doRotateImage() {
 	RepaintWindow();
 	globTimer = window.SetTimeout(function() {
 		doRotateImage();
-	}, pref.t_aa_glob*1000);
+	}, pref.art_rotate_delay * 1000);
 }
 
 function timerTick(id) {
@@ -2412,7 +2375,7 @@ function calcDateRatios(dontUpdateLastPlayed, currentLastPlayed) {
 function glob_image(index, loadFromCache) {
 	var temp_albumart;
 	if (loadFromCache) {
-		temp_albumart = AttemptToLoadCachedImage(aa_list[index]);
+		temp_albumart = art_cache.getImage(aa_list[index]);
 	}
 	if (temp_albumart) {
 		// albumart = disposeImg(albumart);
@@ -2480,7 +2443,7 @@ function CreateRotatedCDImage() {
 }
 
 function ResizeArtwork(resetCDPosition) {
-	if (albumart) {
+	if (albumart && albumart.Width && albumart.Height) {
 		// Size for big albumart
 		var album_scale = Math.min((displayPlaylist ? 0.47*ww : 0.75*ww) / albumart.Width, (wh - geo.top_art_spacing - geo.lower_bar_h - 32) / albumart.Height);
 		if (displayPlaylist || displayLibrary) {
@@ -2616,7 +2579,7 @@ function fetchNewArtwork(metadb) {
 			}
 		}
 		if (disc_art_exists) {
-			var temp_cdart = AttemptToLoadCachedImage(cdartPath);
+			var temp_cdart = art_cache.getImage(cdartPath);
 			if (temp_cdart) {
 				disposeCDImg(cdart);
 				cdart = temp_cdart;
@@ -2651,7 +2614,7 @@ function fetchNewArtwork(metadb) {
 			if (aa_list.length > 1 && pref.aa_glob) {
 				globTimer = window.SetTimeout(function() {
 					doRotateImage();
-				}, pref.t_aa_glob * 1000);
+				}, pref.art_rotate_delay * 1000);
 			}
 			albumArtIndex = 0;
 			glob_image(albumArtIndex, !dontLoadFromCache); // display first image
