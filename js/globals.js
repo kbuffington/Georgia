@@ -59,6 +59,7 @@ tf.add_properties(
 	{
 		// added:          ['Tag Fields: Added', '$ifgreater($if(%lastfm_added%,$replace($date(%lastfm_added%),-,),999999999),$replace($date(%added%),-,),[%added%],[%lastfm_added%])'],
 		added:          ['Tag Fields: Added', '[$if2(%added_enhanced%,%added%)]'],
+        album_subtitle:  ['Tag Fields: Album Subtitle', '%albumsubtitle%'],
 		artist:			['Tag Fields: Artist String', '$if3(%artist%,%composer%,%performer%,%album artist%)'],
 		artist_country: ['Tag Fields: Country', '%artistcountry%'],	// we call meta_num(artistcountry) so don't wrap this in % signs
 		disc:			['Tag Fields: Disc String', '$ifgreater(%totaldiscs%,1,CD %discnumber%/%totaldiscs%,)'],
@@ -66,12 +67,13 @@ tf.add_properties(
 		year:			['Tag Fields: Year', '$puts(d,$if2(%original release date%,%date%))$if($strcmp($year($get(d)),$get(d)),$get(d),)'],
 		date:			['Tag Fields: Date', '$puts(d,$if2(%original release date%,%date%))$if($strcmp($year($get(d)),$get(d)),,$get(d))'],
 		last_played:	['Tag Fields: Last Played', '[$if2(%last_played_enhanced%,%last_played%)]'],
-		title:			['Tag Fields: Song Title String', "%title%[ '('%original artist%' cover)'][ '['%translation%']']"],
+		title:			 ['Tag Fields: Song Title String', "%title%[ '['%translation%']']"],
 		vinyl_side:		['Tag Fields: Vinyl Side', '%vinyl side%'],			// the tag used for determining what side a song appears on for vinyl releases - i.e. song A1 has a %vinyl side% of "A"
 		vinyl_tracknum: ['Tag Fields: Vinyl Track#', '%vinyl tracknumber%'],	// the tag used for determining the track number on vinyl releases i.e. song A1 has %vinyl tracknumber% set to "1"
 		translation:	['Tag Fields: Translated song title', '%translation%'],
 		album_trans:	['Tag Fields: Translated album title', '%albumtranslation%'],
 		edition:		['Tag Fields: Edition', '[$if(%original release date%,$ifequal($year(%original release date%),$year(%date%),,$year(%date%) ))$if2(%edition%,\'release\')]'],
+        original_artist: ['Tag Fields: Original Artist', "[ '('%original artist%' cover)']"],
 	}
 )
 

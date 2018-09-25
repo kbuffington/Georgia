@@ -27,6 +27,7 @@ testFont('HelveticaNeueLT Std Med');
 testFont('HelveticaNeueLT Std Lt');
 testFont('Guifx v2 Transports');
 
+var useNeue = false;
 var fontsCreated = null;
 function createFonts() {
 	var font_size = is_4k.toString();
@@ -39,6 +40,9 @@ function createFonts() {
 	ft.album_lrg			= font('HelveticaNeueLT Std Med', 36, 0);
 	ft.album_med 			= font('HelveticaNeueLT Std Med', 32, 0);
 	ft.album_sml 			= font('HelveticaNeueLT Std Med', 28, 0);
+    ft.album_substitle_lrg  = font('HelveticaNeueLT Std Med', 36, g_font_style.italic);
+    ft.album_substitle_med  = font('HelveticaNeueLT Std Med', 32, g_font_style.italic);
+    ft.album_substitle_sml  = font('HelveticaNeueLT Std Med', 28, g_font_style.italic);
 	ft.title_lrg			= font('HelveticaNeueLT Std Thin', 34, 0);
 	ft.title_med 			= font('HelveticaNeueLT Std Thin', 30, 0);
 	ft.title_sml 			= font('HelveticaNeueLT Std Thin', 26, 0);
@@ -56,8 +60,16 @@ function createFonts() {
 	ft.grd_val_sml			= font('HelveticaNeueLT Std Lt', 18, 0);
 	ft.lower_bar			= font('HelveticaNeueLT Std Lt', 30, 0);
 	ft.lower_bar_bold		= font('HelveticaNeueLT Std Med', 30, 0);
-	ft.lower_bar_sml 		= font('HelveticaNeueLT Std Lt', 24, 0);
-	ft.lower_bar_sml_bold 	= font('HelveticaNeueLT Std Med', 24, 0);
+	ft.lower_bar_sml 		= font('HelveticaNeueLT Std Lt', 26, 0);
+	ft.lower_bar_sml_bold 	= font('HelveticaNeueLT Std Med', 26, 0);
+	if (utils.checkFont('NeueHaasGroteskDisp Pro XLt')) {
+		useNeue = true;
+		ft.lower_bar_artist 	= font('NeueHaasGroteskDisp Pro XLt', 31, g_font_style.italic);
+		ft.lower_bar_artist_sml	= font('NeueHaasGroteskDisp Pro XLt', 27, g_font_style.italic);
+	} else {
+		ft.lower_bar_artist 	= font('HelveticaNeueLT Std Thin', 31, g_font_style.italic);
+		ft.lower_bar_artist_sml	= font('HelveticaNeueLT Std Thin', 27, g_font_style.italic);
+	}
 	ft.small_font			= font('HelveticaNeueLT Std', 14, 0);
 	ft.guifx 				= font('Guifx v2 Transports', 16, 0);
 	ft.Marlett				= font('Marlett', 13, 0);
@@ -146,7 +158,7 @@ pref.last_fm_img	= fb.ProfilePath + 'georgia/images/last-fm-red-36.png';
 pref.last_fmw_img   = fb.ProfilePath + 'georgia/images/last-fm-36.png';
 pref.label_base  	= fb.ProfilePath + 'images/recordlabel/';		// location of the record label logos for the bottom right corner
 pref.logo_hq	   	= fb.ProfilePath + 'images/artistlogos/';	// location of High-Qualiy band logos for the bottom left corner
-pref.logo_color  	= fb.ProfilePath + 'images/band logos color/';
+pref.logo_color  	= fb.ProfilePath + 'images/artistlogos color/';
 pref.codec_base		= fb.ProfilePath + 'images/codec logos/';
 pref.flags_base		= fb.ProfilePath + 'images/flags/';			// location of artist country flags
 
@@ -592,19 +604,35 @@ function on_paint(gr) {
 			top += geo.timeline_h + (is_4k ? 20 : 12);
 
 			if (str.album) {
-				ft.album = ft.album_lrg;
-				txtRec = gr.MeasureString(str.album, ft.album, 0, 0, text_width, wh);
-				if (txtRec.lines > 2) {
-					ft.album = ft.album_med;
-					txtRec = gr.MeasureString(str.album, ft.album, 0, 0, text_width, wh);
+				var drawSubtitle = !!str.album_subtitle.length;
+				ft_album = ft.album_lrg;
+				ft_subtitle = ft.album_substitle_lrg;
+				txtRec = gr.MeasureString(str.album, ft_album, 0, 0, text_width, wh);
+				subtitleRec = gr.MeasureString(str.album_subtitle, ft_subtitle, 0, 0, text_width, wh);
+				if (txtRec.lines > 2 || subtitleRec.lines > 2) {
+					ft_album = ft.album_med;
+					txtRec = gr.MeasureString(str.album, ft_album, 0, 0, text_width, wh);
 					if (txtRec.lines > 2) {
 						ft.album = ft.album_sml;
 					}
+					album_text = str.album + str.album_subtitle;
+					drawSubtitle = false;
+				} else if (txtRec.width + subtitleRec.width > text_width) {
+					album_text = str.album + str.album_subtitle;
+					drawSubtitle = false;
+				} else {
+					// draw subtitle separately
+					album_text = str.album;
 				}
 				var numLines = Math.min(2, txtRec.lines);
-				height = gr.CalcTextHeight(str.album, ft.album) * numLines;
+				height = gr.CalcTextHeight(album_text, ft_album) * numLines;
 
-				gr.DrawString(str.album, ft.album, col.info_text, textLeft, top, text_width, height, g_string_format.trim_ellipsis_word);
+				gr.DrawString(album_text, ft_album, col.info_text, textLeft, top, text_width, height, g_string_format.trim_ellipsis_word);
+				// console.log(drawSubtitle, str.album_subtitle, txtRec.width, subtitleRec.width, text_width);
+				if (drawSubtitle) {
+					gr.DrawString(str.album_subtitle, ft_subtitle, col.info_text,
+							textLeft + Math.ceil(txtRec.width), top, text_width - Math.ceil(txtRec.width), height, g_string_format.trim_ellipsis_word);
+				}
 
 				top += height + (is_4k ? 20 : 10);
 			}
@@ -831,40 +859,53 @@ function on_paint(gr) {
 		width = 0;
 	}
 
-	trackNumWidth = gr.MeasureString(str.tracknum, ft.lower_bar, 0, 0, 0, 0).Width;
-	var stxt = gr.MeasureString(str.title, ft.lower_bar, 0, 0, ww, wh);
-	titleWidth = stxt.Width;
 	var ft_lower_bold = ft.lower_bar_bold;
-	var ft_lower = ft.lower_bar
-	if (width + trackNumWidth + titleWidth > 0.95*ww) {
+	var ft_lower = ft.lower_bar;
+	var ft_lower_orig_artist = ft.lower_bar_artist;
+	var trackNumWidth = Math.ceil(gr.MeasureString(str.tracknum, ft_lower, 0, 0, 0, 0).Width);
+	var titleMeasurements = gr.MeasureString(str.title_lower, ft_lower, 0, 0, 0, 0);
+	var titleWidth = titleMeasurements.Width;
+	var origArtistWidth = gr.MeasureString(str.original_artist, ft_lower_orig_artist, 0, 0, 0, 0).Width;
+	if (width + trackNumWidth + titleWidth + origArtistWidth > 0.95*ww) {
 		// we don't have room for all the text so use a smaller font and recalc size
 		ft_lower_bold =  ft.lower_bar_sml_bold;
 		ft_lower = ft.lower_bar_sml;
-        stxt = gr.MeasureString(str.tracknum, ft.lower_bar_sml_bold, 0, 0, ww, wh);
-        trackNumWidth = stxt.Width;
+		ft_lower_orig_artist = ft.lower_bar_artist_sml;
+		titleMeasurements = gr.MeasureString(str.title_lower, ft_lower, 0, 0, 0, 0);
+		trackNumWidth = Math.ceil(gr.MeasureString(str.tracknum, ft.lower_bar_sml_bold, 0, 0, 0, 0).Width);
         if (str.disc !== '') {
             width = gr.CalcTextWidth(str.disc+'   '+str.time+'   '+str.length, ft_lower);
         } else {
             width = gr.CalcTextWidth(' '+str.time+'   '+str.length, ft_lower);
         }
 	}
-	gr.DrawString(str.tracknum, ft_lower_bold, col.now_playing, pbLeft, lowerBarTop, 0.95*ww-width, stxt.Height, StringFormat(0,0,4,0x00001000));
+	gr.DrawString(str.tracknum, ft_lower_bold, col.now_playing, pbLeft, lowerBarTop, 0.95*ww-width, titleMeasurements.Height, StringFormat(0,0,4,0x00001000));
 	width += trackNumWidth;
-	gr.DrawString('  '+str.title, ft_lower, col.now_playing, pbLeft + trackNumWidth, lowerBarTop, 0.95*ww-width, stxt.Height, StringFormat(0,0,4,0x00001000));
+	gr.DrawString(str.title_lower, ft_lower, col.now_playing, pbLeft + trackNumWidth, lowerBarTop, 0.95*ww-width, titleMeasurements.Height, StringFormat(0,0,4,0x00001000));
+	width += Math.ceil(titleMeasurements.Width);
+	if (str.original_artist && width < 0.95*ww) {
+		var h_spacing = 0;
+		var v_spacing = 0;
+		if (useNeue) {
+			h_spacing = is_4k ? 8 : 4;
+			v_spacing = is_4k ? 2 : 1;
+		}
+		gr.DrawString(str.original_artist, ft_lower_orig_artist, col.now_playing, pbLeft + trackNumWidth + titleMeasurements.Width + h_spacing, lowerBarTop + v_spacing, 0.95*ww-width, titleMeasurements.Height, StringFormat(0,0,4,0x00001000));
+	}
 
 	// Progress bar/Seekbar
-	var pbTop = Math.round(lowerBarTop + stxt.Height) + (is_4k ? 16 : 8);
+	var pbTop = Math.round(lowerBarTop + titleMeasurements.Height) + (is_4k ? 16 : 8);
 	gr.SetSmoothingMode(SmoothingMode.None); // disable smoothing
 	if (pref.show_progress_bar) {
 		gr.FillSolidRect(pbLeft, pbTop, Math.round(0.95*ww), geo.prog_bar_h, col.progress_bar);
 	}
 	if (fb.PlaybackLength > 0) {
 		if (ww > 600) {
-			gr.DrawString(str.length, ft_lower, col.now_playing, 0.725*ww, lowerBarTop, 0.25*ww, stxt.Height, StringFormat(2,0));
+			gr.DrawString(str.length, ft_lower, col.now_playing, 0.725*ww, lowerBarTop, 0.25*ww, titleMeasurements.Height, StringFormat(2,0));
 			width = gr.CalcTextWidth('  '+str.length, ft_lower);
-			gr.DrawString(str.time, ft_lower_bold, col.now_playing, 0.725*ww, lowerBarTop, 0.25*ww-width, stxt.Height, StringFormat(2,0));
+			gr.DrawString(str.time, ft_lower_bold, col.now_playing, 0.725*ww, lowerBarTop, 0.25*ww-width, titleMeasurements.Height, StringFormat(2,0));
 			width += gr.CalcTextWidth('  '+str.time, ft_lower_bold);
-			gr.DrawString(str.disc, ft_lower, col.now_playing, 0.725*ww, lowerBarTop, 0.25*ww-width, stxt.Height, StringFormat(2,0));
+			gr.DrawString(str.disc, ft_lower, col.now_playing, 0.725*ww, lowerBarTop, 0.25*ww-width, titleMeasurements.Height, StringFormat(2,0));
 		}
 
 		if (pref.show_progress_bar) {
@@ -1388,7 +1429,6 @@ function on_playback_new_track(metadb) {
     themeColorSet = false;
 
 	isStreaming = !metadb.RawPath.match(/^file\:\/\//);
-	console.log(isStreaming);
 	if (!isStreaming) {
 		current_path = $('%directoryname%');
 	} else {
@@ -1496,18 +1536,22 @@ function on_metadb_changed(handle_list, fromhook) {
 
         if (nowPlayingUpdated) {
             // the handle_list contains the currently playing song so update
-            title  = fb.TitleFormat(tf.title).Eval();
-            artist = fb.TitleFormat(tf.artist).Eval();
+			var title  = $(tf.title);
+			var artist = $(tf.artist);
+			var original_artist = $(tf.original_artist);
             if (pref.use_vinyl_nums)
-                tracknum = fb.TitleFormat(tf.vinyl_track).Eval();
+				tracknum = $(tf.vinyl_track);
             else
-                tracknum = fb.TitleFormat(tf.tracknum).Eval();
+				tracknum = $(tf.tracknum);
 
             str.tracknum = tracknum.trim();
-            str.title = title;
+			str.title = title + original_artist;
+			str.title_lower = '  ' + title;
+			str.original_artist = original_artist;
             str.artist = artist;
             str.year = $('$year($if2(%original release date%,%date%)))');
             str.album = $("[%album%][ '['"+ tf.album_trans +"']']");
+			str.album_subtitle = $("[ '['" + tf.album_subtitle + "']']");
             var codec = $("$lower($if2(%codec%,$ext(%path%)))");
             if (codec == "cue") {
                 codec = $("$ext($info(referenced_file))");
@@ -1656,7 +1700,8 @@ function on_mouse_lbtn_up(x, y, m) {
 			just_dblclicked = false;
 		} else {
 			if ((albumart && albumart_size.x <= x && albumart_size.y <= y && albumart_size.x+albumart_size.w >= x && albumart_size.y+albumart_size.h >= y) ||
-				(!displayPlaylist && !displayLibrary && 0.5*(ww-geo.pause_size) <= x && 0.5*(wh-geo.pause_size) <= y && 0.5*(ww-geo.pause_size)+geo.pause_size >=x  && 0.5*(wh-geo.pause_size)+geo.pause_size >= y)) {
+				(!displayPlaylist && !displayLibrary && 0.5*(ww-geo.pause_size) <= x && 0.5*(wh-geo.pause_size) <= y && 0.5*(ww-geo.pause_size)+geo.pause_size >=x  && 0.5*(wh-geo.pause_size)+geo.pause_size >= y) ||
+				(!albumart && (displayPlaylist || displayLibrary) && 0.5*(ww*.833-geo.pause_size) <= x && 0.5*(wh-geo.pause_size) <= y && 0.5*(ww*.833-geo.pause_size)+geo.pause_size >=x  && 0.5*(wh-geo.pause_size)+geo.pause_size >= y)) {
 				fb.PlayOrPause();
 			}
 		}
@@ -2040,7 +2085,7 @@ function clearUIVariables() {
 	return {
 		artist: '',
         tracknum: stoppedStr1,
-        title: stoppedStr2,
+		title_lower: '  ' + stoppedStr2,
 		year: '',
 		grid: [],
 		time: ''
