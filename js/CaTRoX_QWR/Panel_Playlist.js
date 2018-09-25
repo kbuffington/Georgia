@@ -6430,7 +6430,7 @@ GroupingHandler.Settings = function () {
  * @param {string} description
  * @param {?string=} [group_query='']
  * @param {?string=} [title_query='[%album artist%]']
- * @param {?string=} [sub_title_query='[%album%[ - %albumsubtitle%]]']
+ * @param {?string=} [sub_title_query="[%album%[ '('%albumsubtitle%')']][ - '['%edition%']']"]
  * @param {object=}  [options={}]
  * @param {boolean=} [options.show_date=false]
  * @param {boolean=} [options.show_cd=false]
@@ -6447,7 +6447,7 @@ GroupingHandler.Settings.Group = function (name, description, group_query, title
     /** @type {string} */
     this.title_query = !_.isNil(title_query) ? title_query : '[%album artist%]';
     /** @type {string} */
-    this.sub_title_query = !_.isNil(sub_title_query) ? sub_title_query : '[%album%[ - %albumsubtitle%]][ - \[%edition%\]]';
+    this.sub_title_query = !_.isNil(sub_title_query) ? sub_title_query : '[%album%[ \'(\'%albumsubtitle%\')\']][ - \'[\'%edition%\']\']';
     /** @type {boolean} */
     this.show_date = !!(options && options.show_date);
     /** @type {boolean} */
