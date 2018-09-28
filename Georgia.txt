@@ -20,11 +20,9 @@
 // @import "%fb2k_profile_path%georgia\js\CaTRoX_QWR\Control_Button.js"
 // @import "%fb2k_profile_path%georgia\js\color.js"
 // @import "%fb2k_profile_path%georgia\js\themes.js"
-// @import "%fb2k_profile_path%georgia\js\Image_Caching.js"
+// @import "%fb2k_profile_path%georgia\js\image-caching.js"
+// @import "%fb2k_profile_path%georgia\js\ui-components.js"
 // @import "%fb2k_profile_path%georgia\js\georgia-main.js"
 // @import "%fb2k_profile_path%georgia\js\lyrics.js"
 // @feature "dragdrop"
 // ==/PREPROCESSOR==
-
-
-/// @import "%fb2k_path%\themes\CaTRoX\Scripts\Panel_Library.js"

@@ -273,21 +273,18 @@ var newTrackFetchingArtwork = false;				// only load theme colors when newTrackF
 var noArtwork = false;								// only use default theme when noArtwork was found
 var themeColorSet = false;                          // when no artwork, don't set themeColor every redraw
 var playCountVerifiedByLastFm = false;				// show Last.fm image when we %lastfm_play_count% > 0
-var pauseBorderWidth = 2;
 var art_off_center   = false;                       // if true, album art has been shifted 40 pixels to the right
 var dontLoadFromCache = false;                      // always load art from cache unless this is set
 
 //var inShowMenuEntry   = false;
 
 var str	  		= new Object();
-//var img	  	= new Object();
 var state		= new Object(); // panel state
 
 var metadb_handle = null; // watch db for tag changes
 // TIMERS
 var progressTimer;		// 40ms repaint of progress bar
 var globTimer;			// Timer for rotating globs
-var pauseTimer;			// Blinks time display
 var slideTimer;			// Timer for CD Slide out
 var hideCursor;			// Timer for hiding cursor
 
@@ -302,7 +299,6 @@ var aa_list = new Array();
 var albumArtIndex = 0;		// index of currently displayed album art if more than 1
 var fadeAlpha = 255;		// full alpha which will be decremented
 var nextPrevAlpha = 255;	// full alpha for next/prev icons which will be decremented
-var showTimeElapsed = true;	// this will alternate while paused to make the elapsed time blink
 var bandLogoHQ = false;		// if true will partially remove the 10 pixel "gutter" around the image that fanart.tv requires around their high-rez images so that logos use more of the available space.
 var t_interval; 			// milliseconds between screen updates
 // var settingsY = 0;			// location of settings button
@@ -406,6 +402,8 @@ var art_cache = new ArtCache(10);
 var cdartPath = '';
 var album_art_path = '';
 
+var pauseBtn = new PauseButton();
+
 var last_accent_col = undefined;
 var progressAlphaCol = undefined;
 
@@ -431,6 +429,12 @@ function on_paint(gr) {
 	}
 	gr.FillSolidRect(0, geo.top_bg_h, ww, wh - geo.top_bg_h, col.bg);
 	gr.FillSolidRect(0, 0, ww, geo.top_bg_h, col.menu_bg);
+    if ((fb.IsPaused || fb.IsPlaying) && (!albumart && cdart)) {
+		gr.SetSmoothingMode(SmoothingMode.None);
+		gr.FillSolidRect(0, albumart_size.y, albumart_size.x, albumart_size.h, col.info_bg);
+		gr.DrawRect(-1, albumart_size.y, albumart_size.x, albumart_size.h - 1, 1, col.accent);
+		gr.SetSmoothingMode(SmoothingMode.AntiAlias);
+	}
 
 	gr.SetSmoothingMode(SmoothingMode.AntiAlias);
 	gr.SetInterpolationMode(InterpolationMode.HighQualityBicubic);
@@ -466,39 +470,30 @@ function on_paint(gr) {
 			gr.FillSolidRect(albumart_size.x-1,albumart_size.y-1,albumart_size.w+1,albumart_size.h+1,RGBA(0,0,0,155));
 			show_lyrics(gr, g_tab, Math.floor(lyrPos - pref.lyrics_h_padding));
 		}
-		if (fb.IsPaused) {
-			gr.FillRoundRect(albumart_size.x+0.5*(albumart_size.w-geo.pause_size), albumart_size.y+0.5*(albumart_size.h-geo.pause_size),geo.pause_size,geo.pause_size,
-				0.1*geo.pause_size,0.1*geo.pause_size,RGBA(0,0,0,150));
-			gr.DrawRoundRect(albumart_size.x+0.5*(albumart_size.w-geo.pause_size)+Math.floor(pauseBorderWidth/2), albumart_size.y+0.5*(albumart_size.h-geo.pause_size)+Math.floor(pauseBorderWidth/2),
-				geo.pause_size-pauseBorderWidth,geo.pause_size-pauseBorderWidth,
-				0.1*geo.pause_size,0.1*geo.pause_size, pauseBorderWidth, RGBA(128,128,128,60));
-			gr.FillRoundRect(albumart_size.x+0.5*albumart_size.w-0.22*geo.pause_size, albumart_size.y+0.5*albumart_size.h-0.25*geo.pause_size,
-									0.12*geo.pause_size, 0.5*geo.pause_size, 2,2, RGBA(255,255,255,160));
-			gr.FillRoundRect(albumart_size.x+0.5*albumart_size.w+0.22*geo.pause_size-0.12*geo.pause_size, albumart_size.y+0.5*albumart_size.h-0.25*geo.pause_size,
-									0.12*geo.pause_size, 0.5*geo.pause_size, 2,2, RGBA(255,255,255,160));
-		}
 		if (showExtraDrawTiming) drawArt.Print();
 	} else {
-		if (fb.IsPaused) {
-			var offset = 0;
-			if (displayPlaylist || displayLibrary) {
-				offset = ww * 0.167 / -2;    // info takes up 1/3 so use half the difference of 0.5 - .33
+        if (cdart && !rotatedCD && !displayPlaylist && !displayLibrary && pref.display_cdart) {
+            CreateRotatedCDImage();
 			}
-			gr.FillRoundRect(offset + 0.5*(ww-geo.pause_size), 0.5*(wh-geo.pause_size),geo.pause_size,geo.pause_size,
-				0.1*geo.pause_size,0.1*geo.pause_size,RGBA(0,0,0,150));
-			gr.DrawRoundRect(offset + 0.5*(ww-geo.pause_size)+Math.floor(pauseBorderWidth/2), 0.5*(wh-geo.pause_size)+Math.floor(pauseBorderWidth/2),geo.pause_size-pauseBorderWidth,geo.pause_size-pauseBorderWidth,
-				0.1*geo.pause_size,0.1*geo.pause_size, pauseBorderWidth, RGBA(128,128,128,60));
-			gr.FillRoundRect(offset + 0.5*ww-0.22*geo.pause_size, 0.5*wh-0.25*geo.pause_size,
-									0.12*geo.pause_size, 0.5*geo.pause_size, 2,2, RGBA(255,255,255,160));
-			gr.FillRoundRect(offset + 0.5*ww+0.22*geo.pause_size-0.12*geo.pause_size, 0.5*wh-0.25*geo.pause_size,
-									0.12*geo.pause_size, 0.5*geo.pause_size, 2,2, RGBA(255,255,255,160));
+        if (!shadow_image) {	// when switching views, the drop shadow won't get created initially which is very jarring when it suddenly appears later, so create it if we don't have it.
+            createDropShadow();
+        }
+        if (rotatedCD && pref.display_cdart) {
+            if (showExtraDrawTiming) drawCD = fb.CreateProfiler('cdart');
+            shadow_image && gr.DrawImage(shadow_image, -geo.aa_shadow, albumart_size.y - geo.aa_shadow, shadow_image.Width, shadow_image.Height,
+                0, 0, shadow_image.Width, shadow_image.Height);
+            gr.DrawImage(rotatedCD, cdart_size.x, cdart_size.y, cdart_size.w, cdart_size.h, 0,0,rotatedCD.width,rotatedCD.height,0);
+            if (showExtraDrawTiming) drawCD.Print();
 		}
 	}
-	if (fb.IsPaused || fb.IsPlaying) {
+	if (fb.IsPlaying && (albumart || !cdart)) {
 		gr.SetSmoothingMode(SmoothingMode.None);
 		gr.FillSolidRect(0, albumart_size.y, albumart_size.x, albumart_size.h, col.info_bg);	// info bg -- must be drawn after shadow
 		gr.DrawRect(-1, albumart_size.y, albumart_size.x, albumart_size.h - 1, 1, col.accent);
 		gr.SetSmoothingMode(SmoothingMode.AntiAlias);
+	}
+	if (fb.IsPaused) {
+		pauseBtn.draw(gr);
 	}
 
 	var textLeft = Math.round(Math.min(0.015 * ww, is_4k ? 40 : 20));
@@ -519,7 +514,11 @@ function on_paint(gr) {
 	}
 
 	if (((!displayPlaylist && !displayLibrary) || (!albumart && noArtwork)) && fb.IsPlaying) {
+        if (!albumart && cdart) {
+            gridSpace = Math.round(cdart_size.x-geo.aa_shadow-textLeft);
+        } else {
 		gridSpace = Math.round(albumart_size.x-geo.aa_shadow-textLeft);
+        }
 		text_width = gridSpace;
 
 		if (showExtraDrawTiming) drawTextGrid = fb.CreateProfiler('on_paint -> textGrid');
@@ -581,7 +580,7 @@ function on_paint(gr) {
 			}
 
 			//Timeline playcount bars
-			if (fb.IsPlaying || fb.IsPaused) {
+			if (fb.IsPlaying) {
 				var extraLeftSpace = is_4k ? 6 : 3;	// add a little space to the left so songs that were played a long time ago show more in the "added" stage
 				gr.SetSmoothingMode(SmoothingMode.None); // disable smoothing
 				width = albumart_size.x - extraLeftSpace - 1;	// albumart_size.x set even if no art. Subtract 1 because we want the timeline stop 1 pixel short of art
@@ -712,7 +711,7 @@ function on_paint(gr) {
 
 	}	/* if (!displayPlaylist && !displayLibrary) */
 
-	if ((!displayPlaylist && !displayLibrary) || (!albumart && noArtwork)) {
+	if ((!displayPlaylist && !displayLibrary) || (!albumart && !cdart && noArtwork)) {
 		// BAND LOGO drawing code
 		showExtraDrawTiming && (drawBandLogos = fb.CreateProfiler("on_paint -> band logos"));
 		if (bandLogo) {
@@ -1211,7 +1210,7 @@ function onSettingsMenu(x, y) {
 			break;
 		case 4:
 			pref.display_cdart = !pref.display_cdart;
-			fetchNewArtwork(fb.GetNowPlaying());
+            if (fb.IsPlaying) fetchNewArtwork(fb.GetNowPlaying());
 			lastLeftEdge = 0; // resize labels
 			ResizeArtwork(true);
 			RepaintWindow();
@@ -1359,7 +1358,7 @@ function on_init() {
 
 	last_pb = fb.PlaybackOrder;
 
-	if (fb.IsPlaying || fb.IsPaused) {
+	if (fb.IsPlaying && fb.GetNowPlaying()) {
 		on_size();
 		on_playback_new_track(fb.GetNowPlaying());
 	}
@@ -1452,7 +1451,7 @@ function on_playback_new_track(metadb) {
     newTrackFetchingArtwork = true;
     themeColorSet = false;
 
-	isStreaming = !metadb.RawPath.match(/^file\:\/\//);
+	isStreaming = metadb ? !metadb.RawPath.match(/^file\:\/\//) : false;
 	if (!isStreaming) {
 		current_path = $('%directoryname%');
 	} else {
@@ -1548,7 +1547,7 @@ function on_playback_new_track(metadb) {
 // tag content changed
 function on_metadb_changed(handle_list, fromhook) {
     console.log('on_metadb_changed()');
-	if (fb.IsPaused || fb.IsPlaying) {
+	if (fb.IsPlaying) {
         var nowPlayingUpdated = !handle_list;   // if we don't have a handle_list we called this manually from on_playback_new_track
         var metadb = fb.GetNowPlaying();
         if (metadb && handle_list) {
@@ -1726,15 +1725,14 @@ function on_mouse_lbtn_up(x, y, m) {
 			just_dblclicked = false;
 		} else {
 			if ((albumart && albumart_size.x <= x && albumart_size.y <= y && albumart_size.x+albumart_size.w >= x && albumart_size.y+albumart_size.h >= y) ||
-				(!displayPlaylist && !displayLibrary && 0.5*(ww-geo.pause_size) <= x && 0.5*(wh-geo.pause_size) <= y && 0.5*(ww-geo.pause_size)+geo.pause_size >=x  && 0.5*(wh-geo.pause_size)+geo.pause_size >= y) ||
-				(!albumart && (displayPlaylist || displayLibrary) && 0.5*(ww*.833-geo.pause_size) <= x && 0.5*(wh-geo.pause_size) <= y && 0.5*(ww*.833-geo.pause_size)+geo.pause_size >=x  && 0.5*(wh-geo.pause_size)+geo.pause_size >= y)) {
+                (cdart && !albumart && cdart_size.x <= x && cdart_size.y <= y && cdart_size.x+cdart_size.w >= x && cdart_size.y+cdart_size.h >= y) ||
+				pauseBtn.trace(x, y)) {
 				fb.PlayOrPause();
 			}
 		}
 	}
 	on_mouse_move(x, y);
 	buttonEventHandler(x, y, m);
-	// hyperlinkEventHandler(x, y, m);
 
 	onMouseLbtnDown = false;
 }
@@ -1743,7 +1741,7 @@ function on_mouse_lbtn_dblclk(x, y, m) {
 	if (!displayPlaylist && !displayLibrary) {
 		// re-initialise the panel
 		just_dblclicked = true;
-		if (fb.IsPlaying || fb.IsPaused)
+		if (fb.IsPlaying)
 			on_playback_new_track(fb.GetNowPlaying());
 		if (displayLyrics) {
 			refresh_lyrics();
@@ -1951,7 +1949,7 @@ function on_key_down(vkey) {
 		case 0x6D:		// VK_SUBTRACT ??
 			if (CtrlKeyPressed && ShiftKeyPressed) {
 				var action = vkey === 0x6B ? '+' : '-';
-				if (fb.IsPlaying || fb.IsPaused) {
+				if (fb.IsPlaying) {
 					var metadb = fb.GetNowPlaying();
 					fb.RunContextCommandWithMetadb('Rating/' + action, metadb);
 				} else if (!metadb && displayPlaylist) {
@@ -1989,11 +1987,8 @@ function on_playback_pause(state) {
 	if (state) {	// pausing
 		if (progressTimer) window.ClearInterval(progressTimer);
 		progressTimer = 0;
-		// fadeAlpha = 255;	// make text visible again on pause
         window.RepaintRect(0.015*ww, 0.12*wh, Math.max(albumart_size.x-0.015*ww,0.015*ww), wh-geo.lower_bar_h-0.12*wh);
 	} else {		// unpausing
-		if (pauseTimer > 0) window.ClearInterval(pauseTimer);
-		showTimeElapsed = true;
 		if (progressTimer > 0) window.ClearInterval(progressTimer);	// clear to avoid multiple progressTimers which can happen depending on the playback state when theme is loaded
 		debugLog("on_playback_pause: creating refresh_seekbar() interval with delay = " + t_interval);
 		progressTimer = window.SetInterval(function() {
@@ -2001,22 +1996,10 @@ function on_playback_pause(state) {
 		}, t_interval);
 	}
 
-	// Draws grey pause button on album art
-	if (albumart) {
-		debugLog("Repainting on_playback_pause");
-		if (!displayLyrics)		// if we are displaying lyrics we need to refresh all the lyrics to avoid tearing at the edges of the pause button
-			window.RepaintRect(albumart_size.x+0.5*(albumart_size.w-geo.pause_size), albumart_size.y+0.5*(albumart_size.h-geo.pause_size),geo.pause_size+1,geo.pause_size+1);
-		else
+	pauseBtn.repaint();
+	if (albumart && displayLyrics) {	// if we are displaying lyrics we need to refresh all the lyrics to avoid tearing at the edges of the pause button
 			window.RepaintRect(albumart_size.x+(albumart_size.w-lyricsWidth)/2, albumart_size.y+ pref.lyrics_h_padding, lyricsWidth, albumart_size.h- pref.lyrics_h_padding*2);
 		}
-	else {
-		debugLog("Repainting on_playback_pause no albumart");
-		var offset = 0;
-		if (displayPlaylist || displayLibrary) {
-			offset = ww * 0.167 / -2;    // info takes up 1/3 so use half the difference of 0.5 - .33
-		}
-		window.RepaintRect(offset+0.5*(ww-geo.pause_size), 0.5*(wh-geo.pause_size),geo.pause_size+1,geo.pause_size+1);
-    }
 
     if (displayPlaylist) {
         playlist.on_playback_pause(state);
@@ -2056,8 +2039,9 @@ function on_playback_stop(reason) {
 
 	g_playtimer && window.ClearInterval(g_playtimer);
 	g_playtimer = null;
-	if (reason==0) {
+	if (reason === 0) {
 		// Stop
+        cdart = disposeCDImg(cdart);
 		window.Repaint();
     }
     if (displayPlaylist) {
@@ -2170,10 +2154,7 @@ function on_script_unload() {
 
 function on_playback_time(){
 	// Refresh playback time
-	if (showTimeElapsed)
 		str.time = $('%playback_time%');
-	else
-		str.time = '';
 
 	// at each new second, hundredth is reset to 0 (Increment on timer every 100ms)
 	hundredth = 0;
@@ -2255,16 +2236,18 @@ function createShadowRect(width, height) {
 // HELPER FUNCTIONS
 function createDropShadow() {
 	if (showDebugTiming) shadow = fb.CreateProfiler("createDropShadow");
-	if (albumart && albumart_size.w > 0) {
+    if ((albumart && albumart_size.w > 0) || (cdart && pref.display_cdart && cdart_size.w > 0)) {
 		disposeImg(shadow_image);
 		if (cdart && !displayPlaylist && !displayLibrary && pref.display_cdart)
-			shadow_image = gdi.CreateImage(cdart_size.x+cdart_size.w+2*geo.aa_shadow, albumart_size.h+2*geo.aa_shadow);
+			shadow_image = gdi.CreateImage(cdart_size.x + cdart_size.w+2*geo.aa_shadow, cdart_size.h + 4 + 2*geo.aa_shadow);
 		else
 			shadow_image = gdi.CreateImage(albumart_size.x + albumart_size.w + 2*geo.aa_shadow, albumart_size.h + 2*geo.aa_shadow);
 		if (shadow_image) {
 			shimg = shadow_image.GetGraphics();
+            if (albumart) {
 			shimg.FillRoundRect(geo.aa_shadow, geo.aa_shadow, albumart_size.x + albumart_size.w, albumart_size.h,
 				0.5*geo.aa_shadow, 0.5*geo.aa_shadow, col.aa_shadow);
+            }
 
 			if (cdart && pref.display_cdart && !displayPlaylist) {
 				var offset = cdart_size.w * 0.40;	// don't change this value
@@ -2468,9 +2451,11 @@ function CreateRotatedCDImage() {
 }
 
 function ResizeArtwork(resetCDPosition) {
+    console.log('Resizing artwork');
+    var hasArtwork = false;
 	if (albumart && albumart.Width && albumart.Height) {
 		// Size for big albumart
-		var album_scale = Math.min((displayPlaylist ? 0.47*ww : 0.75*ww) / albumart.Width, (wh - geo.top_art_spacing - geo.lower_bar_h - 32) / albumart.Height);
+		var album_scale = Math.min(((displayPlaylist || displayLibrary) ? 0.47*ww : 0.75*ww) / albumart.Width, (wh - geo.top_art_spacing - geo.lower_bar_h - 32) / albumart.Height);
 		if (displayPlaylist || displayLibrary) {
             xCenter = 0.25*ww;
         } else if (ww/wh < 1.40) {		 // when using a roughly 4:3 display the album art crowds, so move it slightly off center
@@ -2501,7 +2486,39 @@ function ResizeArtwork(resetCDPosition) {
 			albumart_scaled.Dispose();
 		}
 		albumart_scaled = albumart.Resize(albumart_size.w, albumart_size.h);
-
+		pauseBtn.setCoords(albumart_size.x + albumart_size.w / 2, albumart_size.y + albumart_size.h / 2);
+        hasArtwork = true;
+    } else {
+        albumart_size = new ImageSize(0,0,0,0);
+    }
+    if (cdart) {
+        if (!hasArtwork) {
+            // no album art so we need to calc size of disc
+            var album_scale = Math.min(((displayPlaylist || displayLibrary) ? 0.47*ww : 0.75*ww) / cdart.Width, (wh - geo.top_art_spacing - geo.lower_bar_h - 32) / cdart.Height);
+            if (displayPlaylist || displayLibrary) {
+                xCenter = 0.25*ww;
+            } else if (ww/wh < 1.40) {		 // when using a roughly 4:3 display the album art crowds, so move it slightly off center
+                xCenter = 0.56*ww;  // TODO: check if this is still needed?
+            } else {
+                xCenter = 0.5*ww;
+                art_off_center = false;
+                if (album_scale == 0.75*ww / cdart.Width) {
+                    xCenter += 0.1*ww;
+                    art_off_center = true;  // TODO: We should probably suppress labels in this case
+                }
+            }
+            cdart_size.w = Math.floor(cdart.Width * album_scale);											// width
+            cdart_size.h = Math.floor(cdart.Height * album_scale);										// height
+            cdart_size.x = Math.floor(xCenter-0.5 * cdart_size.w);										// left
+            if (album_scale !== (wh - geo.top_art_spacing - geo.lower_bar_h - 32) / cdart.Height) {
+                // restricted by width
+                var y = geo.top_art_spacing + Math.floor(((wh - geo.top_art_spacing - geo.lower_bar_h - 32) / 2) - cdart_size.h / 2);
+                cdart_size.y = Math.min(y, 160);
+            } else {
+                cdart_size.y = geo.top_art_spacing;		// height of menu bar + spacing + height of Artist text (32+32+32)	// top
+			}
+			pauseBtn.setCoords(cdart_size.x + cdart_size.w / 2, cdart_size.y + cdart_size.h / 2);
+        } else {
 		if (resetCDPosition) {
 			if (ww - (albumart_size.x + albumart_size.w) < albumart_size.h*pref.cdart_amount+5)
 				cdart_size.x = Math.floor(0.99*ww - albumart_size.h);
@@ -2516,10 +2533,19 @@ function ResizeArtwork(resetCDPosition) {
 			cdart_size.w = Math.max(cdart_size.w, albumart_size.h-4);
 			cdart_size.h = cdart_size.w;
 		}
+        }
+        hasArtwork = true;
+    } else {
+		cdart_size = new ImageSize(0,0,0,0);
+	}
+    if (hasArtwork) {
 		createDropShadow();
 	} else {
-		albumart_size = new ImageSize(0,0,0,0);
-		cdart_size = new ImageSize(0,0,0,0);		// TODO: Should probably display disc if we can't show album art
+		if (displayLibrary || displayPlaylist) {
+			pauseBtn.setCoords(ww * (0.33 + .167 / 2), wh / 2);
+		} else {
+			pauseBtn.setCoords(ww / 2, wh / 2);
+		}
 	}
 }
 
