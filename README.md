@@ -12,7 +12,7 @@ I run the theme in Columns UI with a super simple setup using the JScript Panel,
 ##### Step-by-step guide (please follow closely)
 
 1. Close foobar
-2. Download this theme.
+2. Download this theme from the [releases page](https://github.com/kbuffington/Georgia/releases).
 3. Extract it into a folder named `georgia` to your foobar profile folder. On a non-portable installation this will typically be `C:\Users\<USERNAME>\AppData\Roaming\foobar2000`.
 4. Open up the `\georgia\fonts` folder and install all fonts located there. If you miss this step things will look terrible.
 5. *(Optional Step)*  Download any of the image packs you like and place them in a folder called `images` in your foobar profile folder. See below for image pack locations.
