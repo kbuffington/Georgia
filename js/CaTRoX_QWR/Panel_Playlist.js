@@ -2820,7 +2820,7 @@ function Playlist(x, y) {
     var cnt_helper = this.cnt.helper;
 
     // Workaround for bug: PlayingPlaylist is equal to -1 on startup
-    if (plman.PlayingPlaylist === -1) {
+    if (plman.PlayingPlaylist === -1 && plman.ActivePlaylist !== -1) {
         plman.PlayingPlaylist = plman.ActivePlaylist;
     }
 }
@@ -5925,7 +5925,7 @@ function PlaylistManager(x, y, w, h) {
         var p = 10;
         var right_pad = p;
 
-        if (plman.IsPlaylistLocked(plman.ActivePlaylist)) {
+        if (plman.ActivePlaylist !== -1 && plman.IsPlaylistLocked(plman.ActivePlaylist)) {
             // Position above scrollbar for eye candy
             var sbar_x = x + w - playlist_geo.scrollbar_w - playlist_geo.scrollbar_right_pad;
             var lock_text = '\uf023';
