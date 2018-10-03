@@ -214,30 +214,7 @@ if (playlistFontSize < 7) {
 	window.SetProperty("Playlist: Font Size", playlistFontSize);
 }
 
-//---> Group Colors
-var groupTitleColor = RGB(190, 192, 194);
-var artistColorNormal = groupTitleColor;
-var albumColorNormal = groupTitleColor;
-var infoColorNormal = RGB(130, 132, 134);
-var dateColorNormal = groupTitleColor;
-// var lineColorNormal = panelsLineColor;
-// var lineColorSelected = panelsLineColorSelected;
-// var groupTitleColorSelected = groupTitleColor;
-var artAlpha = 220;
-//---> Row Colors
-var rowColorSelected = RGB(40, 40, 40);
-var rowColorAlternate = RGB(40, 40, 40);
-var rowColorFocusSelected = RGB(70, 70, 70);
-var rowColorFocusNormal = RGB(80, 80, 80);
-var rowColorQueued = RGBA(150, 150, 150, 0);
-//--->
-// var backgroundColor = panelsBackColor;
-var dropped = false;
-var totalLength = selectionLength = 0;
-var listInfoHeight = 24;
-
 // END OF CONFIGURATION /////////////////////////////////
-
 
 
 
@@ -440,6 +417,7 @@ function on_paint(gr) {
 	gr.SetInterpolationMode(InterpolationMode.HighQualityBicubic);
 
 	// BIG ALBUMART
+	if (fb.IsPlaying) {
 	if (albumart && albumart_scaled) {
 		if (showExtraDrawTiming) drawArt = fb.CreateProfiler('on_paint -> artwork');
 		if (!shadow_image) {	// when switching views, the drop shadow won't get created initially which is very jarring when it suddenly appears later, so create it if we don't have it.
@@ -485,6 +463,7 @@ function on_paint(gr) {
             gr.DrawImage(rotatedCD, cdart_size.x, cdart_size.y, cdart_size.w, cdart_size.h, 0,0,rotatedCD.width,rotatedCD.height,0);
             if (showExtraDrawTiming) drawCD.Print();
 		}
+	}
 	}
 	if (fb.IsPlaying && (albumart || !cdart)) {
 		gr.SetSmoothingMode(SmoothingMode.None);
@@ -535,9 +514,8 @@ function on_paint(gr) {
 			gr.DrawString(str.year, ft.year, col.artist, ww - textLeft * 2 - text_width, geo.top_bg_h - trackInfoHeight - height - 20, text_width, height, StringFormat(StringAlignment.Far));
 		}
 
+		var top = (albumart_size.y ? albumart_size.y : geo.top_art_spacing) + (is_4k ? 30 : 15);
 		if (gridSpace > 120) {
-            top = (albumart_size.y ? albumart_size.y : geo.top_art_spacing) + (is_4k ? 30 : 15);
-
 			if (str.title) {
 				ft.title = ft.title_lrg;
 				ft.tracknum = ft.tracknum_lrg;
@@ -662,11 +640,6 @@ function on_paint(gr) {
 			var col2_width = text_width - column_margin - col1_width;
 			var col2_left = textLeft + col1_width + column_margin;
 
-			// TODO: should probably test this out fully
-			// if (calcBrightness(col.primary) > 190) {
-			// } else {
-			// }
-
 			for (k=0, i=0; k < str.grid.length; k++) {
 				var key   = str.grid[k].label;
 				var value = str.grid[k].val;
@@ -683,6 +656,7 @@ function on_paint(gr) {
 						default:			break;
 					}
 					txtRec = gr.MeasureString(value, grid_val_ft, 0, 0, col2_width, wh);
+					if (top + txtRec.Height < albumart_size.y + albumart_size.h) {
 					cell_height = txtRec.Height + 5;
 					if (dropShadow) {
 						var border_w = is_4k ? 1 : 0.5;
@@ -707,17 +681,24 @@ function on_paint(gr) {
 				}
 			}
 		}
+		}
 		if (showExtraDrawTiming) drawTextGrid.Print();
 
 	}	/* if (!displayPlaylist && !displayLibrary) */
 
-	if ((!displayPlaylist && !displayLibrary) || (!albumart && !cdart && noArtwork)) {
+	if ((fb.IsPlaying && !displayPlaylist && !displayLibrary) || (!albumart && !cdart && noArtwork)) {
 		// BAND LOGO drawing code
 		showExtraDrawTiming && (drawBandLogos = fb.CreateProfiler("on_paint -> band logos"));
-		if (bandLogo) {
+		availableSpace = albumart_size.y + albumart_size.h - top;
+		if (bandLogo && availableSpace > 75) {
             // max width we'll draw is 1/2 the full size because the HQ images are just so big
 			logoWidth = Math.min(bandLogoHQ ? (is_4k ? bandLogo.width : bandLogo.width / 2) : bandLogo.width * 1.5, albumart_size.x-ww*0.05);
 			heightScale = logoWidth / bandLogo.width;   // width is fixed to logoWidth, so scale height accordingly
+			if (bandLogo.height * heightScale > availableSpace) {
+				// TODO: could probably do this calc just once, but the logic is complicated
+				heightScale = availableSpace / bandLogo.height;
+				logoWidth = bandLogo.width * heightScale;
+			}
             logoTop = Math.round(albumart_size.y + albumart_size.h - (heightScale * bandLogo.height)) - 4;
             if (!bandLogoHQ || is_4k) {
                 logoTop -= 20;
@@ -2249,7 +2230,7 @@ function createDropShadow() {
 				0.5*geo.aa_shadow, 0.5*geo.aa_shadow, col.aa_shadow);
             }
 
-			if (cdart && pref.display_cdart && !displayPlaylist) {
+			if (cdart && pref.display_cdart && !displayPlaylist && !displayLibrary) {
 				var offset = cdart_size.w * 0.40;	// don't change this value
 				var xVal = cdart_size.x;
 				var shadowOffset = geo.aa_shadow*2;
