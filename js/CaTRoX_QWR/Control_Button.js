@@ -306,7 +306,7 @@ function onPlaylistsMenu(x, y) {
 	lists.AppendMenuItem(MF_STRING, 2, "Create New Playlist");
 	lists.AppendMenuSeparator();
 	for (var i = 0; i != playlistCount; i++) {
-		lists.AppendMenuItem(MF_STRING, playlistId + i, plman.GetPlaylistName(i).replace(/\&/g, "&&") + " [" + plman.PlaylistItemCount(i) + "]" + (plman.IsAutoPlaylist(i) ? " (Auto)" : "") + (i == plman.PlayingPlaylist ? " (Now Playing)" : ""));
+		lists.AppendMenuItem(MF_STRING, playlistId + i, plman.GetPlaylistName(i).replace(/\&/g, '&&') + ' [' + plman.PlaylistItemCount(i) + ']' + (plman.IsAutoPlaylist(i) ? ' (Auto)' : '') + (i === plman.PlayingPlaylist ? ' (Now Playing)' : ''));
 	}
 
 	var id = lists.TrackPopupMenu(x, y);

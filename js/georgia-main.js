@@ -74,7 +74,7 @@ function createFonts() {
 	ft.guifx 				= font('Guifx v2 Transports', 16, 0);
 	ft.Marlett				= font('Marlett', 13, 0);
 	ft.SegoeUi				= font('Segoe Ui Semibold', 12, 0);
-	ft.library_tree         = font('Segoe UI', 16, 0);
+	ft.library_tree         = font('Segoe UI', libraryProps.baseFontSize, 0);
 	ft.lyrics               = font('HelveticaNeueLT Std', pref.lyrics_font_size, 1);
 }
 
@@ -1163,6 +1163,22 @@ function onSettingsMenu(x, y) {
 	_libraryMenu.CheckMenuItem(51, libraryProps.fullLine);
 	_libraryMenu.AppendMenuItem(MF_STRING, 52, 'Show Tooltips');
 	_libraryMenu.CheckMenuItem(52, libraryProps.tooltips);
+
+	var _rootNodeMenu = window.CreatePopupMenu();
+	_rootNodeMenu.AppendMenuItem(MF_STRING, 170, 'Hide');
+	_rootNodeMenu.AppendMenuItem(MF_STRING, 171, '"All Music"');
+	_rootNodeMenu.AppendMenuItem(MF_STRING, 172, 'View Name');
+	_rootNodeMenu.CheckMenuRadioItem(170, 172, 170 + libraryProps.rootNode);
+	_rootNodeMenu.AppendTo(_libraryMenu, MF_STRING, 'Root Node Type');
+	var _nodeitemCountsMenu = window.CreatePopupMenu();
+	_nodeitemCountsMenu.AppendMenuItem(MF_STRING, 180, 'Hidden');
+	_nodeitemCountsMenu.AppendMenuItem(MF_STRING, 181, '# Tracks');
+	_nodeitemCountsMenu.AppendMenuItem(MF_STRING, 182, '# Sub-Items');
+	_nodeitemCountsMenu.CheckMenuRadioItem(180, 182, 180 + libraryProps.nodeItemCounts);
+	_nodeitemCountsMenu.AppendTo(_libraryMenu, MF_STRING, 'Node Item Counts');
+
+
+	_libraryMenu.AppendMenuItem(MF_STRING, 53, 'Reset Library Zoom');
 	_libraryMenu.AppendTo(_menu, MF_STRING, 'Library Settings');
 	_menu.AppendMenuSeparator();
 
@@ -1236,6 +1252,7 @@ function onSettingsMenu(x, y) {
         case 30:
             pref.hyperlinks_ctrl = !pref.hyperlinks_ctrl;
             break;
+		/* Library Menu Items */
 		case 50:
 			libraryProps.rememberTree = !libraryProps.rememberTree;
 			break;
@@ -1246,6 +1263,25 @@ function onSettingsMenu(x, y) {
 			libraryProps.tooltips = !libraryProps.tooltips;
 			setLibrarySize();
 			break;
+		case 53:
+			libraryProps.filterZoom = 100;
+			libraryProps.fontZoom = 100;
+			libraryProps.nodeZoom = 100;
+			setLibrarySize();
+			break;
+		case 170:
+		case 171:
+		case 172:
+			libraryProps.rootNode = idx - 170;
+			lib_manager.rootNodes(1);
+			break;
+		case 180:
+		case 181:
+		case 182:
+			libraryProps.nodeItemCounts = idx - 180;
+			lib_manager.rootNodes(1);
+			break;
+
 
 		case 130:
 		case 131:
