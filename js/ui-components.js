@@ -16,7 +16,7 @@ function PauseButton() {
 		var halfBorderWidth = Math.floor(pauseBorderWidth / 2);
 
 		gr.FillRoundRect(this.left, this.top, geo.pause_size, geo.pause_size,
-				0.1*geo.pause_size, 0.1*geo.pause_size, rgba(250,0,0,150));
+				0.1*geo.pause_size, 0.1*geo.pause_size, rgba(0,0,0,150));
 		gr.DrawRoundRect(this.left + halfBorderWidth, this.top + halfBorderWidth, geo.pause_size - pauseBorderWidth, geo.pause_size - pauseBorderWidth,
 				0.1*geo.pause_size, 0.1*geo.pause_size, pauseBorderWidth, rgba(128,128,128,60));
 		gr.FillRoundRect(this.left + 0.26*geo.pause_size, this.top + 0.25 * geo.pause_size,
