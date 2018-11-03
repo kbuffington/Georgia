@@ -25,76 +25,76 @@ function buttonEventHandler(x, y, m) {
 			thisButton = btns[i];
 			break;
 		}
-    }
+	}
 	if (lastOverButton != thisButton)
 		g_tooltip.Deactivate();
 	lastOverButton = thisButton;
 
-    switch (c) {
+	switch (c) {
 
-        case 'on_mouse_move':
-            if (downButton) return;
+		case 'on_mouse_move':
+			if (downButton) return;
 
-            if (oldButton && oldButton != thisButton) {
-                oldButton.changeState(0);
-            }
-            if (thisButton && thisButton != oldButton) {
-                thisButton.changeState(1);
-            }
+			if (oldButton && oldButton != thisButton) {
+				oldButton.changeState(0);
+			}
+			if (thisButton && thisButton != oldButton) {
+				thisButton.changeState(1);
+			}
 
-            if (lastOverButton != oldButton) {
-                tooltipTimeout && window.ClearInterval(tooltipTimeout);
-                tooltipTimeout = window.SetTimeout(function () {
-                    displayTooltip();
-                }, 750);
-            }
+			if (lastOverButton != oldButton) {
+				tooltipTimeout && window.ClearInterval(tooltipTimeout);
+				tooltipTimeout = window.SetTimeout(function () {
+					displayTooltip();
+				}, 750);
+			}
 
-            oldButton = thisButton;
-            break;
-        case 'on_mouse_lbtn_dblclk':
-            if (thisButton) {
-                thisButton.changeState(2);
-                downButton = thisButton;
-                downButton.onDblClick();
-            }
-            break;
-        case 'on_mouse_lbtn_down':
-            if (thisButton) {
-                thisButton.changeState(2);
-                downButton = thisButton;
-            }
+			oldButton = thisButton;
+			break;
+		case 'on_mouse_lbtn_dblclk':
+			if (thisButton) {
+				thisButton.changeState(2);
+				downButton = thisButton;
+				downButton.onDblClick();
+			}
+			break;
+		case 'on_mouse_lbtn_down':
+			if (thisButton) {
+				thisButton.changeState(2);
+				downButton = thisButton;
+			}
 
-            break;
+			break;
 
-        case 'on_mouse_lbtn_up':
-            if (downButton) {
-                downButton.onClick();
+		case 'on_mouse_lbtn_up':
+			if (downButton) {
+				downButton.onClick();
 
-                if (mainMenuOpen) {
-                    thisButton = undefined;
-                    mainMenuOpen = false;
-                }
-                thisButton ? thisButton.changeState(1) : downButton.changeState(0);
+				if (mainMenuOpen) {
+					thisButton = undefined;
+					mainMenuOpen = false;
+				}
+				thisButton ? thisButton.changeState(1) : downButton.changeState(0);
 
-                downButton = undefined;
-            }
-            break;
-        case 'on_mouse_leave':
-            oldButton = undefined;
-            if (downButton) return; // for menu buttons
+				downButton = undefined;
+			}
+			break;
+		case 'on_mouse_leave':
+			oldButton = undefined;
+			if (downButton) return; // for menu buttons
 
-            for (var i in btns) {
-                if (btns[i].state != 0) {
-                    btns[i].changeState(0);
-                }
-            }
+			for (var i in btns) {
+				if (btns[i].state != 0) {
+					btns[i].changeState(0);
+				}
+			}
 
-            break;
-    }
+			break;
+	}
 }
 
 var g_tooltip = window.CreateTooltip();
-g_tooltip.Text = "";	// was seeing stale tooltips when reloading the theme, having another window selected and mousing over the WSHPanel
+g_tooltip.Text = ""; // was seeing stale tooltips when reloading the theme, having another window selected and mousing over the WSHPanel
 
 function displayTooltip() {
 	if (lastOverButton && lastOverButton.tooltip !== "" && g_tooltip.Text !== lastOverButton.tooltip) {
@@ -246,27 +246,33 @@ Button.prototype.onClick = function () {
 				if (displayLyrics) {
 					refresh_lyrics();
 				}
-				window.RepaintRect(albumart_size.x-1, albumart_size.y-1, albumart_scaled.width+2, albumart_scaled.height+2);
+				window.RepaintRect(albumart_size.x - 1, albumart_size.y - 1, albumart_scaled.width + 2, albumart_scaled.height + 2);
 			}
-            break;
-        case 'ShowLibrary':
-            displayLibrary = !displayLibrary;
-            displayPlaylist = false;
-            if (displayLibrary) {
+			break;
+		case 'ShowLibrary':
+			displayLibrary = !displayLibrary;
+			if (displayLibrary) {
 				initLibraryPanel();
-                setLibrarySize();
-            }
-            ResizeArtwork(false);
-            window.Repaint();
-            break;
+				setLibrarySize();
+			}
+			if (displayPlaylist) {
+				displayPlaylist = false;
+			} else {
+				ResizeArtwork(false);
+			}
+			window.Repaint();
+			break;
 		case 'Playlist':
 			// we appear to be getting album art way too frequently here -- delete this comment and others when verified this is cool
-            displayPlaylist = !displayPlaylist;
-            displayLibrary = false;
+			displayPlaylist = !displayPlaylist;
 			if (displayPlaylist) {
 				playlist.on_size(ww, wh);
 			}
-			ResizeArtwork(false);
+			if (displayLibrary) {
+				displayLibrary = false;
+			} else {
+				ResizeArtwork(false);
+			}
 			window.Repaint();
 			break;
 	}
@@ -348,8 +354,8 @@ function onMainMenu(x, y, name) {
 
 		if (ret > 0) {
 			menuManager.ExecuteByID(ret - 1);
-        }
-    }
+		}
+	}
 
 	menuManager.Dispose();
 	menu.Dispose();
@@ -411,7 +417,7 @@ function buttonAlphaTimer() {
 			//---> Test button alpha values and turn button timer off when it's not required;
 			for (i = activatedBtns.length - 1; i >= 0; i--) {
 				if ((!activatedBtns[i].hoverAlpha && !activatedBtns[i].downAlpha) ||
-					  activatedBtns[i].hoverAlpha === 255 || activatedBtns[i].downAlpha === 255) {
+					activatedBtns[i].hoverAlpha === 255 || activatedBtns[i].downAlpha === 255) {
 					activatedBtns.splice(i, 1);
 				}
 			}
@@ -419,11 +425,11 @@ function buttonAlphaTimer() {
 			if (!activatedBtns.length) {
 				window.ClearInterval(buttonTimer);
 				buttonTimer = null;
-                trace && console.log("buttonTimerStarted = false");
+				trace && console.log("buttonTimerStarted = false");
 			}
 
 		}, buttonTimerDelay);
 
-        trace && console.log("buttonTimerStarted = true");
+		trace && console.log("buttonTimerStarted = true");
 	}
 }

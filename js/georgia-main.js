@@ -1309,6 +1309,15 @@ function onSettingsMenu(x, y) {
 			pref.show_reload_button = !pref.show_reload_button;
 			window.Reload();
 			break;
+		case 95:
+			pref.show_theme_log = !pref.show_theme_log;
+			if (pref.show_theme_log) {
+				// this is overkill, but it'll print the theme logging at least
+				albumart = null;
+				loadFromCache = false;
+				on_playback_new_track(fb.GetNowPlaying());
+			}
+			break;
 		case 100:
 			pref.locked = !pref.locked;
 			break;
@@ -1382,7 +1391,6 @@ function on_init() {
 		on_playback_new_track(fb.GetNowPlaying());
 	}
 
-	console.log('clearing g_playtimer in on_init()');
 	g_playtimer && window.ClearInterval(g_playtimer);
 	g_playtimer = null;
 }
@@ -1757,27 +1765,28 @@ function on_mouse_lbtn_up(x, y, m) {
 }
 
 function on_mouse_lbtn_dblclk(x, y, m) {
-	if (!displayPlaylist && !displayLibrary) {
+	if (displayPlaylist && playlist.mouse_in_this(x, y)) {
+		trace_call && console.log(qwr_utils.function_name());
+		playlist.on_mouse_lbtn_dblclk(x, y, m);
+	} else if (displayLibrary && library.mouse_in_this(x, y)) {
+		trace_call && console.log(qwr_utils.function_name());
+		library.on_mouse_lbtn_dblclk(x, y, m);
+	} else {
 		// re-initialise the panel
 		just_dblclicked = true;
-		if (fb.IsPlaying)
+		if (fb.IsPlaying) {
+            albumart = null;
+            loadFromCache = false;
 			on_playback_new_track(fb.GetNowPlaying());
+        }
 		if (displayLyrics) {
 			refresh_lyrics();
 		}
-	}
 	buttonEventHandler(x, y, m);
-    if (displayPlaylist) {
-		trace_call && console.log(qwr_utils.function_name());
-		playlist.on_mouse_lbtn_dblclk(x, y, m);
-	} else if (displayLibrary) {
-		trace_call && console.log(qwr_utils.function_name());
-		library.on_mouse_lbtn_dblclk(x, y, m);
 	}
 }
 
 function on_mouse_rbtn_down(x, y, m) {
-	console.log(qwr_utils.function_name());
 	if (displayPlaylist && playlist.mouse_in_this(x, y)) {
 		trace_call && console.log(qwr_utils.function_name());
 		playlist.on_mouse_rbtn_down(x, y, m);
