@@ -29,13 +29,21 @@ testFont('Guifx v2 Transports');
 
 var useNeue = false;
 var fontsCreated = null;
+
 function createFonts() {
 	var font_size = is_4k.toString();
 	if (fontsCreated && fontsCreated == font_size) {
 		return;	// don't redo fonts
 	}
+
 	function font(name, size, style) {
-		return gdi.Font(name, font_size === 'true' ? Math.min(size * 2) : size, style);
+		var font;
+		try {
+			font = gdi.Font(name, font_size === 'true' ? Math.min(size * 2) : size, style);
+		} catch (e) {
+			console.log('Failed to load font >>>', name, size, style);
+		}
+		return font;
 	}
 	ft.album_lrg			= font('HelveticaNeueLT Std Med', 36, 0);
 	ft.album_med 			= font('HelveticaNeueLT Std Med', 32, 0);
@@ -75,7 +83,7 @@ function createFonts() {
 	ft.Marlett				= font('Marlett', 13, 0);
 	ft.SegoeUi				= font('Segoe Ui Semibold', 12, 0);
 	ft.library_tree         = font('Segoe UI', libraryProps.baseFontSize, 0);
-	ft.lyrics               = font('HelveticaNeueLT Std', pref.lyrics_font_size, 1);
+	ft.lyrics = font('HelveticaNeueLT Std', pref.lyrics_font_size || 20, 1);
 }
 
 
