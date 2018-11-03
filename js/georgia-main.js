@@ -1185,8 +1185,22 @@ function onSettingsMenu(x, y) {
 	_nodeitemCountsMenu.CheckMenuRadioItem(180, 182, 180 + libraryProps.nodeItemCounts);
 	_nodeitemCountsMenu.AppendTo(_libraryMenu, MF_STRING, 'Node Item Counts');
 
+	_libraryMenu.AppendMenuItem(MF_STRING, 53, 'Show Library Scrollbar');
+	_libraryMenu.CheckMenuItem(53, libraryProps.showScrollbar);
+	_libraryMenu.AppendMenuItem(MF_STRING, 54, 'Send files to Current Playlist');
+	_libraryMenu.CheckMenuItem(54, libraryProps.sendToCurrent);
+	_libraryMenu.AppendMenuItem(MF_STRING, 55, 'Auto-Fill Playlist on Selection');
+	_libraryMenu.CheckMenuItem(55, libraryProps.autoFill);
 
-	_libraryMenu.AppendMenuItem(MF_STRING, 53, 'Reset Library Zoom');
+	var _doubleClickMenu = window.CreatePopupMenu();
+	_doubleClickMenu.AppendMenuItem(MF_STRING, 190, 'Expand/Collapse Folders');
+	_doubleClickMenu.AppendMenuItem(MF_STRING, 191, 'Send and Play');
+	_doubleClickMenu.AppendMenuItem(MF_STRING, 192, 'Send to Playlist');
+	_doubleClickMenu.CheckMenuRadioItem(190, 192, 190 + libraryProps.doubleClickAction);
+	_doubleClickMenu.AppendTo(_libraryMenu, MF_STRING, 'Double Click Action');
+	_libraryMenu.AppendMenuItem(MF_STRING, 57, 'Auto Collapse Nodes');
+	_libraryMenu.CheckMenuItem(57, libraryProps.autoCollapse);
+	_libraryMenu.AppendMenuItem(MF_STRING, 58, 'Reset Library Zoom');
 	_libraryMenu.AppendTo(_menu, MF_STRING, 'Library Settings');
 	_menu.AppendMenuSeparator();
 
@@ -1274,6 +1288,19 @@ function onSettingsMenu(x, y) {
 			setLibrarySize();
 			break;
 		case 53:
+			libraryProps.showScrollbar = !libraryProps.showScrollbar;
+			setLibrarySize();
+			break;
+		case 54:
+			libraryProps.sendToCurrent = !libraryProps.sendToCurrent;
+			break;
+		case 55:
+			libraryProps.autoFill = !libraryProps.autoFill;
+			break;
+		case 57:
+			libraryProps.autoCollapse = !libraryProps.autoCollapse;
+			break;
+		case 58:
 			libraryProps.filterZoom = 100;
 			libraryProps.fontZoom = 100;
 			libraryProps.nodeZoom = 100;
@@ -1291,7 +1318,11 @@ function onSettingsMenu(x, y) {
 			libraryProps.nodeItemCounts = idx - 180;
 			lib_manager.rootNodes(1);
 			break;
-
+		case 190:
+		case 191:
+		case 192:
+			libraryProps.doubleClickAction = idx - 190;
+			break;
 
 		case 130:
 		case 131:
@@ -1470,6 +1501,8 @@ function setLibrarySize() {
         var y = btns[30].y + btns[30].h + 10 + listTop;
         var library_w = ww - x;
         var library_h = Math.max(0, wh - geo.lower_bar_h - 10 - y - listBottom);
+		ui.sizedNode = false;
+		ui.node_sz = Math.round(16 * ui.scale);
         libraryPanel.on_size(x, y, library_w, library_h);
     } else {
         // TODO: take this if/else out once this part is done
