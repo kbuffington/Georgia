@@ -3673,102 +3673,112 @@ function Header(parent, x, y, w, h, idx) {
         if (!hyperlinks_initialized) {
             this.initialize_hyperlinks(gr);
         }
-
-        var artist_color = g_pl_colors.artist_normal;
-        var album_color = g_pl_colors.album_normal;
-        var info_color = g_pl_colors.info_normal;
-        var date_color = g_pl_colors.date_normal;
-        var line_color = g_pl_colors.line_normal;
-        var date_font = g_pl_fonts.date;
-        var artist_font = g_pl_fonts.artist_normal;
-
-        if (this.is_playing()) {
-            artist_color = g_pl_colors.artist_playing;
-            album_color = g_pl_colors.album_playing;
-            info_color = g_pl_colors.info_playing;
-            date_color = g_pl_colors.date_playing;
-            line_color = g_pl_colors.line_playing;
-            artist_font = g_pl_fonts.artist_playing;
+        var cache_header = true;  // caching is a lot faster, but need to handle artwork loading
+        if (was_playing !== this.is_playing()) {
+            was_playing = this.is_playing();
+            cache_header = false;
+            if (header_image) {
+                header_image.Dispose();
+                header_image = undefined;
+            }
         }
-        if (this.has_selected_items()) {
-            line_color = g_pl_colors.line_selected;
-            artist_color = album_color = date_color = info_color = g_pl_colors.group_title_selected;
-        }
+        if (!cache_header || !header_image) {
+            var artist_color = g_pl_colors.artist_normal;
+            var album_color = g_pl_colors.album_normal;
+            var info_color = g_pl_colors.info_normal;
+            var date_color = g_pl_colors.date_normal;
+            var line_color = g_pl_colors.line_normal;
+            var date_font = g_pl_fonts.date;
+            var artist_font = g_pl_fonts.artist_normal;
 
-        var clipImg = gdi.CreateImage(this.w, this.h);
-        var grClip = clipImg.GetGraphics();
-
-        grClip.FillSolidRect(0, 0, this.w, this.h, g_pl_colors.background); // Solid background for ClearTypeGridFit text rendering
-        if (this.has_selected_items()) {
-            grClip.FillSolidRect(0, 0, this.w, this.h, g_pl_colors.row_selected);
-        }
-
-        if (this.is_playing()) {
-            var p = is_4k_playlist ? 12 : 6;  // from art below
+            if (this.is_playing()) {
+                artist_color = g_pl_colors.artist_playing;
+                album_color = g_pl_colors.album_playing;
+                info_color = g_pl_colors.info_playing;
+                date_color = g_pl_colors.date_playing;
+                line_color = g_pl_colors.line_playing;
+                artist_font = g_pl_fonts.artist_playing;
+            }
             if (this.has_selected_items()) {
-                grClip.FillSolidRect(0, p, is_4k_playlist ? 16 : 8, this.h - p * 2, col.accent);
-                // grClip.FillGradRect(5, p, this.w / 2, this.h - p * 2, 180, g_pl_colors.row_selected, col.accent);
-            } else {
-                grClip.FillSolidRect(0, p, is_4k_playlist ? 16 : 8, this.h - p * 2, col.darkAccent);
-                // grClip.FillGradRect(5, p, this.w / 2, this.h - p * 2, 180, g_pl_colors.background, col.darkAccent);
+                line_color = g_pl_colors.line_selected;
+                artist_color = album_color = date_color = info_color = g_pl_colors.group_title_selected;
             }
-        }
 
-        grClip.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
+            var clipImg = gdi.CreateImage(this.w, this.h);
+            var grClip = clipImg.GetGraphics();
 
-        if (this.is_collapsed && this.is_focused()) {
-            grClip.DrawRect(2, 2, this.w - 4, this.h - 4, 1, line_color);
-        }
+            grClip.FillSolidRect(0, 0, this.w, this.h, g_pl_colors.background); // Solid background for ClearTypeGridFit text rendering
+            if (this.has_selected_items()) {
+                grClip.FillSolidRect(0, 0, this.w, this.h, g_pl_colors.row_selected);
+            }
 
-        //************************************************************//
-
-        var left_pad = is_4k_playlist ? 20 : 10;
-
-        //---> Artbox
-        if (g_properties.show_album_art) {
-            if (!this.is_art_loaded()) {
-                var cached_art = Header.art_cache.get_image_for_meta(metadb);
-                if (cached_art) {
-                    this.assign_art(cached_art);
+            if (this.is_playing()) {
+                var p = is_4k_playlist ? 12 : 6;  // from art below
+                if (this.has_selected_items()) {
+                    grClip.FillSolidRect(0, p, is_4k_playlist ? 16 : 8, this.h - p * 2, col.accent);
+                    // grClip.FillGradRect(5, p, this.w / 2, this.h - p * 2, 180, g_pl_colors.row_selected, col.accent);
+                } else {
+                    grClip.FillSolidRect(0, p, is_4k_playlist ? 16 : 8, this.h - p * 2, col.darkAccent);
+                    // grClip.FillGradRect(5, p, this.w / 2, this.h - p * 2, 180, g_pl_colors.background, col.darkAccent);
                 }
             }
 
-            if (art !== null || !g_properties.auto_album_art) {
-                var p = is_4k_playlist ? 12 : 6;
-                var spacing = is_4k_playlist ? 4 : 2;
+            grClip.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
 
-                var art_box_size = art_max_size + spacing * 2;
-                var art_box_x = p * 3;
-                var art_box_y = p;
-                var art_box_w = art_box_size;
-                var art_box_h = art_box_size;
+            if (this.is_collapsed && this.is_focused()) {
+                grClip.DrawRect(2, 2, this.w - 4, this.h - 4, 1, line_color);
+            }
 
-                if (art) {
-                    var art_x = art_box_x + spacing;
-                    var art_y = art_box_y + spacing;
-                    var art_h = art.Height;
-                    var art_w = art.Width;
-                    if (art_h > art_w) {
-                        art_box_w = art_w + spacing * 2;
+            //************************************************************//
+
+            var left_pad = is_4k_playlist ? 20 : 10;
+
+            //---> Artbox
+            if (g_properties.show_album_art) {
+                if (!this.is_art_loaded()) {
+                    var cached_art = Header.art_cache.get_image_for_meta(metadb);
+                    if (cached_art) {
+                        this.assign_art(cached_art);
                     }
-                    else {
-                        art_box_h = art_h + spacing * 2;
-                        art_y += Math.round((art_max_size - art_h) / 2);
-                        art_box_y = art_y - spacing;
+                }
+
+                if (art !== null || !g_properties.auto_album_art) {
+                    var p = is_4k_playlist ? 12 : 6;
+                    var spacing = is_4k_playlist ? 4 : 2;
+
+                    var art_box_size = art_max_size + spacing * 2;
+                    var art_box_x = p * 3;
+                    var art_box_y = p;
+                    var art_box_w = art_box_size;
+                    var art_box_h = art_box_size;
+
+                    if (art) {
+                        var art_x = art_box_x + spacing;
+                        var art_y = art_box_y + spacing;
+                        var art_h = art.Height;
+                        var art_w = art.Width;
+                        if (art_h > art_w) {
+                            art_box_w = art_w + spacing * 2;
+                        }
+                        else {
+                            art_box_h = art_h + spacing * 2;
+                            art_y += Math.round((art_max_size - art_h) / 2);
+                            art_box_y = art_y - spacing;
+                        }
+                        grClip.DrawImage(art, art_x, art_y, art_w, art_h, 0, 0, art_w, art_h, 0, 220);
                     }
-                    grClip.DrawImage(art, art_x, art_y, art_w, art_h, 0, 0, art_w, art_h, 0, 220);
-                }
-                else if (!this.is_art_loaded()) {
-                    grClip.DrawString('LOADING', g_pl_fonts.cover, line_color, art_box_x, art_box_y, art_box_size, art_box_size, g_string_format.align_center);
-                    alreadyDrawn = true;
-                }
-                else {// null
-                    grClip.DrawString('NO COVER', g_pl_fonts.cover, _.RGB(100, 100, 100), art_box_x, art_box_y, art_box_size, art_box_size, g_string_format.align_center);
-                }
+                    else if (!this.is_art_loaded()) {
+                        grClip.DrawString('LOADING', g_pl_fonts.cover, line_color, art_box_x, art_box_y, art_box_size, art_box_size, g_string_format.align_center);
+                        cache_header = false;   // don't cache until artwork is loaded
+                        alreadyDrawn = true;
+                    }
+                    else {// null
+                        grClip.DrawString('NO COVER', g_pl_fonts.cover, _.RGB(100, 100, 100), art_box_x, art_box_y, art_box_size, art_box_size, g_string_format.align_center);
+                    }
 
-                grClip.DrawRect(art_box_x, art_box_y, art_box_w - 1, art_box_h - 1, 1, line_color);
+                    grClip.DrawRect(art_box_x, art_box_y, art_box_w - 1, art_box_h - 1, 1, line_color);
 
-                left_pad += art_box_x + art_box_w;
+                    left_pad += art_box_x + art_box_w;
                     hyperlinks.artist && hyperlinks.artist.set_xOffset(left_pad);
                     var i = 0;
                     var offset = 0;
@@ -3780,232 +3790,236 @@ function Header(parent, x, y, w, h, idx) {
                         hyperlinks['genre' + i].x -= offset;
                         i++;
                     }
-            }
-        }
-
-        //************************************************************//
-        var is_radio = _.startsWith(metadb.RawPath, 'http') || _.startsWith(metadb.Path, 'spotify');
-
-        // part1: artist
-        // part2: album + line + Date OR line
-        // part3: info OR album
-        var part1_cur_x = left_pad;
-        var part2_cur_x = left_pad;
-        var part3_cur_x = left_pad;
-
-        var part_h = (!g_properties.show_group_info) ? this.h / 2 : this.h / 3;
-        var part2_right_pad = 0;
-
-        //---> DATE
-        if (grouping_handler.show_date()) {
-            var date_query = '[%date%]';
-            if (g_properties.show_original_date) {
-                date_query += '[ \'(\'%original release date%\')\']';
-            }
-            date_query = '$year($if2(%original release date%,%date%))'; // Mordred: my date query
-
-            var date_text = _.tf(date_query, metadb);
-            if (date_text) {
-                var date_w = Math.ceil(gr.MeasureString(date_text, date_font, 0, 0, 0, 0).Width + 5);
-                var date_x = this.w - date_w - 5;
-
-                if (!hyperlinks.date && date_x > left_pad) {
-                    var date_y = 0;
-                    var date_h = this.h - 4;
-                    grClip.DrawString(date_text, date_font, date_color, date_x, date_y, date_w, date_h, g_string_format.v_align_center);
-                } else {
-                    hyperlinks.date.draw(grClip, date_color);
                 }
-
-                part2_right_pad += this.w - date_x;
             }
-        }
 
-        //---> TITLE
-        if (grouping_handler.get_title_query()) {
-            var artist_text = _.tf(grouping_handler.get_title_query(), metadb);
-            if (!artist_text && is_radio) {
-                artist_text = 'Radio Stream';
-            }
-            if (artist_text) {
-                var artist_x = part1_cur_x;
-                var artist_w = this.w - artist_x;
-                var artist_h = part_h;
-                if (!g_properties.show_group_info) {
-                    artist_w -= part2_right_pad + 5;
-                    artist_h -= 5;
+            //************************************************************//
+            var is_radio = _.startsWith(metadb.RawPath, 'http') || _.startsWith(metadb.Path, 'spotify');
+
+            // part1: artist
+            // part2: album + line + Date OR line
+            // part3: info OR album
+            var part1_cur_x = left_pad;
+            var part2_cur_x = left_pad;
+            var part3_cur_x = left_pad;
+
+            var part_h = (!g_properties.show_group_info) ? this.h / 2 : this.h / 3;
+            var part2_right_pad = 0;
+
+            //---> DATE
+            if (grouping_handler.show_date()) {
+                var date_query = '[%date%]';
+                if (g_properties.show_original_date) {
+                    date_query += '[ \'(\'%original release date%\')\']';
                 }
+                date_query = '$year($if2(%original release date%,%date%))'; // Mordred: my date query
 
-                var artist_text_format = g_string_format.v_align_far | g_string_format.trim_ellipsis_char | g_string_format.no_wrap;
-                if (is_radio || !hyperlinks.artist)  {
-                    grClip.DrawString(artist_text, artist_font, artist_color, artist_x, 0, artist_w, artist_h, artist_text_format);
-                } else {
-                    hyperlinks.artist.draw(grClip, artist_color);
+                var date_text = _.tf(date_query, metadb);
+                if (date_text) {
+                    var date_w = Math.ceil(gr.MeasureString(date_text, date_font, 0, 0, 0, 0).Width + 5);
+                    var date_x = this.w - date_w - 5;
+
+                    if (!hyperlinks.date && date_x > left_pad) {
+                        var date_y = 0;
+                        var date_h = this.h - 4;
+                        grClip.DrawString(date_text, date_font, date_color, date_x, date_y, date_w, date_h, g_string_format.v_align_center);
+                    } else {
+                        hyperlinks.date.draw(grClip, date_color);
+                    }
+
+                    part2_right_pad += this.w - date_x;
                 }
-                //part1_cur_x += artist_w;
             }
-        }
 
-        //---> SUB TITLE
-        if (grouping_handler.get_sub_title_query()) {
-            var album_text = _.tf(grouping_handler.get_sub_title_query(), metadb);
-            if (album_text) {
-                var album_h = part_h;
-                var album_y = part_h;
-                var album_x;
-                if (g_properties.show_group_info) {
-                    album_x = part2_cur_x
+            //---> TITLE
+            if (grouping_handler.get_title_query()) {
+                var artist_text = _.tf(grouping_handler.get_title_query(), metadb);
+                if (!artist_text && is_radio) {
+                    artist_text = 'Radio Stream';
+                }
+                if (artist_text) {
+                    var artist_x = part1_cur_x;
+                    var artist_w = this.w - artist_x;
+                    var artist_h = part_h;
+                    if (!g_properties.show_group_info) {
+                        artist_w -= part2_right_pad + 5;
+                        artist_h -= 5;
+                    }
+
+                    var artist_text_format = g_string_format.v_align_far | g_string_format.trim_ellipsis_char | g_string_format.no_wrap;
+                    if (is_radio || !hyperlinks.artist)  {
+                        grClip.DrawString(artist_text, artist_font, artist_color, artist_x, 0, artist_w, artist_h, artist_text_format);
+                    } else {
+                        hyperlinks.artist.draw(grClip, artist_color);
+                    }
+                    //part1_cur_x += artist_w;
+                }
+            }
+
+            //---> SUB TITLE
+            if (grouping_handler.get_sub_title_query()) {
+                var album_text = _.tf(grouping_handler.get_sub_title_query(), metadb);
+                if (album_text) {
+                    var album_h = part_h;
+                    var album_y = part_h;
+                    var album_x;
+                    if (g_properties.show_group_info) {
+                        album_x = part2_cur_x
+                    }
+                    else {
+                        album_y += 5;
+                        album_x = part3_cur_x
+                    }
+                    var album_w = this.w - album_x - (part2_right_pad + 5);
+
+                    var album_text_format = g_string_format.trim_ellipsis_char | g_string_format.no_wrap;
+                    if (g_properties.show_group_info) {
+                        album_text_format |= g_string_format.v_align_center;
+                    }
+
+                    grClip.DrawString(album_text, g_pl_fonts.album, album_color, album_x, album_y, album_w, album_h, album_text_format);
+
+                    var album_text_w = Math.ceil(
+                        /** @type {!number} */
+                        gr.MeasureString(album_text, g_pl_fonts.album, 0, 0, 0, 0).Width
+                    );
+                    if (g_properties.show_group_info) {
+                        part2_cur_x += album_text_w;
+                    }
+                    else {
+                        part3_cur_x += album_text_w;
+                    }
+                }
+            }
+
+            //---> INFO
+            if (g_properties.show_group_info) {
+                var info_x = part3_cur_x;
+                var info_y = 2 * part_h;
+                var info_h = part_h;//row_h;
+                var info_w = this.w - info_x;
+
+                var bitspersample = _.tf('$Info(bitspersample)', metadb);
+                var samplerate = _.tf('$Info(samplerate)', metadb);
+                var sample = ((bitspersample > 16 || samplerate > 44100) ? ' ' + bitspersample + 'bit/' + samplerate / 1000 + 'khz' : '');
+                var codec = _.tf('$ext(%path%)', metadb);
+
+                if (codec === 'cue') {
+                    codec = _.tf('$ext($Info(referenced_file))', metadb);
+                }
+                else if (codec === 'mpc') {
+                    codec += _.tf('[-$Info(codec_profile)]', metadb).replace('quality ', 'q');
+                }
+                else if (codec === 'dts' || codec === 'ac3' || codec === 'atsc a/52') {
+                    codec += ' ' + _.tf(" $replace($replace($replace($info(channel_mode), + LFE,),' front, ','/'),' rear surround channels',$if($strstr($info(channel_mode),' + LFE'),.1,.0)) %bitrate%", metadb) + ' kbps';
+                    codec = codec.replace('atsc a/52', 'Dolby Digital');
+                }
+                else if (_.tf('$Info(encoding)', metadb) === 'lossy') {
+                    if (_.tf('$Info(codec_profile)', metadb) === 'CBR') {
+                        codec += _.tf('[-%bitrate% kbps]', metadb);
+                    }
+                    else {
+                        codec += _.tf('[-$Info(codec_profile)]', metadb);
+                    }
+                }
+                if (codec) {
+                    codec = codec + sample;
                 }
                 else {
-                    album_y += 5;
-                    album_x = part3_cur_x
-                }
-                var album_w = this.w - album_x - (part2_right_pad + 5);
-
-                var album_text_format = g_string_format.trim_ellipsis_char | g_string_format.no_wrap;
-                if (g_properties.show_group_info) {
-                    album_text_format |= g_string_format.v_align_center;
+                    codec = (_.startsWith(metadb.RawPath, '3dydfy:') || _.startsWith(metadb.RawPath, 'fy+')) ? 'yt' : metadb.Path;
                 }
 
-                grClip.DrawString(album_text, g_pl_fonts.album, album_color, album_x, album_y, album_w, album_h, album_text_format);
-
-                var album_text_w = Math.ceil(
-                    /** @type {!number} */
-                    gr.MeasureString(album_text, g_pl_fonts.album, 0, 0, 0, 0).Width
-                );
-                if (g_properties.show_group_info) {
-                    part2_cur_x += album_text_w;
+                var track_count = this.sub_items.length;
+                var has_discs = false;
+                if (_.isInstanceOf(this.sub_items[0], DiscHeader)) {
+                    track_count = 0;
+                    has_discs = true;
+                    _.forEach(this.sub_items, function(discHeader) {
+                        track_count += discHeader.sub_items.length
+                    });
                 }
-                else {
-                    part3_cur_x += album_text_w;
+                var genre_text_w = 0;
+                if (!is_radio && grouping_handler.get_query_name() !== 'artist') {
+                    var genre_text = _.tf('[%genre%]', metadb).replace(/, /g,' \u2022 ');
+                    genre_text_w = Math.ceil(gr.MeasureString(genre_text, g_pl_fonts.info, 0, 0, 0, 0).Width + 3);
+                    if (!hyperlinks.genre0) {
+                        grClip.DrawString(genre_text, g_pl_fonts.info, info_color, info_x, info_y, info_w, info_h, info_text_format);
+                    } else {
+                        var i = 0;
+                        while (hyperlinks['genre' + i]) {
+                            if (i > 0) {
+                                grClip.DrawString(' \u2022 ', g_pl_fonts.info, info_color, genre_hyperlink.x + genre_hyperlink.get_w(), info_y, 8, info_h);
+                            }
+                            genre_hyperlink = hyperlinks['genre' + i];
+                            genre_hyperlink.draw(grClip, info_color);
+                            i++;
+                        }
+                    }
                 }
-            }
-        }
-
-        //---> INFO
-        if (g_properties.show_group_info) {
-            var info_x = part3_cur_x;
-            var info_y = 2 * part_h;
-            var info_h = part_h;//row_h;
-            var info_w = this.w - info_x;
-
-            var bitspersample = _.tf('$Info(bitspersample)', metadb);
-            var samplerate = _.tf('$Info(samplerate)', metadb);
-            var sample = ((bitspersample > 16 || samplerate > 44100) ? ' ' + bitspersample + 'bit/' + samplerate / 1000 + 'khz' : '');
-            var codec = _.tf('$ext(%path%)', metadb);
-
-            if (codec === 'cue') {
-                codec = _.tf('$ext($Info(referenced_file))', metadb);
-            }
-            else if (codec === 'mpc') {
-                codec += _.tf('[-$Info(codec_profile)]', metadb).replace('quality ', 'q');
-            }
-            else if (codec === 'dts' || codec === 'ac3' || codec === 'atsc a/52') {
-                codec += ' ' + _.tf(" $replace($replace($replace($info(channel_mode), + LFE,),' front, ','/'),' rear surround channels',$if($strstr($info(channel_mode),' + LFE'),.1,.0)) %bitrate%", metadb) + ' kbps';
-                codec = codec.replace('atsc a/52', 'Dolby Digital');
-            }
-            else if (_.tf('$Info(encoding)', metadb) === 'lossy') {
-                if (_.tf('$Info(codec_profile)', metadb) === 'CBR') {
-                    codec += _.tf('[-%bitrate% kbps]', metadb);
+                var disc_number = (!grouping_handler.show_cd() && _.tf('[%totaldiscs%]', metadb) !== '1') ? _.tf('[ | Disc: %discnumber%[/%totaldiscs%]]', metadb) : '';
+                var track_text = is_radio ? '' : ' | ' +
+                        (grouping_handler.show_cd() && has_discs ? this.sub_items.length + ' Discs - ' : '') +
+                        track_count + (track_count === 1 ? ' Track' : ' Tracks');
+                var info_text = _.tf(codec + disc_number + '[ | %replaygain_album_gain%]', metadb) + track_text;
+                if (genre_text_w) {
+                    info_text = '| ' + info_text;
                 }
-                else {
-                    codec += _.tf('[-$Info(codec_profile)]', metadb);
+                if (this.get_duration()) {
+                    info_text += ' | Time: ' + utils.FormatDuration(this.get_duration());
                 }
-            }
-            if (codec) {
-                codec = codec + sample;
-            }
-            else {
-                codec = (_.startsWith(metadb.RawPath, '3dydfy:') || _.startsWith(metadb.RawPath, 'fy+')) ? 'yt' : metadb.Path;
-            }
 
-            var track_count = this.sub_items.length;
-            var has_discs = false;
-            if (_.isInstanceOf(this.sub_items[0], DiscHeader)) {
-                track_count = 0;
-                has_discs = true;
-                _.forEach(this.sub_items, function(discHeader) {
-                    track_count += discHeader.sub_items.length
-                });
-            }
-            var genre_text_w = 0;
-            if (!is_radio && grouping_handler.get_query_name() !== 'artist') {
-                var genre_text = _.tf('[%genre%]', metadb).replace(/, /g,' \u2022 ');
-                genre_text_w = Math.ceil(gr.MeasureString(genre_text, g_pl_fonts.info, 0, 0, 0, 0).Width + 3);
-                if (!hyperlinks.genre0) {
-                    grClip.DrawString(genre_text, g_pl_fonts.info, info_color, info_x, info_y, info_w, info_h, info_text_format);
+                var info_text_format = g_string_format.trim_ellipsis_char | g_string_format.no_wrap;
+                grClip.DrawString(info_text, g_pl_fonts.info, info_color, info_x + genre_text_w, info_y, info_w, info_h, info_text_format);
+
+                //---> Record labels
+                if (!hyperlinks.label0) {
+                    var info_text_w = Math.ceil(gr.MeasureString(info_text, g_pl_fonts.info, 0, 0, 0, 0).Width + 5);    // TODO: Mordred - should only call MeasureString once
+                    var label_string = $('$if2(%label%,[%publisher%])', metadb).replace(/, /g,' \u2022 ');
+                    var label_w = Math.ceil(gr.MeasureString(label_string, g_pl_fonts.info, 0, 0, 0, 0).Width + 10);
+                    if (info_w > label_w + info_text_w) {
+                        grClip.DrawString(label_string, g_pl_fonts.info, info_color, this.w - label_w - 10, info_y, label_w, info_h, g_string_format.h_align_far);
+                    }
                 } else {
                     var i = 0;
-                    while (hyperlinks['genre' + i]) {
+                    while (hyperlinks['label' + i]) {
                         if (i > 0) {
-                            grClip.DrawString(' \u2022 ', g_pl_fonts.info, info_color, genre_hyperlink.x + genre_hyperlink.get_w(), info_y, 8, info_h);
+                            grClip.DrawString(' \u2022 ', g_pl_fonts.info, info_color, label_hyperlink.x + label_hyperlink.w + 1, info_y, 8, info_h);
                         }
-                        genre_hyperlink = hyperlinks['genre' + i];
-                        genre_hyperlink.draw(grClip, info_color);
+                        label_hyperlink = hyperlinks['label' + i];
+                        label_hyperlink.draw(grClip, info_color);
                         i++;
                     }
                 }
-            }
-            var disc_number = (!grouping_handler.show_cd() && _.tf('[%totaldiscs%]', metadb) !== '1') ? _.tf('[ | Disc: %discnumber%[/%totaldiscs%]]', metadb) : '';
-            var track_text = is_radio ? '' : ' | ' +
-                    (grouping_handler.show_cd() && has_discs ? this.sub_items.length + ' Discs - ' : '') +
-                    track_count + (track_count === 1 ? ' Track' : ' Tracks');
-            var info_text = _.tf(codec + disc_number + '[ | %replaygain_album_gain%]', metadb) + track_text;
-            if (genre_text_w) {
-                info_text = '| ' + info_text;
-            }
-            if (this.get_duration()) {
-                info_text += ' | Time: ' + utils.FormatDuration(this.get_duration());
-            }
 
-            var info_text_format = g_string_format.trim_ellipsis_char | g_string_format.no_wrap;
-            grClip.DrawString(info_text, g_pl_fonts.info, info_color, info_x + genre_text_w, info_y, info_w, info_h, info_text_format);
-
-            //---> Record labels
-            if (!hyperlinks.label0) {
-                var info_text_w = Math.ceil(gr.MeasureString(info_text, g_pl_fonts.info, 0, 0, 0, 0).Width + 5);    // TODO: Mordred - should only call MeasureString once
-                var label_string = $('$if2(%label%,[%publisher%])', metadb).replace(/, /g,' \u2022 ');
-                var label_w = Math.ceil(gr.MeasureString(label_string, g_pl_fonts.info, 0, 0, 0, 0).Width + 10);
-                if (info_w > label_w + info_text_w) {
-                    grClip.DrawString(label_string, g_pl_fonts.info, info_color, this.w - label_w - 10, info_y, label_w, info_h, g_string_format.h_align_far);
-                }
-            } else {
-                var i = 0;
-                while (hyperlinks['label' + i]) {
-                    if (i > 0) {
-                        grClip.DrawString(' \u2022 ', g_pl_fonts.info, info_color, label_hyperlink.x + label_hyperlink.w + 1, info_y, 8, info_h);
-                    }
-                    label_hyperlink = hyperlinks['label' + i];
-                    label_hyperlink.draw(grClip, info_color);
-                    i++;
+                //---> Info line
+                var info_text_h = Math.ceil(gr.MeasureString(info_text, g_pl_fonts.info, 0, 0, 0, 0).Height + 5);
+                var line_x1 = left_pad;
+                var line_x2 = this.x + this.w - 10;
+                var line_y = info_y + info_text_h;
+                if (line_x2 - line_x1 > 0) {
+                    grClip.DrawLine(line_x1, line_y, line_x2, line_y, 1, line_color);
                 }
             }
 
-            //---> Info line
-            var info_text_h = Math.ceil(gr.MeasureString(info_text, g_pl_fonts.info, 0, 0, 0, 0).Height + 5);
-            var line_x1 = left_pad;
-            var line_x2 = this.x + this.w - 10;
-            var line_y = info_y + info_text_h;
-            if (line_x2 - line_x1 > 0) {
-                grClip.DrawLine(line_x1, line_y, line_x2, line_y, 1, line_color);
+            //---> Part 2 line
+            {
+                var line_x1 = part2_cur_x;
+                if (line_x1 !== left_pad) {
+                    line_x1 += 10;
+                }
+                var line_x2 = this.w - part2_right_pad - 10;
+                var line_y = Math.round(this.h / 2) + 1;
+
+                if (line_x2 - line_x1 > 0) {
+                    grClip.DrawLine(line_x1, line_y, line_x2, line_y, 1, line_color);
+                }
+            }
+
+            clipImg.ReleaseGraphics(grClip);
+            if (cache_header) {
+                header_image = clipImg;
             }
         }
-
-        //---> Part 2 line
-        {
-            var line_x1 = part2_cur_x;
-            if (line_x1 !== left_pad) {
-                line_x1 += 10;
-            }
-            var line_x2 = this.w - part2_right_pad - 10;
-            var line_y = Math.round(this.h / 2) + 1;
-
-            if (line_x2 - line_x1 > 0) {
-                grClip.DrawLine(line_x1, line_y, line_x2, line_y, 1, line_color);
-            }
-        }
-
-        clipImg.ReleaseGraphics(grClip);
 
         var y = this.y;
         var h = this.h;
@@ -4017,8 +4031,8 @@ function Header(parent, x, y, w, h, idx) {
         } else if (this.y + this.h > bottom) {
             h = bottom - this.y;
         }
-        gr.DrawImage(clipImg, this.x, y, this.w, h, 0, srcY, this.w, h);
-        clipImg.Dispose();
+        gr.DrawImage(cache_header ? header_image : clipImg, this.x, y, this.w, h, 0, srcY, this.w, h);
+        if (!cache_header) clipImg.Dispose();
 
     };
 
@@ -4257,6 +4271,10 @@ function Header(parent, x, y, w, h, idx) {
         }
 
         if (needs_redraw) {
+            if (header_image) {
+                header_image.Dispose();
+                header_image = null;
+            }
             this.repaint();
         }
 
@@ -4322,6 +4340,7 @@ function Header(parent, x, y, w, h, idx) {
 
     var hyperlinks = {};
     var hyperlinks_initialized = false;
+    var was_playing = undefined; // last value of this.is_playing() updated each draw cycle
 
     var header_image = undefined;
 }
@@ -5659,8 +5678,8 @@ function QueueHandler(rows_arg, cur_playlist_idx_arg) {
 function PlaylistManager(x, y, w, h) {
     //<editor-fold desc="Callback Implementation">
     this.on_paint = function (gr) {
-        if (!info_text) {
-            var cur_playlist_idx = plman.ActivePlaylist;
+        if (!info_text || cur_playlist_idx !== plman.ActivePlaylist) {
+            cur_playlist_idx = plman.ActivePlaylist;
             var metadb_list = plman.GetPlaylistSelectedItems(cur_playlist_idx);
             var is_selected = true;
 
@@ -6011,6 +6030,8 @@ function PlaylistManager(x, y, w, h) {
     var image_normal = null;
     /** @type {?IGdiBitmap} */
     var image_hovered = null;
+
+    var cur_playlist_idx = undefined;
 }
 
 /**
