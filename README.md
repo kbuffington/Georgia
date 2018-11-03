@@ -30,6 +30,7 @@ I run the theme in Columns UI with a super simple setup using the JScript Panel,
 * Theme includes a "timeline" bar between the Title and Album Name which is a graphical representation of the songs lifetime in your library. If you're using foo_playcount and foo_enhanced_playcount the timeline bar it will look something like [this](https://imgur.com/2tChYuD). The left edge is when the song was first added to your library and the right edge is the current moment in time. The darker bar on the left is the time between added and first played, and the light bar on the right is time between last_played and today. If you have foo_enhanced_playcount, every song play in it's database will be reflected as a vertical line. If you play the song multiple times on the same day (and all plays map to the same pixel) that line will get darker.
 * The playlist has Hyperlinks! Mouse over Artist, Year, Genre, or Record Label and you should see a line appear underneath. Clicking on it will search your library for all songs with those values. These hyperlinks are also multi-value aware in case you have multiple genres or record labels listed.
 * Check out the options menu. It will allow you to easily change many visual settings, and configure certain theme settings. These options will be updated frequently as the theme is developed.
+* Occasionally the theme might choose a sub-optimal theme color from the album art. Maybe it's just a little bit off, or it clashes, or is too bright, etc. You can force the theme to use a different color by adding a THEMECOLOR field to the files and specifying the color like **rgb(153, 24, 75)**. You can get the RGB values from an image editor, or by turning on *Theme debug output* in the debug settings and seeing what other colors were extracted from the image.
 * And lots more...
 
 ### Image Packs
@@ -44,4 +45,4 @@ Image pack repo: https://github.com/kbuffington/georgia-image-packs - I recommen
 
 ### Thanks
 
-Thanks goes to Peter for fb2k. Also massive thanks to Marc2003 for foo_jscript_panel. Also, 90% of the playlist is ripped directly from TheQwertiest's amazing "CaTRoX (QWR)" theme. Thanks to him for his hard work, putting up with my stupid ideas, and letting me use it here.
+Thanks goes to Peter for fb2k. Also massive thanks to Marc2003 for foo_jscript_panel. Also, 90% of the playlist is ripped directly from TheQwertiest's amazing "CaTRoX (QWR)" theme. Thanks to him for his hard work, putting up with my stupid ideas, and letting me use it here. The LibraryTree is all WilB's work, I just modified it to fit the theme and stripped out a few of the more advanced features that would be hard to support.
