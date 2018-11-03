@@ -21,6 +21,7 @@ pref.add_properties(
 		rotate_cdart:		['Art: Rotate CD art on new track', true],		// true: rotate cdArt based on track number. i.e. rotationAmt = %tracknum% * x degrees
 		cdart_ontop:		['Art: Show CD art above front cover', false],	// true: display cdArt above front cover
 		show_debug_log:		['Debug: Show Debug Output', false],		// true: show debug output in console
+		show_theme_log:		['Debug: Show Theme Logging', false],		// true: show theme logging in console
 		hide_cursor:    	['Hide Cursor when stationary', false],		// true: hide cursor when not moving, false: don't
 		show_flags:			['Show country flags', true],				// true: show the artist country flags
 		// check_multich:		['Check for MultiChannel version', false],	// true: search paths in tf.MultiCh_paths to see if there is a multichannel version of the current album available

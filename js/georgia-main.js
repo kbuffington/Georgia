@@ -1184,6 +1184,8 @@ function onSettingsMenu(x, y) {
 
 	_debugMenu.AppendMenuItem(MF_STRING, 90, 'Enable debug output');
 	_debugMenu.CheckMenuItem(90, pref.show_debug_log);
+	_debugMenu.AppendMenuItem(MF_STRING, 95, 'Enable theme debug output');
+	_debugMenu.CheckMenuItem(95, pref.show_theme_log);
 	_debugMenu.AppendMenuItem(MF_STRING, 91, 'Show draw timing');
 	_debugMenu.CheckMenuItem(91, showDrawTiming);
 	_debugMenu.AppendMenuItem(MF_STRING, 92, 'Show extra draw timing');
