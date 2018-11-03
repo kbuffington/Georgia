@@ -259,7 +259,7 @@ var noArtwork = false;								// only use default theme when noArtwork was found
 var themeColorSet = false;                          // when no artwork, don't set themeColor every redraw
 var playCountVerifiedByLastFm = false;				// show Last.fm image when we %lastfm_play_count% > 0
 var art_off_center   = false;                       // if true, album art has been shifted 40 pixels to the right
-var dontLoadFromCache = false;                      // always load art from cache unless this is set
+var loadFromCache = true; // always load art from cache unless this is set
 
 //var inShowMenuEntry   = false;
 
@@ -1505,7 +1505,7 @@ function on_playback_new_track(metadb) {
 			$('$if2(%discnumber%,0)') != lastDiscNumber || $('$if2(' + tf.vinyl_side + ',ZZ)') != lastVinylSide) {
 		fetchNewArtwork(metadb);
 	}
-	dontLoadFromCache = false;
+	loadFromCache = true;
 	CreateRotatedCDImage();	// we need to always setup the rotated image because it rotates on every track
 
 	/* code to retrieve record label logos */
@@ -2057,7 +2057,7 @@ function on_playback_stop(reason) {
 			metadb_handle = null;
         }
 		createButtonObjects(ww, wh);	// switch pause button to play
-		dontLoadFromCache = true;
+		loadFromCache = false;
 	}
 	progressTimer && window.ClearInterval(progressTimer);
 	if (globTimer)
@@ -2164,9 +2164,7 @@ function on_load_image_done(cookie, image) {
 		ResizeArtwork(true);
 		CreateRotatedCDImage();
 		lastLeftEdge = 0;	// recalc label location
-	}
-	else if (cookie == album_art_loading) {
-		// disposeImg(albumart);	// delay disposal so we don't get flashing
+	} else if (cookie == album_art_loading) {
 		albumart = art_cache.encache(image, album_art_path);
 		if (retrieveThemeColorsWhenLoaded && newTrackFetchingArtwork) {
 			getThemeColors(albumart);
@@ -2487,7 +2485,7 @@ function CreateRotatedCDImage() {
 }
 
 function ResizeArtwork(resetCDPosition) {
-    console.log('Resizing artwork');
+	debugLog('Resizing artwork');
     var hasArtwork = false;
 	if (albumart && albumart.Width && albumart.Height) {
 		// Size for big albumart
@@ -2666,7 +2664,9 @@ function fetchNewArtwork(metadb) {
 			}
 		}
 		if (disc_art_exists) {
-			var temp_cdart = art_cache.getImage(cdartPath);
+			var temp_cdart;
+			if (loadFromCache)
+				temp_cdart = art_cache.getImage(cdartPath);
 			if (temp_cdart) {
 				disposeCDImg(cdart);
 				cdart = temp_cdart;
@@ -2704,7 +2704,7 @@ function fetchNewArtwork(metadb) {
 				}, pref.art_rotate_delay * 1000);
 			}
 			albumArtIndex = 0;
-			glob_image(albumArtIndex, !dontLoadFromCache); // display first image
+			glob_image(albumArtIndex, loadFromCache); // display first image
 		} else if (albumart = utils.GetAlbumArtV2(metadb)) {
 			getThemeColors(albumart);
 			ResizeArtwork(true);
