@@ -3769,6 +3769,17 @@ function Header(parent, x, y, w, h, idx) {
                 grClip.DrawRect(art_box_x, art_box_y, art_box_w - 1, art_box_h - 1, 1, line_color);
 
                 left_pad += art_box_x + art_box_w;
+                    hyperlinks.artist && hyperlinks.artist.set_xOffset(left_pad);
+                    var i = 0;
+                    var offset = 0;
+                    while (hyperlinks['genre' + i]) {
+                        if (i === 0) {
+                            offset = hyperlinks.genre0.x - left_pad;
+                            if (!offset) break;
+                        }
+                        hyperlinks['genre' + i].x -= offset;
+                        i++;
+                    }
             }
         }
 
@@ -4181,18 +4192,17 @@ function Header(parent, x, y, w, h, idx) {
             hyperlinks.date = new Hyperlink(date_text, date_font, 'date', date_x, date_y, this.w);
         }
 
-        var left_pad = (is_4k_playlist ? 32 : 16) + this.h;
+        var left_pad = is_4k_playlist ? 20 : 10;
+        var art_box_x = 3 * (is_4k_playlist ? 12 : 6);
+        var spacing = is_4k_playlist ? 4 : 2;
+        var art_box_size = art_max_size + spacing * 2;
+        left_pad += art_box_x + art_box_size;
+
         if (!_.startsWith(metadb.RawPath, 'http')) {
             // don't create for radio
             var artist_text = _.tf(grouping_handler.get_title_query(), metadb);
             if (artist_text) {
                 var artist_x = left_pad;
-                var artist_w = this.w - artist_x;
-                var artist_h = this.h / 3;
-                if (!g_properties.show_group_info) {
-                    artist_w -= part2_right_pad + 5;
-                    artist_h -= 5;
-                }
 
                 hyperlinks.artist = new Hyperlink(artist_text, artist_font, 'artist', artist_x, 5, this.w);
             }
