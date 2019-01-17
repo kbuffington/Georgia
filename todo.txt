@@ -1,0 +1,3 @@
+* Dark Theme (possibly add option to adjust theme based on album cover colors?)
+* Disable 4k menu Option
+* Alt+Ctrl scaling of Playlist?
