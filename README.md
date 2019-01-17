@@ -5,7 +5,7 @@ Georgia also supports 4k resolutions, and will adjust based on window size.
 
 ### Installation Instructions
 
-Unlike most themes I don't include an .fcl with mine. This makes getting setup *slightly* more work for you, but ensures that you can use it however you want. It works with both DUI and CUI, and all it really requires is a single [JScript Panel](https://github.com/marc2k3/foo_jscript_panel/releases) version 2.1.1 or greater.
+Unlike most themes I don't include an .fcl with mine. This makes getting setup *slightly* more work for you, but ensures that you can use it however you want. It works with both DUI and CUI, and all it really requires is a single [JScript Panel](https://github.com/marc2k3/foo_jscript_panel/releases) version 2.1.1 or greater (Note: this theme is not currently compatible with version 2.2.0+).
 
 I run the theme in Columns UI with a super simple setup using the JScript Panel, an auto-hiding vertical splitter, and two filter panels. You can see my setup [here](https://imgur.com/nJ71Vn1). Currently there's no library search mechanism built in, so unless you use foo_http_control (which I also recommend for HTPC use!), choosing what to play will be limited to your current playlists.
 
@@ -16,7 +16,7 @@ I run the theme in Columns UI with a super simple setup using the JScript Panel,
 3. Extract it into a folder named `georgia` to your foobar profile folder. On a non-portable installation this will typically be `C:\Users\<USERNAME>\AppData\Roaming\foobar2000`.
 4. Open up the `\georgia\fonts` folder and install all fonts located there. If you miss this step things will look terrible.
 5. *(Optional Step)*  Download any of the image packs you like and place them in a folder called `images` in your foobar profile folder. See below for image pack locations.
-6. If you don't have foo_jscript_panel installed already, grab the latest version [here](https://github.com/marc2k3/foo_jscript_panel/releases).
+6. If you don't have foo_jscript_panel installed already, grab the latest version [here](https://github.com/marc2k3/foo_jscript_panel/releases) (Note: this theme is not currently compatible with version 2.2.0+).
 7. *(Optional Step)* This theme also makes heavy use of [the foo_enhanced_playcount](https://www.foobar2000.org/components/view/foo_enhanced_playcount) component. I recommend installing that as well, otherwise the timeline will not be as interesting. You'll probably also want [foo_playcount](https://www.foobar2000.org/components/view/foo_playcount) if you don't have that one yet.
 8. Now add JScript Panel to a new theme. If you're using CUI I recommend the setup I'm [using](https://imgur.com/nJ71Vn1) but feel free to configure it how you want. Typically it will look best if the panel takes up the majority of foobar. Close foobar's properties.
 9. Now right click on the JScript panel and select Configure. In the dialog that opens up, first make sure the Script Engine is set to "Chakra". Now select all the text in the text box and replace it with the contents of [Georgia.txt](https://github.com/kbuffington/Georgia/blob/master/Georgia.txt). It should look something like [this](https://imgur.com/3Ekc1HL). Hit OK and if you followed the instructions, the theme should have loaded working properly. If it didn't, most likely file paths are wrong. Check the console for more information.
