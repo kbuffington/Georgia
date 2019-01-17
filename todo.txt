@@ -1,3 +1,5 @@
+* Fix issues with JScript 2.2.0
 * Dark Theme (possibly add option to adjust theme based on album cover colors?)
 * Disable 4k menu Option
 * Alt+Ctrl scaling of Playlist?
+* Convert to using foo_spider_monkey_panel instead of foo_jscript
