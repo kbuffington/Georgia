@@ -1479,6 +1479,10 @@ function on_init() {
 	g_playtimer && window.ClearInterval(g_playtimer);
 	g_playtimer = null;
 
+	setTimeout(function () {
+		// defer initing of library panel until everything else has loaded
+		initLibraryPanel();
+	}, 10000);
 }
 
 // window size changed
