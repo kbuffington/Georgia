@@ -1536,6 +1536,7 @@ function setLibrarySize() {
 		var library_h = Math.max(0, wh - geo.lower_bar_h - 10 - y - listBottom);
 		ui.sizedNode = false;
 		ui.node_sz = Math.round(16 * ui.scale);
+		p.setFilterFont();	// resets filter font in case the zoom was reset
 		libraryPanel.on_size(x, y, library_w, library_h);
 	} else {
 		// TODO: take this if/else out once this part is done

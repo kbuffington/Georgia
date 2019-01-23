@@ -148,30 +148,6 @@ function userinterface() {
 		var trace = true;
 		if (trace) console.log("Library Tree" + ": " + message);
 	};
-	// if (custom_col) {
-	// 	if (cust_icon_font.length) {
-	// 		cust_icon_font = cust_icon_font.split(",");
-	// 		try {
-	// 			var st = Math.round(parseFloat(cust_icon_font[1]));
-	// 			if (!st) st = 0;
-	// 			var font_test = gdi.Font(cust_icon_font[0], 16, st);
-	// 			icon_f_name = cust_icon_font[0];
-	// 			icon_f_style = st;
-	// 		} catch (e) {
-	// 			this.trace("JScript Panel is unable to use your node icon font. Using Segoe UI instead");
-	// 		}
-	// 	}
-	// }
-	// try {
-	// 	var win_node = parseFloat(window.GetProperty("ADV.Node [Default]: Themed 0 or 1", "0").replace(/\s+/g, "").charAt(0));
-	// 	if (isNaN(win_node)) win_node = 0;
-	// 	if (win_node != 0 && win_node != 1) win_node = 0;
-	// 	if (win_node == 1)  window.SetProperty("ADV.Node [Default]: Themed 0 or 1", "1 // Highlight & Custom Colours N/A For Themed");
-	// 	else window.SetProperty("ADV.Node [Default]: Themed 0 or 1", "" + 0 + "");
-	// } catch (e) {
-	// 	win_node = 0;
-	// 	window.SetProperty("ADV.Node [Default]: Themed 0 or 1", "" + 0 + "");
-	// }
 	this.node_style = 1;
 	// window.GetProperty(" Node: Custom (No Lines)", false) ? 0 : !win_node ? 1 : 2;
 	// if (this.node_style > 2 || this.node_style < 0) this.node_style = 1;
@@ -397,12 +373,7 @@ function userinterface() {
 	this.get_font = function() {
 		this.font = ft.library_tree;
 		orig_font_sz = libraryProps.baseFontSize;
-		// if (this.font.Size != orig_font_sz)
-		// 	window.SetProperty(" Zoom Font Size (%)", 100);
-		// orig_font_sz = this.font.Size;
-		libraryProps.baseFontSize = this.font.Size;
 		zoom = libraryProps.fontZoom;
-		// zoom_node = libraryProps.nodeZoom;
 		zoom_font_sz = Math.max(Math.round(orig_font_sz * zoom / 100), 1);
 		if (!this.sizedNode) {	// prevents node sizes from growing every time this method is called
 			ui.node_sz = Math.round(ui.node_sz * libraryProps.nodeZoom / 100);
@@ -442,7 +413,7 @@ function userinterface() {
 		if (p.m_y > p.s_h + ui.y) {
 			if (p.m_x >= ui.x + Math.round(this.icon_w + this.margin + (libraryProps.rootNode ? this.pad : 0))) {
 				zoom_font_sz += step;
-				zoom_font_sz = Math.max(zoom_font_sz, 1) * (is_4k ? 2 : 1);
+				zoom_font_sz = Math.min(is_4k ? 96 : 60, Math.max(zoom_font_sz, 12));
 				this.font = gdi.Font(this.font.Name, zoom_font_sz, this.font.Style);
 				this.s_font = gdi.Font(this.font.Name, this.font.Size, 2);
 				this.j_font = gdi.Font(this.font.Name, this.font.Size * 1.5, 1);
@@ -465,13 +436,12 @@ function userinterface() {
 		} else {
 			if (p.scale < 0.9)
 				return;
-			p.scale += step * 0.1 + (is_4k ? 1 : 0);
+			p.scale += step * 0.1;
 			p.scale = Math.max(p.scale, 0.9);
-			p.filter_font = gdi.Font("Segoe UI", p.scale > 1.05 ? Math.floor(12 * this.scale * p.scale) : 12 * this.scale * p.scale, 1);
-			p.filter_but_ft = gdi.Font("Segoe UI", p.scale > 1.05 ? Math.floor(9 * this.scale * p.scale) : 9 * this.scale * p.scale, 1);
+			libraryProps.filterZoom = Math.round(p.scale * 100);
+			p.setFilterFont();
 			p.calc_text();
 			but.refresh(true);
-			libraryProps.filterZoom = Math.round(p.scale * 100);
 			p.search_paint();
 		}
 	}
@@ -874,17 +844,19 @@ function panel_operations() {
 	this.s_w1 = 0;
 	this.s_w2 = 0;
 	this.tf = "";
-	// if (window.GetProperty(" Node: Show All Music"))
-	// 	window.SetProperty(" Node: Root Hide-0 All Music-1 View Name-2", 1);
-	// this.base = window.GetProperty(" Node: Root Hide-0 All Music-1 View Name-2", 0);
+
 	libraryProps.rootNode = Math.max(Math.min(libraryProps.rootNode, 2), 0);
 	this.syncType = window.GetProperty(" Library Sync: Auto-0, Initialisation Only-1") !== undefined ? window.GetProperty(" Library Sync: Auto-0, Initialisation Only-1") : 1;
-	// if (!ui.zoomUpd && window.GetProperty("SYSTEM.Software Notice Checked"))
-	// 	window.SetProperty(" Zoom Filter Size (%)", window.GetProperty(" Zoom Filter Size (%)", 100) / ui.scale);
 	this.scale = Math.max(libraryProps.filterZoom / 100, 0.9);
 	libraryProps.filterZoom = this.scale * 100;
-	this.filter_font = gdi.Font("Segoe UI", this.scale > 1.05 ? Math.floor(12 * ui.scale * this.scale) : 12 * ui.scale * this.scale, 1);
-	this.filter_but_ft = gdi.Font("Segoe UI", this.scale > 1.05 ? Math.floor(9 * ui.scale * this.scale) : 9 * ui.scale * this.scale, 1);
+
+	this.setFilterFont = function() {
+		var scale = Math.max(libraryProps.filterZoom / 100, 0.9);
+		this.filter_font = gdi.Font("Segoe UI", scale > 1.05 ? Math.floor(12 * ui.scale * scale) : 12 * ui.scale * scale, 1);
+		this.filter_but_ft = gdi.Font("Segoe UI", scale > 1.05 ? Math.floor(9 * ui.scale * scale) : 9 * ui.scale * scale, 1);
+	}
+	this.setFilterFont();
+
 	this.filter_by = window.GetProperty("SYSTEM.Filter By", 0);
 	// this.pn_h_auto = window.GetProperty("ADV.Height Auto [Expand/Collapse With Root]", false) && libraryProps.rootNode; this.init = true;
 	// this.pn_h_max = window.GetProperty("ADV.Height Auto-Expand", 578);
@@ -2648,24 +2620,6 @@ function LibraryPanel() {
 
 function button_manager() {
 	arrow_symb = 0;
-	// var custom_col = window.GetProperty("_CUSTOM COLOURS/FONTS: USE", false),
-		// cust_icon_font = window.GetProperty("_Custom.Font Icon [Scroll] (Name,Style[0or1])", "Segoe UI Symbol,0"),
-		// icon_f_name= "Segoe UI",
-		// icon_f_style = 0;
-		// pad = Math.min(Math.max(window.GetProperty(" Scrollbar Arrow Custom: Icon: Vertical Offset %", -24) / 100, -0.5), 0.3);
-	// if (custom_col) {
-	// 	if (cust_icon_font.length) {
-	// 		cust_icon_font = cust_icon_font.split(",");
-	// 		try {
-	// 			var st = Math.round(parseFloat(cust_icon_font[1]));
-	// 			if (!st) st = 0;
-	// 			var font_test = gdi.Font(cust_icon_font[0], 16, st);
-	// 			icon_f_name = cust_icon_font[0]; icon_f_style = st;
-	// 		} catch (e) {
-	// 			ui.trace("JScript Panel is unable to use your scroll icon font. Using Segoe UI instead");
-	// 		}
-	// 	}
-	// }
 	var b_x,
 		b3 = ["scrollUp", "scrollDn"],
 		but_tt = window.CreateTooltip("Segoe UI", 15 * ui.scale * libraryProps.btnTooltipZoom / 100, 0),
@@ -3159,11 +3113,6 @@ function initLibraryPanel() {
 		libraryInitialized = true;
 	}
 }
-// function StringFormat() {
-//     var a = arguments, h_align = 0, v_align = 0, trimming = 0, flags = 0;
-//     switch (a.length) {case 3: trimming = a[2]; case 2: v_align = a[1]; case 1: h_align = a[0]; break; default: return 0;}
-//     return (h_align << 28 | v_align << 24 | trimming << 20 | flags);
-// }
 
 // if (!window.GetProperty("SYSTEM.Software Notice Checked", false))
 // 	fb.ShowPopupMessage("THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHORS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.", "Library Tree");
