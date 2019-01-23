@@ -5,9 +5,9 @@
 //
 // Description  a fullscreen now-playing script for foo_jscript_panel
 // Author 		Mordred
-// Version 		0.9.0
+// Version 		1.0.1
 // Dev. Started 2017-12-22
-// Last change  2018-04-18
+// Last change  2019-01-23
 // --------------------------------------------------------------------------------------
 
 // CONFIGURATION //////////////////////////////////////
@@ -845,12 +845,12 @@ function on_paint(gr) {
 			h = btns[i].h,
 			img = btns[i].img;
 
-			if (img) { // TODO: fix
-				gr.DrawImage(img[0], x, y, w, h, 0, 0, w, h, 0, 255); // normal
-				gr.DrawImage(img[1], x, y, w, h, 0, 0, w, h, 0, btns[i].hoverAlpha);
-				gr.DrawImage(img[2], x, y, w, h, 0, 0, w, h, 0, btns[i].downAlpha);
-			}
+		if (img) { // TODO: fix
+			gr.DrawImage(img[0], x, y, w, h, 0, 0, w, h, 0, 255); // normal
+			gr.DrawImage(img[1], x, y, w, h, 0, 0, w, h, 0, btns[i].hoverAlpha);
+			gr.DrawImage(img[2], x, y, w, h, 0, 0, w, h, 0, btns[i].downAlpha);
 		}
+	}
 
 	showExtraDrawTiming && drawMenuBar.Print();
 
@@ -3192,4 +3192,3 @@ function resizeDone() {
 		getAlbumArt();
 	}
 }
-
