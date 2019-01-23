@@ -78,13 +78,13 @@ var g_drop_effect = {
     scroll: 0x80000000
 };
 
-var is_4k_playlist = false;
+var is_4k = false;
 var playlistFontsCreated = false;
 var playlist_geo = {};
 
 function createPlaylistFonts() {
     function font(name, size, style) {
-        return gdi.Font(name, is_4k_playlist ? Math.min(size * 2) : size, style);
+        return gdi.Font(name, is_4k ? Math.min(size * 2) : size, style);
     }
     g_pl_fonts = {
         title_normal:   font('Segoe Ui', 12),
@@ -113,15 +113,15 @@ function createPlaylistFonts() {
 }
 
 function rescalePlaylist() {
-    var font_size = is_4k_playlist.toString();
+    var font_size = is_4k.toString();
     if (playlistFontsCreated && playlistFontsCreated == font_size) {
         return;	// don't redo fonts
     }
     createPlaylistFonts();
-    playlist_geo.scrollbar_w = is_4k_playlist ? g_properties.scrollbar_w * 2 : g_properties.scrollbar_w;
-    playlist_geo.scrollbar_right_pad = is_4k_playlist ? g_properties.scrollbar_right_pad * 2 : g_properties.scrollbar_right_pad;
-    playlist_geo.scrollbar_top_pad = is_4k_playlist ? g_properties.scrollbar_top_pad * 2 : g_properties.scrollbar_top_pad;
-    playlist_geo.scrollbar_bottom_pad = is_4k_playlist ? g_properties.scrollbar_bottom_pad * 2 : g_properties.scrollbar_bottom_pad;
+    playlist_geo.scrollbar_w = is_4k ? g_properties.scrollbar_w * 2 : g_properties.scrollbar_w;
+    playlist_geo.scrollbar_right_pad = is_4k ? g_properties.scrollbar_right_pad * 2 : g_properties.scrollbar_right_pad;
+    playlist_geo.scrollbar_top_pad = is_4k ? g_properties.scrollbar_top_pad * 2 : g_properties.scrollbar_top_pad;
+    playlist_geo.scrollbar_bottom_pad = is_4k ? g_properties.scrollbar_bottom_pad * 2 : g_properties.scrollbar_bottom_pad;
 }
 
 //---> Fonts
@@ -384,11 +384,7 @@ function PlaylistPanel(x, y) {
 
     // PlaylistPanel.on_size
     this.on_size = function (w, h) {
-        if (ww > 3000) {
-            is_4k_playlist = true;
-        } else {
-            is_4k_playlist = false;
-        }
+
         rescalePlaylist();
         var x = Math.round(ww *.5);
         var y = btns[30].y + btns[30].h + 10 + listTop;
@@ -400,9 +396,11 @@ function PlaylistPanel(x, y) {
         this.x = x;
         this.y = y;
 
+        playlist_info_h = is_4k ? g_properties.row_h * 2 + 8 : g_properties.row_h + 4;
+        playlist_info_and_gap_h = playlist_info_h + (is_4k ? 4 : 2);
         playlist.on_size(playlist_w, playlist_h - (g_properties.show_playlist_info ? playlist_info_and_gap_h : 0),
                 x, y + (g_properties.show_playlist_info ? playlist_info_and_gap_h : 0));
-        playlist_info.set_xyw(x, y, this.w);
+        playlist_info.set_xywh(x, y, this.w);
 
         is_activated = window.IsVisible;
     };
@@ -689,7 +687,8 @@ function PlaylistPanel(x, y) {
      * @const
      * @type {number}
      */
-    var playlist_info_h = g_properties.row_h + 4;
+    var playlist_info_h = is_4k ? g_properties.row_h * 2 + 8 : g_properties.row_h + 4;
+
     /**
      * @const
      * @type {number}
@@ -745,7 +744,7 @@ function Playlist(x, y) {
         }
 
         if (this.is_scrollbar_available) {
-            var gradiantHeight = is_4k_playlist ? 20 : 10;
+            var gradiantHeight = is_4k ? 20 : 10;
             if (!this.scrollbar.is_scrolled_up) {
                 gr.FillGradRect(this.list_x, this.list_y - 1, this.list_w, gradiantHeight, 270, _.RGBtoRGBA(g_theme.colors.panel_back, 0), _.RGBtoRGBA(g_theme.colors.panel_back, 200));
             }
@@ -1758,6 +1757,7 @@ function Playlist(x, y) {
         if (cur_playlist_idx !== plman.ActivePlaylist) {
             g_properties.scroll_pos = _.isNil(scroll_pos_list[plman.ActivePlaylist]) ? 0 : scroll_pos_list[plman.ActivePlaylist];
         }
+        this.row_h = is_4k ? g_properties.row_h * 2 : g_properties.row_h;
         this.initialize_list();
         scroll_to_focused();
     };
@@ -3443,9 +3443,8 @@ function DiscHeader(parent, x, y, w, h, idx) {
             gr.FillSolidRect(this.x, this.y + 1, this.w, this.h - 1, g_pl_colors.row_alternate);
         }
 
-        var cur_x = this.x + (is_4k_playlist ? 36 : 18);
-        var right_pad = is_4k_playlist ? 20 : 10;
-        var testRect = false;
+        var cur_x = this.x + (is_4k ? 36 : 18);
+        var right_pad = is_4k ? 20 : 10;
 
         var title_font = g_pl_fonts.title_normal;
         var title_color = g_pl_colors.title_normal;
@@ -3713,12 +3712,12 @@ function Header(parent, x, y, w, h, idx) {
             }
 
             if (this.is_playing()) {
-                var p = is_4k_playlist ? 12 : 6;  // from art below
+                var p = is_4k ? 12 : 6;  // from art below
                 if (this.has_selected_items()) {
-                    grClip.FillSolidRect(0, p, is_4k_playlist ? 16 : 8, this.h - p * 2, col.accent);
+                    grClip.FillSolidRect(0, p, is_4k ? 16 : 8, this.h - p * 2, col.accent);
                     // grClip.FillGradRect(5, p, this.w / 2, this.h - p * 2, 180, g_pl_colors.row_selected, col.accent);
                 } else {
-                    grClip.FillSolidRect(0, p, is_4k_playlist ? 16 : 8, this.h - p * 2, col.darkAccent);
+                    grClip.FillSolidRect(0, p, is_4k ? 16 : 8, this.h - p * 2, col.darkAccent);
                     // grClip.FillGradRect(5, p, this.w / 2, this.h - p * 2, 180, g_pl_colors.background, col.darkAccent);
                 }
             }
@@ -3731,7 +3730,7 @@ function Header(parent, x, y, w, h, idx) {
 
             //************************************************************//
 
-            var left_pad = is_4k_playlist ? 20 : 10;
+            var left_pad = is_4k ? 20 : 10;
 
             //---> Artbox
             if (g_properties.show_album_art) {
@@ -3743,8 +3742,8 @@ function Header(parent, x, y, w, h, idx) {
                 }
 
                 if (art !== null || !g_properties.auto_album_art) {
-                    var p = is_4k_playlist ? 12 : 6;
-                    var spacing = is_4k_playlist ? 4 : 2;
+                    var p = is_4k ? 12 : 6;
+                    var spacing = is_4k ? 4 : 2;
 
                     var art_box_size = art_max_size + spacing * 2;
                     var art_box_x = p * 3;
@@ -4190,7 +4189,7 @@ function Header(parent, x, y, w, h, idx) {
     };
 
     this.initialize_hyperlinks = function (gr) {
-        var right_edge = is_4k_playlist ? 10 : 5;
+        var right_edge = is_4k ? 10 : 5;
         hyperlinks_initialized = true;
         var date_font = g_pl_fonts.date;
         var artist_font = g_pl_fonts.artist_normal;
@@ -4201,14 +4200,14 @@ function Header(parent, x, y, w, h, idx) {
         if (date_text) {
             var date_w = Math.ceil(gr.MeasureString(date_text, date_font, 0, 0, 0, 0).Width + 5);
             var date_x = -date_w - right_edge;
-            var date_y = Math.floor((this.h / 2) - (is_4k_playlist ? 34 : 17));
+            var date_y = Math.floor((this.h / 2) - (is_4k ? 34 : 17));
 
             hyperlinks.date = new Hyperlink(date_text, date_font, 'date', date_x, date_y, this.w);
         }
 
-        var left_pad = is_4k_playlist ? 20 : 10;
-        var art_box_x = 3 * (is_4k_playlist ? 12 : 6);
-        var spacing = is_4k_playlist ? 4 : 2;
+        var left_pad = is_4k ? 20 : 10;
+        var art_box_x = 3 * (is_4k ? 12 : 6);
+        var spacing = is_4k ? 4 : 2;
         var art_box_size = art_max_size + spacing * 2;
         left_pad += art_box_x + art_box_size;
 
@@ -4328,7 +4327,7 @@ function Header(parent, x, y, w, h, idx) {
      * @const
      * @type {number}
      */
-    var art_max_size = that.h - (is_4k_playlist ? 32 : 16);
+    var art_max_size = that.h - (is_4k ? 32 : 16);
 
     /** @type {IFbMetadbHandle} */
     var metadb;
@@ -4473,13 +4472,13 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
 
         var is_radio = _.startsWith(this.metadb.RawPath, 'http');
 
-        var right_spacing = is_4k_playlist ? 36 : 18;
+        var right_spacing = is_4k ? 36 : 18;
         var cur_x = this.x + right_spacing;
-        var right_pad = is_4k_playlist ? 20 : 10;
+        var right_pad = is_4k ? 20 : 10;
         var testRect = false;
 
         if (_.tf('$ifgreater(%totaldiscs%,1,true,false)', this.metadb) != 'false') {
-            cur_x += is_4k_playlist ? 40 : 20;
+            cur_x += is_4k ? 40 : 20;
         }
 
         //---> LENGTH
@@ -4488,7 +4487,7 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
                 length_text = _.tf('[%length%]', this.metadb);
             }
 
-            var length_w = is_4k_playlist ? 80 : 50;
+            var length_w = is_4k ? 80 : 50;
             if (length_text) {
                 var length_x = this.x + this.w - length_w - right_pad;
 
@@ -4583,7 +4582,7 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
 
         //---> TITLE draw
         {
-            var title_w = this.w - right_pad - (is_4k_playlist ? 44 : 22);
+            var title_w = this.w - right_pad - (is_4k ? 44 : 22);
 
             var title_text_format = g_string_format.v_align_center | g_string_format.trim_ellipsis_char | g_string_format.no_wrap;
             gr.DrawString(title_text + (title_artist_text ? '' : queue_text), title_font, title_color, cur_x, this.y, title_w, this.h, title_text_format);
@@ -4835,7 +4834,7 @@ function Rating(x, y, max_w, h, metadb) {
      * @const
      * @type {number}
      */
-    var btn_w = is_4k_playlist ? 28 : 14;
+    var btn_w = is_4k ? 28 : 14;
 
     /**
      * @const
@@ -5880,10 +5879,11 @@ function PlaylistManager(x, y, w, h) {
         this.w = w;
     };
 
-    this.set_xyw = function (x, y, w) {
+    this.set_xywh = function (x, y, w) {
         this.x = x;
         this.y = y;
         this.w = w;
+        this.h = is_4k ? g_properties.row_h * 2 + 8 : g_properties.row_h + 4
     }
 
     this.trace = function (x, y) {

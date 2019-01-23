@@ -1115,6 +1115,15 @@ function onSettingsMenu(x, y) {
 	var _timeZoneMenu = window.CreatePopupMenu();
 
 	//var pbo = fb.PlaybackOrder;
+	var _4kMenu = window.CreatePopupMenu();	
+	_4kMenu.AppendMenuItem(MF_STRING, 120, 'Auto-detect');
+	_4kMenu.CheckMenuItem(120, pref.use_4k === 'auto');
+	_4kMenu.AppendMenuItem(MF_STRING, 121, 'Never');
+	_4kMenu.CheckMenuItem(121, pref.use_4k === 'never');
+	_4kMenu.AppendMenuItem(MF_STRING, 122, 'Always');
+	_4kMenu.CheckMenuItem(122, pref.use_4k === 'always');
+	_4kMenu.AppendTo(_menu, MF_STRING, 'Use 4K mode');
+	
 	_menu.AppendMenuItem(MF_STRING, 1, 'Cycle Through All Artwork');
 	_menu.CheckMenuItem(1, pref.aa_glob);
 	_menu.AppendMenuItem(MF_STRING, 4, 'Display CD Art (cd.pngs)');
@@ -1347,6 +1356,20 @@ function onSettingsMenu(x, y) {
 			libraryProps.doubleClickAction = idx - 190;
 			break;
 
+		case 120:
+		case 121:
+		case 122:
+			if (idx === 120) {
+				pref.use_4k = 'auto';
+			} else if (idx === 121) {
+				pref.use_4k = 'never';
+			} else {
+				pref.use_4k = 'always';
+			}
+			on_size();
+			RepaintWindow();
+			break;
+
 		case 130:
 		case 131:
 		case 132:
@@ -1455,20 +1478,7 @@ function on_init() {
 
 	g_playtimer && window.ClearInterval(g_playtimer);
 	g_playtimer = null;
-}
 
-var sizeInitialized = false;
-var last_size = undefined;
-
-function checkFor4k(w) {
-	if (w > 3000) {
-		is_4k = true;
-	} else {
-		is_4k = false;
-	}
-	if (last_size !== is_4k) {
-		sizeInitialized = false;
-	}
 }
 
 // window size changed

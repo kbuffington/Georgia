@@ -53,7 +53,7 @@ List = function (x, y, w, h, content) {
     this.h = h;
 
     /** @const {number}*/
-    this.row_h = g_properties.row_h;
+    this.row_h = g_properties.row_h;    // 4k scaling set in playlist.reinitialize
 
     /** @type {number} */
     this.background_color = g_theme.colors.pss_back;

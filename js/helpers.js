@@ -208,3 +208,20 @@ function leftPad(val, size, ch) {
 	}
 	return result;
 }
+
+var sizeInitialized = false;
+var last_size = undefined;
+
+function checkFor4k(w) {
+	if (pref.use_4k === 'always') {
+		is_4k = true;
+	} else if (pref.use_4k === 'auto' && w > 3000) {
+		is_4k = true;
+	} else {
+		is_4k = false;
+	}
+	if (last_size !== is_4k) {
+		sizeInitialized = false;
+		last_size = is_4k;
+	}
+}
