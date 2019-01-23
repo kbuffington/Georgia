@@ -1052,8 +1052,7 @@ function panel_operations() {
 		sbar.metrics(this.sbar_x, sbar_y, ui.scr_w, sbar_h, this.rows, ui.row_h);
 	}
 }
-// var p = new panel_operations();
-window.DlgCode = 0x004;
+if ('DlgCode' in window) { window.DlgCode = 4; }
 
 SHIFT = 0;
 CTRL = 1;

@@ -200,7 +200,7 @@ _.mixin({
             }
         }
 
-        window.DlgCode = DLGC_WANTALLKEYS;
+        if ('DlgCode' in window) { window.DlgCode = 4; }
         this.fonts = {};
         this.colours = {};
         this.w = 0;
