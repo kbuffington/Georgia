@@ -58,7 +58,9 @@ function createFonts() {
 	ft.tracknum_med = font('HelveticaNeueLT Std Lt', 30, g_font_style.bold);
 	ft.tracknum_sml = font('HelveticaNeueLT Std Lt', 26, g_font_style.bold);
 	ft.year = font('HelveticaNeueLT Std', 48, g_font_style.bold);
-	ft.artist = font('HelveticaNeueLT Std Med', 40, 0);
+	ft.artist_lrg = font('HelveticaNeueLT Std Med', 40, 0);
+	ft.artist_med = font('HelveticaNeueLT Std Med', 36, 0);
+	ft.artist_sml = font('HelveticaNeueLT Std Med', 30, 0);
 	ft.track_info = font('HelveticaNeueLT Std Thin', 18, 0);
 	ft.grd_key_lrg = font('HelveticaNeueLT Std', 24, 0); // used instead of ft.grd_key if ww > 1280
 	ft.grd_val_lrg = font('HelveticaNeueLT Std Lt', 24, 0); // used instead of ft.grd_val if ww > 1280
@@ -490,11 +492,13 @@ function on_paint(gr) {
 
 	var textLeft = Math.round(Math.min(0.015 * ww, is_4k ? 40 : 20));
 	if (str.artist) {
-		height = gr.CalcTextHeight(str.artist, ft.artist);
+		var availableWidth = displayPlaylist || displayLibrary ? Math.min(ww / 2 - 20, btns.playlist.x - textLeft) : btns.playlist.x - textLeft;
+		var artistFont = chooseFontForWidth(gr, availableWidth, str.artist, [ft.artist_lrg, ft.artist_med, ft.artist_sml]);
+		height = gr.CalcTextHeight(str.artist, artistFont);
 		var artistY = albumart_size.y - height - (is_4k ? 16 : 8);
-		gr.DrawString(str.artist, ft.artist, col.artist, textLeft, artistY, displayPlaylist ? ww / 2 - 20 : ww - 200, height, StringFormat(0, 0, 4));
-		if (pref.show_flags) {
-			width = Math.max(gr.MeasureString(str.artist, ft.artist, 0, 0, 0, 0).Width);
+		gr.DrawString(str.artist, artistFont, col.artist, textLeft, artistY, availableWidth, height, StringFormat(0, 0, 4));
+		width = gr.MeasureString(str.artist, artistFont, 0, 0, 0, 0).Width;
+		if (pref.show_flags && flagImgs.length && width + flagImgs[0].width * flagImgs.length < availableWidth) {
 			var flagWidths = 0;
 			var flagsLeft = textLeft + width + (is_4k ? 30 : 15);
 			for (i = 0; i < flagImgs.length; i++) {
@@ -841,14 +845,12 @@ function on_paint(gr) {
 			h = btns[i].h,
 			img = btns[i].img;
 
-		if ((!displayPlaylist && !displayLibrary) || i < 40) {
 			if (img) { // TODO: fix
 				gr.DrawImage(img[0], x, y, w, h, 0, 0, w, h, 0, 255); // normal
 				gr.DrawImage(img[1], x, y, w, h, 0, 0, w, h, 0, btns[i].hoverAlpha);
 				gr.DrawImage(img[2], x, y, w, h, 0, 0, w, h, 0, btns[i].downAlpha);
 			}
 		}
-	}
 
 	showExtraDrawTiming && drawMenuBar.Print();
 
@@ -2570,7 +2572,7 @@ function ResizeArtwork(resetCDPosition) {
 		} else {
 			albumart_size.y = geo.top_art_spacing; // height of menu bar + spacing + height of Artist text (32+32+32)	// top
 		}
-		if (btns[34] && albumart_size.x + albumart_size.w > btns[34].x - 50) {
+		if (btns.playlist && albumart_size.x + albumart_size.w > btns.playlist.x - 50) {
 			albumart_size.y += 16 - pref.show_transport * 6;
 		}
 
@@ -2898,12 +2900,12 @@ function createButtonObjects(ww, wh) {
 		var img = btnImg.ShowLibrary;
 		var w = img[0].width;
 		x -= (w + 10);
-		btns[34] = new Button(x, y, w, h, 'ShowLibrary', img, 'Show Library');
+		btns.library = new Button(x, y, w, h, 'ShowLibrary', img, 'Show Library');
 	}
 	var img = btnImg.Playlist;
 	var w = img[0].width;
 	x -= (w + 10);
-	btns[35] = new Button(x, y, w, h, 'Playlist', img, 'Show Playlist');
+	btns.playlist = new Button(x, y, w, h, 'Playlist', img, 'Show Playlist');
 	/* if a new image button is added to the left of playlist we need to update the ResizeArtwork code */
 }
 

@@ -92,6 +92,21 @@ function calculateGridMaxTextWidth(gr, gridArray, font) {
 	return maxWidth;
 }
 
+/** Given an array of fonts, returns a single font which the given text will fully fit the 
+ *  availableSpace, or the last font in the list (should be the smallest and text will be truncated)
+ * */ 
+// TODO: add maxLines field so this can be used multiple places. Possibly handle multiple text/font combos
+function chooseFontForWidth(gr, availableWidth, text, fontList) {
+	var fontIndex = undefined;
+	for (var i = 0; i < fontList.length; i++) {
+		fontIndex = i;
+		var width = Math.ceil(gr.MeasureString(text, fontList[fontIndex], 0, 0, 0, 0).Width) + 1;
+		if (width <= availableWidth)
+			break;
+	}
+	return fontIndex !== undefined ? fontList[fontIndex] : null;
+}
+
 function calcAgeDateString(date) {
 	var str = '';
 	if (date.length) {
