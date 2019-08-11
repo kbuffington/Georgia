@@ -37,12 +37,20 @@ I run the theme in Columns UI with a super simple setup using the JScript Panel,
 
 These packs will all need to be extracted to a folder called `images` which you will need to create in your foobar profile folder.
 
-* **[Record Labels](https://github.com/kbuffington/georgia-image-packs/raw/master/artistlogos-2018-06-29.rar)**: Extract to `.../AppData/Roaming/foobar2000/images/`
-* **[Artist Logos](https://github.com/kbuffington/georgia-image-packs/raw/master/flags.rar)**: Extract to `.../AppData/Roaming/foobar2000/images/`
-* **[Flags](https://github.com/kbuffington/georgia-image-packs/raw/master/recordlabel.rar)**: Extract to `.../AppData/Roaming/foobar2000/images/`
+* **[Record Labels](https://github.com/kbuffington/georgia-image-packs/raw/master/recordlabel.zip)**: Extract to `.../AppData/Roaming/foobar2000/images/`
+* **[Artist Logos](https://github.com/kbuffington/georgia-image-packs/raw/master/artistlogos.zip)**: Extract to `.../AppData/Roaming/foobar2000/images/`
+* **[Flags](https://github.com/kbuffington/georgia-image-packs/raw/master/flags.rar)**: Extract to `.../AppData/Roaming/foobar2000/images/`
 
-Image pack repo: https://github.com/kbuffington/georgia-image-packs - I recommend starring this repo. I'll be releasing incremental updates of the image packs every month.
+###### NOTE: If installing to a portable install the images folder should be put at the root level. i.e. if foobar is at `c:\foobar\` then install the image packs to `c:\foobar\images`.
+
+All the images are stored in the Image pack repo located at: https://github.com/kbuffington/georgia-image-packs - I recommend starring this repo. I'll be releasing incremental updates of the image packs every couple months.
+
+### Help
+
+The official discussion thread for this theme is located at https://hydrogenaud.io/index.php/topic,116190.0.html, and that's a great place to go for questions and other support issues. Support can also commonly be found in reddit.com/r/foobar2000. If you discover a bug, please open an issue on github if you can. That makes things easier to track.
 
 ### Thanks
 
 Thanks goes to Peter for fb2k. Also massive thanks to Marc2003 for foo_jscript_panel. Also, 90% of the playlist is ripped directly from TheQwertiest's amazing "CaTRoX (QWR)" theme. Thanks to him for his hard work, putting up with my stupid ideas, and letting me use it here. The LibraryTree is all WilB's work, I just modified it to fit the theme and stripped out a few of the more advanced features that would be hard to support.
+
+Also, I want to thank the Hydrogen Audio and Reddit community for supporting this theme from the get-go, providing valuable feedback and testing, and requests.
