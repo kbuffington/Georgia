@@ -301,7 +301,7 @@ var bandLogoHQ = false; // if true will partially remove the 10 pixel "gutter" a
 var t_interval; // milliseconds between screen updates
 // var settingsY = 0;			// location of settings button
 var lastLeftEdge = 0; // the left edge of the record labels. Saved so we don't have to recalculate every on every on_paint unless size has changed
-var displayPlaylist = pref.start_Playlist;
+var displayPlaylist = false; //pref.start_Playlist;
 var displayLibrary = false;
 var displayLyrics = false;
 var showLibraryButton = true; // TODO: Remove once library goes live
@@ -1547,6 +1547,13 @@ function on_init() {
 	g_playtimer && window.ClearInterval(g_playtimer);
 	g_playtimer = null;
 
+	if (pref.start_Playlist) {		
+		displayPlaylist = false;
+		setTimeout(function () {
+			btns.playlist.onClick();	// displays playlist
+		}, 30);
+	}
+
 	setTimeout(function () {
 		// defer initing of library panel until everything else has loaded
 		initLibraryPanel();
@@ -1639,6 +1646,8 @@ function on_playback_new_track(metadb) {
 		window.ClearTimeout(globTimer);
 		globTimer = 0;
 	}
+
+	str.timeline = new Timeline(geo.timeline_h);
 
 	// Fetch new albumart
 	if ((pref.aa_glob && aa_list.length != 1) || current_path != last_path || albumart == null ||
@@ -1802,7 +1811,6 @@ function on_metadb_changed(handle_list, fromhook) {
 				playCountVerifiedByLastFm = false;
 			}
 
-			str.timeline = new Timeline(geo.timeline_h);
 			str.timeline.setColors(col.tl_added, col.tl_played, col.tl_unplayed);
 			lastPlayed = $(tf.last_played);
 			calcDateRatios($date(currentLastPlayed) !== $date(lastPlayed), currentLastPlayed); // last_played has probably changed and we want to update the date bar

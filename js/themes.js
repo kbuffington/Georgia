@@ -97,8 +97,10 @@ function setTheme(theme) {
 			col.progress_bar = rgb(112,112,112);
 		}
     }
-    col.progress_fill = theme.primary;
-    str.timeline.setColors(theme.darkAccent, theme.accent, theme.lightAccent);
+	col.progress_fill = theme.primary;
+	if (str.timeline) {
+		str.timeline.setColors(theme.darkAccent, theme.accent, theme.lightAccent);
+	}
 	col.tl_added = theme.darkAccent;
 	col.tl_played = theme.accent;
 	col.tl_unplayed = theme.lightAccent;

@@ -2,7 +2,7 @@ var globals = PanelProperties.get_instance();
 var pref = PanelProperties.get_instance(); // preferences
 var tf = PanelProperties.get_instance(); // titleformating strings
 
-var currentVersion = '1.1.0';
+var currentVersion = '1.1.1';
 
 globals.add_properties({
 	version: ['_theme_version (do not hand edit!)', 'NONE']
