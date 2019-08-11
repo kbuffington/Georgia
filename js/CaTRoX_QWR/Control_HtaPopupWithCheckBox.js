@@ -54,8 +54,8 @@ g_hta_window.popup_with_checkbox = function(x, y, title, info_text, checkbox_tex
         '</body>' +
         '</html>';
 
-    var wnd_w = 358;
-    var wnd_h = 425;
+    var wnd_w = is_4k ? 716 : 358;
+    var wnd_h = is_4k ? 850 : 425;
     var wnd = g_hta_window.manager.open(x, y, wnd_w, wnd_h, 'Foobar2000: ' + title, content, g_hta_window.default_features);
     if (!wnd) {
         return false;

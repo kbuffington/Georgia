@@ -71,14 +71,23 @@ themeList.push({
 function setTheme(theme) {
 	var themeCol = new Color(theme.primary);
 	if (colorDistance(theme.primary, col.bg, true) < (themeCol.isCloseToGreyscale ? 60 : 45)) {
-		if (pref.show_theme_log) console.log('>>> Theme primary color is too close to bg color. Shading theme color.');
-		// darken theme.primary because it's too close to col.bg
-		theme.primary = shadeColor(theme.primary, 5);
-        themeCol = new Color(theme.primary);
+        if (pref.darkMode) {
+            if (pref.show_theme_log) console.log('>>> Theme primary color is too close to bg color. Tinting theme color.');
+            theme.primary = tintColor(theme.primary, 5);
+            themeCol = new Color(theme.primary);
+        } else {
+            if (pref.show_theme_log) console.log('>>> Theme primary color is too close to bg color. Shading theme color.');
+            theme.primary = shadeColor(theme.primary, 5);
+            themeCol = new Color(theme.primary);
+        }
 	}
 	col.info_bg = theme.primary;
 
-    col.progress_bar = rgb(125,125,125);
+	if (!pref.darkMode) {
+		col.progress_bar = rgb(125,125,125);
+	} else {
+		col.progress_bar = rgb(23, 22, 25);
+	}
 	if (colorDistance(theme.primary, col.progress_bar, true) < (themeCol.isCloseToGreyscale ? 60 : 45)) {
 		// progress fill is too close in color to bg
 		if (pref.show_theme_log) console.log('>>> Theme primary color is too close to progress bar. Adjusting progress_bar');
@@ -88,7 +97,8 @@ function setTheme(theme) {
 			col.progress_bar = rgb(112,112,112);
 		}
     }
-	col.progress_fill = theme.primary;
+    col.progress_fill = theme.primary;
+    str.timeline.setColors(theme.darkAccent, theme.accent, theme.lightAccent);
 	col.tl_added = theme.darkAccent;
 	col.tl_played = theme.accent;
 	col.tl_unplayed = theme.lightAccent;
@@ -136,10 +146,11 @@ function findClosestTheme(color) {
 	if (pref.show_theme_log) console.log(closest.name + ' - ' + colToRgb(closest.hint));
 }
 
-function getThemeColorsJson(image, maxColorsToPull, maxColors) {
+function getThemeColorsJson(image, maxColorsToPull) {
 	var selectedColor;
 	var minFrequency = 0.015;
 	var colorsWeighted = [];
+	var maxBrightness = pref.darkMode ? 255 : 212;
 
 	try {
 		colorsWeighted = JSON.parse(image.GetColourSchemeJson(maxColorsToPull));
@@ -154,7 +165,8 @@ function getThemeColorsJson(image, maxColorsToPull, maxColors) {
 			var col = c.col;
 			var midBrightness = 127 - Math.abs(127 - col.brightness);   // favors colors with a brightness around 127
 			c.weight = c.freq * midBrightness * 10; // multiply by 10 so numbers are easier to compare
-			if (c.freq >= minFrequency && !col.isCloseToGreyscale && col.brightness < 212) {
+
+			if (c.freq >= minFrequency && !col.isCloseToGreyscale && col.brightness < maxBrightness) {
 				if (pref.show_theme_log) console.log(leftPad(i, 2), col.getRGB(true,true), leftPad(col.brightness, 4), ' ', leftPad(parseFloat(c.freq*100).toFixed(2),5) + '%', leftPad(parseFloat(c.weight).toFixed(2), 7));
 				if (c.weight > maxWeight) {
 					maxWeight = c.weight;
@@ -203,11 +215,11 @@ function getThemeColors(image) {
 			calculatedColor = 0xff000000 | parseInt(val, 16);
 		}
 	} else {
-		calculatedColor = getThemeColorsJson(image, 14, 3);
+		calculatedColor = getThemeColorsJson(image, 14);
 	}
 	if (!isNaN(calculatedColor)) {
 		var color = new Color(calculatedColor);
-		while (color.brightness > 200) {
+		while (!pref.darkMode && color.brightness > 200) {
 			calculatedColor = shadeColor(calculatedColor, 3);
 			if (pref.show_theme_log) console.log(' >> Shading: ', colToRgb(calculatedColor), ' - brightness: ', color.brightness);
 			color = new Color(calculatedColor);
@@ -218,24 +230,34 @@ function getThemeColors(image) {
 			color = new Color(calculatedColor);
 		}
 		if (color.brightness > 17) {
-			var tObj = {
-				primary: calculatedColor,
-				darkAccent: shadeColor(calculatedColor, 30),
-				accent: shadeColor(calculatedColor, 15),
-				lightAccent: tintColor(calculatedColor, 20),
-				playedLine: rgba(255,255,255,75),
-				gridCol: rgb(255,255,255)
-			};
-			if (color.brightness < 40) {
-				tObj.darkAccent = shadeColor(calculatedColor, 35);
-				tObj.accent = tintColor(calculatedColor, 10);
-				tObj.lightAccent = tintColor(calculatedColor, 20);
-            }
+			var tObj = createThemeColorObject(color)
 			setTheme(tObj);
 		} else {
 			findClosestTheme(calculatedColor);
 		}
 	}
+}
+
+function createThemeColorObject(color) {
+    var themeObj = {
+        primary: color.val,
+        darkAccent: shadeColor(color.val, 30),
+        accent: shadeColor(color.val, 15),
+        lightAccent: tintColor(color.val, 20),
+        playedLine: rgba(255,255,255,75),
+        gridCol: rgb(255,255,255)
+    };
+    if (color.brightness < 40) {
+        themeObj.darkAccent = shadeColor(color.val, 35);
+        themeObj.accent = tintColor(color.val, 10);
+        themeObj.lightAccent = tintColor(color.val, 20);
+    }
+    if (color.brightness > 210) {
+        themeObj.darkAccent = shadeColor(color.val, 30);
+        themeObj.accent = shadeColor(color.val, 20);
+        themeObj.lightAccent = shadeColor(color.val, 10);
+    }
+    return themeObj;
 }
 
 function shadeColor(color, percent) {

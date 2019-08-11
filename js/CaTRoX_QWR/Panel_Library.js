@@ -410,7 +410,7 @@ function userinterface() {
 	}
 
 	this.wheel = function(step) {
-		if (p.m_y > p.s_h + ui.y) {
+        if (p.m_y > p.s_h + ui.y) {
 			if (p.m_x >= ui.x + Math.round(this.icon_w + this.margin + (libraryProps.rootNode ? this.pad : 0))) {
 				zoom_font_sz += step;
 				zoom_font_sz = Math.min(is_4k ? 96 : 60, Math.max(zoom_font_sz, 12));
@@ -1775,7 +1775,6 @@ function LibraryTree() {
 			np_item = -1,
 			pid = -1,
 			pln = plman.FindOrCreatePlaylist(libraryProps.libPlaylistName, false);
-		console.log('default playlist:', def_pl);
 		if (!def_pl) pln = plman.ActivePlaylist;
 		else plman.ActivePlaylist = pln;
 		if (type) {
@@ -2299,7 +2298,10 @@ function searchLibrary() {
 		if (s == f) return;
 		var cursor_y = Math.round(p.s_sp / 2 + ui.y);
 		var clamp = p.s_x + p.s_w2;
-		var selcol = col.primary ? col.primary : ui.backcolsel;
+        var selcol = col.primary ? col.primary : ui.backcolsel;
+        if (colorDistance(selcol, rgb(255,255,255))) {
+            selcol = col.darkAccent;
+        }
 		gr.DrawLine(Math.min(p.s_x + get_cursor_x(s), clamp), cursor_y, Math.min(p.s_x + get_cursor_x(f), clamp), cursor_y, ui.row_h - 3, selcol);
 	}
 	var get_cursor_pos = function (x) {var im = gdi.CreateImage(1, 1), g = im.GetGraphics(), nx = x - p.s_x, pos = 0; for (i = offset; i < p.s_txt.length; i++) {pos += g.CalcTextWidth(p.s_txt.substr(i,1), ui.font); if (pos >= nx + 3) break;} im.ReleaseGraphics(g); im.Dispose(); return i;}
@@ -2601,6 +2603,10 @@ function LibraryPanel() {
 	}
 
 	this.on_size = function (x, y, width, height) {
+        this.x = x;
+        this.y = y;
+        this.w = width;
+        this.h = height;
 		ui.x = x;
 		ui.y = y;
 		ui.w = width;
@@ -2613,7 +2619,12 @@ function LibraryPanel() {
 		library_tree.create_tooltip();
 		if (libraryProps.searchMode || libraryProps.showScrollbar) but.refresh(true);
 		jS.on_size();
-	}
+    }
+
+    this.x;
+    this.y;
+    this.w;
+    this.h;
 }
 
 // var libraryPanel = new LibraryPanel();
@@ -3074,7 +3085,13 @@ function LibraryCallbacks() {
 	this.on_mouse_mbtn_up = function(x, y) {library_tree.mbtn_up(x, y);}
 	this.on_mouse_move = function(x, y, m) {if (p.m_x == x && p.m_y == y) return; if (libraryProps.searchMode || libraryProps.showScrollbar) but.move(x, y); if (libraryProps.searchMode) sL.move(x, y); library_tree.move(x, y); library_tree.dragDrop(x, y); sbar.move(x, y); p.m_x = x; p.m_y = y;}
 	this.on_mouse_rbtn_up = function(x, y) {if (y < p.s_h && x > p.s_x && x < p.s_x + p.s_w2) {if (libraryProps.searchMode) sL.rbtn_up(x, y); return true;} else {men.rbtn_up(x, y); return true;}}
-	this.on_mouse_wheel = function(step) { if (!v.k(CTRL_ALT)) sbar.wheel(step, false); else ui.wheel(step); }
+	this.on_mouse_wheel = function(step) {
+        if (!v.k(CTRL_ALT)) {
+            sbar.wheel(step, false);
+        } else {
+            ui.wheel(step);
+        }
+    }
 	this.on_notify_data = function(name, info) {switch (name) {case "!!.tags update": lib_manager.treeState(false, 2); break;}}
 	this.on_playback_new_track = function(handle) {ui.on_playback_new_track(handle);}
 	this.on_playback_stop = function(reason) {if (reason == 2) return; on_item_focus_change();}

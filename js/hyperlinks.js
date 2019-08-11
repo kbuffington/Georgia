@@ -4,10 +4,8 @@ HyperlinkStates = {
 }
 
 var measureStringScratchImg = gdi.CreateImage(1000, 200);
-var hyperlinksCount = 0;
 
 function Hyperlink(text, font, type, x_offset, y_offset, container_w) {
-	hyperlinksCount++;
 	this.text = text;
 	this.font = font;
 	this.hoverFont = gdi.font(font.Name, font.Size, font.Style | g_font_style.underline);
@@ -74,12 +72,17 @@ Hyperlink.prototype.repaint = function () {
 }
 
 Hyperlink.prototype.click = function () {
-	var handle_list = fb.GetQueryItems(fb.GetLibraryItems(), this.type + ' IS ' + this.text);
-	if (handle_list.Count) {
-		var pl = plman.FindOrCreatePlaylist('Search', true);
-		plman.ClearPlaylist(pl);
-		plman.InsertPlaylistItems(pl, 0, handle_list);
-		plman.SortByFormat(pl, '$if2(%ArtistSortOrder%,%album artist%) $if2(%AlbumSortOrder%,%date%) %album% %discnumber% %tracknumber%');
-		plman.ActivePlaylist = pl;
-	}
+    var query = this.type + ' IS ' + this.text;
+
+    if (this.type === 'date') {
+        query = '"$year(%date%)" IS ' + this.text;
+    }
+    var handle_list = fb.GetQueryItems(fb.GetLibraryItems(), query);
+    if (handle_list.Count) {
+        var pl = plman.FindOrCreatePlaylist('Search', true);
+        plman.ClearPlaylist(pl);
+        plman.InsertPlaylistItems(pl, 0, handle_list);
+        plman.SortByFormat(pl, '$if2(%artist sort order%,%album artist%) $if3(%album sort order%,%original release date%,%date%) %album% %edition% %codec% %discnumber% %tracknumber%');
+        plman.ActivePlaylist = pl;
+    }
 }

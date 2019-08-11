@@ -92,43 +92,134 @@ function calculateGridMaxTextWidth(gr, gridArray, font) {
 	return maxWidth;
 }
 
-/** Given an array of fonts, returns a single font which the given text will fully fit the 
+/** Given an array of fonts, returns a single font which the given text will fully fit the
  *  availableSpace, or the last font in the list (should be the smallest and text will be truncated)
- * */ 
-// TODO: add maxLines field so this can be used multiple places. Possibly handle multiple text/font combos
-function chooseFontForWidth(gr, availableWidth, text, fontList) {
+ * */
+function chooseFontForWidth(gr, availableWidth, text, fontList, maxLines) {
+    maxLines = (typeof maxLines !== 'undefined') ? maxLines : 1;
 	var fontIndex = undefined;
 	for (var i = 0; i < fontList.length; i++) {
 		fontIndex = i;
-		var width = Math.ceil(gr.MeasureString(text, fontList[fontIndex], 0, 0, 0, 0).Width) + 1;
-		if (width <= availableWidth)
+		var measurements = gr.MeasureString(text, fontList[fontIndex], 0, 0, availableWidth, 0);
+		if (measurements.lines <= maxLines)
 			break;
 	}
 	return fontIndex !== undefined ? fontList[fontIndex] : null;
+}
+
+/** Given two different texts, and two different font arrays, draws both lines of text
+ *  in the maximum number of lines available, using the largest font where all of the text
+ *  will fit. Where text1 ends and text2 begins will be on the same line if possible, switching
+ *  fonts in between.
+ *  Returns the height of the drawn text
+*/
+function drawMultipleLines(gr, availableWidth, left, top, color, text1, fontList1, text2, fontList2, maxLines) {
+	maxLines = (typeof maxLines !== 'undefined') ? maxLines : 2;
+	var textArray;
+	var continuation;
+	var lineHeight;
+	height = 0;
+	for (var fontIndex = 0; fontIndex < fontList1.length && fontIndex < fontList2.length; fontIndex++) {
+		textArray = [];
+		lineHeight = Math.max(gr.CalcTextHeight(text1, fontList1[fontIndex]),
+							  gr.CalcTextHeight(text2, fontList2[fontIndex]))
+		var continuation = false;	// does font change on same line
+		var lineText = gr.EstimateLineWrap(text1, fontList1[fontIndex], availableWidth).toArray();
+		for (var i = 0; i < lineText.length; i += 2) {
+			textArray.push({ text: lineText[i], x_offset: 0, font: fontList1[fontIndex] });
+		}
+		if (textArray.length <= maxLines) {
+			var lastLineWidth = lineText[lineText.length - 1];
+			var secondaryText = gr.EstimateLineWrap(text2, fontList2[fontIndex], availableWidth - lastLineWidth - 5).toArray();
+			firstSecondaryLine = secondaryText[0];
+			textRemainder = text2.substr(firstSecondaryLine.length).trim();
+			if (firstSecondaryLine.trim().length) {
+				textArray.push({ text: firstSecondaryLine, x_offset: lastLineWidth + 5, font: fontList2[fontIndex] });
+				continuation = true;	// font changes on same line
+			}
+			secondaryText = gr.EstimateLineWrap(textRemainder, fontList2[fontIndex], availableWidth).toArray();
+			for (var i = 0; i < secondaryText.length; i += 2) {
+				textArray.push({ text: secondaryText[i], x_offset: 0, font: fontList2[fontIndex] });
+			}
+		}
+		if (textArray.length - (continuation ? 1 : 0) <= maxLines) break;
+	}
+	var y_offset = 0;
+	var linesDrawn = 0;
+	var cutoff = false;
+	if (textArray.length > maxLines + (continuation ? 1 : 0)) {
+		cutoff = true;
+	}
+	textArray.splice(maxLines + (continuation ? 1 : 0));
+	for (var i = 0; i < textArray.length; i++) {
+		var line = textArray[i];
+		if (line.x_offset) {
+			// continuation line, so move back up for drawing
+			y_offset -= lineHeight;
+		} else if (line.text.length) {
+			linesDrawn++;
+		}
+		if (i === textArray.length - 1 && cutoff) {
+			line.text += ' ABCDEFGHIJKMLNOPQRSTUVWXYZABCDEFGHIJKMLNOPQRSTUVWXYZ';	// trigger elipses
+		}
+		gr.DrawString(line.text, line.font, color, left + line.x_offset, top + y_offset,
+			availableWidth - line.x_offset, lineHeight, g_string_format.trim_ellipsis_word);
+		y_offset += lineHeight;
+	}
+	return linesDrawn * lineHeight;
+}
+
+function dateDiff(startingDate, endingDate) {
+    var hasStartDay = (startingDate.length > 7) ? true : false;
+    if (!hasStartDay) {
+        startingDate = startingDate + '-02';    // avoid timezone issues
+    }
+    var startDate = new Date(new Date(startingDate).toISOString().substr(0, 10));
+    if (!endingDate) {
+        endingDate = new Date().toISOString().substr(0, 10);    // need date in YYYY-MM-DD format
+    }
+    var endDate = new Date(endingDate);
+    if (startDate > endDate) {
+        var swap = startDate;
+        startDate = endDate;
+        endDate = swap;
+    }
+    var startYear = startDate.getFullYear();
+    var february = (startYear % 4 === 0 && startYear % 100 !== 0) || startYear % 400 === 0 ? 29 : 28;
+    var daysInMonth = [31, february, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+    var yearDiff = endDate.getFullYear() - startYear;
+    var monthDiff = endDate.getMonth() - startDate.getMonth();
+    if (monthDiff < 0) {
+        yearDiff--;
+        monthDiff += 12;
+    }
+    var dayDiff = 0;
+    if (hasStartDay) {
+        dayDiff = endDate.getDate() - startDate.getDate();
+        if (dayDiff < 0) {
+            if (monthDiff > 0) {
+                monthDiff--;
+            } else {
+                yearDiff--;
+                monthDiff = 11;
+            }
+            dayDiff += daysInMonth[startDate.getMonth()];
+        }
+    }
+
+    return (yearDiff ? yearDiff + 'y ' : '') + (monthDiff > 0 ? monthDiff + 'm ': '') + (dayDiff ? dayDiff + 'd': '');
 }
 
 function calcAgeDateString(date) {
 	var str = '';
 	if (date.length) {
 		try {
-			var days = calcAge($date(date), true);
-
-			var then = new Date($date(date));
-
-			var diffDate = new Date(new Date() - then);
-			if (diffDate.toISOString().slice(0, 4) - 1970) {
-				str = (diffDate.toISOString().slice(0, 4) - 1970) + 'y ';
-			}
-			if (diffDate.getMonth()) {
-				str += diffDate.getMonth() + 'm ';
-			}
-			if (diffDate.getDate()-1) {
-				str += (diffDate.getDate()-1) + 'd';
-			}
+            str = dateDiff($date(date));
 		} catch (e) {
 			console.log(e);
-			console.log('date:', date, 'days:', days, 'then:', then);
-			// fail();
+			console.log('date:', date);
+			fail();
 			str = '';
 		}
 	}
@@ -212,10 +303,10 @@ function leftPad(val, size, ch) {
 var sizeInitialized = false;
 var last_size = undefined;
 
-function checkFor4k(w) {
+function checkFor4k(w, h) {
 	if (pref.use_4k === 'always') {
 		is_4k = true;
-	} else if (pref.use_4k === 'auto' && w > 3000) {
+	} else if (pref.use_4k === 'auto' && (w > 3000 || h > 1400)) {
 		is_4k = true;
 	} else {
 		is_4k = false;

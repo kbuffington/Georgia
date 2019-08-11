@@ -1,0 +1,19 @@
+v1.1.0 - 2019-08-10
+ - Dark mode (new default)! Switch between the two in the options menu
+ - A ton more 4k fixes
+ - reiniting playlist when 4k mode switches to avoid scrollbar issues
+ - accurate date difference code based on human accepted norms of what a date difference is (i.e. 1 month ago)
+ - correctly handling forbidden characters when attempting to find artwork/files
+ - better sorting of results when clicking on hyperlinks
+ - searching dates by year only
+ - Fixed a bunch of issues with Multi-channel display
+ - Highlight colors in library/playlist should still allow text to be legible
+ - Drastically reduced console spam
+
+v1.0.1 - 2019-01-23
+ - Fix some 4k scaling issues
+ - auto load library 10s after startup for better response time
+ - fix crash in jscript 2.2.0+
+ - variable font sizing for artist string
+
+v1.0.0 - First official release

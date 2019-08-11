@@ -27,6 +27,7 @@ g_properties.add_properties(
 // Fixup properties
 (function() {
     g_properties.row_h = Math.max(10, g_properties.row_h);
+    checkFor4k(window.Width, window.Height);
 })();
 
 /**
@@ -40,7 +41,6 @@ g_properties.add_properties(
  * @constructor
  */
 List = function (x, y, w, h, content) {
-
     // public:
 
     /** @type {number} */
@@ -53,7 +53,8 @@ List = function (x, y, w, h, content) {
     this.h = h;
 
     /** @const {number}*/
-    this.row_h = g_properties.row_h;    // 4k scaling set in playlist.reinitialize
+    this.row_h = is_4k ? g_properties.row_h * 2 : g_properties.row_h;   // also see playlist.reinitialize
+    // console.log('>>>>>', this.row_h, is_4k);
 
     /** @type {number} */
     this.background_color = g_theme.colors.pss_back;

@@ -5,6 +5,7 @@
 // @import "%fb2k_profile_path%georgia\js\polyfills.js"
 // @import "%fb2k_profile_path%georgia\js\helpers.js"
 // @import "%fb2k_profile_path%georgia\js\hyperlinks.js"
+// @import "%fb2k_profile_path%georgia\js\timeline.js"
 // @import "%fb2k_profile_path%georgia\js\CaTRoX_QWR\js_marc2003\js\lodash.min.js"
 // @import "%fb2k_profile_path%georgia\js\CaTRoX_QWR\js_marc2003\js\helpers.js"
 // @import "%fb2k_profile_path%georgia\js\CaTRoX_QWR\Common.js"

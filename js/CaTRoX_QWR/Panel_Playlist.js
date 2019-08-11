@@ -7,7 +7,7 @@
 var trace_call = false;
 var trace_on_paint = false;
 var trace_on_move = false;
-var trace_initialize_list_performance = true;
+var trace_initialize_list_performance = false;
 
 g_script_list.push('Panel_Playlist.js');
 
@@ -78,7 +78,6 @@ var g_drop_effect = {
     scroll: 0x80000000
 };
 
-var is_4k = false;
 var playlistFontsCreated = false;
 var playlist_geo = {};
 
@@ -123,9 +122,6 @@ function rescalePlaylist() {
     playlist_geo.scrollbar_top_pad = is_4k ? g_properties.scrollbar_top_pad * 2 : g_properties.scrollbar_top_pad;
     playlist_geo.scrollbar_bottom_pad = is_4k ? g_properties.scrollbar_bottom_pad * 2 : g_properties.scrollbar_bottom_pad;
 }
-
-//---> Fonts
-rescalePlaylist();
 
 var g_pl_colors = {};
 //---> Common
@@ -1675,8 +1671,8 @@ function Playlist(x, y) {
      */
     this.initialize_list = function () {
         trace_call && console.log('initialize_list');
+        var profiler = fb.CreateProfiler();
         if (trace_initialize_list_performance) {
-            var profiler = fb.CreateProfiler();
             var profiler_part = fb.CreateProfiler();
         }
 
@@ -1750,7 +1746,7 @@ function Playlist(x, y) {
         }
         selection_handler = new SelectionHandler(/** @type {PlaylistContent} */ this.cnt, cur_playlist_idx);
 
-        trace_initialize_list_performance && console.log('Playlist initialized in ' + profiler.Time + 'ms');
+        (true || trace_initialize_list_performance) && console.log('Playlist initialized in ' + profiler.Time + 'ms');
     };
 
     this.reinitialize = function () {
@@ -2873,7 +2869,8 @@ PlaylistContent = function () {
             return 0;
         }
 
-        var total_height_in_rows = Math.round(_.head(this.sub_items).h / g_properties.row_h) * this.sub_items.length;
+        var row_h = is_4k ? g_properties.row_h * 2 : g_properties.row_h;
+        var total_height_in_rows = Math.round(_.head(this.sub_items).h / row_h) * this.sub_items.length;
         _.forEach(this.sub_items, function (item) {
             if (!item.is_collapsed) {
                 total_height_in_rows += item.get_sub_items_total_h_in_rows();
@@ -3340,7 +3337,8 @@ BaseHeader.prototype.get_sub_items_total_h_in_rows = function () {
         return this.sub_items.length;
     }
 
-    var h_in_rows = Math.round(_.head(this.sub_items).h / g_properties.row_h) * this.sub_items.length;
+    var row_h = is_4k ? g_properties.row_h * 2 : g_properties.row_h;
+    var h_in_rows = Math.round(_.head(this.sub_items).h / row_h) * this.sub_items.length;
     _.forEach(this.sub_items, function (item) {
         if (!item.is_collapsed) {
             h_in_rows += item.get_sub_items_total_h_in_rows();
@@ -3650,7 +3648,8 @@ function Header(parent, x, y, w, h, idx) {
      * @return {Array<DiscHeader>}
      */
     function create_cd_headers(prepared_rows, rows_to_proccess_count) {
-        return DiscHeader.create_headers(that, that.x, 0, that.w, g_properties.row_h, prepared_rows, rows_to_proccess_count);
+        var row_h = is_4k ? g_properties.row_h * 2 : g_properties.row_h;
+        return DiscHeader.create_headers(that, that.x, 0, that.w, row_h, prepared_rows, rows_to_proccess_count);
     }
 
     /** @override */
@@ -3900,9 +3899,12 @@ function Header(parent, x, y, w, h, idx) {
 
                 var bitspersample = _.tf('$Info(bitspersample)', metadb);
                 var samplerate = _.tf('$Info(samplerate)', metadb);
-                var sample = ((bitspersample > 16 || samplerate > 44100) ? ' ' + bitspersample + 'bit/' + samplerate / 1000 + 'khz' : '');
+                var sample = ((bitspersample > 16 || samplerate > 44100) ? _.tf(' [$Info(bitspersample)bit/]', metadb) + samplerate / 1000 + 'khz' : '');
                 var codec = _.tf('$ext(%path%)', metadb);
 
+                if (codec == "dca (dts coherent acoustics)") {
+                    codec = "dts";
+                }             
                 if (codec === 'cue') {
                     codec = _.tf('$ext($Info(referenced_file))', metadb);
                 }
@@ -3910,7 +3912,7 @@ function Header(parent, x, y, w, h, idx) {
                     codec += _.tf('[-$Info(codec_profile)]', metadb).replace('quality ', 'q');
                 }
                 else if (codec === 'dts' || codec === 'ac3' || codec === 'atsc a/52') {
-                    codec += ' ' + _.tf(" $replace($replace($replace($info(channel_mode), + LFE,),' front, ','/'),' rear surround channels',$if($strstr($info(channel_mode),' + LFE'),.1,.0)) %bitrate%", metadb) + ' kbps';
+                    codec += _.tf("[ $replace($replace($replace($info(channel_mode), + LFE,),' front, ','/'),' rear surround channels',$if($strstr($info(channel_mode),' + LFE'),.1,.0))] %bitrate%", metadb) + ' kbps';
                     codec = codec.replace('atsc a/52', 'Dolby Digital');
                 }
                 else if (_.tf('$Info(encoding)', metadb) === 'lossy') {
@@ -3947,7 +3949,7 @@ function Header(parent, x, y, w, h, idx) {
                         var i = 0;
                         while (hyperlinks['genre' + i]) {
                             if (i > 0) {
-                                grClip.DrawString(' \u2022 ', g_pl_fonts.info, info_color, genre_hyperlink.x + genre_hyperlink.get_w(), info_y, 8, info_h);
+                                grClip.DrawString(' \u2022 ', g_pl_fonts.info, info_color, genre_hyperlink.x + genre_hyperlink.get_w(), info_y, is_4k ? 16 : 8, info_h);
                             }
                             genre_hyperlink = hyperlinks['genre' + i];
                             genre_hyperlink.draw(grClip, info_color);
@@ -3982,7 +3984,7 @@ function Header(parent, x, y, w, h, idx) {
                     var i = 0;
                     while (hyperlinks['label' + i]) {
                         if (i > 0) {
-                            grClip.DrawString(' \u2022 ', g_pl_fonts.info, info_color, label_hyperlink.x + label_hyperlink.w + 1, info_y, 8, info_h);
+                            grClip.DrawString(' \u2022 ', g_pl_fonts.info, info_color, label_hyperlink.x + label_hyperlink.w + 1, info_y, is_4k ? 16 : 8, info_h);
                         }
                         label_hyperlink = hyperlinks['label' + i];
                         label_hyperlink.draw(grClip, info_color);
@@ -4232,7 +4234,7 @@ function Header(parent, x, y, w, h, idx) {
             var label_w = gr.MeasureString(labels[i], g_pl_fonts.info, 0, 0, 0, 0).Width + 10;
             label_left -= label_w;
             hyperlinks['label' + i] = new Hyperlink(labels[i], g_pl_fonts.info, 'label', label_left, label_y, this.w);
-            label_left -= 6;  // spacing between labels
+            label_left -= is_4k ? 16 : 4;  // spacing between labels - not doubled in 4k due to font differences
         }
 
         var genre_string = _.tf('[%genre%]', metadb);
@@ -4240,7 +4242,7 @@ function Header(parent, x, y, w, h, idx) {
         var genre_left = left_pad;
         var genre_y = label_y;
         for (var i = 0; i < genres.length; i++) {
-            var genre_w = gr.MeasureString(genres[i], g_pl_fonts.info, 0, 0, 0, 0).Width + 10;
+            var genre_w = gr.MeasureString(genres[i], g_pl_fonts.info, 0, 0, 0, 0).Width + (is_4k ? 20 : 10);
             hyperlinks['genre' + i] = new Hyperlink(genres[i], g_pl_fonts.info, 'genre', genre_left, genre_y, this.w);
             genre_left += genre_w;
         }
@@ -4756,13 +4758,14 @@ function Rating(x, y, max_w, h, metadb) {
     this.draw = function (gr, color) {
         var cur_rating = this.get_rating();
         var cur_rating_x = this.x;
+        var y = this.y - (is_4k ? 3 : 1);
 
         for (var j = 0; j < 5; j++) {
             if (j < cur_rating) {
-                gr.DrawString('\u2605', g_pl_fonts.rating_set, color, cur_rating_x, this.y - 1, btn_w, this.h, g_string_format.align_center);
+                gr.DrawString('\u2605', g_pl_fonts.rating_set, color, cur_rating_x, y, btn_w, this.h, g_string_format.align_center);
             }
             else {
-                gr.DrawString('\u2219', g_pl_fonts.rating_not_set, color, cur_rating_x, this.y - 1, btn_w, this.h, g_string_format.align_center);
+                gr.DrawString('\u2219', g_pl_fonts.rating_not_set, color, cur_rating_x, y, btn_w, this.h, g_string_format.align_center);
             }
             cur_rating_x += btn_w;
         }
@@ -4801,7 +4804,7 @@ function Rating(x, y, max_w, h, metadb) {
             }
         }
         else {
-            fb.RunContextCommandWithMetadb('Rating/' + (current_rating === new_rating ? '<not set>' : new_rating), this.metadb);
+            fb.RunContextCommandWithMetadb('Playback Statistics/Rating/' + (current_rating === new_rating ? '<not set>' : new_rating), this.metadb);
         }
 
         rating = (current_rating === new_rating) ? 0 : new_rating;
@@ -6567,5 +6570,15 @@ function ArtImageCache(max_cache_size_arg) {
 
 Header.art_cache = new ArtImageCache(200);
 
-var playlist = new PlaylistPanel(0, 0);
-playlist.initialize();
+var playlist;
+function initPlaylist() {
+    playlist = new PlaylistPanel(0, 0);
+    playlist.initialize();
+}
+
+setTimeout(function () {
+    // need to delay until we have Window.height for checking 4k
+    rescalePlaylist();  // set fonts for 4k
+    initPlaylist();
+});
+

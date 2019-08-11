@@ -89,31 +89,42 @@ function createFonts() {
 }
 
 
-// COLORS
-col.progres_bar_text = RGB(0, 0, 0);
-col.artist = RGB(255, 255, 255);
-col.info_text = RGB(255, 255, 255);
-col.now_playing = RGB(0, 0, 0); // tracknumber, title, and time
+function initColors() {
+	col.artist = RGB(255, 255, 255);
+	col.info_text = RGB(255, 255, 255);
 
-col.bg = RGB(205, 205, 205);
-col.menu_bg = RGB(58, 58, 58);
-col.rating = RGB(255, 170, 032);
-col.mood = RGB(000, 128, 255);
-col.hotness = RGB(192, 192, 000);
+	if (!pref.darkMode) {
+		col.bg = RGB(205, 205, 205);
+		col.menu_bg = RGB(58, 58, 58);
+		col.progress_fill = RGB(235, 59, 70);
+		col.progress_bar = RGB(125, 125, 125);
+		col.now_playing = RGB(0, 0, 0); // tracknumber, title, and time
+		col.aa_shadow = RGBA(000, 000, 000, 64);
+	} else {
+		col.bg = RGB(50, 54, 57);
+		col.menu_bg = RGB(23, 23, 23);
+		col.progress_fill = RGB(235, 59, 70);
+		col.progress_bar = RGB(23, 22, 25);
+		col.now_playing = RGB(255, 255, 255); // tracknumber, title, and time
+		col.aa_shadow = RGBA(128, 128, 128, 54);
+	}
 
-col.playcount = RGB(000, 153, 153);
-col.dark_grey = RGB(128, 128, 128);
-col.progress_fill = RGB(235, 59, 70);
-col.progress_bar = RGB(125, 125, 125);
+	col.rating = RGB(255, 170, 032);
+	col.mood = RGB(000, 128, 255);
+	col.hotness = RGB(192, 192, 000);
 
-col.tl_added = RGB(15, 51, 65);
-col.tl_played = RGB(44, 66, 75);
-col.tl_unplayed = RGB(126, 173, 195);
-col.tl_play = RGB(255, 255, 255); // each individual play
+	col.playcount = RGB(000, 153, 153);
+	col.dark_grey = RGB(128, 128, 128);
 
-// ALBUM ART DISPLAY PROPERTIES
-col.aa_border = RGBA(060, 060, 060, 128);
-col.aa_shadow = RGBA(000, 000, 000, 64);
+	col.tl_added = RGB(15, 51, 65);
+	col.tl_played = RGB(44, 66, 75);
+	col.tl_unplayed = RGB(126, 173, 195);
+	col.tl_play = RGB(255, 255, 255); // each individual play
+
+	// ALBUM ART DISPLAY PROPERTIES
+	col.aa_border = RGBA(060, 060, 060, 128);
+}
+initColors();
 
 function setGeometry() {
 	geo.aa_shadow = is_4k ? 16 : 8; // size of albumart shadow
@@ -145,7 +156,6 @@ function setGeometry() {
 }
 
 var playedTimesRatios = [];
-var lfmPlayedTimesRatios = []; // remove this
 
 // PATHS
 pref.bg_image = fb.ProfilePath + 'georgia/images/wallpaper-blueish.jpg';
@@ -435,12 +445,14 @@ function on_paint(gr) {
 	if (fb.IsPlaying) {
 		if (albumart && albumart_scaled) {
 			if (showExtraDrawTiming) drawArt = fb.CreateProfiler('on_paint -> artwork');
-			if (!shadow_image) { // when switching views, the drop shadow won't get created initially which is very jarring when it suddenly appears later, so create it if we don't have it.
-				createDropShadow();
+			if (!pref.darkMode) {
+				if (!shadow_image) { // when switching views, the drop shadow won't get created initially which is very jarring when it suddenly appears later, so create it if we don't have it.
+					createDropShadow();
+				}
+				shadow_image && gr.DrawImage(shadow_image, -geo.aa_shadow, albumart_size.y - geo.aa_shadow, shadow_image.Width, shadow_image.Height,
+					0, 0, shadow_image.Width, shadow_image.Height);
+				// gr.DrawRect(-geo.aa_shadow, albumart_size.y - geo.aa_shadow, shadow_image.Width, shadow_image.Height, 1, RGBA(0,0,255,125));	// viewing border line
 			}
-			shadow_image && gr.DrawImage(shadow_image, -geo.aa_shadow, albumart_size.y - geo.aa_shadow, shadow_image.Width, shadow_image.Height,
-				0, 0, shadow_image.Width, shadow_image.Height);
-			// gr.DrawRect(-geo.aa_shadow, albumart_size.y - geo.aa_shadow, shadow_image.Width, shadow_image.Height, 1, RGBA(0,0,255,125));	// viewing border line
 			if (cdart && !rotatedCD && !displayPlaylist && !displayLibrary && pref.display_cdart) {
 				CreateRotatedCDImage();
 			}
@@ -473,8 +485,10 @@ function on_paint(gr) {
 			}
 			if (rotatedCD && pref.display_cdart) {
 				if (showExtraDrawTiming) drawCD = fb.CreateProfiler('cdart');
-				shadow_image && gr.DrawImage(shadow_image, -geo.aa_shadow, albumart_size.y - geo.aa_shadow, shadow_image.Width, shadow_image.Height,
-					0, 0, shadow_image.Width, shadow_image.Height);
+				if (!pref.darkMode) {
+					shadow_image && gr.DrawImage(shadow_image, -geo.aa_shadow, albumart_size.y - geo.aa_shadow, shadow_image.Width, shadow_image.Height,
+						0, 0, shadow_image.Width, shadow_image.Height);
+				}
 				gr.DrawImage(rotatedCD, cdart_size.x, cdart_size.y, cdart_size.w, cdart_size.h, 0, 0, rotatedCD.width, rotatedCD.height, 0);
 				if (showExtraDrawTiming) drawCD.Print();
 			}
@@ -531,6 +545,14 @@ function on_paint(gr) {
 			gr.DrawString(str.year, ft.year, col.artist, ww - textLeft * 2 - text_width, geo.top_bg_h - trackInfoHeight - height - 20, text_width, height, StringFormat(StringAlignment.Far));
 		}
 
+		var c = new Color(col.info_bg);
+		if (c.brightness > 190) {
+			col.info_text = rgb(32,32,32);
+			col.info_text = rgb(0,0,0);
+		} else {
+			col.info_text = rgb(255,255,255);
+		}
+
 		var top = (albumart_size.y ? albumart_size.y : geo.top_art_spacing) + (is_4k ? 30 : 15);
 		if (gridSpace > 120) {
 			if (str.title) {
@@ -575,32 +597,34 @@ function on_paint(gr) {
 			}
 
 			//Timeline playcount bars
-			if (fb.IsPlaying) {
-				var extraLeftSpace = is_4k ? 6 : 3; // add a little space to the left so songs that were played a long time ago show more in the "added" stage
-				gr.SetSmoothingMode(SmoothingMode.None); // disable smoothing
-				width = albumart_size.x - extraLeftSpace - 1; // albumart_size.x set even if no art. Subtract 1 because we want the timeline stop 1 pixel short of art
-
-				gr.FillSolidRect(0, top, width + extraLeftSpace, geo.timeline_h, col.tl_added);
-				if (tl_firstPlayedRatio >= 0 && tl_lastPlayedRatio >= 0) {
-					x1 = Math.floor(width * tl_firstPlayedRatio) + extraLeftSpace;
-					x2 = Math.floor(width * tl_lastPlayedRatio) + extraLeftSpace;
-					gr.FillSolidRect(x1, top, width - x1 + extraLeftSpace, geo.timeline_h, col.tl_played);
-					gr.FillSolidRect(x2, top, width - x2 + extraLeftSpace, geo.timeline_h, col.tl_unplayed);
-				}
-				for (i = 0; i < playedTimesRatios.length; i++) {
-					x = Math.floor(width * playedTimesRatios[i]) + extraLeftSpace;
-					if (!isNaN(x)) {
-						gr.DrawLine(x, top, x, top + geo.timeline_h, is_4k ? 3 : 2, col.tl_play);
-					} else {
-						// console.log('Played Times Error! ratio: ' + playedTimesRatios[i], 'x: ' + x);
-					}
-				}
-				gr.SetSmoothingMode(SmoothingMode.AntiAlias);
+			if (fb.IsPlaying && str.timeline) {
+				str.timeline.setSize(0, top, albumart_size.x);
+				str.timeline.draw(gr);
 			}
 
 			top += geo.timeline_h + (is_4k ? 20 : 12);
 
 			if (str.album) {
+				var font_array = [ft.album_lrg, ft.album_med, ft.album_sml];
+				var subtitlefont_array = [ft.album_substitle_lrg, ft.album_substitle_med, ft.album_substitle_sml];
+				if (str.album_subtitle.length) {
+					top += drawMultipleLines(gr, text_width, textLeft, top, col.info_text, str.album, font_array,
+						str.album_subtitle, subtitlefont_array, 2);
+				} else {
+					var ft_album = chooseFontForWidth(gr, text_width, str.album, font_array, 2);
+					var txtRec = gr.MeasureString(str.album, ft_album, 0, 0, text_width, wh);
+					var numLines = txtRec.lines;
+					var lineHeight = txtRec.Height / numLines;
+					if (numLines > 2) {
+						numLines = 2;
+					}
+					height = lineHeight * numLines;
+					gr.DrawString(str.album, ft_album, col.info_text, textLeft, top, text_width, height, g_string_format.trim_ellipsis_word);
+				}
+				top += height + (is_4k ? 20 : 10);
+			}
+
+			if (0 && str.album) {
 				var drawSubtitle = !!str.album_subtitle.length;
 				ft_album = ft.album_lrg;
 				ft_subtitle = ft.album_substitle_lrg;
@@ -616,6 +640,11 @@ function on_paint(gr) {
 					drawSubtitle = false;
 				} else if (txtRec.width + subtitleRec.width > text_width) {
 					album_text = str.album + str.album_subtitle;
+					txtRec = gr.MeasureString(album_text, ft_album, 0, 0, text_width, wh);
+					var lineText = gr.EstimateLineWrap(album_text, ft_album, text_width).toArray();
+					lineText.forEach(function (l) {
+						console.log(JSON.stringify(l));
+					});
 					drawSubtitle = false;
 				} else {
 					// draw subtitle separately
@@ -686,9 +715,9 @@ function on_paint(gr) {
 					}
 					txtRec = gr.MeasureString(value, grid_val_ft, 0, 0, col2_width, wh);
 					if (top + txtRec.Height < albumart_size.y + albumart_size.h) {
+						var border_w = is_4k ? 1 : 0.5;
 						cell_height = txtRec.Height + 5;
 						if (dropShadow) {
-							var border_w = is_4k ? 1 : 0.5;
 							gr.DrawString(value, grid_val_ft, col.extraDarkAccent, col2_left + border_w, top + border_w, col2_width, cell_height, StringFormat(0, 0, 4));
 							gr.DrawString(value, grid_val_ft, col.extraDarkAccent, col2_left - border_w, top + border_w, col2_width, cell_height, StringFormat(0, 0, 4));
 							gr.DrawString(value, grid_val_ft, col.extraDarkAccent, col2_left + border_w, top - border_w, col2_width, cell_height, StringFormat(0, 0, 4));
@@ -696,15 +725,20 @@ function on_paint(gr) {
 						}
 						gr.DrawString(key, grid_key_ft, col.info_text, textLeft, top, col1_width, cell_height, g_string_format.trim_ellipsis_char); // key
 						gr.DrawString(value, grid_val_ft, grid_val_col, col2_left, top, col2_width, cell_height, StringFormat(0, 0, 4));
+						// Attempting to solve white on light color
+						// gr.DrawString(value, grid_val_ft, rgb(128,128,128), col2_left + border_w, top + border_w, col2_width, cell_height, StringFormat(0, 0, 4));
+						// gr.DrawString(value, grid_val_ft, rgb(255,255,255), col2_left, top, col2_width, cell_height, StringFormat(0, 0, 4));
 
 						if (playCountVerifiedByLastFm && showLastFmImage) {
 							var lastFmLogo = lastFmImg;
 							if (colorDistance(col.primary, rgb(185, 0, 0), false) < 132) {
 								lastFmLogo = lastFmWhiteImg;
 							}
-							var heightRatio = (cell_height - 12) / lastFmImg.height;
-							gr.DrawImage(lastFmLogo, col2_left + txtRec.Width + 20, top + 3, Math.round(lastFmLogo.width * heightRatio), cell_height - 12,
-								0, 0, lastFmLogo.width, lastFmLogo.height);
+							var heightRatio = (cell_height - 12) / lastFmLogo.height;
+							if (txtRec.Width + 20 + Math.round(lastFmLogo.width * heightRatio) < col2_width) {
+								gr.DrawImage(lastFmLogo, col2_left + txtRec.Width + 20, top + 3, Math.round(lastFmLogo.width * heightRatio), cell_height - 12,
+									0, 0, lastFmLogo.width, lastFmLogo.height);
+							}
 						}
 						top += cell_height + 5;
 					}
@@ -811,11 +845,15 @@ function on_paint(gr) {
 				topEdge = albumart_size.y + albumart_size.h - labelHeight - 20;
 				var origLabelHeight = labelHeight;
 
-				if (!labelShadowImg) {
-					labelShadowImg = createShadowRect(ww - labelX + leftEdgeWidth, labelHeight + 40);
+				if (!pref.darkMode) {
+					if (!labelShadowImg) {
+						labelShadowImg = createShadowRect(ww - labelX + leftEdgeWidth, labelHeight + 40);
+					}
+					gr.DrawImage(labelShadowImg, labelX - leftEdgeWidth - geo.aa_shadow, topEdge - 20 - geo.aa_shadow, ww - labelX + leftEdgeWidth + 2 * geo.aa_shadow, labelHeight + 40 + 2 * geo.aa_shadow,
+						0, 0, labelShadowImg.width, labelShadowImg.height);
+				} else {
+					gr.DrawRect(labelX - leftEdgeWidth - 1, topEdge - 21, ww - labelX + leftEdgeWidth + 1, labelHeight + 41, 1, col.accent);
 				}
-				gr.DrawImage(labelShadowImg, labelX - leftEdgeWidth - geo.aa_shadow, topEdge - 20 - geo.aa_shadow, ww - labelX + leftEdgeWidth + 2 * geo.aa_shadow, labelHeight + 40 + 2 * geo.aa_shadow,
-					0, 0, labelShadowImg.width, labelShadowImg.height);
 				gr.SetSmoothingMode(SmoothingMode.None); // disable smoothing
 				gr.FillSolidRect(labelX - leftEdgeWidth, topEdge - 20, ww - labelX + leftEdgeWidth, labelHeight + 40, col.info_bg);
 				gr.DrawRect(labelX - leftEdgeWidth, topEdge - 20, ww - labelX + leftEdgeWidth, labelHeight + 40 - 1, 1, col.accent);
@@ -907,6 +945,12 @@ function on_paint(gr) {
 	var pbTop = Math.round(lowerBarTop + titleMeasurements.Height) + (is_4k ? 16 : 8);
 	gr.SetSmoothingMode(SmoothingMode.None); // disable smoothing
 	if (pref.show_progress_bar) {
+		// if (pref.darkMode) {
+		//     // TODO: keep this? Only do when accent is too close?
+		//     gr.SetSmoothingMode(SmoothingMode.AntiAlias);
+		//     gr.DrawRect(pbLeft - 0.5, pbTop - 0.5, Math.round(0.95 * ww), geo.prog_bar_h, 1, col.darkAccent);
+		//     gr.SetSmoothingMode(SmoothingMode.None); // disable smoothing
+		// }
 		gr.FillSolidRect(pbLeft, pbTop, Math.round(0.95 * ww), geo.prog_bar_h, col.progress_bar);
 	}
 	if (fb.PlaybackLength > 0) {
@@ -929,7 +973,10 @@ function on_paint(gr) {
 			}
 			progressMoved = false;
 			gr.FillSolidRect(pbLeft, pbTop, progressLength, geo.prog_bar_h, col.progress_fill);
-			gr.DrawLine(progressLength + pbLeft, pbTop, progressLength + pbLeft, pbTop + geo.prog_bar_h - 1, 1, col.accent);
+			if (pref.darkMode) {
+				// TODO: keep this? Only do when accent is too close?
+				gr.DrawRect(pbLeft, pbTop, progressLength, geo.prog_bar_h - 1, 1, col.darkAccent);
+			}
 			if (progressStationary && fb.IsPlaying && !fb.IsPaused) {
 				if (col.accent !== last_accent_col || progressAlphaCol === undefined) {
 					var c = new Color(col.accent);
@@ -940,25 +987,32 @@ function on_paint(gr) {
 			}
 		}
 	} else if (ww > 600) { // streaming, but still want to show time
-		gr.DrawString(str.time, ft.lower_bar, col.now_playing, Math.floor(0.725 * ww), lowerBarTop, 0.25 * ww, 0.5 * geo.lower_bar_h, StringFormat(2, 0));
+		if (fb.IsPlaying) {
+			gr.DrawString(str.time, ft.lower_bar, col.now_playing, Math.floor(0.725 * ww), lowerBarTop, 0.25 * ww, 0.5 * geo.lower_bar_h, StringFormat(2, 0));
+		} else {
+			var color = pref.darkMode ? tintColor(col.bg,20) : shadeColor(col.bg, 20);
+			gr.DrawString(str.time, ft.lower_bar, color, Math.floor(0.725 * ww), lowerBarTop, 0.25 * ww, 0.5 * geo.lower_bar_h, StringFormat(2, 0));
+		}
 	}
 	gr.SetSmoothingMode(SmoothingMode.AntiAlias);
 
 	if (displayPlaylist) {
 		showExtraDrawTiming && (drawPlaylist = fb.CreateProfiler('on_paint -> playlist'));
-		if (!playlist_shadow) {
-			playlist_shadow = createShadowRect(playlist.w + 2 * geo.aa_shadow, playlist.h); // extend shadow past edge
+		if (!pref.darkMode) {
+			if (!playlist_shadow) {
+				playlist_shadow = createShadowRect(playlist.w + 2 * geo.aa_shadow, playlist.h); // extend shadow past edge
+			}
+			gr.DrawImage(playlist_shadow, playlist.x - geo.aa_shadow, playlist.y - geo.aa_shadow, playlist.w + 2 * geo.aa_shadow, playlist.h + 2 * geo.aa_shadow,
+				0, 0, playlist_shadow.width, playlist_shadow.height);
+		} else {
+			gr.DrawRect(playlist.x - 1, playlist.y - 1, playlist.w + 2, playlist.h + 2, 1, rgb(64,64,64));
 		}
-		gr.DrawImage(playlist_shadow, playlist.x - geo.aa_shadow, playlist.y - geo.aa_shadow, playlist.w + 2 * geo.aa_shadow, playlist.h + 2 * geo.aa_shadow,
-			0, 0, playlist_shadow.width, playlist_shadow.height);
 		playlist.on_paint(gr);
 		showExtraDrawTiming && drawPlaylist.Print();
 	} else if (displayLibrary) {
-		if (typeof libraryPanel !== 'undefined') {
-			libraryPanel.on_paint(gr);
-		} else {
-			// TODO: take this if/else out once this part is done
-			displayLibrary = false;
+		libraryPanel.on_paint(gr);
+		if (pref.darkMode) {
+			gr.DrawRect(libraryPanel.x - 1, libraryPanel.y - 1, libraryPanel.w + 2, libraryPanel.h + 2, 1, rgb(64,64,64));
 		}
 	}
 
@@ -1115,7 +1169,7 @@ function onSettingsMenu(x, y) {
 	var _timeZoneMenu = window.CreatePopupMenu();
 
 	//var pbo = fb.PlaybackOrder;
-	var _4kMenu = window.CreatePopupMenu();	
+	var _4kMenu = window.CreatePopupMenu();
 	_4kMenu.AppendMenuItem(MF_STRING, 120, 'Auto-detect');
 	_4kMenu.CheckMenuItem(120, pref.use_4k === 'auto');
 	_4kMenu.AppendMenuItem(MF_STRING, 121, 'Never');
@@ -1123,9 +1177,12 @@ function onSettingsMenu(x, y) {
 	_4kMenu.AppendMenuItem(MF_STRING, 122, 'Always');
 	_4kMenu.CheckMenuItem(122, pref.use_4k === 'always');
 	_4kMenu.AppendTo(_menu, MF_STRING, 'Use 4K mode');
-	
-	_menu.AppendMenuItem(MF_STRING, 1, 'Cycle Through All Artwork');
-	_menu.CheckMenuItem(1, pref.aa_glob);
+
+
+	_menu.AppendMenuItem(MF_STRING, 1, 'Use Dark Theme');
+	_menu.CheckMenuItem(1, pref.darkMode);
+	_menu.AppendMenuItem(MF_STRING, 2, 'Cycle Through All Artwork');
+	_menu.CheckMenuItem(2, pref.aa_glob);
 	_menu.AppendMenuItem(MF_STRING, 4, 'Display CD Art (cd.pngs)');
 	_menu.CheckMenuItem(4, pref.display_cdart);
 	_menu.AppendMenuItem(pref.display_cdart ? MF_STRING : MF_DISABLED, 5, 'Rotate CD Art on track change');
@@ -1253,6 +1310,17 @@ function onSettingsMenu(x, y) {
 	idx = _menu.TrackPopupMenu(x, y);
 	switch (idx) {
 		case 1:
+			pref.darkMode = !pref.darkMode;
+			initColors();
+			if (fb.IsPlaying) {
+				albumart = null;
+				loadFromCache = false;
+				on_playback_new_track(fb.GetNowPlaying());
+			} else {
+				RepaintWindow();
+			}
+			break;
+		case 2:
 			pref.aa_glob = !pref.aa_glob;
 			if (!pref.aa_glob) {
 				window.ClearTimeout(globTimer);
@@ -1495,7 +1563,7 @@ function on_size() {
 
 	if (ww <= 0 || wh <= 0) return;
 
-	checkFor4k(ww);
+	checkFor4k(ww, wh);
 
 	if (!sizeInitialized) {
 		createFonts();
@@ -1503,6 +1571,7 @@ function on_size() {
 		if (fb.IsPlaying) {
 			LoadCountryFlags(); // wrong size flag gets loaded on 4k systems
 		}
+		initPlaylist();
 		sizeInitialized = true;
 	}
 
@@ -1590,7 +1659,7 @@ function on_playback_new_track(metadb) {
 	}
 	labelStrings = _.uniq(labelStrings);
 	for (i = 0; i < labelStrings.length; i++) {
-		var addLabel = LoadLabelImage(labelStrings[i].replace(/'/, '\'\''));
+		var addLabel = LoadLabelImage(labelStrings[i]);
 		if (addLabel != null) {
 			recordLabels.push(addLabel);
 		}
@@ -1609,7 +1678,7 @@ function on_playback_new_track(metadb) {
 	}
 
 	/* code to retrieve band logo */
-	bandStr = $('[%artist%]').replace(/"/g, '\'').replace(/:/g, '_').replace(/\//g, '-').replace(/\*/g, '').replace(/\?/g, '');
+	bandStr = replaceFileChars($('[%artist%]'));
 	bandLogo = disposeImg(bandLogo);
 	if (bandStr) {
 		bandLogoHQ = false;
@@ -1684,6 +1753,9 @@ function on_metadb_changed(handle_list, fromhook) {
 			str.album = $("[%album%][ '['" + tf.album_trans + "']']");
 			str.album_subtitle = $("[ '['" + tf.album_subtitle + "']']");
 			var codec = $("$lower($if2(%codec%,$ext(%path%)))");
+			if (codec == "dca (dts coherent acoustics)") {
+				codec = "dts";
+			}
 			if (codec == "cue") {
 				codec = $("$ext($info(referenced_file))");
 			} else if (codec == "mpc") {
@@ -1730,13 +1802,14 @@ function on_metadb_changed(handle_list, fromhook) {
 				playCountVerifiedByLastFm = false;
 			}
 
+			str.timeline = new Timeline(geo.timeline_h);
+			str.timeline.setColors(col.tl_added, col.tl_played, col.tl_unplayed);
 			lastPlayed = $(tf.last_played);
 			calcDateRatios($date(currentLastPlayed) !== $date(lastPlayed), currentLastPlayed); // last_played has probably changed and we want to update the date bar
 			if (lastPlayed.length) {
 				today = dateToYMD(new Date());
 				if (!currentLastPlayed.length || $date(lastPlayed) !== today) {
 					currentLastPlayed = lastPlayed;
-					console.log('currentLastPlayed:', currentLastPlayed);
 				}
 			}
 
@@ -1753,8 +1826,6 @@ function on_metadb_changed(handle_list, fromhook) {
 			if (pref.show_flags) {
 				LoadCountryFlags();
 			}
-
-			tag_timer = 0;
 		}
 	}
 	// createHyperlinks();
@@ -1803,7 +1874,7 @@ function on_mouse_lbtn_down(x, y, m) {
 
 	buttonEventHandler(x, y, m);
 
-	if (displayPlaylist && playlist.mouse_in_this(x, y)) {
+	if (displayPlaylist) {// && playlist.mouse_in_this(x, y)) {
 		trace_call && console.log(qwr_utils.function_name());
 		playlist.on_mouse_lbtn_down(x, y, m);
 	} else if (displayLibrary && library.mouse_in_this(x, y)) {
@@ -2057,11 +2128,11 @@ function on_key_down(vkey) {
 				var action = vkey === 0x6B ? '+' : '-';
 				if (fb.IsPlaying) {
 					var metadb = fb.GetNowPlaying();
-					fb.RunContextCommandWithMetadb('Rating/' + action, metadb);
+					fb.RunContextCommandWithMetadb('Playback Statistics/Rating/' + action, metadb);
 				} else if (!metadb && displayPlaylist) {
 					var metadbList = plman.GetPlaylistSelectedItems(plman.ActivePlaylist);
 					if (metadbList.Count === 1) {
-						fb.RunContextCommandWithMetadb('Rating/' + action, metadbList.Item(0));
+						fb.RunContextCommandWithMetadb('Playback Statistics/Rating/' + action, metadbList.Item(0));
 					} else {
 						console.log('Won\'t change rating with more than one selected item');
 					}
@@ -2192,13 +2263,17 @@ function on_drag_drop(action, x, y, mask) {
 }
 
 function on_focus(is_focused) {
-	trace_call && console.log(qwr_utils.function_name());
-	playlist.on_focus(is_focused);
+	if (displayPlaylist) {
+		trace_call && console.log(qwr_utils.function_name());
+		playlist.on_focus(is_focused);
+	}
 }
 
 function on_notify_data(name, info) {
-	trace_call && console.log(qwr_utils.function_name());
-	playlist.on_notify_data(name, info);
+	if (displayPlaylist) {
+		trace_call && console.log(qwr_utils.function_name());
+		playlist.on_notify_data(name, info);
+	}
 }
 
 var debounced_init_playlist = _.debounce(function (playlistIndex) {
@@ -2218,7 +2293,7 @@ function clearUIVariables() {
 		title_lower: '  ' + stoppedStr2,
 		year: '',
 		grid: [],
-		time: ''
+		time: stoppedTime
 	}
 }
 
@@ -2402,10 +2477,12 @@ function SetProgressBarRefresh() {
 	}
 }
 
-function parseJson(json, label) {
+function parseJson(json, label, log) {
 	var parsed = [];
 	try {
-		console.log(label + json);
+		if (log) {
+			console.log(label + json);
+		}
 		parsed = JSON.parse(json);
 	} catch (e) {
 		console.log('<<< ERROR IN parseJson >>>');
@@ -2418,11 +2495,13 @@ function calcAgeRatio(num, divisor) {
 	return toFixed(1.0 - (calcAge(num, false) / divisor), 3);
 }
 
+var lfmPlayedTimesJsonLast = '';
+var playedTimesJsonLast = '';
+
 function calcDateRatios(dontUpdateLastPlayed, currentLastPlayed) {
 	dontUpdateLastPlayed = dontUpdateLastPlayed || false;
 
 	playedTimesRatios = [];
-	lfmPlayedTimesRatios = [];
 	var added = toTime($('$if2(%added_enhanced%,%added%)'));
 	var first_played = toTime($('$if2(%first_played_enhanced%,%first_played%)'));
 	var last_played = $('$if2(%last_played_enhanced%,%last_played%)');
@@ -2430,7 +2509,7 @@ function calcDateRatios(dontUpdateLastPlayed, currentLastPlayed) {
 	// console.log('today:', today);
 	if (dontUpdateLastPlayed && $date(last_played) === today) {
 		last_played = new Date(toDatetime(currentLastPlayed)).getTime();
-		console.log('Setting last_played to:', currentLastPlayed, ' => ', last_played);
+		// console.log('Setting last_played to:', currentLastPlayed, ' => ', last_played);
 	} else {
 		last_played = toTime(last_played);
 	}
@@ -2438,10 +2517,16 @@ function calcDateRatios(dontUpdateLastPlayed, currentLastPlayed) {
 	var lfmPlayedTimes = [];
 	var playedTimes = [];
 	if (componentEnhancedPlaycount) {
-		var raw = $('[%played_times_js%]', fb.GetNowPlaying());
+		var playedTimes = $('[%played_times_js%]', fb.GetNowPlaying());
 		var lastfm = $('[%lastfm_played_times_js%]', fb.GetNowPlaying());
-		lfmPlayedTimes = parseJson(lastfm, 'lastfm: ');
-		playedTimes = parseJson(raw, 'foobar: ');
+		var log = true;
+		if (playedTimes == playedTimesJsonLast && lastfm == lfmPlayedTimesJsonLast) {
+			log = false;    // cut down on spam
+		}
+		lfmPlayedTimesJsonLast = lastfm;
+		playedTimesJsonLast = playedTimes;
+		lfmPlayedTimes = parseJson(lastfm, 'lastfm: ', log);
+		playedTimes = parseJson(playedTimes, 'foobar: ', log);
 	} else {
 		playedTimes.push(first_played);
 		playedTimes.push(last_played);
@@ -2453,7 +2538,7 @@ function calcDateRatios(dontUpdateLastPlayed, currentLastPlayed) {
 
 		tl_firstPlayedRatio = calcAgeRatio(first_played, age);
 		tl_lastPlayedRatio = calcAgeRatio(last_played, age);
-		console.log('fp (' + first_played + ') ratio: ', tl_firstPlayedRatio, 'lp (' + last_played + ') ratio:', tl_lastPlayedRatio);
+		// console.log('fp (' + first_played + ') ratio: ', tl_firstPlayedRatio, 'lp (' + last_played + ') ratio:', tl_lastPlayedRatio);
 		if (tl_lastPlayedRatio < tl_firstPlayedRatio) {
 			// due to daylight savings time, if there's a single play before the time changed lastPlayed could be < firstPlayed
 			tl_lastPlayedRatio = tl_firstPlayedRatio;
@@ -2487,6 +2572,7 @@ function calcDateRatios(dontUpdateLastPlayed, currentLastPlayed) {
 		tl_firstPlayedRatio = 0.33;
 		tl_lastPlayedRatio = 0.66;
 	}
+	str.timeline.setPlayTimes(tl_firstPlayedRatio, tl_lastPlayedRatio, playedTimesRatios);
 }
 
 function glob_image(index, loadFromCache) {
@@ -2669,10 +2755,22 @@ function LoadCountryFlags() {
 	}
 }
 
+function replaceFileChars(s) {
+	return s.replace(/:/g, '_')
+		.replace(/\\/g, '-')
+		.replace(/\//g, '-')
+		.replace(/\?/g, '')
+		.replace(/</g, '')
+		.replace(/>/g, '')
+		.replace(/\*/g, '')
+		.replace(/"/g, '\'')
+		.replace(/\|/g, '-');
+}
+
 function LoadLabelImage(publisherString) {
 	recordLabel = null;
 	d = new Date();
-	labelStr = $(publisherString.replace(']', '').replace('[', '').replace(':', ''));
+	labelStr = replaceFileChars(publisherString);
 	if (labelStr) {
 		/* First check for record label folder */
 		lastSrchYear = d.getFullYear();
@@ -2696,7 +2794,7 @@ function LoadLabelImage(publisherString) {
 			}
 		}
 		/* actually load the label from either the directory we found above, or the base record label folder */
-		labelStr = $(publisherString.replace(']', '').replace('[', '').replace(':', '')); // we need to start over with the original string when searching for the file, just to be safe
+		labelStr = replaceFileChars(publisherString); // we need to start over with the original string when searching for the file, just to be safe
 		label = dir + labelStr + '.png';
 		if (utils.FileTest(label, 'e')) {
 			recordLabel = gdi.Image(label);
@@ -2779,7 +2877,7 @@ function fetchNewArtwork(metadb) {
 			}
 			albumArtIndex = 0;
 			glob_image(albumArtIndex, loadFromCache); // display first image
-		} else if (albumart = utils.GetAlbumArtV2(metadb)) {
+		} else if (metadb && (albumart = utils.GetAlbumArtV2(metadb))) {
 			getThemeColors(albumart);
 			ResizeArtwork(true);
 		} else {
