@@ -117,10 +117,12 @@ function rescalePlaylist() {
         return;	// don't redo fonts
     }
     createPlaylistFonts();
+    playlist_geo.row_h = is_4k ? g_properties.row_h * 2 : g_properties.row_h;
     playlist_geo.scrollbar_w = is_4k ? g_properties.scrollbar_w * 2 : g_properties.scrollbar_w;
     playlist_geo.scrollbar_right_pad = is_4k ? g_properties.scrollbar_right_pad * 2 : g_properties.scrollbar_right_pad;
     playlist_geo.scrollbar_top_pad = is_4k ? g_properties.scrollbar_top_pad * 2 : g_properties.scrollbar_top_pad;
     playlist_geo.scrollbar_bottom_pad = is_4k ? g_properties.scrollbar_bottom_pad * 2 : g_properties.scrollbar_bottom_pad;
+    playlist_geo.list_bottom_pad = is_4k ? g_properties.list_bottom_pad * 2 : g_properties.list_bottom_pad;
 }
 
 var g_pl_colors = {};
@@ -724,8 +726,7 @@ function Playlist(x, y) {
             }, that);
 
             // Hide rows that shouldn't be visible
-            gr.FillSolidRect(this.x, this.y, this.w, this.list_y - this.y, g_pl_colors.background);
-            gr.FillSolidRect(this.x, this.list_y + this.list_h, this.w, (this.y + this.h) - (this.list_y + this.list_h), g_pl_colors.background);
+            gr.FillSolidRect(this.x-1, this.y + this.h, this.w+1, g_properties.row_h * 2, col.bg);
         }
         else {
             var text;
@@ -740,12 +741,12 @@ function Playlist(x, y) {
         }
 
         if (this.is_scrollbar_available) {
-            var gradiantHeight = is_4k ? 20 : 10;
+            var gradiantHeight = Math.ceil(playlist_geo.row_h * 2 / 3);
             if (!this.scrollbar.is_scrolled_up) {
-                gr.FillGradRect(this.list_x, this.list_y - 1, this.list_w, gradiantHeight, 270, _.RGBtoRGBA(g_theme.colors.panel_back, 0), _.RGBtoRGBA(g_theme.colors.panel_back, 200));
+                gr.FillGradRect(this.x, this.list_y - 1, this.list_w, gradiantHeight, 270, _.RGBtoRGBA(g_theme.colors.panel_back, 0), _.RGBtoRGBA(g_theme.colors.panel_back, 200));
             }
             if (!this.scrollbar.is_scrolled_down) {
-                gr.FillGradRect(this.list_x, this.list_y + this.list_h - (gradiantHeight - 1), this.list_w, gradiantHeight, 90, _.RGBtoRGBA(g_theme.colors.panel_back, 0), _.RGBtoRGBA(g_theme.colors.panel_back, 200));
+                gr.FillGradRect(this.x, this.y + this.h - gradiantHeight, this.w, gradiantHeight, 90, _.RGBtoRGBA(g_theme.colors.panel_back, 0), _.RGBtoRGBA(g_theme.colors.panel_back, 255));
             }
         }
 
@@ -2869,7 +2870,7 @@ PlaylistContent = function () {
             return 0;
         }
 
-        var row_h = is_4k ? g_properties.row_h * 2 : g_properties.row_h;
+        var row_h = playlist_geo.row_h;
         var total_height_in_rows = Math.round(_.head(this.sub_items).h / row_h) * this.sub_items.length;
         _.forEach(this.sub_items, function (item) {
             if (!item.is_collapsed) {
@@ -2966,7 +2967,7 @@ PlaylistContent = function () {
         function iterate_level(sub_items, start_item) {
             var is_cur_level_header = _.isInstanceOf(_.head(sub_items), BaseHeader);
             var start_item_used = !start_item;
-
+            
             var leveled_start_item = start_item;
             while (leveled_start_item && leveled_start_item.parent !== _.head(sub_items).parent) {
                 leveled_start_item = leveled_start_item.parent;
@@ -3337,7 +3338,7 @@ BaseHeader.prototype.get_sub_items_total_h_in_rows = function () {
         return this.sub_items.length;
     }
 
-    var row_h = is_4k ? g_properties.row_h * 2 : g_properties.row_h;
+    var row_h = playlist_geo.row_h;
     var h_in_rows = Math.round(_.head(this.sub_items).h / row_h) * this.sub_items.length;
     _.forEach(this.sub_items, function (item) {
         if (!item.is_collapsed) {
@@ -3648,8 +3649,7 @@ function Header(parent, x, y, w, h, idx) {
      * @return {Array<DiscHeader>}
      */
     function create_cd_headers(prepared_rows, rows_to_proccess_count) {
-        var row_h = is_4k ? g_properties.row_h * 2 : g_properties.row_h;
-        return DiscHeader.create_headers(that, that.x, 0, that.w, row_h, prepared_rows, rows_to_proccess_count);
+        return DiscHeader.create_headers(that, that.x, 0, that.w, playlist_geo.row_h, prepared_rows, rows_to_proccess_count);
     }
 
     /** @override */
@@ -3806,11 +3806,7 @@ function Header(parent, x, y, w, h, idx) {
 
             //---> DATE
             if (grouping_handler.show_date()) {
-                var date_query = '[%date%]';
-                if (g_properties.show_original_date) {
-                    date_query += '[ \'(\'%original release date%\')\']';
-                }
-                date_query = '$year($if2(%original release date%,%date%))'; // Mordred: my date query
+                var date_query = '[$year($if3(%original release date%,%originaldate%,%date%))]'; // Mordred: my date query
 
                 var date_text = _.tf(date_query, metadb);
                 if (date_text) {
@@ -4088,10 +4084,7 @@ function Header(parent, x, y, w, h, idx) {
 
         //---> DATE
         if (grouping_handler.show_date()) {
-            var date_query = '[%date%]';
-            if (g_properties.show_original_date) {
-                date_query += '[ \'(\'%original release date%\')\']';
-            }
+            var date_query = tf.year;
 
             var date_text = _.tf(date_query, metadb);
             if (date_text) {
@@ -4196,7 +4189,7 @@ function Header(parent, x, y, w, h, idx) {
         var date_font = g_pl_fonts.date;
         var artist_font = g_pl_fonts.artist_normal;
 
-        date_query = '$year($if2(%original release date%,%date%))'; // Mordred: my date query
+        date_query = tf.year; // Mordred: my date query
 
         var date_text = _.tf(date_query, metadb);
         if (date_text) {
@@ -4422,7 +4415,6 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
         var title_font = g_pl_fonts.title_normal;
         var title_color = g_pl_colors.title_normal;
         var count_color = g_pl_colors.count_normal;
-        var row_color_focus = g_pl_colors.row_focus_normal;
         var title_artist_font = g_pl_fonts.title_selected;
         var title_artist_color = g_pl_colors.title_selected;
 

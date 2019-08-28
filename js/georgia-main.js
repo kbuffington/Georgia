@@ -301,7 +301,7 @@ var bandLogoHQ = false; // if true will partially remove the 10 pixel "gutter" a
 var t_interval; // milliseconds between screen updates
 // var settingsY = 0;			// location of settings button
 var lastLeftEdge = 0; // the left edge of the record labels. Saved so we don't have to recalculate every on every on_paint unless size has changed
-var displayPlaylist = false; //pref.start_Playlist;
+var displayPlaylist = false;
 var displayLibrary = false;
 var displayLyrics = false;
 var showLibraryButton = true; // TODO: Remove once library goes live
@@ -941,6 +941,27 @@ function on_paint(gr) {
 		gr.DrawString(str.original_artist, ft_lower_orig_artist, col.now_playing, pbLeft + trackNumWidth + titleMeasurements.Width + h_spacing, lowerBarTop + v_spacing, 0.95 * ww - width, titleMeasurements.Height, StringFormat(0, 0, 4, 0x00001000));
 	}
 
+	// Playlist/Library
+	if (displayPlaylist) {
+		showExtraDrawTiming && (drawPlaylist = fb.CreateProfiler('on_paint -> playlist'));
+		if (!pref.darkMode) {
+			if (!playlist_shadow) {
+				playlist_shadow = createShadowRect(playlist.w + 2 * geo.aa_shadow, playlist.h); // extend shadow past edge
+			}
+			gr.DrawImage(playlist_shadow, playlist.x - geo.aa_shadow, playlist.y - geo.aa_shadow, playlist.w + 2 * geo.aa_shadow, playlist.h + 2 * geo.aa_shadow,
+				0, 0, playlist_shadow.width, playlist_shadow.height);
+		} else {
+			gr.DrawRect(playlist.x - 1, playlist.y - 1, playlist.w + 2, playlist.h + 2, 1, rgb(64,64,64));
+		}
+		playlist.on_paint(gr);
+		showExtraDrawTiming && drawPlaylist.Print();
+	} else if (displayLibrary) {
+		libraryPanel.on_paint(gr);
+		if (pref.darkMode) {
+			gr.DrawRect(libraryPanel.x - 1, libraryPanel.y - 1, libraryPanel.w + 2, libraryPanel.h + 2, 1, rgb(64,64,64));
+		}
+	}
+
 	// Progress bar/Seekbar
 	var pbTop = Math.round(lowerBarTop + titleMeasurements.Height) + (is_4k ? 16 : 8);
 	gr.SetSmoothingMode(SmoothingMode.None); // disable smoothing
@@ -996,25 +1017,6 @@ function on_paint(gr) {
 	}
 	gr.SetSmoothingMode(SmoothingMode.AntiAlias);
 
-	if (displayPlaylist) {
-		showExtraDrawTiming && (drawPlaylist = fb.CreateProfiler('on_paint -> playlist'));
-		if (!pref.darkMode) {
-			if (!playlist_shadow) {
-				playlist_shadow = createShadowRect(playlist.w + 2 * geo.aa_shadow, playlist.h); // extend shadow past edge
-			}
-			gr.DrawImage(playlist_shadow, playlist.x - geo.aa_shadow, playlist.y - geo.aa_shadow, playlist.w + 2 * geo.aa_shadow, playlist.h + 2 * geo.aa_shadow,
-				0, 0, playlist_shadow.width, playlist_shadow.height);
-		} else {
-			gr.DrawRect(playlist.x - 1, playlist.y - 1, playlist.w + 2, playlist.h + 2, 1, rgb(64,64,64));
-		}
-		playlist.on_paint(gr);
-		showExtraDrawTiming && drawPlaylist.Print();
-	} else if (displayLibrary) {
-		libraryPanel.on_paint(gr);
-		if (pref.darkMode) {
-			gr.DrawRect(libraryPanel.x - 1, libraryPanel.y - 1, libraryPanel.w + 2, libraryPanel.h + 2, 1, rgb(64,64,64));
-		}
-	}
 
 	if (showDrawTiming) {
 		drawStuff.Print();
@@ -1566,7 +1568,6 @@ function on_size() {
 	ww = window.Width;
 	wh = window.Height;
 	console.log('width: ' + ww + ', height: ' + wh);
-	var count = 0;
 
 	if (ww <= 0 || wh <= 0) return;
 
@@ -1758,7 +1759,7 @@ function on_metadb_changed(handle_list, fromhook) {
 			str.title_lower = '  ' + title;
 			str.original_artist = original_artist;
 			str.artist = artist;
-			str.year = $('$year($if2(%original release date%,%date%)))');
+			str.year = $(tf.year);
 			str.album = $("[%album%][ '['" + tf.album_trans + "']']");
 			str.album_subtitle = $("[ '['" + tf.album_subtitle + "']']");
 			var codec = $("$lower($if2(%codec%,$ext(%path%)))");
@@ -2658,7 +2659,8 @@ function ResizeArtwork(resetCDPosition) {
 	var hasArtwork = false;
 	if (albumart && albumart.Width && albumart.Height) {
 		// Size for big albumart
-		var album_scale = Math.min(((displayPlaylist || displayLibrary) ? 0.47 * ww : 0.75 * ww) / albumart.Width, (wh - geo.top_art_spacing - geo.lower_bar_h - 32) / albumart.Height);
+		var album_scale = Math.min(((displayPlaylist || displayLibrary) ? 0.47 * ww : 0.75 * ww) / albumart.Width, 
+								   (wh - geo.top_art_spacing - geo.lower_bar_h - 32) / albumart.Height);
 		if (displayPlaylist || displayLibrary) {
 			xCenter = 0.25 * ww;
 		} else if (ww / wh < 1.40) { // when using a roughly 4:3 display the album art crowds, so move it slightly off center

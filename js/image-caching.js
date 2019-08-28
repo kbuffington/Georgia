@@ -2,17 +2,19 @@ function ArtCache(maxCacheSize) {
     var art_cache_max_size = maxCacheSize;
     var art_cache = {};
     var art_cache_indexes = [];
-    var max_width = 1200;
-    var max_height = 1600;
+    var max_width = 1440;
+    var max_height = 872;
 
     this.encache = function(img, path) {
         try {
             var h = img.Height;
             var w = img.Width;
-            if (h > max_width || w > max_height) {
-                var scale_factor = w / max_width;
-                if (scale_factor < w / max_height) {
-                    scale_factor = w / max_height;
+            var max_w = is_4k ? max_width * 2 : max_width;
+            var max_h = is_4k ? max_height * 2 : max_height;
+            if (w > max_w || h > max_h) {
+                var scale_factor = w / max_w;
+                if (scale_factor < h / max_h) {
+                    scale_factor = h / max_h;
                 }
                 h = Math.min(h / scale_factor);
                 w = Math.min(w / scale_factor);
@@ -45,5 +47,13 @@ function ArtCache(maxCacheSize) {
             return art_cache[path];
         }
         return null;
+    }
+
+    this.clear = function() {
+        while (art_cache_indexes.length) {
+            var remove = art_cache_indexes.shift();
+            disposeImg(art_cache[remove]);
+            delete art_cache[remove];   
+        }
     }
 }

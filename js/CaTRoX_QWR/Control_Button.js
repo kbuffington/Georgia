@@ -158,6 +158,7 @@ Button.prototype.onClick = function () {
 			fb.RunMainMenuCommand("Playback/Random");
 			break;
 		case 'Reload':
+			art_cache.clear();
 			window.Reload();
 			break;
 		case 'Console':

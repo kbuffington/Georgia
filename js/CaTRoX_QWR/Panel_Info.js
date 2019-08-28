@@ -30,11 +30,11 @@ var g_has_modded_jscript = qwr_utils.has_modded_jscript();
     g_properties.track_mode = Math.max(1, Math.min(3, g_properties.track_mode));
 
     if (g_properties.first_launch) {
-        g_properties.scrollbar_top_pad = 3;
-        g_properties.list_left_pad = 4;
-        g_properties.list_top_pad = 4;
-        g_properties.list_right_pad = 4;
-        g_properties.list_bottom_pad = 4;
+        g_properties.scrollbar_top_pad = 0;
+        g_properties.list_left_pad = 0;
+        g_properties.list_top_pad = 0;
+        g_properties.list_right_pad = 0;
+        g_properties.list_bottom_pad = 15;
 
         g_properties.first_launch = false;
     }
