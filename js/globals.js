@@ -2,7 +2,7 @@ var globals = PanelProperties.get_instance();
 var pref = PanelProperties.get_instance(); // preferences
 var tf = PanelProperties.get_instance(); // titleformating strings
 
-var currentVersion = '1.1.2';
+var currentVersion = '1.1.3';
 
 globals.add_properties({
 	version: ['_theme_version (do not hand edit!)', 'NONE']
@@ -62,8 +62,8 @@ tf.add_properties({
 	artist_country: ['Tag Fields: Country', '%artistcountry%'], // we call meta_num(artistcountry) so don't wrap this in % signs
 	disc: ['Tag Fields: Disc String', '$ifgreater(%totaldiscs%,1,CD %discnumber%/%totaldiscs%,)'],
 	disc_subtitle: ['Tag Fields: Disc Subtitle', '%discsubtitle%'],
-	year: ['Tag Fields: Year', '$puts(d,$if2(%original release date%,%originaldate%,%date%))$if($strcmp($year($get(d)),$get(d)),$get(d),)'],
-	date: ['Tag Fields: Date', '$puts(d,$if2(%original release date%,%originaldate%,%date%))$if($strcmp($year($get(d)),$get(d)),,$get(d))'],
+	year: ['Tag Fields: Year', '$puts(d,$if3(%original release date%,%originaldate%,%date%))$if($strcmp($year($get(d)),$get(d)),$get(d),)'],
+	date: ['Tag Fields: Date', '$puts(d,$if3(%original release date%,%originaldate%,%date%))$if($strcmp($year($get(d)),$get(d)),,$get(d))'],
 	last_played: ['Tag Fields: Last Played', '[$if2(%last_played_enhanced%,%last_played%)]'],
 	title: ['Tag Fields: Song Title String', "%title%[ '['%translation%']']"],
 	vinyl_side: ['Tag Fields: Vinyl Side', '%vinyl side%'], // the tag used for determining what side a song appears on for vinyl releases - i.e. song A1 has a %vinyl side% of "A"

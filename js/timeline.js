@@ -38,12 +38,12 @@ Timeline.prototype.draw = function (gr) {
         gr.SetSmoothingMode(SmoothingMode.None); // disable smoothing
         width = Math.floor(this.w - extraLeftSpace - 1 - lineWidth + lineWidth / 2);
 
-        gr.FillSolidRect(0, this.y, width + extraLeftSpace + lineWidth - 1, this.h, this.addedCol);
+        gr.FillSolidRect(0, this.y, width + extraLeftSpace + lineWidth, this.h, this.addedCol);
         if (this.firstPlayedPercent >= 0 && this.lastPlayedPercent >= 0) {
             x1 = Math.floor(width * this.firstPlayedPercent) + extraLeftSpace;
             x2 = Math.floor(width * this.lastPlayedPercent) + extraLeftSpace;
             gr.FillSolidRect(x1, this.y, width - x1 + extraLeftSpace, this.h, this.playedCol);
-            gr.FillSolidRect(x2, this.y, width - x2 + extraLeftSpace, this.h, this.unplayedCol);
+            gr.FillSolidRect(x2, this.y, width - x2 + extraLeftSpace + lineWidth, this.h, this.unplayedCol);
         }
         for (i = 0; i < this.playedTimesPercents.length; i++) {
             x = Math.floor(width * this.playedTimesPercents[i]) + extraLeftSpace;

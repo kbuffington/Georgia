@@ -962,6 +962,7 @@ function on_paint(gr) {
 		}
 	}
 
+    gr.SetTextRenderingHint(TextRenderingHint.AntiAlias);
 	// Progress bar/Seekbar
 	var pbTop = Math.round(lowerBarTop + titleMeasurements.Height) + (is_4k ? 16 : 8);
 	gr.SetSmoothingMode(SmoothingMode.None); // disable smoothing
@@ -975,6 +976,7 @@ function on_paint(gr) {
 		gr.FillSolidRect(pbLeft, pbTop, Math.round(0.95 * ww), geo.prog_bar_h, col.progress_bar);
 	}
 	if (fb.PlaybackLength > 0) {
+        gr.SetSmoothingMode(SmoothingMode.AntiAlias);
 		if (ww > 600) {
 			gr.DrawString(str.length, ft_lower, col.now_playing, 0.725 * ww, lowerBarTop, 0.25 * ww, titleMeasurements.Height, StringFormat(2, 0));
 			width = gr.CalcTextWidth('  ' + str.length, ft_lower);
@@ -983,6 +985,7 @@ function on_paint(gr) {
 			gr.DrawString(str.disc, ft_lower, col.now_playing, 0.725 * ww, lowerBarTop, 0.25 * ww - width, titleMeasurements.Height, StringFormat(2, 0));
 		}
 
+        gr.SetSmoothingMode(SmoothingMode.None); // disable smoothing
 		if (pref.show_progress_bar) {
 			var progressStationary = false;
 			/* in some cases the progress bar would move backwards at the end of a song while buffering/streaming was occurring.
@@ -1008,6 +1011,7 @@ function on_paint(gr) {
 			}
 		}
 	} else if (ww > 600) { // streaming, but still want to show time
+        gr.SetSmoothingMode(SmoothingMode.AntiAlias);
 		if (fb.IsPlaying) {
 			gr.DrawString(str.time, ft.lower_bar, col.now_playing, Math.floor(0.725 * ww), lowerBarTop, 0.25 * ww, 0.5 * geo.lower_bar_h, StringFormat(2, 0));
 		} else {
@@ -1015,7 +1019,7 @@ function on_paint(gr) {
 			gr.DrawString(str.time, ft.lower_bar, color, Math.floor(0.725 * ww), lowerBarTop, 0.25 * ww, 0.5 * geo.lower_bar_h, StringFormat(2, 0));
 		}
 	}
-	gr.SetSmoothingMode(SmoothingMode.AntiAlias);
+    gr.SetSmoothingMode(SmoothingMode.AntiAlias);
 
 
 	if (showDrawTiming) {
@@ -1549,7 +1553,7 @@ function on_init() {
 	g_playtimer && window.ClearInterval(g_playtimer);
 	g_playtimer = null;
 
-	if (pref.start_Playlist) {		
+	if (pref.start_Playlist) {
 		displayPlaylist = false;
 		setTimeout(function () {
 			btns.playlist.onClick();	// displays playlist
@@ -1758,9 +1762,9 @@ function on_metadb_changed(handle_list, fromhook) {
 			str.title = title + original_artist;
 			str.title_lower = '  ' + title;
 			str.original_artist = original_artist;
-			str.artist = artist;
-			str.year = $(tf.year);
-			str.album = $("[%album%][ '['" + tf.album_trans + "']']");
+            str.artist = artist;
+            str.year = $('[$year($if3(%original release date%,%originaldate%,%date%))]');
+            str.album = $("[%album%][ '['" + tf.album_trans + "']']");
 			str.album_subtitle = $("[ '['" + tf.album_subtitle + "']']");
 			var codec = $("$lower($if2(%codec%,$ext(%path%)))");
 			if (codec == "dca (dts coherent acoustics)") {
@@ -2659,7 +2663,7 @@ function ResizeArtwork(resetCDPosition) {
 	var hasArtwork = false;
 	if (albumart && albumart.Width && albumart.Height) {
 		// Size for big albumart
-		var album_scale = Math.min(((displayPlaylist || displayLibrary) ? 0.47 * ww : 0.75 * ww) / albumart.Width, 
+		var album_scale = Math.min(((displayPlaylist || displayLibrary) ? 0.47 * ww : 0.75 * ww) / albumart.Width,
 								   (wh - geo.top_art_spacing - geo.lower_bar_h - 32) / albumart.Height);
 		if (displayPlaylist || displayLibrary) {
 			xCenter = 0.25 * ww;
