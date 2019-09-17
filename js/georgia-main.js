@@ -2669,7 +2669,7 @@ function CreateRotatedCDImage() {
 			rotCDimg = rotatedCD.GetGraphics();
 			trackNum = parseInt(fb.TitleFormat('$num($if(' + tf.vinyl_tracknum + ',$sub($mul(' + tf.vinyl_tracknum + ',2),1),$if2(%tracknumber%,1)),1)').Eval()) - 1;
 			if (!pref.rotate_cdart || trackNum != trackNum) trackNum = 0; // avoid NaN issues when changing tracks rapidly
-			rotCDimg.DrawImage(cdart, 0, 0, cdart_size.w, cdart_size.w, 0, 0, 1000, 1000, trackNum * pref.rotation_amt, 255);
+			rotCDimg.DrawImage(cdart, 0, 0, cdart_size.w, cdart_size.h, 0, 0, cdart.Width, cdart.Height, trackNum * pref.rotation_amt, 255);
 			rotatedCD.ReleaseGraphics(rotCDimg);
 		}
 	}
