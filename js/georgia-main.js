@@ -69,6 +69,9 @@ function createFonts() {
 	ft.grd_key_sml = font('HelveticaNeueLT Std', 18, 0);
 	ft.grd_val_sml = font('HelveticaNeueLT Std Lt', 18, 0);
 	ft.lower_bar = font('HelveticaNeueLT Std Lt', 30, 0);
+	if (updateHyperlink) {
+		updateHyperlink.setFont(ft.lower_bar);
+	}
 	ft.lower_bar_bold = font('HelveticaNeueLT Std Med', 30, 0);
 	ft.lower_bar_sml = font('HelveticaNeueLT Std Lt', 26, 0);
 	ft.lower_bar_sml_bold = font('HelveticaNeueLT Std Med', 26, 0);
@@ -1010,13 +1013,22 @@ function on_paint(gr) {
 				gr.DrawLine(progressLength + pbLeft + 1, pbTop, progressLength + pbLeft + 1, pbTop + geo.prog_bar_h - 1, 1, progressAlphaCol);
 			}
 		}
-	} else if (ww > 600) { // streaming, but still want to show time
+	} else if (ww > 600) {
         gr.SetSmoothingMode(SmoothingMode.AntiAlias);
-		if (fb.IsPlaying) {
+		if (fb.IsPlaying) { // streaming, but still want to show time
 			gr.DrawString(str.time, ft.lower_bar, col.now_playing, Math.floor(0.725 * ww), lowerBarTop, 0.25 * ww, 0.5 * geo.lower_bar_h, StringFormat(2, 0));
 		} else {
 			var color = pref.darkMode ? tintColor(col.bg,20) : shadeColor(col.bg, 20);
-			gr.DrawString(str.time, ft.lower_bar, color, Math.floor(0.725 * ww), lowerBarTop, 0.25 * ww, 0.5 * geo.lower_bar_h, StringFormat(2, 0));
+			var offset = 0;
+			if (updateAvailable) {
+				offset = updateHyperlink.get_w();
+				updateHyperlink.set_w(ww);
+				updateHyperlink.set_y(lowerBarTop + 2); // +2 counteracts the -2 in the set_y method required for playlist
+				updateHyperlink.set_xOffset(-offset - Math.floor(ww*0.025));
+				updateHyperlink.draw(gr, color);
+				offset += is_4k ? 12 : 6;
+			}
+			gr.DrawString(str.time, ft.lower_bar, color, Math.floor(0.725 * ww) - offset, lowerBarTop, 0.25 * ww, 0.5 * geo.lower_bar_h, StringFormat(2, 0));
 		}
 	}
     gr.SetSmoothingMode(SmoothingMode.AntiAlias);
@@ -1174,6 +1186,10 @@ function onSettingsMenu(x, y) {
 	var _libraryMenu = window.CreatePopupMenu();
 	var _timeZoneMenu = window.CreatePopupMenu();
 
+	// DO NOT USE ITEM 0 OR THINGS BREAK
+	_menu.AppendMenuItem(MF_STRING, 1, 'Check for Theme Updates');
+	_menu.CheckMenuItem(1, pref.checkForUpdates);
+
 	//var pbo = fb.PlaybackOrder;
 	var _4kMenu = window.CreatePopupMenu();
 	_4kMenu.AppendMenuItem(MF_STRING, 120, 'Auto-detect');
@@ -1184,11 +1200,10 @@ function onSettingsMenu(x, y) {
 	_4kMenu.CheckMenuItem(122, pref.use_4k === 'always');
 	_4kMenu.AppendTo(_menu, MF_STRING, 'Use 4K mode');
 
-
-	_menu.AppendMenuItem(MF_STRING, 1, 'Use Dark Theme');
-	_menu.CheckMenuItem(1, pref.darkMode);
-	_menu.AppendMenuItem(MF_STRING, 2, 'Cycle Through All Artwork');
-	_menu.CheckMenuItem(2, pref.aa_glob);
+	_menu.AppendMenuItem(MF_STRING, 2, 'Use Dark Theme');
+	_menu.CheckMenuItem(2, pref.darkMode);
+	_menu.AppendMenuItem(MF_STRING, 3, 'Cycle Through All Artwork');
+	_menu.CheckMenuItem(3, pref.aa_glob);
 	_menu.AppendMenuItem(MF_STRING, 4, 'Display CD Art (cd.pngs)');
 	_menu.CheckMenuItem(4, pref.display_cdart);
 	_menu.AppendMenuItem(pref.display_cdart ? MF_STRING : MF_DISABLED, 5, 'Rotate CD Art on track change');
@@ -1316,6 +1331,9 @@ function onSettingsMenu(x, y) {
 	idx = _menu.TrackPopupMenu(x, y);
 	switch (idx) {
 		case 1:
+			pref.checkForUpdates = !pref.checkForUpdates;
+			break;
+		case 2:
 			pref.darkMode = !pref.darkMode;
 			initColors();
 			if (fb.IsPlaying) {
@@ -1326,14 +1344,12 @@ function onSettingsMenu(x, y) {
 				RepaintWindow();
 			}
 			break;
-		case 2:
+		case 3:
 			pref.aa_glob = !pref.aa_glob;
 			if (!pref.aa_glob) {
 				window.ClearTimeout(globTimer);
 				globTimer = 0;
 			}
-			break;
-		case 3:
 			break;
 		case 4:
 			pref.display_cdart = !pref.display_cdart;
@@ -1886,6 +1902,9 @@ function on_mouse_lbtn_down(x, y, m) {
 	}
 
 	buttonEventHandler(x, y, m);
+	if (updateHyperlink && updateHyperlink.trace(x, y)) {
+		updateHyperlink.click();
+	}
 
 	if (displayPlaylist) {// && playlist.mouse_in_this(x, y)) {
 		trace_call && console.log(qwr_utils.function_name());
@@ -1992,7 +2011,7 @@ function on_mouse_move(x, y, m) {
 		}
 
 		buttonEventHandler(x, y, m);
-		// hyperlinkEventHandler(x, y, m);
+		if (updateHyperlink) Hyperlinks_on_mouse_move(updateHyperlink, x, y);
 
 		if (displayPlaylist && playlist.mouse_in_this(x, y)) {
 			trace_call && trace_on_move && console.log(qwr_utils.function_name());

@@ -300,6 +300,30 @@ function leftPad(val, size, ch) {
 	return result;
 }
 
+function makeHttpRequest(type, url, successCB) {
+	var xmlhttp = new ActiveXObject('Microsoft.XMLHTTP');
+	xmlhttp.open(type, url, true);
+	xmlhttp.setRequestHeader('User-Agent', 'foo_jscript_panel_georgia');
+	xmlhttp.send();
+	xmlhttp.onreadystatechange = _.bind(function () {
+		if (xmlhttp.readyState == 4) {
+			successCB(xmlhttp.responseText);
+		}
+	}, this);
+}
+
+function isNewerVersion (oldVer, newVer) {
+	var oldParts = oldVer.split('.');
+	var newParts = newVer.split('.');
+	for (var i = 0; i < newParts.length; i++) {
+		var a = parseInt(newParts[i]) || 0
+		var b = parseInt(oldParts[i]) || 0
+		if (a > b) return true
+		if (a < b) return false
+	}
+	return false
+}
+
 var sizeInitialized = false;
 var last_size = undefined;
 

@@ -2,11 +2,13 @@ var globals = PanelProperties.get_instance();
 var pref = PanelProperties.get_instance(); // preferences
 var tf = PanelProperties.get_instance(); // titleformating strings
 
-var currentVersion = '1.1.3';
+var currentVersion = '1.1.4';
+var updateAvailable = false;
+var updateHyperlink;
 
 globals.add_properties({
 	version: ['_theme_version (do not hand edit!)', 'NONE']
-})
+});
 
 // THEME PREFERENCES/PROPERTIES EXPLANATIONS - After initial run, these values are changed in Options Menu or by Right Click >> Properties and not here!
 pref.add_properties({
@@ -33,6 +35,7 @@ pref.add_properties({
     hyperlinks_ctrl: ['Playlist: Hyperlinks require CTRL Key', false], // true: clicking on hyperlinks only works if CTRL key is held down
     darkMode: ['Use Dark Theme', true], // true: use a darker background
 	use_4k: ['Detect 4k', 'auto'], // auto: switch to 4k mode when window width wide enough, never: never use 4k mode, always: always use 4k mode
+	checkForUpdates: ['Check for Updates', true], // true: check github repo to determine if updates exist
 
 	lyrics_line_height: ['Lyrics: Line height', 32],
 	lyrics_normal_color: ['Lyrics: Text Color', 'RGBA(255, 255, 255, 255);'],
@@ -176,7 +179,7 @@ pref.cdart_amount = 0.48; // show 48% of the CD image if it will fit on the scre
 
 pref.display_menu = true; // true: show the menu bar at the top of the theme (only useful in CUI); false: don't show menu bar
 
-function versionCheck(version, storedVersion) {
+function migrateCheck(version, storedVersion) {
 	if (version !== storedVersion) {
 		// this function clears default values which have changed
 		switch (storedVersion) {
@@ -213,4 +216,26 @@ function versionCheck(version, storedVersion) {
 	}
 }
 
-versionCheck(currentVersion, globals.version);
+migrateCheck(currentVersion, globals.version);
+
+if (pref.checkForUpdates) {
+	var url = 'https://api.github.com/repos/kbuffington/Georgia/tags';
+	makeHttpRequest('GET', url, function (resp) {
+		try {
+			var respObj = JSON.parse(resp);
+			updateAvailable = isNewerVersion(currentVersion, respObj[0].name);
+			console.log('Current released version of Georgia: v' + respObj[0].name);
+			if (updateAvailable) {
+				stoppedTime += ' - ';
+				console.log('>>> Georgia update available. Download it here: https://github.com/kbuffington/Georgia/releases')
+				if (!fb.IsPlaying) {
+					str.time = stoppedTime;
+					RepaintWindow();
+				}
+				updateHyperlink = new Hyperlink('Update Available', ft.lower_bar, 'update', 0, 0, window.Width);
+			}
+		} catch (e) {
+			console.log('Could not check latest version');
+		}
+	});
+}
