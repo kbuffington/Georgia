@@ -276,8 +276,6 @@ var playCountVerifiedByLastFm = false; // show Last.fm image when we %lastfm_pla
 var art_off_center = false; // if true, album art has been shifted 40 pixels to the right
 var loadFromCache = true; // always load art from cache unless this is set
 
-//var inShowMenuEntry   = false;
-
 var str = new Object();
 var state = new Object(); // panel state
 
@@ -854,8 +852,6 @@ function on_paint(gr) {
 					}
 					gr.DrawImage(labelShadowImg, labelX - leftEdgeWidth - geo.aa_shadow, topEdge - 20 - geo.aa_shadow, ww - labelX + leftEdgeWidth + 2 * geo.aa_shadow, labelHeight + 40 + 2 * geo.aa_shadow,
 						0, 0, labelShadowImg.width, labelShadowImg.height);
-				} else {
-					gr.DrawRect(labelX - leftEdgeWidth - 1, topEdge - 21, ww - labelX + leftEdgeWidth + 1, labelHeight + 41, 1, col.accent);
 				}
 				gr.SetSmoothingMode(SmoothingMode.None); // disable smoothing
 				gr.FillSolidRect(labelX - leftEdgeWidth, topEdge - 20, ww - labelX + leftEdgeWidth, labelHeight + 40, col.info_bg);
@@ -910,6 +906,29 @@ function on_paint(gr) {
 		width = 0;
 	}
 
+	// Playlist/Library
+	if (displayPlaylist) {
+		showExtraDrawTiming && (drawPlaylist = fb.CreateProfiler('on_paint -> playlist'));
+		if (!pref.darkMode) {
+			if (!playlist_shadow) {
+				playlist_shadow = createShadowRect(playlist.w + 2 * geo.aa_shadow, playlist.h); // extend shadow past edge
+			}
+			gr.DrawImage(playlist_shadow, playlist.x - geo.aa_shadow, playlist.y - geo.aa_shadow, playlist.w + 2 * geo.aa_shadow, playlist.h + 2 * geo.aa_shadow,
+				0, 0, playlist_shadow.width, playlist_shadow.height);
+		} else {
+			gr.DrawRect(playlist.x - 1, playlist.y - 1, playlist.w + 2, playlist.h + 2, 1, rgb(64,64,64));
+		}
+		playlist.on_paint(gr);
+		showExtraDrawTiming && drawPlaylist.Print();
+	} else if (displayLibrary) {
+		libraryPanel.on_paint(gr);
+		if (pref.darkMode) {
+			gr.DrawRect(libraryPanel.x - 1, libraryPanel.y - 1, libraryPanel.w + 2, libraryPanel.h + 2, 1, rgb(64,64,64));
+		}
+	}
+
+    gr.SetTextRenderingHint(TextRenderingHint.AntiAlias);
+
 	var ft_lower_bold = ft.lower_bar_bold;
 	var ft_lower = ft.lower_bar;
 	var ft_lower_orig_artist = ft.lower_bar_artist;
@@ -944,28 +963,6 @@ function on_paint(gr) {
 		gr.DrawString(str.original_artist, ft_lower_orig_artist, col.now_playing, pbLeft + trackNumWidth + titleMeasurements.Width + h_spacing, lowerBarTop + v_spacing, 0.95 * ww - width, titleMeasurements.Height, StringFormat(0, 0, 4, 0x00001000));
 	}
 
-	// Playlist/Library
-	if (displayPlaylist) {
-		showExtraDrawTiming && (drawPlaylist = fb.CreateProfiler('on_paint -> playlist'));
-		if (!pref.darkMode) {
-			if (!playlist_shadow) {
-				playlist_shadow = createShadowRect(playlist.w + 2 * geo.aa_shadow, playlist.h); // extend shadow past edge
-			}
-			gr.DrawImage(playlist_shadow, playlist.x - geo.aa_shadow, playlist.y - geo.aa_shadow, playlist.w + 2 * geo.aa_shadow, playlist.h + 2 * geo.aa_shadow,
-				0, 0, playlist_shadow.width, playlist_shadow.height);
-		} else {
-			gr.DrawRect(playlist.x - 1, playlist.y - 1, playlist.w + 2, playlist.h + 2, 1, rgb(64,64,64));
-		}
-		playlist.on_paint(gr);
-		showExtraDrawTiming && drawPlaylist.Print();
-	} else if (displayLibrary) {
-		libraryPanel.on_paint(gr);
-		if (pref.darkMode) {
-			gr.DrawRect(libraryPanel.x - 1, libraryPanel.y - 1, libraryPanel.w + 2, libraryPanel.h + 2, 1, rgb(64,64,64));
-		}
-	}
-
-    gr.SetTextRenderingHint(TextRenderingHint.AntiAlias);
 	// Progress bar/Seekbar
 	var pbTop = Math.round(lowerBarTop + titleMeasurements.Height) + (is_4k ? 16 : 8);
 	gr.SetSmoothingMode(SmoothingMode.None); // disable smoothing
@@ -2001,7 +1998,6 @@ function on_mouse_move(x, y, m) {
 		state["mouse_y"] = y;
 		if (pref.hide_cursor) {
 			window.ClearTimeout(hideCursor);
-			//debugLog("on_mouse_move: creating window.SetCursor() timeout with timeout = " + 10000);
 			hideCursor = window.SetTimeout(function () {
 				// if there's a menu id (i.e. a menu is down) we don't want the cursor to ever disappear
 				if (!menu_down) {
@@ -2024,6 +2020,8 @@ function on_mouse_move(x, y, m) {
 			playlist.on_mouse_move(x, y, m);
 		} else if (displayLibrary && library.mouse_in_this(x, y)) {
 			library.on_mouse_move(x, y, m);
+        } else {
+            // str.timeline.mouse_in_this(x, y);
 		}
 	}
 }

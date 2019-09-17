@@ -56,3 +56,7 @@ Timeline.prototype.draw = function (gr) {
         gr.SetSmoothingMode(SmoothingMode.AntiAlias);
     }
 }
+
+Timeline.prototype.mouse_in_this = function (x, y) {
+    return (x >= this.x && x < this.x + this.w && y >= this.y && y < this.y + this.h);
+}
