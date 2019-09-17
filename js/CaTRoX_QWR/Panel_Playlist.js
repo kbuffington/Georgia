@@ -3818,7 +3818,7 @@ function Header(parent, x, y, w, h, idx) {
                         var date_h = this.h - 4;
                         grClip.DrawString(date_text, date_font, date_color, date_x, date_y, date_w, date_h, g_string_format.v_align_center);
                     } else {
-                        hyperlinks.date.draw(grClip, date_color);
+                        hyperlinks.date.draw_playlist(grClip, date_color);
                     }
 
                     part2_right_pad += this.w - date_x;
@@ -3844,7 +3844,7 @@ function Header(parent, x, y, w, h, idx) {
                     if (is_radio || !hyperlinks.artist)  {
                         grClip.DrawString(artist_text, artist_font, artist_color, artist_x, 0, artist_w, artist_h, artist_text_format);
                     } else {
-                        hyperlinks.artist.draw(grClip, artist_color);
+                        hyperlinks.artist.draw_playlist(grClip, artist_color);
                     }
                     //part1_cur_x += artist_w;
                 }
@@ -3948,7 +3948,7 @@ function Header(parent, x, y, w, h, idx) {
                                 grClip.DrawString(' \u2022 ', g_pl_fonts.info, info_color, genre_hyperlink.x + genre_hyperlink.get_w(), info_y, is_4k ? 16 : 8, info_h);
                             }
                             genre_hyperlink = hyperlinks['genre' + i];
-                            genre_hyperlink.draw(grClip, info_color);
+                            genre_hyperlink.draw_playlist(grClip, info_color);
                             i++;
                         }
                     }
@@ -3983,7 +3983,7 @@ function Header(parent, x, y, w, h, idx) {
                             grClip.DrawString(' \u2022 ', g_pl_fonts.info, info_color, label_hyperlink.x + label_hyperlink.w + 1, info_y, is_4k ? 16 : 8, info_h);
                         }
                         label_hyperlink = hyperlinks['label' + i];
-                        label_hyperlink.draw(grClip, info_color);
+                        label_hyperlink.draw_playlist(grClip, info_color);
                         i++;
                     }
                 }
