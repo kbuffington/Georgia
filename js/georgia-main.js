@@ -2387,7 +2387,7 @@ function on_playback_time() {
 
 function refresh_seekbar() {
 	//debugLog("in refresh_seekbar()");
-	window.RepaintRect(0.025 * ww, wh - geo.lower_bar_h, 0.95 * ww, geo.lower_bar_h, true);
+	window.RepaintRect(0.025 * ww, wh - geo.lower_bar_h, 0.95 * ww, geo.lower_bar_h);
 }
 
 

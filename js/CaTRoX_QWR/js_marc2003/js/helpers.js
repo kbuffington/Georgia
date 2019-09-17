@@ -292,7 +292,7 @@ _.mixin({
         });
     },
     cc:                   function (name) {
-        return utils.CheckComponent(name, true);
+        return utils.CheckComponent(name);
     },
     chrToImg:             function (chr, colour) {
         var size = 96;

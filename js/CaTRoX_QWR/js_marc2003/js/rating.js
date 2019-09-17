@@ -108,7 +108,7 @@ _.mixin({
         this.set_rating = function () {
             switch (this.properties.mode.value) {
                 case 1: // foo_playcount
-                    fb.RunContextCommandWithMetadb('Playback Statistics/Rating/' + (this.hrating == this.rating ? '<not set>' : this.hrating), panel.metadb, 8);
+                    fb.RunContextCommandWithMetadb('Playback Statistics/Rating/' + (this.hrating == this.rating ? '<not set>' : this.hrating), panel.metadb);
                     break;
                 case 2: // file tag
                     var tmp = this.hrating == this.rating ? '' : this.hrating;
