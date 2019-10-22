@@ -52,6 +52,8 @@ function getBlue(color) {
 
 function RGB(r, g, b) { return (0xff000000 | (r << 16) | (g << 8) | (b)); }
 function RGBA(r, g, b, a) { return ((a << 24) | (r << 16) | (g << 8) | (b)); }
+function RGBtoRGBA (rgb, a) { return a << 24 | (rgb & 0x00FFFFFF); }
+
 function colToRgb(c, showPrefix) {
 	if (typeof showPrefix === 'undefined') showPrefix = true;
 	var alpha = getAlpha(c);

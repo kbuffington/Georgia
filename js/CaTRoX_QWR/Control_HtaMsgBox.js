@@ -143,7 +143,7 @@ g_hta_window.default_features =
     'contextMenu=yes ' +
     'selection=no ' +
     'innerBorder=no';
-if (_.isFile(fb.FoobarPath + '\\foobar2000.exe')) {
+if (IsFile(fb.FoobarPath + '\\foobar2000.exe')) {
     g_hta_window.default_features += ' ';
     g_hta_window.default_features += 'icon="' + fb.FoobarPath + '\\foobar2000.exe"';
 }

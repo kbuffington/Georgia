@@ -3,7 +3,294 @@
 // @author 'TheQwertiest'
 // ==/PREPROCESSOR==
 
-//<editor-fold desc="Global constants">
+_.mixin({
+    isInstanceOf:         function (a, b) {
+        return (a instanceof b);
+    },
+    tf:                   function (t, metadb) {
+        if (!metadb) {
+            return '';
+        }
+        var tfo = fb.TitleFormat(t);
+        var str = tfo.EvalWithMetadb(metadb);
+        tfo.Dispose();
+        return str;
+    },
+    tfe:                  function (t, force) {
+        var tfo = fb.TitleFormat(t);
+        var str = tfo.Eval(force);
+        tfo.Dispose();
+        return str;
+    },
+});
+
+//--->
+// Used in SetTextRenderingHint()
+// For more information, see: http://msdn.microsoft.com/en-us/library/ms534404(VS.85).aspx
+var TextRenderingHint =
+    {
+        SystemDefault:            0,
+        SingleBitPerPixelGridFit: 1,
+        SingleBitPerPixel:        2,
+        AntiAliasGridFit:         3,
+        AntiAlias:                4,
+        ClearTypeGridFit:         5
+    };
+//--->
+// Used in SetSmoothingMode()
+// For more information, see: http://msdn.microsoft.com/en-us/library/ms534173(VS.85).aspx
+var SmoothingMode =
+    {
+        Invalid:     -1,
+        Default:     0,
+        HighSpeed:   1,
+        HighQuality: 2,
+        None:        3,
+        AntiAlias:   4
+    };
+//--->
+// Used in SetInterpolationMode()
+// For more information, see: http://msdn.microsoft.com/en-us/library/ms534141(VS.85).aspx
+var InterpolationMode =
+    {
+        Invalid:             -1,
+        Default:             0,
+        LowQuality:          1,
+        HighQuality:         2,
+        Bilinear:            3,
+        Bicubic:             4,
+        NearestNeighbor:     5,
+        HighQualityBilinear: 6,
+        HighQualityBicubic:  7
+    };
+
+function trimArray(array, count, fromHead ){
+        /// Length deduction is much faster then _.drop or slice, since it does not create a new array
+        if (fromHead) {
+            array.reverse();
+            array.length -= count;
+            array.reverse();
+        }
+        else {
+            array.length -= count;
+        }
+    }
+
+// Mask for mouse callbacks
+var MK_LBUTTON = 0x0001;
+var MK_RBUTTON = 0x0002;
+var MK_SHIFT = 0x0004; // The SHIFT key is down.
+var MK_CONTROL = 0x0008; // The CTRL key is down.
+var MK_MBUTTON = 0x0010;
+var MK_XBUTTON1 = 0x0020;
+var MK_XBUTTON2 = 0x0040;
+
+//--->
+var VK_BACKSPACE = 0x08;
+var VK_SHIFT = 0x10;
+var VK_CONTROL = 0x11;
+var VK_MENU = 0x12; // ALT
+var VK_PAUSE = 0x13;
+var VK_ESCAPE = 0x1B;
+var VK_SPACE = 0x20;
+var VK_DELETE = 0x2E;
+var VK_PRIOR = 0x21; // PAGE UP key
+var VK_NEXT = 0x22; // PAGE DOWN key
+var VK_END = 0x23;
+var VK_HOME = 0x24;
+var VK_LEFT = 0x25;
+var VK_UP = 0x26;
+var VK_RIGHT = 0x27;
+var VK_DOWN = 0x28;
+var VK_RETURN = 0x0D; // Enter
+var VK_LSHIFT = 0xA0; // Left SHIFT key
+var VK_RSHIFT = 0xA1; // Right SHIFT key
+var VK_LCONTROL = 0xA2; // Left CONTROL key
+var VK_RCONTROL = 0xA3; // Right CONTROL key
+var VK_LMENU = 0xA4; // Left MENU key (Left Alt)
+var VK_RMENU = 0xA5; // Right MENU key (Right Alt)
+
+var VK_KEY_0 = 0x30; //	0
+var VK_KEY_1 = 0x31; //	1
+var VK_KEY_2 = 0x32; //	2
+var VK_KEY_3 = 0x33; //	3
+var VK_KEY_4 = 0x34; //	4
+var VK_KEY_5 = 0x35; //	5
+var VK_KEY_6 = 0x36; //	6
+var VK_KEY_7 = 0x37; //	7
+var VK_KEY_8 = 0x38; //	8
+var VK_KEY_9 = 0x39; //	9
+var VK_KEY_A = 0x41; //	A
+var VK_KEY_B = 0x42; //	B
+var VK_KEY_C = 0x43; //	C
+var VK_KEY_D = 0x44; //	D
+var VK_KEY_E = 0x45; //	E
+var VK_KEY_F = 0x46; //	F
+var VK_KEY_G = 0x47; //	G
+var VK_KEY_H = 0x48; //	H
+var VK_KEY_I = 0x49; //	I
+var VK_KEY_J = 0x4A; //	J
+var VK_KEY_K = 0x4B; //	K
+var VK_KEY_L = 0x4C; //	L
+var VK_KEY_M = 0x4D; //	M
+var VK_KEY_N = 0x4E; //	N
+var VK_KEY_O = 0x4F; //	O
+var VK_KEY_P = 0x50; //	P
+var VK_KEY_Q = 0x51; //	Q
+var VK_KEY_R = 0x52; //	R
+var VK_KEY_S = 0x53; //	S
+var VK_KEY_T = 0x54; //	T
+var VK_KEY_U = 0x55; //	U
+var VK_KEY_V = 0x56; //	V
+var VK_KEY_W = 0x57; //	W
+var VK_KEY_X = 0x58; //	X
+var VK_KEY_Y = 0x59; //	Y
+var VK_KEY_Z = 0x5A; //	Z
+
+var VK_F1 = 0x70; // F1
+var VK_F10 = 0x79; // F10
+var VK_F11 = 0x7A; // F11
+var VK_F12 = 0x7B; // F12
+var VK_F13 = 0x7C; // F13
+var VK_F14 = 0x7D; // F14
+var VK_F15 = 0x7E; // F15
+var VK_F16 = 0x7F; // F16
+var VK_F17 = 0x80; // F17
+var VK_F18 = 0x81; // F18
+var VK_F19 = 0x82; // F19
+var VK_F2 = 0x71; // F2
+var VK_F20 = 0x83; // F20
+var VK_F21 = 0x84; // F21
+var VK_F22 = 0x85; // F22
+var VK_F23 = 0x86; // F23
+var VK_F24 = 0x87; // F24
+var VK_F3 = 0x72; // F3
+var VK_F4 = 0x73; // F4
+var VK_F5 = 0x74; // F5
+var VK_F6 = 0x75; // F6
+var VK_F7 = 0x76; // F7
+var VK_F8 = 0x77; // F8
+var VK_F9 = 0x78; // F9
+//--->
+
+var IDC_ARROW = 32512;
+var IDC_IBEAM = 32513;
+var IDC_WAIT = 32514;
+var IDC_CROSS = 32515;
+var IDC_UPARROW = 32516;
+var IDC_SIZE = 32640;
+var IDC_ICON = 32641;
+var IDC_SIZENWSE = 32642;
+var IDC_SIZENESW = 32643;
+var IDC_SIZEWE = 32644;
+var IDC_SIZENS = 32645;
+var IDC_SIZEALL = 32646;
+var IDC_NO = 32648;
+var IDC_APPSTARTING = 32650;
+var IDC_HAND = 32649;
+var IDC_HELP = 32651;
+
+
+
+// timeout and interval shims
+function setInterval(func, wait){
+    return window.SetInterval(func, wait);
+}
+function clearInterval(id) {
+    window.ClearInterval(id);
+}
+function setTimeout(func, wait){
+    return window.SetTimeout(func, wait);
+}
+function clearTimeout(id) {
+    window.ClearTimeout(id);
+}
+
+function _alpha_timer(items_arg, hover_predicate_arg) {
+    this.start = function () {
+        var hover_in_step = 50;
+        var hover_out_step = 15;
+
+        if (!alpha_timer_internal) {
+            alpha_timer_internal = window.SetInterval(_.bind(function () {
+                _.forEach(items, function (item) {
+                    var saved_alpha = item.hover_alpha;
+                    if (hover_predicate(item)) {
+                        item.hover_alpha = Math.min(255, item.hover_alpha += hover_in_step);
+                    }
+                    else {
+                        item.hover_alpha = Math.max(0, item.hover_alpha -= hover_out_step);
+                    }
+
+                    if (saved_alpha !== item.hover_alpha) {
+                        item.repaint();
+                    }
+                });
+
+                var alpha_in_progress = _.some(items, function (item) {
+                    return item.hover_alpha > 0 && item.hover_alpha < 255;
+                });
+
+                if (!alpha_in_progress) {
+                    this.stop();
+                }
+            }, this), 25);
+        }
+    };
+
+    this.stop = function () {
+        if (alpha_timer_internal) {
+            window.ClearInterval(alpha_timer_internal);
+            alpha_timer_internal = null;
+        }
+    };
+
+    var alpha_timer_internal = null;
+    var items = items_arg;
+    var hover_predicate = hover_predicate_arg;
+}
+
+
+g_callbacks = {
+    /**
+     * @param {string} event_name
+     * @param {...*} var_args
+     */
+    invoke:                 function (event_name, var_args) {
+        this.validate_event_name(event_name);
+
+        var callbacks = this[event_name];
+        if (!callbacks || !_.isArray(callbacks)) {
+            return;
+        }
+
+        var args = _.drop([].slice.call(arguments));
+        _.over(callbacks)(args);
+    },
+    register:               function (event_name, callback) {
+        if (!_.isFunction(callback)) {
+            throw Error('Type Error: callback is not a function');
+        }
+
+        this.validate_event_name(event_name);
+
+        if (!this[event_name]) {
+            this[event_name] = [];
+        }
+        this[event_name].push(callback);
+    },
+    validate_event_name: function (event_name) {
+        if (!_.isString(event_name)) {
+            throw Error('Type Error: event name is not a string');
+        }
+
+        if (event_name === 'invoke'
+            || event_name === 'register'
+            || event_name === 'unregister') {
+            throw Error('Argument Error: event name is occupied "' + event_name + '"');
+        }
+    }
+};
 
 var g_theme = {};
 g_theme.name = 'Georgia';
@@ -12,12 +299,12 @@ g_theme.name = 'Georgia';
 // g_theme.script_folder = 'themes\\' + g_theme.folder_name + '\\Scripts\\';
 
 g_theme.colors = {};
-g_theme.colors.pss_back = _.RGB(25, 25, 25);
-g_theme.colors.panel_back = _.RGB(30, 30, 30);
-g_theme.colors.panel_front = _.RGB(40, 40, 40);
-g_theme.colors.panel_line = _.RGB(55, 55, 55);
+g_theme.colors.pss_back = RGB(25, 25, 25);
+g_theme.colors.panel_back = RGB(30, 30, 30);
+g_theme.colors.panel_front = RGB(40, 40, 40);
+g_theme.colors.panel_line = RGB(55, 55, 55);
 g_theme.colors.panel_line_selected = g_theme.colors.panel_line;
-g_theme.colors.panel_text_normal = _.RGB(125, 127, 129);
+g_theme.colors.panel_text_normal = RGB(125, 127, 129);
 
 /** @enum{number} */
 var g_string_format = {

@@ -80,7 +80,7 @@ tf.add_properties({
 // Playlist TF strings, not currently saved in globals:
 // %album%[ — '['$if(%original release date%,$ifequal($year(%original release date%),$year(%date%),,$year(%date%) ))%edition%']']
 
-var componentEnhancedPlaycount = _.cc('foo_enhanced_playcount');
+var componentEnhancedPlaycount = utils.CheckComponent('foo_enhanced_playcount');
 if (!componentEnhancedPlaycount) {
 	console.log('foo_enhanced_playcount not loaded');
 	tf.played_times = '';
