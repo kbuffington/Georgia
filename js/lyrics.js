@@ -415,9 +415,9 @@ function check_file(path, filename) {
 	if (showLyricsTiming) load_file_time = fb.CreateProfiler("check_file");
 	var found = true;
 	g_lyrics_path = path;
-	if (utils.FileTest(path+filename+".lrc", "e")) {
+	if (utils.IsFile(path+filename+".lrc")) {
 		g_lyrics_filename = filename+".lrc";
-	} else if (utils.FileTest(path+filename+".txt", "e")) {
+	} else if (utils.IsFile(path+filename+".txt")) {
 		g_lyrics_filename = filename+".txt";
 	} else {
 		g_lyrics_path = null;

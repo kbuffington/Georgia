@@ -609,12 +609,12 @@ _.mixin({
         mm4.Init('Playback');
         mm5.Init('Library');
         mm6.Init('Help');
-        mm1.BuildMenu(s1, 1000, 999);
-        mm2.BuildMenu(s2, 2000, 999);
-        mm3.BuildMenu(s3, 3000, 999);
-        mm4.BuildMenu(s4, 4000, 999);
-        mm5.BuildMenu(s5, 5000, 999);
-        mm6.BuildMenu(s6, 6000, 999);
+        mm1.BuildMenu(s1, 1000);
+        mm2.BuildMenu(s2, 2000);
+        mm3.BuildMenu(s3, 3000);
+        mm4.BuildMenu(s4, 4000);
+        mm5.BuildMenu(s5, 5000);
+        mm6.BuildMenu(s6, 6000);
 
         s1.AppendTo(m1, MF_STRING, 'File');
         s2.AppendTo(m1, MF_STRING, 'Edit');
@@ -658,7 +658,7 @@ _.mixin({
         if (name) {
 
             menuManager.Init(name);
-            menuManager.BuildMenu(menu, 1, 128);
+            menuManager.BuildMenu(menu, 1);
 
             var idx = menu.TrackPopupMenu(x, y, flags);
 
@@ -757,7 +757,7 @@ _.mixin({
         }
     },
     save:                 function (file, value) {
-        if (_.isNil(value) || !_.isFolder(utils.FileTest(file, 'split').toArray()[0])) {
+        if (_.isNil(value)) {
             return;
         }
         if (!utils.WriteTextFile(file, value)) {
@@ -858,7 +858,7 @@ _.mixin({
     },
     tfe:                  function (t, force) {
         var tfo = fb.TitleFormat(t);
-        var str = tfo.Eval(force);
+        var str = tfo.Eval();
         _.dispose(tfo);
         return str;
     },

@@ -242,7 +242,7 @@ function Menu() {
                 if (title_text) {
                     title_text += separator_text;
                 }
-                title_text += fb.TitleFormat('%_foobar2000_version%').eval(true);
+                title_text += fb.TitleFormat('%_foobar2000_version%').eval();
             }
 
             var title_text_format = g_string_format.align_center | g_string_format.trim_ellipsis_char | g_string_format.no_wrap;

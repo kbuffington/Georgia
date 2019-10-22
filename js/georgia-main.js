@@ -1093,40 +1093,30 @@ function onRatingMenu(x, y) {
 
 	menu_down = true;
 
-	var rating = fb.TitleFormat("%rating%").Eval();
+	var rating = fb.TitleFormat("$if2(%rating%,0)").Eval();
 
 	_menu.AppendMenuItem(MF_STRING, 1, "No rating");
-	_menu.CheckMenuItem(1, rating == null ? 1 : 0);
+	_menu.CheckMenuItem(1, rating == 0);
 	_menu.AppendMenuItem(MF_STRING, 11, "1 Star");
-	_menu.CheckMenuItem(11, rating == 1 ? 1 : 0);
+	_menu.CheckMenuItem(11, rating == 1);
 	_menu.AppendMenuItem(MF_STRING, 12, "2 Stars");
-	_menu.CheckMenuItem(12, rating == 2 ? 1 : 0);
+	_menu.CheckMenuItem(12, rating == 2);
 	_menu.AppendMenuItem(MF_STRING, 13, "3 Stars");
-	_menu.CheckMenuItem(13, rating == 3 ? 1 : 0);
+	_menu.CheckMenuItem(13, rating == 3);
 	_menu.AppendMenuItem(MF_STRING, 14, "4 Stars");
-	_menu.CheckMenuItem(14, rating == 4 ? 1 : 0);
+	_menu.CheckMenuItem(14, rating == 4);
 	_menu.AppendMenuItem(MF_STRING, 15, "5 Stars");
-	_menu.CheckMenuItem(15, rating == 5 ? 1 : 0);
+	_menu.CheckMenuItem(15, rating == 5);
 
 	idx = _menu.TrackPopupMenu(x, y);
-	switch (idx) {
-		case 1:
+	switch (true) {
+		case idx == 0:
+			break;
+		case idx == 1:
 			fb.RunContextCommand("Playback Statistics/Rating/<not set>");
 			break;
-		case 11:
-			fb.RunContextCommand("Playback Statistics/Rating/1");
-			break;
-		case 12:
-			fb.RunContextCommand("Playback Statistics/Rating/2");
-			break;
-		case 13:
-			fb.RunContextCommand("Playback Statistics/Rating/3");
-			break;
-		case 14:
-			fb.RunContextCommand("Playback Statistics/Rating/4");
-			break;
-		case 15:
-			fb.RunContextCommand("Playback Statistics/Rating/5");
+		default:
+			fb.RunContextCommand("Playback Statistics/Rating/" + (idx - 10));
 			break;
 	}
 	_menu.Dispose();
@@ -1694,7 +1684,7 @@ function on_playback_new_track(metadb) {
 
 	function testBandLogo(imgDir, bandStr, isHQ) {
 		var logoPath = imgDir + bandStr + '.png'
-		if (utils.FileTest(logoPath, 'e')) {
+		if (utils.IsFile(logoPath)) {
 			if (isHQ) {
 				bandLogoHQ = true;
 				console.log('Found band logo: ' + logoPath);
@@ -2806,15 +2796,15 @@ function LoadLabelImage(publisherString) {
 		/* First check for record label folder */
 		lastSrchYear = d.getFullYear();
 		dir = pref.label_base; // also used below
-		if (utils.FileTest(dir + labelStr, 'd') ||
-			utils.FileTest(dir + (labelStr = labelStr.replace(/ Records$/, '')
+		if (utils.IsFolder(dir + labelStr) ||
+			utils.IsFolder(dir + (labelStr = labelStr.replace(/ Records$/, '')
 				.replace(/ Recordings$/, '')
 				.replace(/ Music$/, '')
-				.replace(/\.$/, '')), 'd')) {
+				.replace(/\.$/, '')))) {
 			year = parseInt($('$year(%date%)'));
 			for (; year <= lastSrchYear; year++) {
 				yearFolder = dir + labelStr + '\\' + year;
-				if (utils.FileTest(yearFolder, 'd')) {
+				if (utils.IsFolder(yearFolder)) {
 					console.log('Found folder for ' + labelStr + ' for year ' + year + '.');
 					dir += labelStr + '\\' + year + '\\';
 					break;
@@ -2827,17 +2817,17 @@ function LoadLabelImage(publisherString) {
 		/* actually load the label from either the directory we found above, or the base record label folder */
 		labelStr = replaceFileChars(publisherString); // we need to start over with the original string when searching for the file, just to be safe
 		label = dir + labelStr + '.png';
-		if (utils.FileTest(label, 'e')) {
+		if (utils.IsFile(label)) {
 			recordLabel = gdi.Image(label);
 			console.log('Found Record label:', label, !recordLabel ? '<COULD NOT LOAD>' : '');
 		} else {
 			labelStr = labelStr.replace(/ Records$/, '').replace(/ Recordings$/, '').replace(/ Music$/, '');
 			label = dir + labelStr + '.png';
-			if (utils.FileTest(label, 'e')) {
+			if (utils.IsFile(label)) {
 				recordLabel = gdi.Image(label);
 			} else {
 				label = dir + labelStr + ' Records.png';
-				if (utils.FileTest(label, 'e')) {
+				if (utils.IsFile(label)) {
 					recordLabel = gdi.Image(label);
 				}
 			}
@@ -2854,13 +2844,13 @@ function fetchNewArtwork(metadb) {
 
 	if (pref.display_cdart && !isStreaming) { // we must attempt to load CD/vinyl art first so that the shadow is drawn correctly
 		cdartPath = $(pref.vinylside_path); // try vinyl%vinyl disc%.png first
-		if (!utils.FileTest(cdartPath, 'e')) {
+		if (!utils.IsFile(cdartPath)) {
 			cdartPath = $(pref.vinyl_path); // try vinyl.png
-			if (!utils.FileTest(cdartPath, 'e')) {
+			if (!utils.IsFile(cdartPath)) {
 				cdartPath = $(pref.cdartdisc_path); // try cd%discnumber%.png
-				if (!utils.FileTest(cdartPath, 'e')) {
+				if (!utils.IsFile(cdartPath)) {
 					cdartPath = $(pref.cdart_path); // cd%discnumber%.png didn't exist so try cd.png.
-					if (!utils.FileTest(cdartPath, 'e')) {
+					if (!utils.IsFile(cdartPath)) {
 						disc_art_exists = false; // didn't find anything
 					}
 				}

@@ -2815,11 +2815,6 @@ function Playlist(x, y) {
      * @type {ContentNavigationHelper}
      */
     var cnt_helper = this.cnt.helper;
-
-    // Workaround for bug: PlayingPlaylist is equal to -1 on startup
-    if (plman.PlayingPlaylist === -1 && plman.ActivePlaylist !== -1) {
-        plman.PlayingPlaylist = plman.ActivePlaylist;
-    }
 }
 
 Playlist.prototype = Object.create(List.prototype);
