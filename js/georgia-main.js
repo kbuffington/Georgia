@@ -1684,7 +1684,7 @@ function on_playback_new_track(metadb) {
 
 	function testBandLogo(imgDir, bandStr, isHQ) {
 		var logoPath = imgDir + bandStr + '.png'
-		if (utils.IsFile(logoPath)) {
+		if (IsFile(logoPath)) {
 			if (isHQ) {
 				bandLogoHQ = true;
 				console.log('Found band logo: ' + logoPath);
@@ -2796,15 +2796,15 @@ function LoadLabelImage(publisherString) {
 		/* First check for record label folder */
 		lastSrchYear = d.getFullYear();
 		dir = pref.label_base; // also used below
-		if (utils.IsFolder(dir + labelStr) ||
-			utils.IsFolder(dir + (labelStr = labelStr.replace(/ Records$/, '')
+		if (IsFolder(dir + labelStr) ||
+			IsFolder(dir + (labelStr = labelStr.replace(/ Records$/, '')
 				.replace(/ Recordings$/, '')
 				.replace(/ Music$/, '')
 				.replace(/\.$/, '')))) {
 			year = parseInt($('$year(%date%)'));
 			for (; year <= lastSrchYear; year++) {
 				yearFolder = dir + labelStr + '\\' + year;
-				if (utils.IsFolder(yearFolder)) {
+				if (IsFolder(yearFolder)) {
 					console.log('Found folder for ' + labelStr + ' for year ' + year + '.');
 					dir += labelStr + '\\' + year + '\\';
 					break;
@@ -2817,17 +2817,17 @@ function LoadLabelImage(publisherString) {
 		/* actually load the label from either the directory we found above, or the base record label folder */
 		labelStr = replaceFileChars(publisherString); // we need to start over with the original string when searching for the file, just to be safe
 		label = dir + labelStr + '.png';
-		if (utils.IsFile(label)) {
+		if (IsFile(label)) {
 			recordLabel = gdi.Image(label);
 			console.log('Found Record label:', label, !recordLabel ? '<COULD NOT LOAD>' : '');
 		} else {
 			labelStr = labelStr.replace(/ Records$/, '').replace(/ Recordings$/, '').replace(/ Music$/, '');
 			label = dir + labelStr + '.png';
-			if (utils.IsFile(label)) {
+			if (IsFile(label)) {
 				recordLabel = gdi.Image(label);
 			} else {
 				label = dir + labelStr + ' Records.png';
-				if (utils.IsFile(label)) {
+				if (IsFile(label)) {
 					recordLabel = gdi.Image(label);
 				}
 			}
@@ -2844,13 +2844,13 @@ function fetchNewArtwork(metadb) {
 
 	if (pref.display_cdart && !isStreaming) { // we must attempt to load CD/vinyl art first so that the shadow is drawn correctly
 		cdartPath = $(pref.vinylside_path); // try vinyl%vinyl disc%.png first
-		if (!utils.IsFile(cdartPath)) {
+		if (!IsFile(cdartPath)) {
 			cdartPath = $(pref.vinyl_path); // try vinyl.png
-			if (!utils.IsFile(cdartPath)) {
+			if (!IsFile(cdartPath)) {
 				cdartPath = $(pref.cdartdisc_path); // try cd%discnumber%.png
-				if (!utils.IsFile(cdartPath)) {
+				if (!IsFile(cdartPath)) {
 					cdartPath = $(pref.cdart_path); // cd%discnumber%.png didn't exist so try cd.png.
-					if (!utils.IsFile(cdartPath)) {
+					if (!IsFile(cdartPath)) {
 						disc_art_exists = false; // didn't find anything
 					}
 				}
