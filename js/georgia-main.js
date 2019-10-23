@@ -20,11 +20,18 @@ var geo = {}; // sizes
 
 var is_4k = false;
 
+var fontThin = 'HelveticaNeueLT Pro 35 Th';
+var fontLight = 'HelveticaNeueLT Pro 45 Lt';
+var fontRegular = 'HelveticaNeueLT Pro 55 Roman';
+var fontBold = 'HelveticaNeueLT Pro 65 Md';
+var fontLightAlternate = 'NeueHaasGroteskDisp Pro XLt';
+
 // FONTS
-testFont('HelveticaNeueLT Std');
-testFont('HelveticaNeueLT Std Thin');
-testFont('HelveticaNeueLT Std Med');
-testFont('HelveticaNeueLT Std Lt');
+testFont(fontThin);
+testFont(fontLight);
+testFont(fontRegular);
+testFont(fontBold);
+testFont(fontLightAlternate);
 testFont('Guifx v2 Transports');
 
 var useNeue = false;
@@ -45,50 +52,50 @@ function createFonts() {
 		}
 		return font;
 	}
-	ft.album_lrg = font('HelveticaNeueLT Std Med', 36, 0);
-	ft.album_med = font('HelveticaNeueLT Std Med', 32, 0);
-	ft.album_sml = font('HelveticaNeueLT Std Med', 28, 0);
-	ft.album_substitle_lrg = font('HelveticaNeueLT Std Med', 36, g_font_style.italic);
-	ft.album_substitle_med = font('HelveticaNeueLT Std Med', 32, g_font_style.italic);
-	ft.album_substitle_sml = font('HelveticaNeueLT Std Med', 28, g_font_style.italic);
-	ft.title_lrg = font('HelveticaNeueLT Std Thin', 34, 0);
-	ft.title_med = font('HelveticaNeueLT Std Thin', 30, 0);
-	ft.title_sml = font('HelveticaNeueLT Std Thin', 26, 0);
-	ft.tracknum_lrg = font('HelveticaNeueLT Std Lt', 34, g_font_style.bold);
-	ft.tracknum_med = font('HelveticaNeueLT Std Lt', 30, g_font_style.bold);
-	ft.tracknum_sml = font('HelveticaNeueLT Std Lt', 26, g_font_style.bold);
-	ft.year = font('HelveticaNeueLT Std', 48, g_font_style.bold);
-	ft.artist_lrg = font('HelveticaNeueLT Std Med', 40, 0);
-	ft.artist_med = font('HelveticaNeueLT Std Med', 36, 0);
-	ft.artist_sml = font('HelveticaNeueLT Std Med', 30, 0);
-	ft.track_info = font('HelveticaNeueLT Std Thin', 18, 0);
-	ft.grd_key_lrg = font('HelveticaNeueLT Std', 24, 0); // used instead of ft.grd_key if ww > 1280
-	ft.grd_val_lrg = font('HelveticaNeueLT Std Lt', 24, 0); // used instead of ft.grd_val if ww > 1280
-	ft.grd_key_med = font('HelveticaNeueLT Std', 20, 0);
-	ft.grd_val_med = font('HelveticaNeueLT Std Lt', 20, 0);
-	ft.grd_key_sml = font('HelveticaNeueLT Std', 18, 0);
-	ft.grd_val_sml = font('HelveticaNeueLT Std Lt', 18, 0);
-	ft.lower_bar = font('HelveticaNeueLT Std Lt', 30, 0);
+	ft.album_lrg = font(fontBold, 36, 0);
+	ft.album_med = font(fontBold, 32, 0);
+	ft.album_sml = font(fontBold, 28, 0);
+	ft.album_substitle_lrg = font(fontBold, 36, g_font_style.italic);
+	ft.album_substitle_med = font(fontBold, 32, g_font_style.italic);
+	ft.album_substitle_sml = font(fontBold, 28, g_font_style.italic);
+	ft.title_lrg = font(fontThin, 34, 0);
+	ft.title_med = font(fontThin, 30, 0);
+	ft.title_sml = font(fontThin, 26, 0);
+	ft.tracknum_lrg = font(fontLight, 34, g_font_style.bold);
+	ft.tracknum_med = font(fontLight, 30, g_font_style.bold);
+	ft.tracknum_sml = font(fontLight, 26, g_font_style.bold);
+	ft.year = font(fontRegular, 48, g_font_style.bold);
+	ft.artist_lrg = font(fontBold, 40, 0);
+	ft.artist_med = font(fontBold, 36, 0);
+	ft.artist_sml = font(fontBold, 30, 0);
+	ft.track_info = font(fontThin, 18, 0);
+	ft.grd_key_lrg = font(fontRegular, 24, 0); // used instead of ft.grd_key if ww > 1280
+	ft.grd_val_lrg = font(fontLight, 24, 0); // used instead of ft.grd_val if ww > 1280
+	ft.grd_key_med = font(fontRegular, 20, 0);
+	ft.grd_val_med = font(fontLight, 20, 0);
+	ft.grd_key_sml = font(fontRegular, 18, 0);
+	ft.grd_val_sml = font(fontLight, 18, 0);
+	ft.lower_bar = font(fontLight, 30, 0);
 	if (updateHyperlink) {
 		updateHyperlink.setFont(ft.lower_bar);
 	}
-	ft.lower_bar_bold = font('HelveticaNeueLT Std Med', 30, 0);
-	ft.lower_bar_sml = font('HelveticaNeueLT Std Lt', 26, 0);
-	ft.lower_bar_sml_bold = font('HelveticaNeueLT Std Med', 26, 0);
-	if (utils.checkFont('NeueHaasGroteskDisp Pro XLt')) {
+	ft.lower_bar_bold = font(fontBold, 30, 0);
+	ft.lower_bar_sml = font(fontLight, 26, 0);
+	ft.lower_bar_sml_bold = font(fontBold, 26, 0);
+	if (utils.checkFont(fontLightAlternate)) {
 		useNeue = true;
-		ft.lower_bar_artist = font('NeueHaasGroteskDisp Pro XLt', 31, g_font_style.italic);
-		ft.lower_bar_artist_sml = font('NeueHaasGroteskDisp Pro XLt', 27, g_font_style.italic);
+		ft.lower_bar_artist = font(fontLightAlternate, 31, g_font_style.italic);
+		ft.lower_bar_artist_sml = font(fontLightAlternate, 27, g_font_style.italic);
 	} else {
-		ft.lower_bar_artist = font('HelveticaNeueLT Std Thin', 31, g_font_style.italic);
-		ft.lower_bar_artist_sml = font('HelveticaNeueLT Std Thin', 27, g_font_style.italic);
+		ft.lower_bar_artist = font(fontThin, 31, g_font_style.italic);
+		ft.lower_bar_artist_sml = font(fontThin, 27, g_font_style.italic);
 	}
-	ft.small_font = font('HelveticaNeueLT Std', 14, 0);
+	ft.small_font = font(fontRegular, 14, 0);
 	ft.guifx = font('Guifx v2 Transports', 16, 0);
 	ft.Marlett = font('Marlett', 13, 0);
 	ft.SegoeUi = font('Segoe Ui Semibold', 12, 0);
 	ft.library_tree = font('Segoe UI', libraryProps.baseFontSize, 0);
-	ft.lyrics = font('HelveticaNeueLT Std', pref.lyrics_font_size || 20, 1);
+	ft.lyrics = font(fontRegular, pref.lyrics_font_size || 20, 1);
 }
 
 
@@ -588,11 +595,11 @@ function on_paint(gr) {
 
 				trackNumWidth = Math.ceil(trackNumWidth);
 				gr.DrawString(str.tracknum, ft.tracknum, col.info_text, textLeft, top - heightAdjustment, trackNumWidth, height);
-				// gr.DrawRect(textLeft, top, trackNumWidth, height, 1, rgb(255,0,0));
+                // gr.DrawRect(textLeft, top, trackNumWidth, height, 1, rgb(255,0,0));
                 if (is_4k) {
                     gr.SetTextRenderingHint(TextRenderingHint.AntiAliasGridFit);
                 } else {
-				gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit); // thicker fonts can use anti-alias
+                    gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit); // thicker fonts can use anti-alias
                 }
 				gr.DrawString(str.title, ft.title, col.info_text, textLeft + trackNumWidth, top, text_width - trackNumWidth, height, g_string_format.trim_ellipsis_word);
 				// gr.DrawRect(textLeft, top, text_width - trackNumWidth, height, 1, rgb(255,0,0));
@@ -736,7 +743,7 @@ function on_paint(gr) {
 						// gr.DrawString(value, grid_val_ft, rgb(255,255,255), col2_left, top, col2_width, cell_height, StringFormat(0, 0, 4));
 
 						if (playCountVerifiedByLastFm && showLastFmImage) {
-							var lastFmLogo = lastFmImg;
+                            var lastFmLogo = lastFmImg;
 							if (colorDistance(col.primary, rgb(185, 0, 0), false) < 133) {
 								lastFmLogo = lastFmWhiteImg;
 							}
@@ -749,7 +756,7 @@ function on_paint(gr) {
 						top += cell_height + 5;
 					}
 				}
-			}
+            }
             gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
 		}
 		if (showExtraDrawTiming) drawTextGrid.Print();
@@ -860,8 +867,8 @@ function on_paint(gr) {
 						0, 0, labelShadowImg.width, labelShadowImg.height);
 				}
 				gr.SetSmoothingMode(SmoothingMode.None); // disable smoothing
-				gr.FillSolidRect(labelX - leftEdgeWidth, topEdge - 20, ww - labelX + leftEdgeWidth, labelHeight + 40, col.info_bg);
-				gr.DrawRect(labelX - leftEdgeWidth, topEdge - 20, ww - labelX + leftEdgeWidth, labelHeight + 40 - 1, 1, col.accent);
+                gr.FillSolidRect(labelX - leftEdgeWidth, topEdge - 20, ww - labelX + leftEdgeWidth, labelHeight + 40, col.info_bg);
+                gr.DrawRect(labelX - leftEdgeWidth, topEdge - 20, ww - labelX + leftEdgeWidth, labelHeight + 40 - 1, 1, col.accent);
 				gr.SetSmoothingMode(SmoothingMode.AntiAliasGridFit);
 				for (i = 0; i < recordLabels.length; i++) {
 					// allLabelsWidth can never be greater than 200, so if a label image is 161 pixels wide, never draw it wider than 161
@@ -2018,7 +2025,7 @@ function on_mouse_move(x, y, m) {
 			library.on_mouse_move(x, y, m);
         } else {
             // str.timeline.mouse_in_this(x, y);
-		}
+        }
 	}
 }
 
@@ -2660,7 +2667,7 @@ function disposeCDImg(cdImage) {
 function CreateRotatedCDImage() {
 	rotatedCD = disposeImg(rotatedCD);
 	if (pref.display_cdart) { // drawing cdArt rotated is slow, so first draw it rotated into the rotatedCD image, and then draw rotatedCD image unrotated in on_paint
-		if (cdart && cdart_size.w > 0) { // cdart must be square so just use cdart_size.w (width)
+        if (cdart && cdart_size.w > 0) { // cdart must be square so just use cdart_size.w (width)
 			rotatedCD = gdi.CreateImage(cdart_size.w, cdart_size.w);
 			rotCDimg = rotatedCD.GetGraphics();
 			trackNum = parseInt(fb.TitleFormat('$num($if(' + tf.vinyl_tracknum + ',$sub($mul(' + tf.vinyl_tracknum + ',2),1),$if2(%tracknumber%,1)),1)').Eval()) - 1;
@@ -2804,9 +2811,9 @@ function LoadLabelImage(publisherString) {
 		dir = pref.label_base; // also used below
 		if (IsFolder(dir + labelStr) ||
 			IsFolder(dir + (labelStr = labelStr.replace(/ Records$/, '')
-				.replace(/ Recordings$/, '')
-				.replace(/ Music$/, '')
-				.replace(/\.$/, '')))) {
+                    .replace(/ Recordings$/, '')
+                    .replace(/ Music$/, '')
+                    .replace(/\.$/, '')))) {
 			year = parseInt($('$year(%date%)'));
 			for (; year <= lastSrchYear; year++) {
 				yearFolder = dir + labelStr + '\\' + year;
@@ -3256,7 +3263,7 @@ function createButtonImages() {
 				g.SetTextRenderingHint(TextRenderingHint.AntiAliasGridFit); // positions playback icons weirdly
 			} else {
                 g.SetTextRenderingHint(TextRenderingHint.AntiAlias)
-			}
+            }
 
 			var menuTextColor = RGB(140, 142, 144);
 			var menuRectColor = RGB(120, 122, 124);
