@@ -2807,7 +2807,7 @@ function menu_object() {
 		MF_GRAYED = 0x00000001,
 		MF_SEPARATOR = 0x00000800,
 		MF_STRING = 0x00000000,
-		mtags_installed = utils.CheckComponent("foo_tags", true),
+		mtags_installed = utils.CheckComponent("foo_tags"),
 		xp = false;
 	this.NewMenuItem = function(index, type, value) {MenuMap[index] = [{type: ""},{value: 0}]; MenuMap[index].type = type; MenuMap[index].value = value;}; this.r_up = false;
 	var box = function(n) {return n != null ? 'Unescape("' + encodeURIComponent(n + "") + '")' : "Empty";}
@@ -2968,7 +2968,7 @@ function menu_object() {
 			// Index = this.ThemeTypeMenu(ThemeMenu, Index); ThemeMenu.AppendTo(OptionsMenu, MF_STRING, "Theme"); OptionsMenu.AppendMenuSeparator();
 			Index = this.ConfigTypeMenu(OptionsMenu, Index);
 			menu.AppendMenuSeparator(); var items = library_tree.getHandles();
-			Context.InitContext(items); Context.BuildMenu(menu, 5000, -1);
+			Context.InitContext(items); Context.BuildMenu(menu, 5000);
 		} else {
 			Index = this.OptionsTypeMenu(menu, Index);
 			// Index = this.ThemeTypeMenu(ThemeMenu, Index);

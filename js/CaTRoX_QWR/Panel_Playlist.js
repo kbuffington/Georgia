@@ -14,6 +14,9 @@ g_script_list.push('Panel_Playlist.js');
 // Should be used only for default panel properties initialization
 var g_is_mini_panel = _.includes(window.name.toLowerCase(), 'mini');
 
+var g_component_playcount = utils.CheckComponent('foo_playcount');
+var g_component_utils = utils.CheckComponent('foo_utils');
+
 // Niceties:
 // TODO: grouping presets manager: other EsPlaylist grouping features - sorting, playlist association
 // Low priority:
@@ -37,8 +40,8 @@ g_properties.add_properties(
         show_disc_header:   ['user.header.disc_header.show', true],
 
         alternate_row_color:  ['user.row.alternate_color', true],
-        show_playcount:       ['user.row.play_count.show', _.cc('foo_playcount')],
-        show_rating:          ['user.row.rating.show', _.cc('foo_playcount') && !g_is_mini_panel],
+        show_playcount:       ['user.row.play_count.show', g_component_playcount],
+        show_rating:          ['user.row.rating.show', g_component_playcount && !g_is_mini_panel],
         use_rating_from_tags: ['user.row.rating.from_tags', false],
         show_focused_row:     ['user.row.focused.show', true],
         show_queue_position:  ['user.row.queue_position.show', true],
@@ -55,8 +58,6 @@ g_properties.add_properties(
     }
 );
 
-var g_component_playcount = _.cc('foo_playcount');
-var g_component_utils = _.cc('foo_utils');
 var g_has_modded_jscript = qwr_utils.has_modded_jscript();
 
 // Fixup properties
@@ -129,37 +130,37 @@ var g_pl_colors = {};
 //---> Common
 g_pl_colors.background = g_theme.colors.panel_back;
 //---> Playlist Manager
-g_pl_colors.playlist_mgr_text_normal = _.RGB(150, 152, 154);
-g_pl_colors.playlist_mgr_text_hovered = _.RGB(200, 202, 204);
-g_pl_colors.playlist_mgr_text_pressed = _.RGB(120, 122, 124);
+g_pl_colors.playlist_mgr_text_normal = RGB(150, 152, 154);
+g_pl_colors.playlist_mgr_text_hovered = RGB(200, 202, 204);
+g_pl_colors.playlist_mgr_text_pressed = RGB(120, 122, 124);
 //---> Header
-g_pl_colors.group_title = _.RGB(180, 182, 184);
+g_pl_colors.group_title = RGB(180, 182, 184);
 g_pl_colors.group_title_selected = g_pl_colors.group_title;
 g_pl_colors.artist_normal = g_pl_colors.group_title;
 g_pl_colors.artist_playing = g_pl_colors.artist_normal;
-g_pl_colors.album_normal = _.RGB(130, 132, 134);
+g_pl_colors.album_normal = RGB(130, 132, 134);
 g_pl_colors.album_playing = g_pl_colors.album_normal;
-g_pl_colors.info_normal = _.RGB(130, 132, 134);
+g_pl_colors.info_normal = RGB(130, 132, 134);
 g_pl_colors.info_playing = g_pl_colors.info_normal;
-g_pl_colors.date_normal = _.RGB(130, 132, 134);
+g_pl_colors.date_normal = RGB(130, 132, 134);
 g_pl_colors.date_playing = g_pl_colors.date_normal;
 g_pl_colors.line_normal = g_theme.colors.panel_line;
 g_pl_colors.line_playing = g_pl_colors.line_normal;
 g_pl_colors.line_selected = g_theme.colors.panel_line_selected;
 //---> Row
-// g_pl_colors.title_selected = _.RGB(160, 162, 164);
-g_pl_colors.title_selected = _.RGB(170, 172, 174);
-// g_pl_colors.title_playing = _.RGB(255, 165, 0);
-g_pl_colors.title_playing = _.RGB(255, 255, 255);
+// g_pl_colors.title_selected = RGB(160, 162, 164);
+g_pl_colors.title_selected = RGB(170, 172, 174);
+// g_pl_colors.title_playing = RGB(255, 165, 0);
+g_pl_colors.title_playing = RGB(255, 255, 255);
 g_pl_colors.title_normal = g_theme.colors.panel_text_normal;
-g_pl_colors.count_normal = _.RGB(120, 122, 124);
+g_pl_colors.count_normal = RGB(120, 122, 124);
 g_pl_colors.count_selected = g_pl_colors.title_selected;
 g_pl_colors.count_playing = g_pl_colors.title_playing;
-g_pl_colors.row_selected = _.RGB(35, 35, 35);
-g_pl_colors.row_alternate = _.RGB(35, 35, 35);
+g_pl_colors.row_selected = RGB(35, 35, 35);
+g_pl_colors.row_alternate = RGB(35, 35, 35);
 g_pl_colors.row_focus_selected = g_theme.colors.panel_line_selected;
-g_pl_colors.row_focus_normal = _.RGB(80, 80, 80);
-g_pl_colors.row_queued = _.RGBA(150, 150, 150, 0);
+g_pl_colors.row_focus_normal = RGB(80, 80, 80);
+g_pl_colors.row_queued = RGBA(150, 150, 150, 0);
 
 var mouse_move_suppress = new qwr_utils.MouseMoveSuppress();
 var key_down_suppress = new qwr_utils.KeyModifiersSuppress();
@@ -737,16 +738,16 @@ function Playlist(x, y) {
                 text = 'Playlist: ' + plman.GetPlaylistName(cur_playlist_idx) + '\n<--- Empty --->';
             }
 
-            gr.DrawString(text, gdi.Font('Segoe Ui', 16), _.RGB(80, 80, 80), this.x, this.y, this.w, this.h, g_string_format.align_center);
+            gr.DrawString(text, gdi.Font('Segoe Ui', 16), RGB(80, 80, 80), this.x, this.y, this.w, this.h, g_string_format.align_center);
         }
 
         if (this.is_scrollbar_available) {
             var gradiantHeight = Math.ceil(playlist_geo.row_h * 2 / 3);
             if (!this.scrollbar.is_scrolled_up) {
-                gr.FillGradRect(this.x, this.list_y - 1, this.list_w, gradiantHeight, 270, _.RGBtoRGBA(g_theme.colors.panel_back, 0), _.RGBtoRGBA(g_theme.colors.panel_back, 200));
+                gr.FillGradRect(this.x, this.list_y - 1, this.list_w, gradiantHeight, 270, RGBtoRGBA(g_theme.colors.panel_back, 0), RGBtoRGBA(g_theme.colors.panel_back, 200));
             }
             if (!this.scrollbar.is_scrolled_down) {
-                gr.FillGradRect(this.x, this.y + this.h - gradiantHeight, this.w, gradiantHeight, 90, _.RGBtoRGBA(g_theme.colors.panel_back, 0), _.RGBtoRGBA(g_theme.colors.panel_back, 255));
+                gr.FillGradRect(this.x, this.y + this.h - gradiantHeight, this.w, gradiantHeight, 90, RGBtoRGBA(g_theme.colors.panel_back, 0), RGBtoRGBA(g_theme.colors.panel_back, 255));
             }
         }
 
@@ -2815,11 +2816,6 @@ function Playlist(x, y) {
      * @type {ContentNavigationHelper}
      */
     var cnt_helper = this.cnt.helper;
-
-    // Workaround for bug: PlayingPlaylist is equal to -1 on startup
-    if (plman.PlayingPlaylist === -1 && plman.ActivePlaylist !== -1) {
-        plman.PlayingPlaylist = plman.ActivePlaylist;
-    }
 }
 
 Playlist.prototype = Object.create(List.prototype);
@@ -3467,12 +3463,12 @@ function DiscHeader(parent, x, y, w, h, idx) {
 
         if (this.is_collapsed) {
             var line_y = Math.round(this.y + this.h / 2) - 2;
-            gr.DrawLine(cur_x + disc_w, line_y, this.x + this.w - tracks_w - 10, line_y, 1, _.RGBA(100,100,100,100));
+            gr.DrawLine(cur_x + disc_w, line_y, this.x + this.w - tracks_w - 10, line_y, 1, RGBA(100,100,100,100));
             line_y += 4;
-            gr.DrawLine(cur_x + disc_w, line_y, this.x + this.w - tracks_w - 10, line_y, 1, _.RGBA(100,100,100,100));
+            gr.DrawLine(cur_x + disc_w, line_y, this.x + this.w - tracks_w - 10, line_y, 1, RGBA(100,100,100,100));
         } else {
             var line_y = Math.round(this.y + this.h / 2);
-            gr.DrawLine(cur_x + disc_w, line_y, this.x + this.w - tracks_w - 10, line_y, 1, _.RGBA(100,100,100,100));
+            gr.DrawLine(cur_x + disc_w, line_y, this.x + this.w - tracks_w - 10, line_y, 1, RGBA(100,100,100,100));
         }
     };
 
@@ -3527,7 +3523,7 @@ DiscHeader.prototype.constructor = Header;
 DiscHeader.prepare_initialization_data = function (rows_to_process, rows_metadb) {
     var tfo = fb.TitleFormat('$ifgreater(%totaldiscs%,1,[Disc %discnumber% $if('+ tf.disc_subtitle+', \u2014 ,) ],)['+ tf.disc_subtitle +']');
     var disc_data = tfo.EvalWithMetadbs(rows_metadb).toArray();
-    _.dispose(tfo);
+    tfo.Dispose();
 
     return _.zip(rows_to_process, disc_data);
 };
@@ -3553,7 +3549,7 @@ DiscHeader.create_headers = function (parent, x, y, w, h, prepared_rows, rows_to
     }
 
     if (!has_valid_data(prepared_rows, rows_to_process_count)) {
-        _.trimArray(prepared_rows, rows_to_process_count, true);
+        trimArray(prepared_rows, rows_to_process_count, true);
         return [];
     }
 
@@ -3567,13 +3563,13 @@ DiscHeader.create_headers = function (parent, x, y, w, h, prepared_rows, rows_to
         var header = new DiscHeader(parent, x, y, w, h, header_idx);
         var processed_items = header.initialize_items(prepared_rows_copy);
 
-        _.trimArray(prepared_rows_copy, processed_items, true);
+        trimArray(prepared_rows_copy, processed_items, true);
 
         headers.push(header);
         ++header_idx;
     }
 
-    _.trimArray(prepared_rows, rows_to_process_count, true);
+    trimArray(prepared_rows, rows_to_process_count, true);
 
     return headers;
 };
@@ -3771,7 +3767,7 @@ function Header(parent, x, y, w, h, idx) {
                         alreadyDrawn = true;
                     }
                     else {// null
-                        grClip.DrawString('NO COVER', g_pl_fonts.cover, _.RGB(100, 100, 100), art_box_x, art_box_y, art_box_size, art_box_size, g_string_format.align_center);
+                        grClip.DrawString('NO COVER', g_pl_fonts.cover, RGB(100, 100, 100), art_box_x, art_box_y, art_box_size, art_box_size, g_string_format.align_center);
                     }
 
                     grClip.DrawRect(art_box_x, art_box_y, art_box_w - 1, art_box_h - 1, 1, line_color);
@@ -4355,7 +4351,7 @@ Header.prepare_initialization_data = function (rows_to_process, rows_metadb) {
 
     var tfo = fb.TitleFormat(query ? query : ''); // workaround a bug, because of which '' is sometimes treated as null :\
     var rows_data = tfo.EvalWithMetadbs(rows_metadb).toArray();
-    _.dispose(tfo);
+    tfo.Dispose();
 
     var prepared_disc_data = g_properties.show_disc_header ? DiscHeader.prepare_initialization_data(rows_to_process, rows_metadb) : [];
 
@@ -4380,7 +4376,7 @@ Header.create_headers = function (parent, x, y, w, h, prepared_rows) {
         var header = new Header(parent, x, y, w, h, header_idx);
         var processed_rows_count = header.initialize_items(prepared_rows);
 
-        _.trimArray(prepared_header_rows, processed_rows_count, true);
+        trimArray(prepared_header_rows, processed_rows_count, true);
 
         headers.push(header);
         ++header_idx;
@@ -4456,10 +4452,10 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
         }
 
         if (this.is_drop_top_selected) {
-            gr.DrawLine(this.x, this.y + 1, this.x + this.w, this.y + 1, 2, this.is_drop_boundary_reached ? _.RGB(255, 165, 0) : _.RGB(140, 142, 144));
+            gr.DrawLine(this.x, this.y + 1, this.x + this.w, this.y + 1, 2, this.is_drop_boundary_reached ? RGB(255, 165, 0) : RGB(140, 142, 144));
         }
         if (this.is_drop_bottom_selected) {
-            gr.DrawLine(this.x, this.y + this.h - 1, this.x + this.w, this.y + this.h - 1, 2, this.is_drop_boundary_reached ? _.RGB(255, 165, 0) : _.RGB(140, 142, 144));
+            gr.DrawLine(this.x, this.y + this.h - 1, this.x + this.w, this.y + this.h - 1, 2, this.is_drop_boundary_reached ? RGB(255, 165, 0) : RGB(140, 142, 144));
         }
 
         ////////////////////////////////////////////////////////////
@@ -4486,7 +4482,7 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
                 var length_x = this.x + this.w - length_w - right_pad;
 
                 gr.DrawString(length_text, title_font, title_color, length_x, this.y, length_w, this.h, g_string_format.h_align_far | g_string_format.v_align_center);
-                testRect && gr.DrawRect(length_x, this.y - 1, length_w, this.h, 1, _.RGBA(155, 155, 255, 250));
+                testRect && gr.DrawRect(length_x, this.y - 1, length_w, this.h, 1, RGBA(155, 155, 255, 250));
             }
             // We always want that padding
             right_pad += Math.max(length_w, Math.ceil(gr.MeasureString(length_text, title_font, 0, 0, 0, 0).Width + 10));
@@ -4526,7 +4522,7 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
                 var count_x = this.x + this.w - count_w - right_pad;
 
                 gr.DrawString(count_text, g_pl_fonts.playcount, count_color, count_x, this.y, count_w, this.h, g_string_format.align_center);
-                testRect && gr.DrawRect(count_x, this.y - 1, count_w, this.h, 1, _.RGBA(155, 155, 255, 250));
+                testRect && gr.DrawRect(count_x, this.y - 1, count_w, this.h, 1, RGBA(155, 155, 255, 250));
 
                 right_pad += count_w;
             }
@@ -4584,7 +4580,7 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
                 gr.DrawString(fb.IsPaused ? g_guifx.pause : g_guifx.play, ft.guifx, title_color, cur_x + 1, this.y, title_w, this.h, title_text_format);
             }
 
-            testRect && gr.DrawRect(this.x, this.y - 1, title_w, this.h, 1, _.RGBA(155, 155, 255, 250));
+            testRect && gr.DrawRect(this.x, this.y - 1, title_w, this.h, 1, RGBA(155, 155, 255, 250));
 
             cur_x += Math.ceil(
                 /** @type {!number} */
@@ -6017,7 +6013,7 @@ function PlaylistManager(x, y, w, h) {
     /** @type {?string} */
     var info_text = undefined;
 
-    var alpha_timer = new _.alpha_timer([this], function (item) {
+    var alpha_timer = new _alpha_timer([this], function (item) {
         return item.panel_state === state.hovered;
     });
 

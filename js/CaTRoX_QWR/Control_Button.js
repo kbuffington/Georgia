@@ -349,7 +349,7 @@ function onMainMenu(x, y, name) {
 	if (name) {
 
 		menuManager.Init(name);
-		menuManager.BuildMenu(menu, 1, 128);
+		menuManager.BuildMenu(menu, 1);
 
 		ret = menu.TrackPopupMenu(x, y);
 

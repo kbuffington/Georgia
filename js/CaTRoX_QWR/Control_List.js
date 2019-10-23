@@ -138,15 +138,15 @@ List.prototype.on_paint = function (gr) {
     }
     else {
         var text_format = g_string_format.align_center | g_string_format.trim_ellipsis_char | g_string_format.no_wrap;
-        gr.DrawString('No rows to display', gdi.font('Segoe Ui Semibold', 24), _.RGB(70, 70, 70), this.x, this.y, this.w, this.h, text_format);
+        gr.DrawString('No rows to display', gdi.font('Segoe Ui Semibold', 24), RGB(70, 70, 70), this.x, this.y, this.w, this.h, text_format);
     }
 
     if (this.is_scrollbar_available) {
         if (!this.scrollbar.is_scrolled_up) {
-            gr.FillGradRect(this.list_x, this.list_y - 1, this.list_w, 7 + 1, 270, _.RGBtoRGBA(g_theme.colors.panel_back, 0), _.RGBtoRGBA(this.panel_back_color, 200));
+            gr.FillGradRect(this.list_x, this.list_y - 1, this.list_w, 7 + 1, 270, RGBtoRGBA(g_theme.colors.panel_back, 0), RGBtoRGBA(this.panel_back_color, 200));
         }
         if (!this.scrollbar.is_scrolled_down) {
-            gr.FillGradRect(this.list_x, this.list_y + this.list_h - 8, this.list_w, 7 + 1, 90, _.RGBtoRGBA(g_theme.colors.panel_back, 0), _.RGBtoRGBA(this.panel_back_color, 200));
+            gr.FillGradRect(this.list_x, this.list_y + this.list_h - 8, this.list_w, 7 + 1, 90, RGBtoRGBA(g_theme.colors.panel_back, 0), RGBtoRGBA(this.panel_back_color, 200));
         }
     }
 

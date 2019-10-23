@@ -49,7 +49,7 @@ ABS_RIGHTHOVER = 20;
 /** @constructor */
 function ScrollBar(x, y, w, h, row_h, fn_redraw) {
     this.paint = function (gr) {
-        gr.FillSolidRect(this.x, this.y, this.w, this.h, _.RGB(37, 37, 37));
+        gr.FillSolidRect(this.x, this.y, this.w, this.h, RGB(37, 37, 37));
         _.forEach(this.sb_parts, function (item, i) {
             var x = item.x,
                 y = item.y,
@@ -406,17 +406,17 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
 
         var ico_back_colors =
             [
-                _.RGB(37, 37, 37),
-                _.RGB(170, 172, 174),
-                _.RGB(90, 92, 94),
-                _.RGB(140, 142, 144)
+                RGB(37, 37, 37),
+                RGB(170, 172, 174),
+                RGB(90, 92, 94),
+                RGB(140, 142, 144)
             ];
         var ico_fore_colors =
             [
-                _.RGB(140, 142, 144),
-                _.RGB(40, 42, 44),
-                _.RGB(30, 32, 34),
-                _.RGB(30, 32, 34)
+                RGB(140, 142, 144),
+                RGB(40, 42, 44),
+                RGB(30, 32, 34),
+                RGB(30, 32, 34)
             ];
 
         var btn =
@@ -487,9 +487,9 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
     function create_dynamic_scrollbar_images(thumb_w, thumb_h) {
         var thumb_colors =
             [
-                _.RGB(110, 112, 114),
-                _.RGB(170, 172, 174),
-                _.RGB(90, 92, 94)
+                RGB(110, 112, 114),
+                RGB(170, 172, 174),
+                RGB(90, 92, 94)
             ];
 
         var w = thumb_w,
