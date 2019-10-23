@@ -182,7 +182,7 @@ function getThemeColorsJson(image, maxColorsToPull) {
 			}
 		});
 
-		if (selectedColor.brightness < 39) {
+		if (selectedColor.brightness < 37) {
 			if (pref.show_theme_log) console.log(selectedColor.getRGB(true), 'brightness:', selectedColor.brightness, 'too dark -- searching for highlight color');
 			brightest = selectedColor;
 			maxWeight = 0;

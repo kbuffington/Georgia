@@ -417,7 +417,7 @@ on_init();
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 function on_paint(gr) {
 	if (showDrawTiming) drawStuff = fb.CreateProfiler("on_paint");
-	gr.SetTextRenderingHint(TextRenderingHint.AntiAlias);
+	gr.SetTextRenderingHint(TextRenderingHint.AntiAliasGridFit);
 	gr.SetSmoothingMode(SmoothingMode.None);
 
 	// Background
@@ -436,10 +436,10 @@ function on_paint(gr) {
 		gr.SetSmoothingMode(SmoothingMode.None);
 		gr.FillSolidRect(0, albumart_size.y, albumart_size.x, albumart_size.h, col.info_bg);
 		gr.DrawRect(-1, albumart_size.y, albumart_size.x, albumart_size.h - 1, 1, col.accent);
-		gr.SetSmoothingMode(SmoothingMode.AntiAlias);
+		gr.SetSmoothingMode(SmoothingMode.AntiAliasGridFit);
 	}
 
-	gr.SetSmoothingMode(SmoothingMode.AntiAlias);
+	gr.SetSmoothingMode(SmoothingMode.AntiAliasGridFit);
 	gr.SetInterpolationMode(InterpolationMode.HighQualityBicubic);
 
 	// BIG ALBUMART
@@ -499,7 +499,7 @@ function on_paint(gr) {
 		gr.SetSmoothingMode(SmoothingMode.None);
 		gr.FillSolidRect(0, albumart_size.y, albumart_size.x, albumart_size.h, col.info_bg); // info bg -- must be drawn after shadow
 		gr.DrawRect(-1, albumart_size.y, albumart_size.x, albumart_size.h - 1, 1, col.accent);
-		gr.SetSmoothingMode(SmoothingMode.AntiAlias);
+		gr.SetSmoothingMode(SmoothingMode.AntiAliasGridFit);
 	}
 	if (fb.IsPaused) {
 		pauseBtn.draw(gr);
@@ -539,7 +539,7 @@ function on_paint(gr) {
 			gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
 			trackInfoHeight = gr.MeasureString(str.trackInfo, ft.track_info, 0, 0, 0, 0).Height;
 			gr.DrawString(str.trackInfo, ft.track_info, col.artist, ww - textLeft * 2 - text_width, geo.top_bg_h - trackInfoHeight - 15, text_width, trackInfoHeight, StringFormat(StringAlignment.Far));
-			gr.SetTextRenderingHint(TextRenderingHint.AntiAlias);
+			gr.SetTextRenderingHint(TextRenderingHint.AntiAliasGridFit);
 		}
 		if (str.year) {
 			height = gr.MeasureString(str.year, ft.year, 0, 0, 0, 0).Height;
@@ -589,12 +589,16 @@ function on_paint(gr) {
 				trackNumWidth = Math.ceil(trackNumWidth);
 				gr.DrawString(str.tracknum, ft.tracknum, col.info_text, textLeft, top - heightAdjustment, trackNumWidth, height);
 				// gr.DrawRect(textLeft, top, trackNumWidth, height, 1, rgb(255,0,0));
+                if (is_4k) {
+                    gr.SetTextRenderingHint(TextRenderingHint.AntiAliasGridFit);
+                } else {
 				gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit); // thicker fonts can use anti-alias
+                }
 				gr.DrawString(str.title, ft.title, col.info_text, textLeft + trackNumWidth, top, text_width - trackNumWidth, height, g_string_format.trim_ellipsis_word);
 				// gr.DrawRect(textLeft, top, text_width - trackNumWidth, height, 1, rgb(255,0,0));
 
 				top += height + (is_4k ? 20 : 12);
-				gr.SetTextRenderingHint(TextRenderingHint.AntiAlias);
+				gr.SetTextRenderingHint(TextRenderingHint.AntiAliasGridFit);
 			}
 
 			//Timeline playcount bars
@@ -687,6 +691,7 @@ function on_paint(gr) {
 			var col2_width = text_width - column_margin - col1_width;
 			var col2_left = textLeft + col1_width + column_margin;
 
+            gr.SetTextRenderingHint(TextRenderingHint.AntiAlias);
 			for (k = 0, i = 0; k < str.grid.length; k++) {
 				var key = str.grid[k].label;
 				var value = str.grid[k].val;
@@ -732,7 +737,7 @@ function on_paint(gr) {
 
 						if (playCountVerifiedByLastFm && showLastFmImage) {
 							var lastFmLogo = lastFmImg;
-							if (colorDistance(col.primary, rgb(185, 0, 0), false) < 132) {
+							if (colorDistance(col.primary, rgb(185, 0, 0), false) < 133) {
 								lastFmLogo = lastFmWhiteImg;
 							}
 							var heightRatio = (cell_height - 12) / lastFmLogo.height;
@@ -745,6 +750,7 @@ function on_paint(gr) {
 					}
 				}
 			}
+            gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
 		}
 		if (showExtraDrawTiming) drawTextGrid.Print();
 
@@ -856,7 +862,7 @@ function on_paint(gr) {
 				gr.SetSmoothingMode(SmoothingMode.None); // disable smoothing
 				gr.FillSolidRect(labelX - leftEdgeWidth, topEdge - 20, ww - labelX + leftEdgeWidth, labelHeight + 40, col.info_bg);
 				gr.DrawRect(labelX - leftEdgeWidth, topEdge - 20, ww - labelX + leftEdgeWidth, labelHeight + 40 - 1, 1, col.accent);
-				gr.SetSmoothingMode(SmoothingMode.AntiAlias);
+				gr.SetSmoothingMode(SmoothingMode.AntiAliasGridFit);
 				for (i = 0; i < recordLabels.length; i++) {
 					// allLabelsWidth can never be greater than 200, so if a label image is 161 pixels wide, never draw it wider than 161
 					var maxWidth = is_4k && recordLabels[i].width < 200 ? recordLabels[i].width * 2 : recordLabels[i].width;
@@ -927,7 +933,7 @@ function on_paint(gr) {
 		}
 	}
 
-    gr.SetTextRenderingHint(TextRenderingHint.AntiAlias);
+    gr.SetTextRenderingHint(TextRenderingHint.AntiAliasGridFit);
 
 	var ft_lower_bold = ft.lower_bar_bold;
 	var ft_lower = ft.lower_bar;
@@ -969,14 +975,14 @@ function on_paint(gr) {
 	if (pref.show_progress_bar) {
 		// if (pref.darkMode) {
 		//     // TODO: keep this? Only do when accent is too close?
-		//     gr.SetSmoothingMode(SmoothingMode.AntiAlias);
+		//     gr.SetSmoothingMode(SmoothingMode.AntiAliasGridFit);
 		//     gr.DrawRect(pbLeft - 0.5, pbTop - 0.5, Math.round(0.95 * ww), geo.prog_bar_h, 1, col.darkAccent);
 		//     gr.SetSmoothingMode(SmoothingMode.None); // disable smoothing
 		// }
 		gr.FillSolidRect(pbLeft, pbTop, Math.round(0.95 * ww), geo.prog_bar_h, col.progress_bar);
 	}
 	if (fb.PlaybackLength > 0) {
-        gr.SetSmoothingMode(SmoothingMode.AntiAlias);
+        gr.SetSmoothingMode(SmoothingMode.AntiAliasGridFit);
 		if (ww > 600) {
 			gr.DrawString(str.length, ft_lower, col.now_playing, 0.725 * ww, lowerBarTop, 0.25 * ww, titleMeasurements.Height, StringFormat(2, 0));
 			width = gr.CalcTextWidth('  ' + str.length, ft_lower);
@@ -1011,7 +1017,7 @@ function on_paint(gr) {
 			}
 		}
 	} else if (ww > 600) {
-        gr.SetSmoothingMode(SmoothingMode.AntiAlias);
+        gr.SetSmoothingMode(SmoothingMode.AntiAliasGridFit);
 		if (fb.IsPlaying) { // streaming, but still want to show time
 			gr.DrawString(str.time, ft.lower_bar, col.now_playing, Math.floor(0.725 * ww), lowerBarTop, 0.25 * ww, 0.5 * geo.lower_bar_h, StringFormat(2, 0));
 		} else {
@@ -1028,7 +1034,7 @@ function on_paint(gr) {
 			gr.DrawString(str.time, ft.lower_bar, color, Math.floor(0.725 * ww) - offset, lowerBarTop, 0.25 * ww, 0.5 * geo.lower_bar_h, StringFormat(2, 0));
 		}
 	}
-    gr.SetSmoothingMode(SmoothingMode.AntiAlias);
+    gr.SetSmoothingMode(SmoothingMode.AntiAliasGridFit);
 
 
 	if (showDrawTiming) {
@@ -1044,7 +1050,7 @@ function show_lyrics(gr, tab, posy) {
 
 	if (showDebugTiming)
 		show_lyricsTime = fb.CreateProfiler("show_lyrics");
-	gr.SetTextRenderingHint(TextRenderingHint.AntiAlias);
+	gr.SetTextRenderingHint(TextRenderingHint.AntiAliasGridFit);
 	var g_txt_align = cc_stringformat;
 
 	if (dividerImg && dividerImg.width < (albumart_size.w - 10) && posy - divider_spacing - dividerImg.height >= albumart_size.y + pref.lyrics_h_padding) {
@@ -1889,7 +1895,7 @@ function on_mouse_lbtn_down(x, y, m) {
 	}
 
 	buttonEventHandler(x, y, m);
-	if (updateHyperlink && updateHyperlink.trace(x, y)) {
+	if (updateHyperlink && !fb.IsPlaying && updateHyperlink.trace(x, y)) {
 		updateHyperlink.click();
 	}
 
@@ -3247,7 +3253,9 @@ function createButtonImages() {
 			g = img.GetGraphics();
 			g.SetSmoothingMode(SmoothingMode.AntiAlias);
 			if (btn[i].type !== 'transport') {
-				g.SetTextRenderingHint(TextRenderingHint.AntiAlias); // positions playback icons weirdly
+				g.SetTextRenderingHint(TextRenderingHint.AntiAliasGridFit); // positions playback icons weirdly
+			} else {
+                g.SetTextRenderingHint(TextRenderingHint.AntiAlias)
 			}
 
 			var menuTextColor = RGB(140, 142, 144);
@@ -3281,7 +3289,7 @@ function createButtonImages() {
 				g.DrawString(btn[i].ico, btn[i].font, captionIcoColor, 0, 0, w, h, StringFormat(1, 1));
 			} else if (btn[i].type == 'transport') {
 				g.DrawEllipse(Math.floor(lw / 2) + 1, Math.floor(lw / 2) + 1, w - lw - 2, h - lw - 2, lw, playbackEllypseColor);
-				g.DrawString(btn[i].ico, btn[i].font, playbackIcoColor, (i == 'Stop' || i == 'OpenExplorer') ? 0 : 1, 0, w, h, StringFormat(1, 1));
+				g.DrawString(btn[i].ico, btn[i].font, playbackIcoColor, 1, (i == 'Stop' || i == 'Reload') ? 0 : 1, w, h, StringFormat(1, 1));
 			} else if (btn[i].type == 'image') {
 				g.DrawImage(btn[i].ico, Math.round((w - btn[i].ico.width) / 2), Math.round((h - btn[i].ico.height) / 2), btn[i].ico.width, btn[i].ico.height, 0, 0, btn[i].ico.width, btn[i].ico.height, 0, iconAlpha);
 			}
