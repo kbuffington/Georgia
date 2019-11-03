@@ -1832,7 +1832,9 @@ function on_metadb_changed(handle_list, fromhook) {
 				playCountVerifiedByLastFm = false;
 			}
 
-			str.timeline.setColors(col.tl_added, col.tl_played, col.tl_unplayed);
+			if (str.timeline) {	// TODO: figure out why this is null for foo_input_spotify
+				str.timeline.setColors(col.tl_added, col.tl_played, col.tl_unplayed);
+			}
 			lastPlayed = $(tf.last_played);
 			calcDateRatios($date(currentLastPlayed) !== $date(lastPlayed), currentLastPlayed); // last_played has probably changed and we want to update the date bar
 			if (lastPlayed.length) {
@@ -1883,6 +1885,7 @@ function on_playback_seek() {
 		refresh_lyrics();
 	}
 	on_playback_time();
+	refresh_seekbar();
 }
 
 var onMouseLbtnDown = false;
@@ -2387,7 +2390,6 @@ function on_playback_time() {
 }
 
 function refresh_seekbar() {
-	//debugLog("in refresh_seekbar()");
 	window.RepaintRect(0.025 * ww, wh - geo.lower_bar_h, 0.95 * ww, geo.lower_bar_h);
 }
 
