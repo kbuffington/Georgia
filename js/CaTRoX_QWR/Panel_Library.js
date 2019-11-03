@@ -1,7 +1,7 @@
 ﻿// ==PREPROCESSOR==
 // @name "Library Tree"
 // @author "WilB"
-// @version "1.4.0.2"
+// @version "1.4.0.4 beta1 -- modified by Mordred"
 // ==/PREPROCESSOR==
 
 if (!window.GetProperty("SYSTEM.Chakra Checked", false) && !Date.now) {
@@ -585,19 +585,35 @@ function userinterface() {
 		this.get = false;
 	}
 	this.grab_f_img = function (handle) {
-		if (!handle) handle = fb.IsPlaying ? fb.GetNowPlaying() : fb.GetFocusItem();
-		if (handle)
-			return utils.GetAlbumArtAsync(window.ID, handle, 0);
-		if (fb.IsPlaying)
-			return;
-		image = stub(1);
+		if (!handle) handle = this.handle(); 
+		if (handle) 
+		return utils.GetAlbumArtAsync(window.ID, handle, 0); 
+		if (fb.IsPlaying) 
+			return; 
+		image = stub(1); 
 		if (!image) {
-			if (blurImg) blurImg.Dispose();
-			blurImg = false;
+			if (blurImg) blurImg.Dispose(); 
+			blurImg = false; 
 			return;
-		}
+		} 
 		this.blur_img(image);
 	}
+
+	var handle_list = fb.CreateHandleList();
+	this.upd_handle_list = true;
+	this.handle = function() {
+		var handle = fb.IsPlaying ? fb.GetNowPlaying() : fb.GetFocusItem(); 
+		if (!handle) {
+			if (this.upd_handle_list) {
+				handle_list.Dispose(); 
+				handle_list = plman.GetPlaylistItems(plman.ActivePlaylist); 
+				this.upd_handle_list = false;
+			} 
+			if (handle_list.Count) handle = handle_list.Item(0);
+		} 
+		return handle;
+	}
+
 	this.on_playback_new_track = function (handle) {
 		console.log('library.on_playback_new_track');
 		if (!this.blur && !this.imgBg) return;
@@ -669,8 +685,8 @@ function scrollbar() {
 		this.bar_ht = Math.max(Math.round(this.scrollbar_height * this.rows_drawn / this.row_count), Math.max(Math.min(this.scrollbar_height / 2, ui.grip_h), 5));
 		this.scrollbar_travel = this.scrollbar_height - this.bar_ht;
 		// scrolling info
-		this.scrollable_lines = this.row_count - this.rows_drawn;
-		this.ratio = this.row_count / this.scrollable_lines;
+		this.scrollable_lines = this.rows_drawn > 0 ? this.row_count - this.rows_drawn : 0;
+        this.ratio = this.row_count / this.scrollable_lines;
 		this.bar_y = this.but_h + this.scrollbar_travel * (this.delta * this.ratio) / (this.row_count * this.row_h);
 		this.drag_distance_per_row = this.scrollbar_travel / this.scrollable_lines;
 		// panel info
@@ -950,7 +966,7 @@ function panel_operations() {
 					this.grp_split_clone[i] = this.grp_split[i].slice();
 					this.grp_split[i] = this.grp_split_orig[i].replace(/[<>]/g,"");
 				}
-				this.grp_sort += (this.grp_split[i] + "|");
+				this.grp_sort += (this.grp_split[i] + "  |");
 				if (this.multi_value[i]) this.grp_split[i] = this.grp_split_clone[i].replace(/%</g, "#!#$meta_sep(").replace(/>%/g, "," + "@@)#!#");
 				this.view += (this.grp_split[i] + "|");
 			}
@@ -1095,7 +1111,7 @@ function library_manager() {
 			if (a[i] !== b[i]) return false;
 		return true;
 	}
-	var binaryInsert = function(arr, item) {var min = 0, max = arr.length, index = Math.floor((min + max) / 2); while (max > min) {if (sort(item, arr[index]) < 0) max = index; else min = index + 1; index = Math.floor((min + max) / 2);} return index;}
+	var binaryInsert = function(item) {var min = 0, max = p.list.Count, index = Math.floor((min + max) / 2); while (max > min) {var tmp = fb.CreateHandleList(item); tmp.Add(p.list.Item(index)); p.sort(tmp); if (item.Compare(tmp.Item(0))) max = index; else min = index + 1; index = Math.floor((min + max) / 2); tmp.Dispose();} return index;}
 	this.checkTree = function() {if (!this.upd && !(this.init && libraryProps.rememberTree)) return; this.init = false; timer.reset(timer.update, timer.updatei); this.time.Reset(); library_tree.subCounts =  {"standard": {}, "search": {}, "filter": {}}; this.rootNodes(this.upd == 2 ? 2 : 1, this.process); this.upd = 0;}
 	this.removed_f = function(handle_list) {var j = handle_list.Count; while (j--) {var i = this.list.Find(handle_list.Item(j)); if (i != -1) {this.list.RemoveById(i); node.splice(i, 1);}}}
 	this.removed_s = function(handle_list) {var j = handle_list.Count; while (j--) {var i = p.list.Find(handle_list.Item(j)); if (i != -1) {p.list.RemoveById(i); node_s.splice(i, 1);}}}
@@ -1148,32 +1164,52 @@ function library_manager() {
 							}
 							tfo.Dispose(); break;
 						case 1:
-							for (var j = 0; j < handle_list.Count; j++) {
-								var h = this.list.Find(handle_list.Item(j));
-								if (h != -1) {if (!arraysIdentical(node[h], fb.GetLibraryRelativePath(this.list.Item(h)).split("\\"))) {this.removed(handle_list); this.added(handle_list); if (ui.w < 1 || !window.IsVisible) this.upd = 2; else timer.lib_update(); upd_done = true; break;}};
-							}
-							break;
+							var items_b = handle_list.GetLibraryRelativePaths().toArray();
+                            for (var j = 0; j < handle_list.Count; j++) {
+                                var h = this.list.Find(handle_list.Item(j));
+                                if (h != -1) {if (!arraysIdentical(node[h], items_b[j].split("\\"))) {this.removed(handle_list); this.added(handle_list); if (ui.w < 1 || !window.IsVisible) this.upd = 2; else timer.lib_update(); upd_done = true; break;}};
+                            }
+                            break;
 					}
 					if (upd_done) break;
-					if (p.filter_by > 0 && libraryProps.searchMode > 1) { // filter: check for addns / removals if not done
-						var startFilter = this.list.Clone(), new_filter_items = fb.CreateHandleList();
-						try {new_filter_items = fb.GetQueryItems(handle_list, p.filt[p.filter_by].type);} catch (e) {}
-						var newFilter = this.list.Clone();
-						newFilter.InsertRange(newFilter.Count, new_filter_items);
-						startFilter.Sort(); newFilter.Sort(); newFilter.MakeDifference(startFilter);
-						if (newFilter.Count) {this.removed_f(handle_list); this.added_f(new_filter_items); if (!p.s_txt) p.list = this.list; if (ui.w < 1 || !window.IsVisible) this.upd = 2; else timer.lib_update();}
-						startFilter.Dispose(); newFilter.Dispose(); new_filter_items.Dispose();
-					}
-					if (p.s_txt) { // search: check for addns / removals if not done
-						var startSearch = p.list.Clone(), new_search_items = fb.CreateHandleList();
-						try {new_search_items = fb.GetQueryItems(handle_list, p.s_txt);} catch (e) {}
-						new_search_items.Sort();
-						if (p.filter_by > 0 && libraryProps.searchMode > 1) {var newFilt = this.list.Clone(); newFilt.Sort(); new_search_items.MakeIntersection(newFilt); newFilt.Dispose();}
-						var newSearch = p.list.Clone();
-						newSearch.InsertRange(newSearch.Count, new_search_items);
-						startSearch.Sort(); newSearch.Sort(); newSearch.MakeDifference(startSearch);
-						if (newSearch.Count) {
-							this.removed_s(handle_list); this.added_s(new_search_items); this.node = node_s.slice();
+                    if (p.filter_by > 0 && p.s_show > 1) { // filter: check if not done
+                        var handlesInFilter = fb.CreateHandleList(), newFilterItems = fb.CreateHandleList(), origFilter = this.list.Clone();
+						// addns
+                        try {newFilterItems = fb.GetQueryItems(handle_list, p.filt[p.filter_by].type);} catch (e) {}
+                        origFilter.Sort();
+						newFilterItems.Sort();
+						newFilterItems.MakeDifference(origFilter);
+                        if (newFilterItems.Count) this.added_f(newFilterItems);
+						// removals
+						var removeFilterItems = handle_list.Clone();
+						removeFilterItems.Sort();	
+						removeFilterItems.MakeIntersection(origFilter);
+						try {handlesInFilter = fb.GetQueryItems(removeFilterItems, p.filt[p.filter_by].type);} catch (e) {}
+						handlesInFilter.Sort();
+						removeFilterItems.MakeDifference(handlesInFilter);
+						if (removeFilterItems.Count) this.removed_f(removeFilterItems);
+						if (removeFilterItems.Count || newFilterItems.Count) {if (!p.s_txt) p.list = this.list; if (ui.w < 1 || !window.IsVisible) this.upd = 2; else timer.lib_update();}
+                        handlesInFilter.Dispose(); newFilterItems.Dispose(); origFilter.Dispose(); removeFilterItems.Dispose();
+                    }
+                    if (p.s_txt) { // search: check if not done
+                        var newSearchItems = fb.CreateHandleList(), origSearch = p.list.Clone();
+						// addns
+                        try {newSearchItems = fb.GetQueryItems(handle_list, p.s_txt);} catch (e) {}
+						origSearch.Sort(); 
+						newSearchItems.Sort();
+                        if (p.filter_by > 0 && p.s_show > 1) {var newFilt = this.list.Clone(); newFilt.Sort(); newSearchItems.MakeIntersection(newFilt); newFilt.Dispose();}
+						newSearchItems.MakeDifference(origSearch);
+                        if (newSearchItems.Count) this.added_s(newSearchItems);
+						// removals
+						var removeSearchItems = handle_list.Clone();
+						removeSearchItems.Sort();	
+						removeSearchItems.MakeIntersection(origSearch);
+						try {handlesInSearch = fb.GetQueryItems(removeSearchItems, p.s_txt);} catch (e) {}
+						handlesInSearch.Sort();
+						removeSearchItems.MakeDifference(handlesInSearch);
+						if (removeSearchItems.Count) this.removed_s(removeSearchItems);	
+						if (newSearchItems.Count || removeSearchItems.Count) {
+							this.node = node_s.slice();
 							if (!p.list.Count) {
 								library_tree.tree = [];
 								library_tree.line_l = 0;
@@ -1184,7 +1220,7 @@ function library_manager() {
 							}
 							if (ui.w < 1 || !window.IsVisible) this.upd = 2; else timer.lib_update();
 						}
-						startSearch.Dispose(); newSearch.Dispose(); new_search_items.Dispose();
+                        handlesInSearch.Dispose(); newSearchItems.Dispose(); origSearch.Dispose(); removeSearchItems.Dispose();
 					}
 					break;
 				case 2: this.removed(handle_list); if (ui.w < 1 || !window.IsVisible) this.upd = 2; else timer.lib_update(); break;
@@ -1202,7 +1238,7 @@ function library_manager() {
 	this.rootNames = function(li, search) {
 		var i = 0, total; switch (search) {case 0: p.sort(this.list); li = p.list = this.list; node = []; var arr = node; break; case 1: node_s = []; var arr = node_s; break;}
 		total = li.Count; var tree_type = p.view_by != p.folder_view ? 0 : 1;
-		switch (tree_type) {case 0: var tfo = fb.TitleFormat(p.view), items = tfo.EvalWithMetadbs(li).toArray(); for (i = 0; i < total; i++) arr[i] = items[i].split("|"); tfo.Dispose(); break; case 1: for (i = 0; i < total; i++) arr[i] = fb.GetLibraryRelativePath(li.Item(i)).split("\\"); break;}
+        switch (tree_type) {case 0: var tfo = fb.TitleFormat(p.view), items = tfo.EvalWithMetadbs(li).toArray(); for (i = 0; i < total; i++) arr[i] = items[i].split("|"); tfo.Dispose(); break; case 1: var items = li.GetLibraryRelativePaths().toArray(); for (i = 0; i < total; i++) arr[i] = items[i].split("\\"); break;}
 	}
 
 	this.prefixes = function(n) {
@@ -1277,76 +1313,97 @@ function library_manager() {
 
 	this.binaryInsert = function(folder, insert, li, n) {
 		switch (true) {
-			case !folder: var tfo = fb.TitleFormat(p.view), item_a = tfo.EvalWithMetadbs(insert).toArray(); tfo.Dispose(); for (var j = 0; j < insert.Count; j++) {var i = binaryInsert(n, item_a[j].split("|")); n.splice(i, 0, item_a[j].split("|")); li.Insert(i, insert.Item(j));} break;
-			case folder: for (var j = 0; j < insert.Count; j++) {var item_a = fb.GetLibraryRelativePath(insert.Item(j)).split("\\"); var i = binaryInsert(n, item_a); if (i != -1) {n.splice(i, 0, item_a); li.Insert(i, insert.Item(j));}} break;
+            case !folder:
+				var tfo = fb.TitleFormat(p.view), item_a = tfo.EvalWithMetadbs(insert).toArray(); tfo.Dispose();
+				for (var j = 0; j < insert.Count; j++) {var i = binaryInsert(insert.Item(j)); n.splice(i, 0, item_a[j].split("|")); li.Insert(i, insert.Item(j));} break;
+            case folder: var item_a = insert.GetLibraryRelativePaths().toArray(); for (var j = 0; j < insert.Count; j++) {
+				var i = binaryInsert(insert.Item(j)); if (i != -1) {n.splice(i, 0, item_a[j].split("\\")); li.Insert(i, insert.Item(j));}} break;
 		}
 	}
 
 	this.added = function(handle_list) {
-		var addType = p.multi_process || p.nodisplay || handle_list.Count > 100 ? 0 : 1;
-		switch (addType) {
-			case 0:
-				full_list.InsertRange(full_list.Count, handle_list); full_list_need_sort = true;
-				if (p.filter_by > 0 && libraryProps.searchMode > 1) {
-					var new_filter_items = fb.CreateHandleList();
-					try {new_filter_items = fb.GetQueryItems(handle_list, p.filt[p.filter_by].type);} catch (e) {}
-					this.list.InsertRange(this.list.Count, new_filter_items); p.sort(this.list); new_filter_items.Dispose();
-				}
-				else {if (full_list_need_sort) p.sort(full_list); this.list = full_list.Clone(); full_list_need_sort = false;} p.sort(handle_list);
-				var tfo = fb.TitleFormat(p.view), item_a = tfo.EvalWithMetadbs(handle_list).toArray(); for (var j = 0; j < handle_list.Count; j++) {var i = this.list.Find(handle_list.Item(j)); if (i != -1) node.splice(i, 0, item_a[j].split("|"));} tfo.Dispose();
-				if (this.list.Count) this.empty = "";
-				if (p.s_txt) {
-					var new_search_items = fb.CreateHandleList(), tree_type = p.view_by != p.folder_view ? 0 : 1;
-					try {new_search_items = fb.GetQueryItems(handle_list, p.s_txt);} catch(e) {}
-					p.list.InsertRange(p.list.Count, new_search_items); p.sort(p.list); p.sort(new_search_items);
-					switch (tree_type) {
-						case 0: var tfo = fb.TitleFormat(p.view), item_a = tfo.EvalWithMetadbs(new_search_items).toArray(); for (var j = 0; j < new_search_items.Count; j++){var i = p.list.Find(new_search_items.Item(j)); if (i != -1) node_s.splice(i, 0, item_a[j].split("|"));} tfo.Dispose(); break;
-						case 1: for (var j = 0; j < new_search_items.Count; j++){var i = p.list.Find(new_search_items.Item(j)); if (i != -1) node_s.splice(i, 0, fb.GetLibraryRelativePath(this.list.Item(i)).split("\\"));} break;
-					}
-					this.node = node_s.slice(); new_search_items.Dispose();
-					if (!p.list.Count) {library_tree.tree = []; library_tree.line_l = 0; sbar.set_rows(0); this.none = "Nothing found"; p.tree_paint();}
-				} else p.list = this.list;
-				break;
-			case 1:
+		var tree_type = p.view_by != p.folder_view ? 0 : 1;
+        switch (true) {
+			case handle_list.Count < 100:
 				var lis = fb.CreateHandleList();
-				if (p.filter_by > 0 && libraryProps.searchMode > 1) {try {lis = fb.GetQueryItems(handle_list, p.filt[p.filter_by].type);} catch (e) {}} else lis = handle_list; p.sort(lis);
+				if (p.filter_by > 0 && p.s_show > 1) {try {lis = fb.GetQueryItems(handle_list, p.filt[p.filter_by].type);} catch (e) {}} else lis = handle_list; p.sort(lis);
 				this.binaryInsert(p.view_by == p.folder_view, lis, this.list, node);
 				if (this.list.Count) this.empty = "";
 				if (p.s_txt) {
-					var new_search_items = fb.CreateHandleList();
-					try {new_search_items = fb.GetQueryItems(handle_list, p.s_txt);} catch(e) {}
-					this.binaryInsert(p.view_by == p.folder_view, new_search_items, p.list, node_s);
-					this.node = node_s.slice(); new_search_items.Dispose();
-					if (!p.list.Count) {library_tree.tree = []; library_tree.line_l = 0; sbar.set_rows(0); this.none = "Nothing found"; p.tree_paint();}
+					var newSearchItems = fb.CreateHandleList();
+					try {newSearchItems = fb.GetQueryItems(handle_list, p.s_txt);} catch(e) {}
+					this.binaryInsert(p.view_by == p.folder_view, newSearchItems, p.list, node_s);
+					this.node = node_s.slice(); newSearchItems.Dispose();
+					if (!p.list.Count) {pop.tree = []; pop.line_l = 0; sbar.set_rows(0); this.none = "Nothing found"; p.tree_paint();}
 				} else p.list = this.list; lis.Dispose();
-				break
+				break;
+			default:
+				full_list.InsertRange(full_list.Count, handle_list); full_list_need_sort = true;
+				if (p.filter_by > 0 && p.s_show > 1) {
+					var newFilterItems = fb.CreateHandleList();
+					try {newFilterItems = fb.GetQueryItems(handle_list, p.filt[p.filter_by].type);} catch (e) {}
+					this.list.InsertRange(this.list.Count, newFilterItems); p.sort(this.list); newFilterItems.Dispose();
+				}
+				else {if (full_list_need_sort) p.sort(full_list); this.list = full_list.Clone(); full_list_need_sort = false;} p.sort(handle_list);
+				switch (tree_type) {
+					case 0: var tfo = fb.TitleFormat(p.view), item_a = tfo.EvalWithMetadbs(handle_list).toArray(); for (var j = 0; j < handle_list.Count; j++) {var i = this.list.Find(handle_list.Item(j)); if (i != -1) node.splice(i, 0, item_a[j].split("|"));} tfo.Dispose(); break;
+					case 1: var item_a = handle_list.GetLibraryRelativePaths().toArray(); for (var j = 0; j < handle_list.Count; j++) {var i = this.list.Find(handle_list.Item(j)); if (i != -1) node.splice(i, 0, item_a[j].split("\\"));} break;
+				}
+				if (this.list.Count) this.empty = "";
+				if (p.s_txt) {
+					var newSearchItems = fb.CreateHandleList();
+					try {newSearchItems = fb.GetQueryItems(handle_list, p.s_txt);} catch(e) {}
+					p.list.InsertRange(p.list.Count, newSearchItems); p.sort(p.list); p.sort(newSearchItems);
+					switch (tree_type) {
+						case 0: var tfo = fb.TitleFormat(p.view), item_a = tfo.EvalWithMetadbs(newSearchItems).toArray(); for (var j = 0; j < newSearchItems.Count; j++) {var i = p.list.Find(newSearchItems.Item(j)); if (i != -1) node_s.splice(i, 0, item_a[j].split("|"));} tfo.Dispose(); break;
+						case 1: var item_a = newSearchItems.GetLibraryRelativePaths().toArray(); for (var j = 0; j < newSearchItems.Count; j++) {var i = p.list.Find(newSearchItems.Item(j)); if (i != -1) node_s.splice(i, 0, item_a[j].split("\\"));} break;
+					}
+					this.node = node_s.slice(); newSearchItems.Dispose();
+					if (!p.list.Count) {pop.tree = []; pop.line_l = 0; sbar.set_rows(0); this.none = "Nothing found"; p.tree_paint();}
+				} else p.list = this.list;
+				break;
 		}
 	}
 
 	this.added_f = function(handle_list) {
-		var addType = p.multi_process || p.nodisplay || handle_list.Count > 100 ? 0 : 1;
-		switch (addType) {
-			case 0:
-				this.list.InsertRange(this.list.Count, handle_list); p.sort(this.list); p.sort(handle_list);
-				var tfo = fb.TitleFormat(p.view), item_a = tfo.EvalWithMetadbs(handle_list).toArray(); tfo.Dispose();
-				for (var j = 0; j < handle_list.Count; j++) {var i = this.list.Find(handle_list.Item(j)); if (i != -1) node.splice(i, 0, item_a[j].split("|"));}
-				if (!this.list.Count) this.none = "Nothing found";
-				break;
-			case 1: this.binaryInsert(p.view_by == p.folder_view, handle_list, this.list, node); break;
-		}
+        switch (true) {
+            case handle_list.Count < 100: this.binaryInsert(p.view_by == p.folder_view, handle_list, this.list, node); break;
+            default:
+                this.list.InsertRange(this.list.Count, handle_list); p.sort(this.list); p.sort(handle_list);
+				var tree_type = p.view_by != p.folder_view ? 0 : 1;
+				switch (tree_type) {
+						case 0:
+							var tfo = fb.TitleFormat(p.view), item_a = tfo.EvalWithMetadbs(handle_list).toArray(); tfo.Dispose();
+							for (var j = 0; j < handle_list.Count; j++) {var i = this.list.Find(handle_list.Item(j)); if (i != -1) node.splice(i, 0, item_a[j].split("|"));} 
+							if (!this.list.Count) this.none = "Nothing found";
+							break;
+						case 1:
+							var item_a = handle_list.GetLibraryRelativePaths().toArray();
+							for (var j = 0; j < handle_list.Count; j++) {var i = this.list.Find(handle_list.Item(j)); if (i != -1) node.splice(i, 0, item_a[j].split("\\"));} 
+							if (!this.list.Count) this.none = "Nothing found";
+							break;
+				}
+        }
 	}
 
-	this.added_s = function(handle_list) {
-		var addType = p.multi_process || p.nodisplay || handle_list.Count > 100 ? 0 : 1;
-		switch (addType) {
-			case 0:
-				p.list.InsertRange(p.list.Count, handle_list); p.sort(p.list);
-				var tfo = fb.TitleFormat(p.view), item_a = tfo.EvalWithMetadbs(handle_list).toArray(); tfo.Dispose(); for (var j = 0; j < handle_list.Count; j++) {var i = p.list.Find(handle_list.Item(j)); if (i != -1) node_s.splice(i, 0, item_a[j].split("|"));}
-				break;
-			case 1: this.binaryInsert(p.view_by == p.folder_view, handle_list, p.list, node_s);
-				break;
-		}
-	}
+    this.added_s = function(handle_list) {
+		switch (true) {
+			case handle_list.Count < 100: this.binaryInsert(p.view_by == p.folder_view, handle_list, p.list, node_s); break;
+            default:
+                p.list.InsertRange(p.list.Count, handle_list); p.sort(p.list);
+				var tree_type = p.view_by != p.folder_view ? 0 : 1;
+				switch (tree_type) {
+					case 0:
+						var tfo = fb.TitleFormat(p.view), item_a = tfo.EvalWithMetadbs(handle_list).toArray(); tfo.Dispose();
+						for (var j = 0; j < handle_list.Count; j++) {var i = p.list.Find(handle_list.Item(j)); if (i != -1) node_s.splice(i, 0, item_a[j].split("|"));}
+						break;
+					case 1:
+						var item_a = handle_list.GetLibraryRelativePaths().toArray();
+						for (var j = 0; j < handle_list.Count; j++) {var i = p.list.Find(handle_list.Item(j)); if (i != -1) node_s.splice(i, 0, item_a[j].split("\\"));}
+						break;
+				}
+        }
+    }
 
 	this.removed = function(handle_list) {
 		var j = handle_list.Count; while (j--) {var i = this.list.Find(handle_list.Item(j)); if (i != -1) {this.list.RemoveById(i); node.splice(i, 1);}}
@@ -1478,7 +1535,7 @@ function LibraryTree() {
 					this.expandNodes(obj.child[k], false);
 	}
     this.gen_pl = !libraryProps.sendToCurrent;
-	this.get_sel_items = function () {p.tree_paint(); var i = 0; this.sel_items = []; for (i = 0; i < this.tree.length; i++) if (this.tree[i].sel) this.sel_items.push.apply(this.sel_items, this.tree[i].item); this.sel_items = uniq(this.sel_items);}
+    this.get_sel_items = function () {p.tree_paint(); var i = 0; this.sel_items = []; for (i = 0; i < this.tree.length; i++) if (this.tree[i].sel) this.sel_items = this.sel_items.concat(this.sel_items, this.tree[i].item); this.sel_items = uniq(this.sel_items);}
 	this.getHandles = function(n) {if (n) this.get_sel_items(); var handle_list = fb.CreateHandleList(); try {for (var i = 0; i < this.sel_items.length; i++) handle_list.Add(p.list.Item(this.sel_items[i]));} catch (e) {} return handle_list;}
 	this.leave = function(){if (men.r_up || tt.Text) return; m_br = -1; row_o = 0; m_i = -1; ix_o = 0; p.tree_paint();}
 	this.mbtn_up = function(x, y) {this.add(x, y, mbtn_pl);}
@@ -1640,13 +1697,13 @@ function LibraryTree() {
 					for (var m = 0; m < multi.length; m++) multi_obj.push({name:multi[m].join("").replace(/#@#.*?#@#/g,""), item:br[i].item.slice(), track:br[i].track, srt:multi[m].join("")});
 				}
 			}
-			i = multi_rem.length; while (i--) br.splice(multi_rem[i], 1); br_l = br.length; multi_obj.sort(sort);
-			i = 0; while (i < multi_obj.length) {n = multi_obj[i].name; nU = n.toUpperCase(); if (n_o != nU) {n_o = nU; multi_cond[j] = {name:n, item:multi_obj[i].item.slice(), track:multi_obj[i].track, srt:multi_obj[i].srt}; j++} else multi_cond[j - 1].item.push.apply(multi_cond[j - 1].item, multi_obj[i].item.slice()); i++}
-			for (i = 0; i < br_l; i++) {br[i].name = br[i].name.replace(/#!#/g, ""); nm_arr.push(br[i].name); if (br[i].srt) br[i].srt = br[i].srt.replace(/#!#/g, "");}
-			for (i = 0; i < multi_cond.length; i++) {h = arr_index(nm_arr, multi_cond[i].name); if (h != -1) {br[h].item.push.apply(br[h].item, multi_cond[i].item.slice()); multi_cond.splice(i ,1);}}
-			for (i = 0; i < multi_cond.length; i++) br.splice(i + 1, 0, {name:multi_cond[i].name, sel:false, track:multi_cond[i].track, child:[], item:multi_cond[i].item.slice(), srt:multi_cond[i].srt});
-			if (!node || node && !full) br.sort(sort);
-			i = br.length; while (i--) {if (i != 0 && br[i].name.toUpperCase() == br[i - 1].name.toUpperCase()) {br[i - 1].item.push.apply(br[i - 1].item, br[i].item.slice()); br.splice(i, 1);}}
+            i = multi_rem.length; while (i--) br.splice(multi_rem[i], 1); br_l = br.length; multi_obj.sort(sort);
+            i = 0; while (i < multi_obj.length) {n = multi_obj[i].name; nU = n.toUpperCase(); if (n_o != nU) {n_o = nU; multi_cond[j] = {name:n, item:multi_obj[i].item.slice(), track:multi_obj[i].track, srt:multi_obj[i].srt}; j++} else multi_cond[j - 1].item = multi_cond[j - 1].item.concat(multi_obj[i].item.slice()); i++}
+            for (i = 0; i < br_l; i++) {br[i].name = br[i].name.replace(/#!#/g, ""); nm_arr.push(br[i].name); if (br[i].srt) br[i].srt = br[i].srt.replace(/#!#/g, "");}
+            for (i = 0; i < multi_cond.length; i++) {h = arr_index(nm_arr, multi_cond[i].name); if (h != -1) {br[h].item = br[h].item.concat(multi_cond[i].item.slice()); multi_cond.splice(i ,1);}}
+            for (i = 0; i < multi_cond.length; i++) br.splice(i + 1, 0, {name:multi_cond[i].name, sel:false, track:multi_cond[i].track, child:[], item:multi_cond[i].item.slice(), srt:multi_cond[i].srt});
+            if (!node || node && !full) br.sort(sort);
+            i = br.length; while (i--) {if (i != 0 && br[i].name.toUpperCase() == br[i - 1].name.toUpperCase()) {br[i - 1].item = br[i - 1].item.concat(br[i].item.slice()); br.splice(i, 1);}}
 		}
 		var folderView = p.view_by == p.folder_view ? true : false, par = this.tree.length - 1; if (tr == 0) this.tree = []; br_l = br.length;
 		if (libraryProps.nodeItemCounts == 2) var type = p.s_txt ? "search" : p.filter_by > 0 && libraryProps.searchMode > 1 ? "filter" : "standard";
@@ -1969,18 +2026,20 @@ function LibraryTree() {
 				}
 			}
 			for (i = start_row; i < last_row; i++) {
+				var item = this.tree[i];
 				item_y = Math.round(ui.y + ui.row_h * i + p.s_h - sbar.delta);
-				nm = this.tree[i].name + this.tree[i].count;
-				item_x = Math.round(ui.x + ui.pad * this.tree[i].tr + ui.margin);
+				nm = item.name + item.count;
+				item_x = Math.round(ui.x + ui.pad * item.tr + ui.margin);
 				item_w = gr.CalcTextWidth(nm, ui.font);
 				var nodeLineWidth = is_4k ? 4 : 2;
-				if (libraryProps.tooltips && libraryProps.fullLine) this.tree[i].tt_w = item_w;
+				if (libraryProps.tooltips && libraryProps.fullLine) item.tt_w = item_w;
 				var y2 = Math.round(ui.y + ui.row_h * (i + 0.5) + p.s_h - sbar.delta) - 1;
-				if (!this.tree[i].track) {
+				if (!item.track) {
 					gr.FillSolidRect(item_x + ui.node_sz, y2, ui.l_s1, nodeLineWidth, ui.linecol);
-					draw_node(gr, this.tree[i].child.length < 1 ? m_br != i ? 0 : 2 : m_br != i ? 1 : 3, item_x, item_y + p.node_y);
+                    draw_node(gr, item.child.length < 1 ? m_br != i ? 0 : 2 : m_br != i ? 1 : 3, item_x, item_y + p.node_y);
 				}
 				else {
+					// y2 = Math.round(p.s_h - sbar.delta) + Math.ceil(ui.row_h * (i + 0.5)) - ui.l_wf; // TODO: Do we need this line?
 					gr.FillSolidRect(item_x + ui.l_s2, y2, ui.l_s3, nodeLineWidth, ui.linecol);
 				}
 				item_x += ui.icon_w;
@@ -1995,17 +2054,17 @@ function LibraryTree() {
 						gr.DrawRect(sel_x, item_y, sel_w, ui.row_h, 1, col.lightAccent);
 					}
 				}
-				if (libraryProps.fullLine)
+				if (libraryProps.fullLine) {
 					item_w = ui.x + sbar.tree_w - item_x;
-				this.tree[i].w = item_w;
-				var txt_c = this.tree[i].sel ? ui.textselcol :
-							m_i == i ? ui.textcol_h : ui.textcol;
+				}
+				item.w = item_w;
+				var txt_c = item.sel ? ui.textselcol : m_i == i ? ui.textcol_h : ui.textcol;
 				if (!ui.countscol) {
 					gr.GdiDrawText(nm, ui.font, txt_c, item_x, item_y, ui.x + sbar.tree_w - item_x - ui.sel, ui.row_h, p.lc);
 				} else {
-					var name_w = gr.CalcTextWidth(this.tree[i].name, ui.font);
-					gr.GdiDrawText(this.tree[i].name, ui.font, txt_c, item_x, item_y, ui.x + sbar.tree_w - item_x - ui.sel, ui.row_h, p.lc);
-					gr.GdiDrawText(this.tree[i].count, ui.font, ui.countscol, item_x + name_w, item_y, ui.x + sbar.tree_w - item_x - ui.sel - name_w, ui.row_h, p.lc);
+					var name_w = gr.CalcTextWidth(item.name, ui.font);
+					gr.GdiDrawText(item.name, ui.font, txt_c, item_x, item_y, sbar.tree_w - item_x - ui.sel, ui.row_h, p.lc);
+					gr.GdiDrawText(item.count, ui.font, ui.countscol, item_x + name_w, item_y, sbar.tree_w - item_x - ui.sel - name_w, ui.row_h, p.lc);	
 				}
 				if (showDrawTiming) {
 					libraryProfiler.Print();
@@ -2171,7 +2230,7 @@ function LibraryTree() {
 			case 0: this.clear(); this.sel_items = []; break;
 			case 1: var direction = (idx > last_sel) ? 1 : -1; if (!v.k(CTRL)) this.clear(); for (var i = last_sel; ; i += direction) {this.tree[i].sel = true; if (i == idx) break;} this.get_sel_items(); p.tree_paint(); break;
 			case 2: this.tree[idx].sel = !this.tree[idx].sel; this.get_sel_items(); last_sel = idx; break;
-			case 3: this.sel_items = []; if (!add) this.clear(); if (!add) this.tree[idx].sel = true; this.sel_items.push.apply(this.sel_items, this.tree[idx].item); this.sel_items = uniq(this.sel_items); last_sel = idx; break;
+            case 3: this.sel_items = []; if (!add) this.clear(); if (!add) this.tree[idx].sel = true; this.sel_items = this.sel_items.concat(this.tree[idx].item); this.sel_items = uniq(this.sel_items); last_sel = idx; break;
 		}
 	}
 
@@ -2286,12 +2345,13 @@ function searchLibrary() {
 		s = 0,
 		shift = false,
 		shift_x = 0,
-		txt_w = 0;
+		txt_w = 0
+		cursor_width = is_4k ? 2 : 1;
 	var calc_text = function () {var im = gdi.CreateImage(1, 1), g = im.GetGraphics(); txt_w = g.CalcTextWidth(p.s_txt.substr(offset), ui.font); im.ReleaseGraphics(g); im.Dispose();}
 	var drawcursor = function (gr) {
 		if (p.s_search && p.s_cursor && s == f && cx >= offset) {
 			var x1 = p.s_x + get_cursor_x(cx);
-			gr.DrawLine(x1, p.s_y + p.s_sp * 0.1, x1, p.s_y + p.s_sp * 0.85, 1, ui.textcol);
+			gr.DrawLine(x1, p.s_y + p.s_sp * 0.1, x1, p.s_y + p.s_sp * 0.85, cursor_width, ui.textcol);
 		}
 	}
 	var drawsel = function(gr) {
@@ -2494,7 +2554,7 @@ function searchLibrary() {
 			f = Math.min(Math.max(f, 0), p.s_txt.length);
 			cx = Math.min(Math.max(cx, 0), p.s_txt.length);
 			if (ui.fill) gr.FillSolidRect(ui.x, ui.y + 1, ui.w, ui.row_h - 4, 0x60000000);
-			if (ui.pen == 1) gr.DrawLine(ui.x + ui.margin, ui.y + p.s_sp, ui.x + p.s_w1, ui.y + p.s_sp, 1, ui.s_linecol);
+			if (ui.pen == 1) gr.DrawLine(ui.x + ui.margin, ui.y + p.s_sp, ui.x + p.s_w1, ui.y + p.s_sp, ui.l_w, ui.s_linecol);
 			if (ui.pen == 2) gr.DrawRoundRect(ui.x, ui.y + 2, ui.w - 1, ui.row_h - 4, 4, 4, 1, ui.pen_c);
 			if (p.s_txt) {
 				f = (f < p.s_txt.length) ? f : p.s_txt.length;
@@ -2510,10 +2570,10 @@ function searchLibrary() {
 			}
 			drawcursor(gr);
 			if (libraryProps.searchMode > 1) {
-				var l_x = p.filter_x1 - 9,
+				var l_x = p.filter_x1 - 8 - ui.l_w,
 					l_y = p.s_y;
 				gr.gdiDrawText(p.filt[p.filter_by].name, p.filter_font, ui.txt_box, p.filter_x1, ui.y, p.f_w[p.filter_by], p.s_sp, p.cc);
-				gr.FillSolidRect(l_x, l_y, 1, p.s_sp, ui.s_linecol);
+				gr.FillSolidRect(l_x, l_y, ui.l_w, p.s_sp, ui.s_linecol);
 			}
 		} catch (e) {}
 	}
@@ -3095,8 +3155,9 @@ function LibraryCallbacks() {
 	this.on_notify_data = function(name, info) {switch (name) {case "!!.tags update": lib_manager.treeState(false, 2); break;}}
 	this.on_playback_new_track = function(handle) {ui.on_playback_new_track(handle);}
 	this.on_playback_stop = function(reason) {if (reason == 2) return; on_item_focus_change();}
-	this.on_playlist_items_added = function() {on_item_focus_change();}
-	this.on_playlist_items_removed = function() {on_item_focus_change();}
+	this.on_playlist_items_added = function(pn) {if (pn == plman.ActivePlaylist) ui.upd_handle_list = true; on_item_focus_change();}
+	this.on_playlist_items_removed = function(pn) {if (pn == plman.ActivePlaylist) ui.upd_handle_list = true; on_item_focus_change();}
+	this.on_playlist_items_reordered = function(pn) {if (pn == plman.ActivePlaylist) ui.upd_handle_list = true;}
 	this.on_playlist_switch = function() {on_item_focus_change();}
 	this.on_script_unload = function() {but.on_script_unload();}
 	this.mouse_in_this = function (x, y) {
