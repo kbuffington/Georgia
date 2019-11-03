@@ -53,7 +53,7 @@ function ArtCache(maxCacheSize) {
         while (art_cache_indexes.length) {
             var remove = art_cache_indexes.shift();
             disposeImg(art_cache[remove]);
-            delete art_cache[remove];   
+            delete art_cache[remove];
         }
     }
 }
