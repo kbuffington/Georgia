@@ -250,23 +250,23 @@ function dateToYMD(date) {
 
 function toDatetime(dateTimeStr) {
 	// convert FB datetime string into one that we can call new Date() on
-    return dateTimeStr.replace(' ', 'T') + pref.time_zone;
+    return dateTimeStr.replace(' ', 'T');
 }
 
 function toTime(dateTimeStr) {
 	return new Date(toDatetime(dateTimeStr)).getTime();
 }
 
-function calcAge(date, roundAge) {
+function calcAge(date) {
 	var round = 1000;		// round to the second
-	if (roundAge) {
-		round = 86400000;	// milliseconds in a day
-	}
 	var now = new Date();
-	var then = new Date(date);
-	var age = Math.floor(now.getTime() / round) - Math.floor(then.getTime() / round);
+	var age = Math.floor(now.getTime() / round) - Math.floor(date / round);
 
 	return age;
+}
+
+function calcAgeRatio(num, divisor) {
+	return toFixed(1.0 - (calcAge(num) / divisor), 3);
 }
 
 function toFixed(number, precision) {

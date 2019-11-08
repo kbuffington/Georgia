@@ -1136,39 +1136,6 @@ function onRatingMenu(x, y) {
 	menu_down = false;
 }
 
-function GetTimezoneMenuItem() {
-	var timezone = pref.time_zone.trim();
-	var isNegative = timezone[0] === '-' ? true : false;
-	timezone = timezone.replace('-', '').replace('+', '');
-	timezone = timezone.split(':');
-
-	var hours = parseInt(timezone[0]);
-	var mins = parseInt(timezone[1]);
-
-	if (mins > 0 || hours > 12) { // not in our timezone menu list
-		return 0;
-	}
-	return 140 + 12 + (isNegative ? -hours : hours);
-}
-
-function SetTimezoneFromMenuItem(menu_idx) {
-	var index = menu_idx - 140;
-	var timezone = '';
-
-	if (index > 12) {
-		timezone = '+';
-		timezone += leftPad(index - 12, 2, '0');
-		timezone += ':00';
-	} else {
-		timezone = '-';
-		timezone += leftPad(12 - index, 2, '0');
-		timezone += ':00';
-	}
-
-	console.log('Setting timezone to', timezone);
-	pref.time_zone = timezone;
-}
-
 function onSettingsMenu(x, y) {
 	var MF_SEPARATOR = 0x00000800;
 	var MF_STRING = 0x00000000;
@@ -1184,7 +1151,6 @@ function onSettingsMenu(x, y) {
 	var _rotationMenu = window.CreatePopupMenu();
 	var _debugMenu = window.CreatePopupMenu();
 	var _libraryMenu = window.CreatePopupMenu();
-	var _timeZoneMenu = window.CreatePopupMenu();
 
 	// DO NOT USE ITEM 0 OR THINGS BREAK
 	_menu.AppendMenuItem(MF_STRING, 1, 'Check for Theme Updates');
@@ -1237,35 +1203,6 @@ function onSettingsMenu(x, y) {
 	_menu.CheckMenuItem(18, pref.show_flags);
 	_menu.AppendMenuSeparator();
 
-	_timeZoneMenu.AppendMenuItem(MF_STRING, 140, 'GMT -12:00');
-	_timeZoneMenu.AppendMenuItem(MF_STRING, 141, 'GMT -11:00');
-	_timeZoneMenu.AppendMenuItem(MF_STRING, 142, 'GMT -10:00');
-	_timeZoneMenu.AppendMenuItem(MF_STRING, 143, 'GMT -9:00');
-	_timeZoneMenu.AppendMenuItem(MF_STRING, 144, 'GMT -8:00');
-	_timeZoneMenu.AppendMenuItem(MF_STRING, 145, 'GMT -7:00');
-	_timeZoneMenu.AppendMenuItem(MF_STRING, 146, 'GMT -6:00');
-	_timeZoneMenu.AppendMenuItem(MF_STRING, 147, 'GMT -5:00');
-	_timeZoneMenu.AppendMenuItem(MF_STRING, 148, 'GMT -4:00');
-	_timeZoneMenu.AppendMenuItem(MF_STRING, 149, 'GMT -3:00');
-	_timeZoneMenu.AppendMenuItem(MF_STRING, 150, 'GMT -2:00');
-	_timeZoneMenu.AppendMenuItem(MF_STRING, 151, 'GMT -1:00');
-	_timeZoneMenu.AppendMenuItem(MF_STRING, 152, 'GMT +0:00');
-	_timeZoneMenu.AppendMenuItem(MF_STRING, 153, 'GMT +1:00');
-	_timeZoneMenu.AppendMenuItem(MF_STRING, 154, 'GMT +2:00');
-	_timeZoneMenu.AppendMenuItem(MF_STRING, 155, 'GMT +3:00');
-	_timeZoneMenu.AppendMenuItem(MF_STRING, 156, 'GMT +4:00');
-	_timeZoneMenu.AppendMenuItem(MF_STRING, 157, 'GMT +5:00');
-	_timeZoneMenu.AppendMenuItem(MF_STRING, 158, 'GMT +6:00');
-	_timeZoneMenu.AppendMenuItem(MF_STRING, 159, 'GMT +7:00');
-	_timeZoneMenu.AppendMenuItem(MF_STRING, 160, 'GMT +8:00');
-	_timeZoneMenu.AppendMenuItem(MF_STRING, 161, 'GMT +9:00');
-	_timeZoneMenu.AppendMenuItem(MF_STRING, 162, 'GMT +10:00');
-	_timeZoneMenu.AppendMenuItem(MF_STRING, 163, 'GMT +11:00');
-	_timeZoneMenu.AppendMenuItem(MF_STRING, 164, 'GMT +12:00');
-	_timeZoneMenu.CheckMenuRadioItem(140, 164, GetTimezoneMenuItem());
-	_timeZoneMenu.AppendTo(_menu, MF_STRING, 'Time-Zone');
-
-	_menu.AppendMenuSeparator();
 	_menu.AppendMenuItem(MF_STRING, 30, 'Follow Hyperlinks only if CTRL-key is down');
 	_menu.CheckMenuItem(30, pref.hyperlinks_ctrl);
 	_menu.AppendMenuSeparator();
@@ -1498,33 +1435,6 @@ function onSettingsMenu(x, y) {
 			break;
 		case 101:
 			fb.RunMainMenuCommand("File/Restart");
-			break;
-		case 140:
-		case 141:
-		case 142:
-		case 143:
-		case 144:
-		case 145:
-		case 146:
-		case 147:
-		case 148:
-		case 149:
-		case 150:
-		case 151:
-		case 152:
-		case 153:
-		case 154:
-		case 155:
-		case 156:
-		case 157:
-		case 158:
-		case 159:
-		case 160:
-		case 161:
-		case 162:
-		case 163:
-		case 164:
-			SetTimezoneFromMenuItem(idx);
 			break;
 	}
 	_menu.Dispose();
@@ -2526,10 +2436,6 @@ function parseJson(json, label, log) {
 	return parsed;
 }
 
-function calcAgeRatio(num, divisor) {
-	return toFixed(1.0 - (calcAge(num, false) / divisor), 3);
-}
-
 var lfmPlayedTimesJsonLast = '';
 var playedTimesJsonLast = '';
 
@@ -2543,7 +2449,7 @@ function calcDateRatios(dontUpdateLastPlayed, currentLastPlayed) {
 	var today = dateToYMD(new Date());
 	// console.log('today:', today);
 	if (dontUpdateLastPlayed && $date(last_played) === today) {
-		last_played = new Date(toDatetime(currentLastPlayed)).getTime();
+		last_played = toTime(last_played);
 		// console.log('Setting last_played to:', currentLastPlayed, ' => ', last_played);
 	} else {
 		last_played = toTime(last_played);
@@ -2567,9 +2473,8 @@ function calcDateRatios(dontUpdateLastPlayed, currentLastPlayed) {
 		playedTimes.push(last_played);
 	}
 
-
-	if (added && first_played) { //(first_played || lfmPlayedTimes.length)) {
-		age = calcAge(added, false);
+	if (added && first_played) {
+		age = calcAge(added);
 
 		tl_firstPlayedRatio = calcAgeRatio(first_played, age);
 		tl_lastPlayedRatio = calcAgeRatio(last_played, age);
