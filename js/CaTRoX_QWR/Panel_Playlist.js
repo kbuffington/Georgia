@@ -1089,6 +1089,7 @@ function Playlist(x, y) {
             selection_handler.disable_drag();
         }
 
+        drag_event_invoked = false;
         this.mouse_in = false;
         this.mouse_down = false;
 
@@ -2802,6 +2803,7 @@ function Playlist(x, y) {
     // Mouse and key state
     var mouse_on_item = false;
     var key_down = false;
+    var drag_event_invoked = false;
 
     // Item events
     /** @type {?Row|?BaseHeader} */
@@ -4955,8 +4957,8 @@ function SelectionHandler(cnt_arg, cur_playlist_idx_arg) {
         var cur_playlist_selection = plman.GetPlaylistSelectedItems(cur_playlist_idx);
         var cur_selected_indexes = selected_indexes;
 
-        var effect = fb.DoDragDrop(window.ID, cur_playlist_selection, g_drop_effect.copy | g_drop_effect.move | g_drop_effect.link);
-
+        var effect = fb.DoDragDrop(cur_playlist_selection, g_drop_effect.copy | g_drop_effect.move | g_drop_effect.link);
+    
         function can_handle_move_drop() {
             // We can handle the 'move drop' properly only when playlist is still in the same state
             return cur_playlist_size === plman.PlaylistItemCount(cur_playlist_idx)
