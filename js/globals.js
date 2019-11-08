@@ -65,8 +65,8 @@ tf.add_properties({
 	artist_country: ['Tag Fields: Country', '%artistcountry%'], // we call meta_num(artistcountry) so don't wrap this in % signs
 	disc: ['Tag Fields: Disc String', '$ifgreater(%totaldiscs%,1,CD %discnumber%/%totaldiscs%,)'],
 	disc_subtitle: ['Tag Fields: Disc Subtitle', '%discsubtitle%'],
-	year: ['Tag Fields: Year', '$puts(d,$if3(%original release date%,%originaldate%,%date%))$if($strcmp($year($get(d)),$get(d)),$get(d),)'],
-	date: ['Tag Fields: Date', '$puts(d,$if3(%original release date%,%originaldate%,%date%))$if($strcmp($year($get(d)),$get(d)),,$get(d))'],
+	year: ['Tag Fields: Year', '$puts(d,$if3(%original release date%,%originaldate%,%date%,%fy_upload_date%))$if($strcmp($year($get(d)),$get(d)),$get(d),)'],
+	date: ['Tag Fields: Date', '$puts(d,$if3(%original release date%,%originaldate%,%date%,%fy_upload_date%))$if($strcmp($year($get(d)),$get(d)),,$get(d))'],
 	last_played: ['Tag Fields: Last Played', '[$if2(%last_played_enhanced%,%last_played%)]'],
 	title: ['Tag Fields: Song Title String', "%title%[ '['%translation%']']"],
 	vinyl_side: ['Tag Fields: Vinyl Side', '%vinyl side%'], // the tag used for determining what side a song appears on for vinyl releases - i.e. song A1 has a %vinyl side% of "A"
@@ -137,6 +137,8 @@ tf.grid = [
 	{ label: 'Added',        val: '[' + tf.added + ']', age: true },
 	{ label: 'Last Played',  val: '[' + tf.last_played + ']', age: true },
 	{ label: 'Hotness',	     val: "$puts(X,5)$puts(Y,$div(%_dynamic_rating%,400))$repeat($repeat(I,$get(X))   ,$div($get(Y),$get(X)))$repeat(I,$mod($get(Y),$get(X)))$ifgreater(%_dynamic_rating%,0,   $replace($div(%_dynamic_rating%,1000)'.'$mod($div(%_dynamic_rating%,100),10),0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9),)" },
+	{ label: 'View Count',   val: '[%fy_view_count%]' },
+	{ label: 'Likes',        val: "[$if(%fy_like_count%,%fy_like_count% ▲ / %fy_dislike_count% ▼,)]" },
 	// { label: 'Play Count',   val: '$if($or(%play_count%,%lastfm_play_count%),$puts(X,5)$puts(Y,$max(%play_count%,%lastfm_play_count%))$repeat($repeat(I,$get(X)) ,$div($get(Y),$get(X)))$repeat(I,$mod($get(Y),$get(X)))   $get(Y))' },
 	{ label: 'Play Count',   val: '$if($or(%play_count%,%lastfm_play_count%),$puts(X,5)$puts(Y,$max(%play_count%,%lastfm_play_count%))$ifgreater($get(Y),30,,$repeat($repeat(I,$get(X)) ,$div($get(Y),$get(X)))$repeat(I,$mod($get(Y),$get(X)))   )$get(Y))' },
 	{ label: 'Rating', 	     val: '$if(%rating%,$repeat(\u2605 ,%rating%))' },
@@ -201,8 +203,17 @@ function migrateCheck(version, storedVersion) {
 				window.SetProperty('SYSTEM.Font Size', null);
 				window.SetProperty('user.row.height', null);
 
+			case '1.1.0':
 			case '1.1.1':
 				tf.edition = null;
+			
+			case '1.1.2':
+			case '1.1.3':
+			case '1.1.4':
+			case '1.1.5':
+				tf.date = null;
+				tf.year = null;
+				pref.time_zone = null;
 
 				// after all previous versions have fallen through
 				console.log('Upgrading Georgia Theme settings');

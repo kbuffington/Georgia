@@ -1038,7 +1038,7 @@ function on_paint(gr) {
 				updateHyperlink.draw(gr, color);
 				offset += is_4k ? 12 : 6;
 			}
-			gr.DrawString(str.time, ft.lower_bar, color, Math.floor(0.725 * ww) - offset, lowerBarTop, 0.25 * ww, 0.5 * geo.lower_bar_h, StringFormat(2, 0));
+			gr.DrawString(str.time, ft.lower_bar, color, Math.floor(0.725 * ww) - offset, lowerBarTop, 0.25 * ww, geo.lower_bar_h, StringFormat(2, 0));
 		}
 	}
     gr.SetSmoothingMode(SmoothingMode.AntiAliasGridFit);
@@ -1689,7 +1689,7 @@ function on_metadb_changed(handle_list, fromhook) {
 			str.title_lower = '  ' + title;
 			str.original_artist = original_artist;
             str.artist = artist;
-            str.year = $('[$year($if3(%original release date%,%originaldate%,%date%))]');
+            str.year = $('[$year($if3(%original release date%,%originaldate%,%date%,%fy_upload_date%))]');
             str.album = $("[%album%][ '['" + tf.album_trans + "']']");
 			str.album_subtitle = $("[ '['" + tf.album_subtitle + "']']");
 			var codec = $("$lower($if2(%codec%,$ext(%path%)))");

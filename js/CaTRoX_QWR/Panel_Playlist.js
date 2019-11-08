@@ -3819,7 +3819,7 @@ function Header(parent, x, y, w, h, idx) {
 
             //---> DATE
             if (grouping_handler.show_date()) {
-                var date_query = '[$year($if3(%original release date%,%originaldate%,%date%))]'; // Mordred: my date query
+                var date_query = '[$year($if3(%original release date%,%originaldate%,%date%,%fy_upload_date%))]'; // Mordred: my date query
 
                 var date_text = _.tf(date_query, metadb);
                 if (date_text) {
