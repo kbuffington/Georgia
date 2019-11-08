@@ -1043,9 +1043,26 @@ function Playlist(x, y) {
         return true;
     };
 
+    this.on_mouse_leave = function() {
+        if (selection_handler.is_internal_drag_n_drop_active()
+            && selection_handler.is_dragging()
+            && !drag_event_invoked) {
+            // Workaround for the following issues:
+            // #1 if you move too fast out of the panel, then drag_enter is not invoked (thus we need to clear mouse state here).
+            // #2 on_mouse_leave sometimes generated during internal drag_over (so we need to ignore it).
+            selection_handler.disable_drag();
+            drag_event_invoked = false
+            this.mouse_in = false;
+            this.mouse_down = false;
+            this.repaint();
+        }
+        List.prototype.on_mouse_leave.apply(this);
+    }
+
     this.on_drag_enter = function (action, x, y, mask) {
         this.mouse_in = true;
         this.mouse_down = true;
+        drag_event_invoked = true;
 
         if (!selection_handler.is_dragging()) {
             if (selection_handler.is_internal_drag_n_drop_active()) {
@@ -4938,7 +4955,7 @@ function SelectionHandler(cnt_arg, cur_playlist_idx_arg) {
         var cur_playlist_selection = plman.GetPlaylistSelectedItems(cur_playlist_idx);
         var cur_selected_indexes = selected_indexes;
 
-        var effect = fb.DoDragDrop(cur_playlist_selection, g_drop_effect.copy | g_drop_effect.move | g_drop_effect.link);
+        var effect = fb.DoDragDrop(window.ID, cur_playlist_selection, g_drop_effect.copy | g_drop_effect.move | g_drop_effect.link);
 
         function can_handle_move_drop() {
             // We can handle the 'move drop' properly only when playlist is still in the same state
