@@ -187,8 +187,8 @@ function dateDiff(startingDate, endingDate) {
     var startDate = new Date(new Date(startingDate).toISOString().substr(0, 10));
     if (!endingDate) {
         endingDate = new Date().toISOString().substr(0, 10);    // need date in YYYY-MM-DD format
-    }
-    var endDate = new Date(endingDate);
+	}
+	var endDate = new Date(endingDate);
     if (startDate > endDate) {
         var swap = startDate;
         startDate = endDate;

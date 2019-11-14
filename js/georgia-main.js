@@ -5,9 +5,9 @@
 //
 // Description  a fullscreen now-playing script for foo_jscript_panel
 // Author 		Mordred
-// Version 		1.0.1
+// Version 		1.1.6
 // Dev. Started 2017-12-22
-// Last change  2019-01-23
+// Last change  2019-11-13
 // --------------------------------------------------------------------------------------
 
 // CONFIGURATION //////////////////////////////////////
@@ -1482,13 +1482,17 @@ function on_init() {
 	if (pref.start_Playlist) {
 		displayPlaylist = false;
 		setTimeout(function () {
+			if (btns && btns.playlist) {
 			btns.playlist.onClick();	// displays playlist
+			}
 		}, 30);
 	}
 
 	setTimeout(function () {
 		// defer initing of library panel until everything else has loaded
+		if (!libraryInitialized) {
 		initLibraryPanel();
+		}
 	}, 10000);
 }
 
@@ -2447,9 +2451,8 @@ function calcDateRatios(dontUpdateLastPlayed, currentLastPlayed) {
 	var first_played = toTime($('$if2(%first_played_enhanced%,%first_played%)'));
 	var last_played = $('$if2(%last_played_enhanced%,%last_played%)');
 	var today = dateToYMD(new Date());
-	// console.log('today:', today);
 	if (dontUpdateLastPlayed && $date(last_played) === today) {
-		last_played = toTime(last_played);
+		last_played = toTime(currentLastPlayed);
 		// console.log('Setting last_played to:', currentLastPlayed, ' => ', last_played);
 	} else {
 		last_played = toTime(last_played);
@@ -2843,13 +2846,13 @@ function createHyperlinks() {
 }
 
 function createButtonObjects(ww, wh) {
-
 	btns = [];
 
-	if (typeof btnImg === 'undefined')
-		createButtonImages();
-	else if (ww <= 0 || wh <= 0)
+	if (ww <= 0 || wh <= 0) {
 		return;
+	} else if (typeof btnImg === 'undefined') {
+		createButtonImages();
+	}
 
 	//---> Transport buttons
 	if (pref.show_transport) {
