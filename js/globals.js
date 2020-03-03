@@ -213,7 +213,7 @@ function migrateCheck(version, storedVersion) {
 			case '1.1.0':
 			case '1.1.1':
 				tf.edition = null;
-			
+
 			case '1.1.2':
 			case '1.1.3':
 			case '1.1.4':
@@ -221,6 +221,8 @@ function migrateCheck(version, storedVersion) {
 				tf.date = null;
 				tf.year = null;
 				pref.time_zone = null;
+
+			case '1.1.6':
 
 				// after all previous versions have fallen through
 				console.log('Upgrading Georgia Theme settings');
