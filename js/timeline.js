@@ -29,6 +29,10 @@ function Timeline (height) {
         this.y = y;
         this.w = width;
     }
+
+    this.setHeight = function (height) {
+        this.h = height;
+    }
 }
 
 Timeline.prototype.draw = function (gr) {

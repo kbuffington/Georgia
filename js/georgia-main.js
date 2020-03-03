@@ -966,7 +966,8 @@ function on_paint(gr) {
 			width = gr.CalcTextWidth(' ' + str.time + '   ' + str.length, ft_lower);
 		}
 	}
-	gr.DrawString(str.tracknum, ft_lower_bold, col.now_playing, pbLeft, lowerBarTop, 0.95 * ww - width, titleMeasurements.Height, StringFormat(0, 0, 4, 0x00001000));
+    var heightAdjustment = is_4k ? 1 : 0;
+    gr.DrawString(str.tracknum, ft_lower_bold, col.now_playing, pbLeft, lowerBarTop + heightAdjustment, 0.95 * ww - width, titleMeasurements.Height, StringFormat(0, 0, 4, 0x00001000));
 	width += trackNumWidth;
 	gr.DrawString(str.title_lower, ft_lower, col.now_playing, pbLeft + trackNumWidth, lowerBarTop, 0.95 * ww - width, titleMeasurements.Height, StringFormat(0, 0, 4, 0x00001000));
 	width += Math.ceil(titleMeasurements.Width);
@@ -997,7 +998,7 @@ function on_paint(gr) {
 		if (ww > 600) {
 			gr.DrawString(str.length, ft_lower, col.now_playing, 0.725 * ww, lowerBarTop, 0.25 * ww, titleMeasurements.Height, StringFormat(2, 0));
 			width = gr.CalcTextWidth('  ' + str.length, ft_lower);
-			gr.DrawString(str.time, ft_lower_bold, col.now_playing, 0.725 * ww, lowerBarTop, 0.25 * ww - width, titleMeasurements.Height, StringFormat(2, 0));
+			gr.DrawString(str.time, ft_lower_bold, col.now_playing, 0.725 * ww, lowerBarTop + heightAdjustment, 0.25 * ww - width, titleMeasurements.Height, StringFormat(2, 0));
 			width += gr.CalcTextWidth('  ' + str.time, ft_lower_bold);
 			gr.DrawString(str.disc, ft_lower, col.now_playing, 0.725 * ww, lowerBarTop, 0.25 * ww - width, titleMeasurements.Height, StringFormat(2, 0));
 		}
@@ -1519,6 +1520,9 @@ function on_size() {
 		}
 		initPlaylist();
 		sizeInitialized = true;
+        if (str.timeline) {
+            str.timeline.setHeight(geo.timeline_h);
+        }
 	}
 
 	lastLeftEdge = 0;
