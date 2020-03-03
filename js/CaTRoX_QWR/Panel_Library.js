@@ -584,32 +584,32 @@ function userinterface() {
 		this.get = false;
 	}
 	this.grab_f_img = function (handle) {
-		if (!handle) handle = this.handle(); 
-		if (handle) 
-		return utils.GetAlbumArtAsync(window.ID, handle, 0); 
-		if (fb.IsPlaying) 
-			return; 
-		image = stub(1); 
-		if (!image) {
-			if (blurImg) blurImg.Dispose(); 
-			blurImg = false; 
+		if (!handle) handle = this.handle();
+		if (handle)
+		return utils.GetAlbumArtAsync(window.ID, handle, 0);
+		if (fb.IsPlaying)
 			return;
-		} 
+		image = stub(1);
+		if (!image) {
+			if (blurImg) blurImg.Dispose();
+			blurImg = false;
+			return;
+		}
 		this.blur_img(image);
 	}
 
 	var handle_list = fb.CreateHandleList();
 	this.upd_handle_list = true;
 	this.handle = function() {
-		var handle = fb.IsPlaying ? fb.GetNowPlaying() : fb.GetFocusItem(); 
+		var handle = fb.IsPlaying ? fb.GetNowPlaying() : fb.GetFocusItem();
 		if (!handle) {
 			if (this.upd_handle_list) {
-				handle_list.Dispose(); 
-				handle_list = plman.GetPlaylistItems(plman.ActivePlaylist); 
+				handle_list.Dispose();
+				handle_list = plman.GetPlaylistItems(plman.ActivePlaylist);
 				this.upd_handle_list = false;
-			} 
+			}
 			if (handle_list.Count) handle = handle_list.Item(0);
-		} 
+		}
 		return handle;
 	}
 
@@ -1181,7 +1181,7 @@ function library_manager() {
                         if (newFilterItems.Count) this.added_f(newFilterItems);
 						// removals
 						var removeFilterItems = handle_list.Clone();
-						removeFilterItems.Sort();	
+						removeFilterItems.Sort();
 						removeFilterItems.MakeIntersection(origFilter);
 						try {handlesInFilter = fb.GetQueryItems(removeFilterItems, p.filt[p.filter_by].type);} catch (e) {}
 						handlesInFilter.Sort();
@@ -1194,19 +1194,19 @@ function library_manager() {
                         var newSearchItems = fb.CreateHandleList(), origSearch = p.list.Clone();
 						// addns
                         try {newSearchItems = fb.GetQueryItems(handle_list, p.s_txt);} catch (e) {}
-						origSearch.Sort(); 
+						origSearch.Sort();
 						newSearchItems.Sort();
                         if (p.filter_by > 0 && p.s_show > 1) {var newFilt = this.list.Clone(); newFilt.Sort(); newSearchItems.MakeIntersection(newFilt); newFilt.Dispose();}
 						newSearchItems.MakeDifference(origSearch);
                         if (newSearchItems.Count) this.added_s(newSearchItems);
 						// removals
 						var removeSearchItems = handle_list.Clone();
-						removeSearchItems.Sort();	
+						removeSearchItems.Sort();
 						removeSearchItems.MakeIntersection(origSearch);
 						try {handlesInSearch = fb.GetQueryItems(removeSearchItems, p.s_txt);} catch (e) {}
 						handlesInSearch.Sort();
 						removeSearchItems.MakeDifference(handlesInSearch);
-						if (removeSearchItems.Count) this.removed_s(removeSearchItems);	
+						if (removeSearchItems.Count) this.removed_s(removeSearchItems);
 						if (newSearchItems.Count || removeSearchItems.Count) {
 							this.node = node_s.slice();
 							if (!p.list.Count) {
@@ -1373,12 +1373,12 @@ function library_manager() {
 				switch (tree_type) {
 						case 0:
 							var tfo = fb.TitleFormat(p.view), item_a = tfo.EvalWithMetadbs(handle_list).toArray(); tfo.Dispose();
-							for (var j = 0; j < handle_list.Count; j++) {var i = this.list.Find(handle_list.Item(j)); if (i != -1) node.splice(i, 0, item_a[j].split("|"));} 
+							for (var j = 0; j < handle_list.Count; j++) {var i = this.list.Find(handle_list.Item(j)); if (i != -1) node.splice(i, 0, item_a[j].split("|"));}
 							if (!this.list.Count) this.none = "Nothing found";
 							break;
 						case 1:
 							var item_a = handle_list.GetLibraryRelativePaths().toArray();
-							for (var j = 0; j < handle_list.Count; j++) {var i = this.list.Find(handle_list.Item(j)); if (i != -1) node.splice(i, 0, item_a[j].split("\\"));} 
+							for (var j = 0; j < handle_list.Count; j++) {var i = this.list.Find(handle_list.Item(j)); if (i != -1) node.splice(i, 0, item_a[j].split("\\"));}
 							if (!this.list.Count) this.none = "Nothing found";
 							break;
 				}
@@ -2063,7 +2063,7 @@ function LibraryTree() {
 				} else {
 					var name_w = gr.CalcTextWidth(item.name, ui.font);
 					gr.GdiDrawText(item.name, ui.font, txt_c, item_x, item_y, sbar.tree_w - item_x - ui.sel, ui.row_h, p.lc);
-					gr.GdiDrawText(item.count, ui.font, ui.countscol, item_x + name_w, item_y, sbar.tree_w - item_x - ui.sel - name_w, ui.row_h, p.lc);	
+					gr.GdiDrawText(item.count, ui.font, ui.countscol, item_x + name_w, item_y, sbar.tree_w - item_x - ui.sel - name_w, ui.row_h, p.lc);
 				}
 				if (showDrawTiming) {
 					libraryProfiler.Print();

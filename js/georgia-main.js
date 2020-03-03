@@ -765,10 +765,10 @@ function on_paint(gr) {
 	} /* if (!displayPlaylist && !displayLibrary) */
 
 	if ((fb.IsPlaying && !displayPlaylist && !displayLibrary) || (!albumart && !cdart && noArtwork)) {
-		// BAND LOGO drawing code
+        // BAND LOGO drawing code
         var brightBackground = (new Color(col.info_bg).brightness) > 190;
 		showExtraDrawTiming && (drawBandLogos = fb.CreateProfiler("on_paint -> band logos"));
-		availableSpace = albumart_size.y + albumart_size.h - top;
+        availableSpace = albumart_size.y + albumart_size.h - top;
         var logo = brightBackground ? (invertedBandLogo ? invertedBandLogo : bandLogo) : bandLogo;
 		if (logo && availableSpace > 75) {
 			// max width we'll draw is 1/2 the full size because the HQ images are just so big
@@ -965,7 +965,7 @@ function on_paint(gr) {
 		} else {
 			width = gr.CalcTextWidth(' ' + str.time + '   ' + str.length, ft_lower);
 		}
-	}
+    }
     var heightAdjustment = is_4k ? 1 : 0;
     gr.DrawString(str.tracknum, ft_lower_bold, col.now_playing, pbLeft, lowerBarTop + heightAdjustment, 0.95 * ww - width, titleMeasurements.Height, StringFormat(0, 0, 4, 0x00001000));
 	width += trackNumWidth;
@@ -1488,7 +1488,7 @@ function on_init() {
 		displayPlaylist = false;
 		setTimeout(function () {
 			if (btns && btns.playlist) {
-			btns.playlist.onClick();	// displays playlist
+				btns.playlist.onClick();	// displays playlist
 			}
 		}, 30);
 	}
@@ -1496,7 +1496,7 @@ function on_init() {
 	setTimeout(function () {
 		// defer initing of library panel until everything else has loaded
 		if (!libraryInitialized) {
-		initLibraryPanel();
+			initLibraryPanel();
 		}
 	}, 10000);
 }
@@ -1519,7 +1519,7 @@ function on_size() {
 			LoadCountryFlags(); // wrong size flag gets loaded on 4k systems
 		}
 		initPlaylist();
-		sizeInitialized = true;
+        sizeInitialized = true;
         if (str.timeline) {
             str.timeline.setHeight(geo.timeline_h);
         }
@@ -1603,7 +1603,7 @@ function on_playback_new_track(metadb) {
 	/* code to retrieve record label logos */
 	var labelStrings = [];
 	while (recordLabels.length) {
-		disposeImg(recordLabels.pop());
+        disposeImg(recordLabels.pop());
     }
     while (recordLabelsInverted.length) {
         disposeImg(recordLabelsInverted.pop());
@@ -1617,7 +1617,7 @@ function on_playback_new_track(metadb) {
 	for (i = 0; i < labelStrings.length; i++) {
 		var addLabel = LoadLabelImage(labelStrings[i]);
 		if (addLabel != null) {
-			recordLabels.push(addLabel);
+            recordLabels.push(addLabel);
             try {
                 recordLabelsInverted.push(addLabel.InvertColours());
             } catch (e) {
@@ -1640,7 +1640,7 @@ function on_playback_new_track(metadb) {
 
 	/* code to retrieve band logo */
 	bandStr = replaceFileChars($('[%artist%]'));
-	bandLogo = disposeImg(bandLogo);
+    bandLogo = disposeImg(bandLogo);
     invertedBandLogo = disposeImg(invertedBandLogo);
 	if (bandStr) {
 		bandLogoHQ = false;
@@ -1648,7 +1648,7 @@ function on_playback_new_track(metadb) {
 		var path = testBandLogo(pref.logo_hq, bandStr, true) || // try 800x310 white
 			testBandLogo(pref.logo_color, bandStr, true); // try 800x310 color
 		if (path) {
-			bandLogo = gdi.Image(path);
+            bandLogo = gdi.Image(path);
             try {
                 invertedBandLogo = bandLogo.InvertColours();
             } catch (e) {
@@ -2178,7 +2178,7 @@ function on_playback_stop(reason) {
         }
         while (recordLabelsInverted.length) {
             disposeImg(recordLabelsInverted.pop());
-		}
+        }
 		if (metadb_handle) {
 			metadb_handle = null;
 		}
@@ -2193,7 +2193,7 @@ function on_playback_stop(reason) {
 		albumart = null;
 		albumart_scaled = disposeImg(albumart_scaled);
 	}
-	bandLogo = disposeImg(bandLogo);
+    bandLogo = disposeImg(bandLogo);
     invertedBandLogo = disposeImg(invertedBandLogo);
 
 	while (flagImgs.length > 0)
@@ -2473,19 +2473,26 @@ var lfmPlayedTimesJsonLast = '';
 var playedTimesJsonLast = '';
 
 function calcDateRatios(dontUpdateLastPlayed, currentLastPlayed) {
+    var newDate = new Date();
+    var timezoneOffset = newDate.getTimezoneOffset();
 	dontUpdateLastPlayed = dontUpdateLastPlayed || false;
 
 	playedTimesRatios = [];
 	var added = toTime($('$if2(%added_enhanced%,%added%)'));
-	var first_played = toTime($('$if2(%first_played_enhanced%,%first_played%)'));
-	var last_played = $('$if2(%last_played_enhanced%,%last_played%)');
-	var today = dateToYMD(new Date());
+    var first_played = toTime($('$if2(%first_played_enhanced%,%first_played%)'));
+    var last_played = $('$if2(%last_played_enhanced%,%last_played%)');
+	var today = dateToYMD(newDate);
 	if (dontUpdateLastPlayed && $date(last_played) === today) {
 		last_played = toTime(currentLastPlayed);
-		// console.log('Setting last_played to:', currentLastPlayed, ' => ', last_played);
 	} else {
 		last_played = toTime(last_played);
-	}
+    }
+    /* first_played and last_played are already in local time, converting them to date objects treats
+     * them as UTC time, and again adjusts to local time, so the timezone offset is applied twice.
+     * therefore we need to add it back in here.
+     */
+    first_played += timezoneOffset * 60000;
+    last_played += timezoneOffset * 60000;
 
 	var lfmPlayedTimes = [];
 	var playedTimes = [];
@@ -2509,8 +2516,7 @@ function calcDateRatios(dontUpdateLastPlayed, currentLastPlayed) {
 		age = calcAge(added);
 
 		tl_firstPlayedRatio = calcAgeRatio(first_played, age);
-		tl_lastPlayedRatio = calcAgeRatio(last_played, age);
-		// console.log('fp (' + first_played + ') ratio: ', tl_firstPlayedRatio, 'lp (' + last_played + ') ratio:', tl_lastPlayedRatio);
+        tl_lastPlayedRatio = calcAgeRatio(last_played, age);
 		if (tl_lastPlayedRatio < tl_firstPlayedRatio) {
 			// due to daylight savings time, if there's a single play before the time changed lastPlayed could be < firstPlayed
 			tl_lastPlayedRatio = tl_firstPlayedRatio;
@@ -2520,7 +2526,7 @@ function calcDateRatios(dontUpdateLastPlayed, currentLastPlayed) {
 			for (i = 0; i < playedTimes.length; i++) {
 				var ratio = calcAgeRatio(playedTimes[i], age);
 				playedTimesRatios.push(ratio);
-			}
+            }
 		} else {
 			playedTimesRatios = [tl_firstPlayedRatio, tl_lastPlayedRatio];
 		}
@@ -2539,7 +2545,10 @@ function calcDateRatios(dontUpdateLastPlayed, currentLastPlayed) {
 				j++;
 			}
 		}
+		playedTimesRatios.sort();
 
+		tl_firstPlayedRatio = playedTimesRatios[0];
+		tl_lastPlayedRatio = playedTimesRatios[Math.max(0, playedTimesRatios.length - (dontUpdateLastPlayed ? 2 : 1))];
 	} else {
 		tl_firstPlayedRatio = 0.33;
 		tl_lastPlayedRatio = 0.66;
