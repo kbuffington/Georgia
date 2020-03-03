@@ -53,7 +53,6 @@ String.prototype.strip = function() {return this.replace(/[\.,\!\?\:;'\u2019"\-_
 if (!String.prototype.trim) {String.prototype.trim = function () {return this.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, '');};}
 
 function userinterface() {
-	var WshShell = new ActiveXObject("WScript.Shell");
 	try {
 		var dpi = WshShell.RegRead("HKCU\\Control Panel\\Desktop\\WindowMetrics\\AppliedDPI");
 	} catch (e) {

@@ -6,6 +6,13 @@ var currentVersion = '1.1.6';
 var updateAvailable = false;
 var updateHyperlink;
 
+// these used to be initialized in js_marc2003/js/helpers.js
+var doc = new ActiveXObject('htmlfile');
+var app = new ActiveXObject('Shell.Application');
+var WshShell = new ActiveXObject('WScript.Shell');
+var fso = new ActiveXObject('Scripting.FileSystemObject');
+var vb = new ActiveXObject('ScriptControl');
+
 globals.add_properties({
 	version: ['_theme_version (do not hand edit!)', 'NONE']
 });
