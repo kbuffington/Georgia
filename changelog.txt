@@ -1,3 +1,32 @@
+v1.1.6 - 2019-11-13
+ - Fixed startup crashes when creating buttons
+ - Drag & Drop issues
+ - Simplified date and timezone handling
+ - Cleaned up georgia.txt
+ - Improved support for foo_youtube
+
+v1.1.5 - 2019-10-22
+ - Fixes for foo_jscript_panel 2.3.x
+ - Removed unneeded files
+ - Updating fonts
+
+v1.1.4 - 2019-08-29
+ - Add check for updates
+
+v1.1.3 - 2019-08-28
+ - Fixed broken dates
+ - Fixed anti-aliasing on elapsed time when playlist is shown
+
+v1.1.2 - 2019-08-27
+ - Playlist should always draw correctly now
+ - Dates should never show as "0000"
+ - Year now uses $if3(%original release date%,%originaldate%,%date%)
+ - ArtCaching was using the wrong values to scale. Corrected
+ - Ticks on the timeline should never show overlap the album art
+
+v1.1.1 - 2019-08-11
+ - Crash on startup when display playlist on startup set
+
 v1.1.0 - 2019-08-10
  - Dark mode (new default)! Switch between the two in the options menu
  - A ton more 4k fixes
