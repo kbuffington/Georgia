@@ -257,7 +257,9 @@ var cdart_size = new ImageSize(0, 0, 0, 0); // cdart position (offset from album
 var image_bg = gdi.Image(pref.bg_image); // background image
 var albumart_scaled = null; // pre-scaled album art to speed up drawing considerably
 var recordLabels = []; // array of record label images
+var recordLabelsInverted = []; // array of inverted record label images
 var bandLogo = null; // band logo image
+var invertedBandLogo = null; // inverted band logo image
 var settingsImg = null; // settings image
 var propertiesImg = null; // properties image
 var ratingsImg = null; // rating image
@@ -556,7 +558,6 @@ function on_paint(gr) {
 		var c = new Color(col.info_bg);
 		if (c.brightness > 190) {
 			col.info_text = rgb(32,32,32);
-			col.info_text = rgb(0,0,0);
 		} else {
 			col.info_text = rgb(255,255,255);
 		}
@@ -765,23 +766,25 @@ function on_paint(gr) {
 
 	if ((fb.IsPlaying && !displayPlaylist && !displayLibrary) || (!albumart && !cdart && noArtwork)) {
 		// BAND LOGO drawing code
+        var brightBackground = (new Color(col.info_bg).brightness) > 190;
 		showExtraDrawTiming && (drawBandLogos = fb.CreateProfiler("on_paint -> band logos"));
 		availableSpace = albumart_size.y + albumart_size.h - top;
-		if (bandLogo && availableSpace > 75) {
+        var logo = brightBackground ? (invertedBandLogo ? invertedBandLogo : bandLogo) : bandLogo;
+		if (logo && availableSpace > 75) {
 			// max width we'll draw is 1/2 the full size because the HQ images are just so big
-			logoWidth = Math.min(bandLogoHQ ? (is_4k ? bandLogo.width : bandLogo.width / 2) : bandLogo.width * 1.5, albumart_size.x - ww * 0.05);
-			heightScale = logoWidth / bandLogo.width; // width is fixed to logoWidth, so scale height accordingly
-			if (bandLogo.height * heightScale > availableSpace) {
+			logoWidth = Math.min(bandLogoHQ ? (is_4k ? logo.width : logo.width / 2) : logo.width * 1.5, albumart_size.x - ww * 0.05);
+			heightScale = logoWidth / logo.width; // width is fixed to logoWidth, so scale height accordingly
+			if (logo.height * heightScale > availableSpace) {
 				// TODO: could probably do this calc just once, but the logic is complicated
-				heightScale = availableSpace / bandLogo.height;
-				logoWidth = bandLogo.width * heightScale;
+				heightScale = availableSpace / logo.height;
+				logoWidth = logo.width * heightScale;
 			}
-			logoTop = Math.round(albumart_size.y + albumart_size.h - (heightScale * bandLogo.height)) - 4;
+			logoTop = Math.round(albumart_size.y + albumart_size.h - (heightScale * logo.height)) - 4;
 			if (!bandLogoHQ || is_4k) {
 				logoTop -= 20;
 			}
-			gr.DrawImage(bandLogo, Math.round(albumart_size.x / 2 - logoWidth / 2), logoTop, Math.round(logoWidth), Math.round(bandLogo.height * heightScale),
-				0, 0, bandLogo.width, bandLogo.height, 0);
+			gr.DrawImage(logo, Math.round(albumart_size.x / 2 - logoWidth / 2), logoTop, Math.round(logoWidth), Math.round(logo.height * heightScale),
+				0, 0, logo.width, logo.height, 0);
 		}
 		if (showExtraDrawTiming) drawBandLogos.Print();
 
@@ -789,6 +792,7 @@ function on_paint(gr) {
 		// RECORD LABEL drawing code
 		// this section should draw in 3ms or less always
 		if (recordLabels.length > 0) {
+            var labels = brightBackground ? (recordLabelsInverted.length ? recordLabelsInverted : recordLabels) : recordLabels;
 			var rightSideGap = 20, // how close last label is to right edge
 				labelSpacing = 0,
 				leftEdgeGap = art_off_center ? 20 : 40, // space between art and label
@@ -796,22 +800,22 @@ function on_paint(gr) {
 			leftEdgeWidth = is_4k ? 45 : 30; // how far label background extends on left
 			if (showExtraDrawTiming) drawLabelTime = fb.CreateProfiler("on_paint -> record labels");
 			totalLabelWidth = 0;
-			for (i = 0; i < recordLabels.length; i++) {
-				if (recordLabels[i].width > maxLabelWidth) {
+			for (i = 0; i < labels.length; i++) {
+				if (labels[i].width > maxLabelWidth) {
 					totalLabelWidth += maxLabelWidth;
 				} else {
-					if (is_4k && recordLabels[i].width < 200) {
-						totalLabelWidth += recordLabels[i].width * 2;
+					if (is_4k && labels[i].width < 200) {
+						totalLabelWidth += labels[i].width * 2;
 					} else {
-						totalLabelWidth += recordLabels[i].width;
+						totalLabelWidth += labels[i].width;
 					}
 				}
 			}
 			if (!lastLeftEdge) { // we don't want to recalculate this every screen refresh
 				debugLog('recalculating lastLeftEdge');
 				labelShadowImg = disposeImg(labelShadowImg);
-				labelWidth = Math.round(totalLabelWidth / recordLabels.length);
-				labelHeight = Math.round(recordLabels[0].height * labelWidth / recordLabels[0].width); // might be recalc'd below
+				labelWidth = Math.round(totalLabelWidth / labels.length);
+				labelHeight = Math.round(labels[0].height * labelWidth / labels[0].width); // might be recalc'd below
 				if (albumart) {
 					if (cdart && pref.display_cdart) {
 						leftEdge = Math.round(Math.max(albumart_size.x + albumart_scaled.Width + 5, ww * 0.975 - totalLabelWidth + 1));
@@ -821,11 +825,11 @@ function on_paint(gr) {
 						var radius = cdCenter.y - cdart_size.y;
 
 						while (true) {
-							allLabelsWidth = Math.max(Math.min(Math.round((ww - leftEdge - rightSideGap) / recordLabels.length), maxLabelWidth), 50);
+							allLabelsWidth = Math.max(Math.min(Math.round((ww - leftEdge - rightSideGap) / labels.length), maxLabelWidth), 50);
 							//console.log("leftEdge = " + leftEdge + ", ww-leftEdge-10 = " + (ww-leftEdge-10) + ", allLabelsWidth=" + allLabelsWidth);
-							var maxWidth = is_4k && recordLabels[0].width < 200 ? recordLabels[0].width * 2 : recordLabels[0].width;
+							var maxWidth = is_4k && labels[0].width < 200 ? labels[0].width * 2 : labels[0].width;
 							labelWidth = (allLabelsWidth > maxWidth) ? maxWidth : allLabelsWidth;
-							labelHeight = Math.round(recordLabels[0].height * labelWidth / recordLabels[0].width); // width is based on height scale
+							labelHeight = Math.round(labels[0].height * labelWidth / labels[0].width); // width is based on height scale
 							topEdge = Math.round(albumart_size.y + albumart_size.h - labelHeight);
 
 							var a = topEdge - cdCenter.y + 1; // adding 1 to a and b so that the border just touches the edge of the cdart
@@ -850,11 +854,11 @@ function on_paint(gr) {
 				labelAreaWidth = ww - leftEdge - rightSideGap;
 			}
 			if (labelAreaWidth >= 50) {
-				if (recordLabels.length > 1) {
-					labelSpacing = Math.min(12, Math.max(3, Math.round((labelAreaWidth / (recordLabels.length - 1)) * 0.048))); // spacing should be proportional, and between 3 and 12 pixels
+				if (labels.length > 1) {
+					labelSpacing = Math.min(12, Math.max(3, Math.round((labelAreaWidth / (labels.length - 1)) * 0.048))); // spacing should be proportional, and between 3 and 12 pixels
 				}
 				// console.log('labelAreaWidth = ' + labelAreaWidth + ", labelSpacing = " + labelSpacing);
-				allLabelsWidth = Math.max(Math.min(Math.round((labelAreaWidth - (labelSpacing * (recordLabels.length - 1))) / recordLabels.length), maxLabelWidth), 50); // allLabelsWidth must be between 50 and 200 pixels wide
+				allLabelsWidth = Math.max(Math.min(Math.round((labelAreaWidth - (labelSpacing * (labels.length - 1))) / labels.length), maxLabelWidth), 50); // allLabelsWidth must be between 50 and 200 pixels wide
 				var labelX = leftEdge;
 				topEdge = albumart_size.y + albumart_size.h - labelHeight - 20;
 				var origLabelHeight = labelHeight;
@@ -870,13 +874,13 @@ function on_paint(gr) {
                 gr.FillSolidRect(labelX - leftEdgeWidth, topEdge - 20, ww - labelX + leftEdgeWidth, labelHeight + 40, col.info_bg);
                 gr.DrawRect(labelX - leftEdgeWidth, topEdge - 20, ww - labelX + leftEdgeWidth, labelHeight + 40 - 1, 1, col.accent);
 				gr.SetSmoothingMode(SmoothingMode.AntiAliasGridFit);
-				for (i = 0; i < recordLabels.length; i++) {
+				for (i = 0; i < labels.length; i++) {
 					// allLabelsWidth can never be greater than 200, so if a label image is 161 pixels wide, never draw it wider than 161
-					var maxWidth = is_4k && recordLabels[i].width < 200 ? recordLabels[i].width * 2 : recordLabels[i].width;
+					var maxWidth = is_4k && labels[i].width < 200 ? labels[i].width * 2 : labels[i].width;
 					labelWidth = (allLabelsWidth > maxWidth) ? maxWidth : allLabelsWidth;
-					labelHeight = Math.round(recordLabels[i].height * labelWidth / recordLabels[i].width); // width is based on height scale
+					labelHeight = Math.round(labels[i].height * labelWidth / labels[i].width); // width is based on height scale
 
-					gr.DrawImage(recordLabels[i], labelX, Math.round(topEdge + origLabelHeight / 2 - labelHeight / 2), labelWidth, labelHeight, 0, 0, recordLabels[i].width, recordLabels[i].height);
+					gr.DrawImage(labels[i], labelX, Math.round(topEdge + origLabelHeight / 2 - labelHeight / 2), labelWidth, labelHeight, 0, 0, recordLabels[i].width, recordLabels[i].height);
 					// gr.DrawRect(labelX, topEdge, labelWidth, labelHeight, 1, RGB(255,0,0));	// shows bounding rect of record labels
 					labelX += labelWidth + labelSpacing;
 				}
@@ -1594,8 +1598,12 @@ function on_playback_new_track(metadb) {
 
 	/* code to retrieve record label logos */
 	var labelStrings = [];
-	while (recordLabels.length > 0)
+	while (recordLabels.length) {
 		disposeImg(recordLabels.pop());
+    }
+    while (recordLabelsInverted.length) {
+        disposeImg(recordLabelsInverted.pop());
+    }
 	for (i = 0; i < tf.labels.length; i++) {
 		for (j = 0; j < $('$meta_num(' + tf.labels[i] + ')'); j++) {
 			labelStrings.push($('$meta(' + tf.labels[i] + ',' + j + ')'));
@@ -1606,6 +1614,11 @@ function on_playback_new_track(metadb) {
 		var addLabel = LoadLabelImage(labelStrings[i]);
 		if (addLabel != null) {
 			recordLabels.push(addLabel);
+            try {
+                recordLabelsInverted.push(addLabel.InvertColours());
+            } catch (e) {
+                // probably not using foo_jscript v2.3.6
+            }
 		}
 	}
 
@@ -1624,6 +1637,7 @@ function on_playback_new_track(metadb) {
 	/* code to retrieve band logo */
 	bandStr = replaceFileChars($('[%artist%]'));
 	bandLogo = disposeImg(bandLogo);
+    invertedBandLogo = disposeImg(invertedBandLogo);
 	if (bandStr) {
 		bandLogoHQ = false;
 
@@ -1631,6 +1645,12 @@ function on_playback_new_track(metadb) {
 			testBandLogo(pref.logo_color, bandStr, true); // try 800x310 color
 		if (path) {
 			bandLogo = gdi.Image(path);
+            try {
+                invertedBandLogo = bandLogo.InvertColours();
+            } catch (e) {
+                // not using the latest foo_jscript_panel so can't InvertColours
+                invertedBandLogo = undefined;
+            }
 		}
 	}
 
@@ -2149,8 +2169,11 @@ function on_playback_stop(reason) {
 		RepaintWindow();
 		last_path = '';
 		lastDiscNumber = "0";
-		while (recordLabels.length > 0) {
+		while (recordLabels.length) {
 			disposeImg(recordLabels.pop());
+        }
+        while (recordLabelsInverted.length) {
+            disposeImg(recordLabelsInverted.pop());
 		}
 		if (metadb_handle) {
 			metadb_handle = null;
@@ -2167,6 +2190,8 @@ function on_playback_stop(reason) {
 		albumart_scaled = disposeImg(albumart_scaled);
 	}
 	bandLogo = disposeImg(bandLogo);
+    invertedBandLogo = disposeImg(invertedBandLogo);
+
 	while (flagImgs.length > 0)
 		disposeImg(flagImgs.pop());
 	rotatedCD = disposeImg(rotatedCD);
