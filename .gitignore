@@ -1,2 +1,7 @@
 *.sublime-workspace
 *.sublime-project
+*.code-workspace
+
+*.fcl
+georgia-main.backup.js
+*Scratch Pad.txt
