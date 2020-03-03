@@ -2982,7 +2982,7 @@ PlaylistContent = function () {
         function iterate_level(sub_items, start_item) {
             var is_cur_level_header = _.isInstanceOf(_.head(sub_items), BaseHeader);
             var start_item_used = !start_item;
-            
+
             var leveled_start_item = start_item;
             while (leveled_start_item && leveled_start_item.parent !== _.head(sub_items).parent) {
                 leveled_start_item = leveled_start_item.parent;
@@ -3915,7 +3915,7 @@ function Header(parent, x, y, w, h, idx) {
 
                 if (codec == "dca (dts coherent acoustics)") {
                     codec = "dts";
-                }             
+                }
                 if (codec === 'cue') {
                     codec = _.tf('$ext($Info(referenced_file))', metadb);
                 }
@@ -3951,9 +3951,10 @@ function Header(parent, x, y, w, h, idx) {
                     });
                 }
                 var genre_text_w = 0;
+                var extraGenreSpacing = 3;
                 if (!is_radio && grouping_handler.get_query_name() !== 'artist') {
                     var genre_text = _.tf('[%genre%]', metadb).replace(/, /g,' \u2022 ');
-                    genre_text_w = Math.ceil(gr.MeasureString(genre_text, g_pl_fonts.info, 0, 0, 0, 0).Width + 3);
+                    genre_text_w = Math.ceil(gr.MeasureString(genre_text, g_pl_fonts.info, 0, 0, 0, 0).Width + extraGenreSpacing);
                     if (!hyperlinks.genre0) {
                         grClip.DrawString(genre_text, g_pl_fonts.info, info_color, info_x, info_y, info_w, info_h, info_text_format);
                     } else {
@@ -3973,7 +3974,9 @@ function Header(parent, x, y, w, h, idx) {
                         (grouping_handler.show_cd() && has_discs ? this.sub_items.length + ' Discs - ' : '') +
                         track_count + (track_count === 1 ? ' Track' : ' Tracks');
                 var info_text = _.tf(codec + disc_number + '[ | %replaygain_album_gain%]', metadb) + track_text;
-                if (genre_text_w) {
+                if (genre_text_w <= extraGenreSpacing) {
+                    genre_text_w = 0;   // don't leave space if no genre
+                } else {
                     info_text = '| ' + info_text;
                 }
                 if (this.get_duration()) {
@@ -4958,7 +4961,7 @@ function SelectionHandler(cnt_arg, cur_playlist_idx_arg) {
         var cur_selected_indexes = selected_indexes;
 
         var effect = fb.DoDragDrop(cur_playlist_selection, g_drop_effect.copy | g_drop_effect.move | g_drop_effect.link);
-    
+
         function can_handle_move_drop() {
             // We can handle the 'move drop' properly only when playlist is still in the same state
             return cur_playlist_size === plman.PlaylistItemCount(cur_playlist_idx)
