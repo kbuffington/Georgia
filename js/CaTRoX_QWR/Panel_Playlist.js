@@ -4239,7 +4239,7 @@ function Header(parent, x, y, w, h, idx) {
             }
         }
 
-        var album_y = part_h + (is_4k ? 4 : 8);
+        var album_y = part_h + (is_4k ? 6 : 3);
         var album_text = _.tf(grouping_handler.get_sub_title_query(), metadb);
         if (album_text) {
             hyperlinks.album = new Hyperlink(album_text, g_pl_fonts.album, 'album', left_pad, album_y, this.w);
