@@ -1985,7 +1985,9 @@ function on_mouse_move(x, y, m) {
         } else {
             // str.timeline.mouse_in_this(x, y);
 		}
-		volume_btn.on_mouse_move(x, y, m);
+		if (pref.show_volume_button) {
+			volume_btn.on_mouse_move(x, y, m);
+		}
 	}
 }
 
