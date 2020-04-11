@@ -3886,7 +3886,11 @@ function Header(parent, x, y, w, h, idx) {
                         album_text_format |= g_string_format.v_align_center;
                     }
 
-                    grClip.DrawString(album_text, g_pl_fonts.album, album_color, album_x, album_y, album_w, album_h, album_text_format);
+                    if (!hyperlinks.album) {
+                        grClip.DrawString(album_text, g_pl_fonts.album, album_color, album_x, album_y, album_w, album_h, album_text_format);
+                    } else {
+                        hyperlinks.album.draw_playlist(grClip, album_color);
+                    }
 
                     var album_text_w = Math.ceil(
                         /** @type {!number} */
@@ -4222,6 +4226,7 @@ function Header(parent, x, y, w, h, idx) {
         var art_box_x = 3 * (is_4k ? 12 : 6);
         var spacing = is_4k ? 4 : 2;
         var art_box_size = art_max_size + spacing * 2;
+        var part_h = (!g_properties.show_group_info) ? this.h / 2 : this.h / 3;
         left_pad += art_box_x + art_box_size;
 
         if (!_.startsWith(metadb.RawPath, 'http')) {
@@ -4232,6 +4237,12 @@ function Header(parent, x, y, w, h, idx) {
 
                 hyperlinks.artist = new Hyperlink(artist_text, artist_font, 'artist', artist_x, 5, this.w);
             }
+        }
+
+        var album_y = part_h + (is_4k ? 4 : 8);
+        var album_text = _.tf(grouping_handler.get_sub_title_query(), metadb);
+        if (album_text) {
+            hyperlinks.album = new Hyperlink(album_text, g_pl_fonts.album, 'album', left_pad, album_y, this.w);
         }
 
         // var info_text_w = Math.ceil(gr.MeasureString(info_text, g_pl_fonts.info, 0, 0, 0, 0).Width + 5);    // TODO: Mordred - should only call MeasureString once
