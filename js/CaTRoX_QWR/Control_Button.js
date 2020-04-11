@@ -13,8 +13,8 @@ var activatedBtns = [];
 
 function buttonEventHandler(x, y, m) {
 
-	var CtrlKeyPressed = utils.IsKeyPressed(VK_CONTROL);
-	var ShiftKeyPressed = utils.IsKeyPressed(VK_SHIFT);
+	// var CtrlKeyPressed = utils.IsKeyPressed(VK_CONTROL);
+	// var ShiftKeyPressed = utils.IsKeyPressed(VK_SHIFT);
 
 	var c = caller();
 
@@ -42,7 +42,7 @@ function buttonEventHandler(x, y, m) {
 				thisButton.changeState(1);
 			}
 
-			if (lastOverButton != oldButton) {
+			if (lastOverButton && lastOverButton != oldButton && lastOverButton.tooltip !== '') {
 				tooltipTimeout && window.ClearInterval(tooltipTimeout);
 				tooltipTimeout = window.SetTimeout(function () {
 					displayTooltip();
@@ -156,6 +156,9 @@ Button.prototype.onClick = function () {
 			break;
 		case 'Playback/Random':
 			fb.RunMainMenuCommand("Playback/Random");
+			break;
+		case 'Volume':
+			volume_btn.showVolumeBar(true);
 			break;
 		case 'Reload':
 			art_cache.clear();
@@ -384,8 +387,7 @@ function buttonAlphaTimer() {
 
 	var trace = false;
 
-	var turnButtonTimerOff = false,
-		buttonHoverInStep = 40,
+	var buttonHoverInStep = 40,
 		buttonHoverOutStep = 15,
 		buttonDownInStep = 100,
 		buttonDownOutStep = 50,

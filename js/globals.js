@@ -36,6 +36,7 @@ pref.add_properties({
 	show_progress_bar: ['Show Progress Bar', true], // true: show progress bar, otherwise hide it (useful is using another panel for this)
 	show_transport: ['Show transport controls', true], // true: show the play/pause/next/prev/random buttons at the top of the screen
 	show_random_button: ['Show Random Button', true], // true: show random button in transport controls, ignored if transport not shown
+	show_volume_button: ['Show Volume Button', false], // true: show volume button in transport controls, ignored if transport is not shown
 	show_reload_button: ['Show Reload Button', false], // true: show a button that reloads the theme when clicked. Useful for debugging only
 	freq_update: ['Frequent progress bar updates', true], // true: update progress bar multiple times a second. Smoother, but uses more CPU
 	time_zone: ['Time-zone (formatted +/-HH:MM, e.g. -06:00)', '+00:00'], // used to create accurate timezone offsets. "Z", "-06:00", "+06:00", etc. are all valid values

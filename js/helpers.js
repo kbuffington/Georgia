@@ -350,3 +350,9 @@ function checkFor4k(w, h) {
 		last_size = is_4k;
 	}
 }
+
+try {
+	var DPI = WshShell.RegRead('HKCU\\Control Panel\\Desktop\\WindowMetrics\\AppliedDPI');
+} catch (e) {
+	var DPI = 96;
+}

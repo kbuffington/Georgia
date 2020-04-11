@@ -1,6 +1,3 @@
-/// <reference path="../jscript_api/Interfaces.js" />
-
-//
 // Georgia
 //
 // Description  a fullscreen now-playing script for foo_jscript_panel
@@ -419,13 +416,14 @@ var pauseBtn = new PauseButton();
 var last_accent_col = undefined;
 var progressAlphaCol = undefined;
 
+var volume_btn = new VolumeBtn();
+
 // Call initialization function
 on_init();
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-function on_paint(gr) {
-	if (showDrawTiming) drawStuff = fb.CreateProfiler("on_paint");
+function draw_ui(gr) {
 	gr.SetTextRenderingHint(TextRenderingHint.AntiAliasGridFit);
 	gr.SetSmoothingMode(SmoothingMode.None);
 
@@ -1047,8 +1045,15 @@ function on_paint(gr) {
 		}
 	}
     gr.SetSmoothingMode(SmoothingMode.AntiAliasGridFit);
+}
 
-
+function on_paint(gr) {
+	if (showDrawTiming) drawStuff = fb.CreateProfiler("on_paint");
+	draw_ui(gr);
+	if (pref.show_volume_button) {
+		volume_btn.on_paint(gr);
+	}
+	
 	if (showDrawTiming) {
 		drawStuff.Print();
 	}
@@ -1195,6 +1200,8 @@ function onSettingsMenu(x, y) {
 	_menu.CheckMenuItem(12, pref.start_Playlist);
 	_menu.AppendMenuItem(MF_STRING, 13, 'Show Transport Controls');
 	_menu.CheckMenuItem(13, pref.show_transport);
+	_menu.AppendMenuItem(MF_STRING, 16, 'Show Volume Control');
+	_menu.CheckMenuItem(16, pref.show_volume_button);
 	_menu.AppendMenuItem(MF_STRING, 14, 'Show Progress Bar');
 	_menu.CheckMenuItem(14, pref.show_progress_bar);
 	_menu.AppendMenuItem(MF_STRING, 15, 'Update Progress Bar frequently (higher CPU)');
@@ -1327,6 +1334,11 @@ function onSettingsMenu(x, y) {
 		case 15:
 			pref.freq_update = !pref.freq_update;
 			SetProgressBarRefresh();
+			break;
+		case 16: 
+			pref.show_volume_button = !pref.show_volume_button;
+			createButtonObjects(ww, wh);
+			RepaintWindow();
 			break;
 		case 17:
 			pref.use_vinyl_nums = !pref.use_vinyl_nums;
@@ -1829,60 +1841,66 @@ function on_playback_seek() {
 var onMouseLbtnDown = false;
 
 function on_mouse_lbtn_down(x, y, m) {
-	var menu_yOffset = 19;
 	if (y > wh - geo.lower_bar_h) {
 		g_drag = 1;
 	}
 
-	// clicking on progress bar
-	if (pref.show_progress_bar && y >= wh - 0.5 * geo.lower_bar_h && y <= wh - 0.5 * geo.lower_bar_h + geo.prog_bar_h && x >= 0.025 * ww && x < 0.975 * ww) {
-		var v = (x - 0.025 * ww) / (0.95 * ww);
-		v = (v < 0) ? 0 : (v < 1) ? v : 1;
-		if (fb.PlaybackTime != v * fb.PlaybackLength) fb.PlaybackTime = v * fb.PlaybackLength;
-		window.RepaintRect(0, wh - geo.lower_bar_h, ww, geo.lower_bar_h);
-	}
+	if (!volume_btn.on_mouse_lbtn_down(x, y, m)) {
+		// not handled by volume_btn
 
-	buttonEventHandler(x, y, m);
-	if (updateHyperlink && !fb.IsPlaying && updateHyperlink.trace(x, y)) {
-		updateHyperlink.click();
-	}
+		// clicking on progress bar
+		if (pref.show_progress_bar && y >= wh - 0.5 * geo.lower_bar_h && y <= wh - 0.5 * geo.lower_bar_h + geo.prog_bar_h && x >= 0.025 * ww && x < 0.975 * ww) {
+			var v = (x - 0.025 * ww) / (0.95 * ww);
+			v = (v < 0) ? 0 : (v < 1) ? v : 1;
+			if (fb.PlaybackTime != v * fb.PlaybackLength) fb.PlaybackTime = v * fb.PlaybackLength;
+			window.RepaintRect(0, wh - geo.lower_bar_h, ww, geo.lower_bar_h);
+		}
 
-	if (displayPlaylist) {// && playlist.mouse_in_this(x, y)) {
-		trace_call && console.log(qwr_utils.function_name());
-		playlist.on_mouse_lbtn_down(x, y, m);
-	} else if (displayLibrary && library.mouse_in_this(x, y)) {
-		trace_call && console.log(qwr_utils.function_name());
-		library.on_mouse_lbtn_down(x, y, m);
+		buttonEventHandler(x, y, m);
+		if (updateHyperlink && !fb.IsPlaying && updateHyperlink.trace(x, y)) {
+			updateHyperlink.click();
+		}
+	
+		if (displayPlaylist) {// && playlist.mouse_in_this(x, y)) {
+			trace_call && console.log(qwr_utils.function_name());
+			playlist.on_mouse_lbtn_down(x, y, m);
+		} else if (displayLibrary && library.mouse_in_this(x, y)) {
+			trace_call && console.log(qwr_utils.function_name());
+			library.on_mouse_lbtn_down(x, y, m);
+		}
 	}
 }
 
 function on_mouse_lbtn_up(x, y, m) {
 	g_drag = 0;
 
-	if (displayPlaylist && playlist.mouse_in_this(x, y)) {
-		trace_call && console.log(qwr_utils.function_name());
-
-		playlist.on_mouse_lbtn_up(x, y, m);
-
-		qwr_utils.EnableSizing(m);
-	} else if (displayLibrary && library.mouse_in_this(x, y)) {
-		trace_call && console.log(qwr_utils.function_name());
-		library.on_mouse_lbtn_up(x, y, m);
-	} else {
-
-		if (just_dblclicked) {
-			// You just did a double-click, so do nothing
-			just_dblclicked = false;
+	if (!volume_btn.on_mouse_lbtn_up(x, y, m)) {
+		// not handled by volume_btn
+		if (displayPlaylist && playlist.mouse_in_this(x, y)) {
+			trace_call && console.log(qwr_utils.function_name());
+	
+			playlist.on_mouse_lbtn_up(x, y, m);
+	
+			qwr_utils.EnableSizing(m);
+		} else if (displayLibrary && library.mouse_in_this(x, y)) {
+			trace_call && console.log(qwr_utils.function_name());
+			library.on_mouse_lbtn_up(x, y, m);
 		} else {
-			if ((albumart && albumart_size.x <= x && albumart_size.y <= y && albumart_size.x + albumart_size.w >= x && albumart_size.y + albumart_size.h >= y) ||
-				(cdart && !albumart && cdart_size.x <= x && cdart_size.y <= y && cdart_size.x + cdart_size.w >= x && cdart_size.y + cdart_size.h >= y) ||
-				pauseBtn.trace(x, y)) {
-				fb.PlayOrPause();
+	
+			if (just_dblclicked) {
+				// You just did a double-click, so do nothing
+				just_dblclicked = false;
+			} else {
+				if ((albumart && albumart_size.x <= x && albumart_size.y <= y && albumart_size.x + albumart_size.w >= x && albumart_size.y + albumart_size.h >= y) ||
+					(cdart && !albumart && cdart_size.x <= x && cdart_size.y <= y && cdart_size.x + cdart_size.w >= x && cdart_size.y + cdart_size.h >= y) ||
+					pauseBtn.trace(x, y)) {
+					fb.PlayOrPause();
+				}
 			}
 		}
+		on_mouse_move(x, y);
+		buttonEventHandler(x, y, m);
 	}
-	on_mouse_move(x, y);
-	buttonEventHandler(x, y, m);
 
 	onMouseLbtnDown = false;
 }
@@ -1966,7 +1984,8 @@ function on_mouse_move(x, y, m) {
 			library.on_mouse_move(x, y, m);
         } else {
             // str.timeline.mouse_in_this(x, y);
-        }
+		}
+		volume_btn.on_mouse_move(x, y, m);
 	}
 }
 
@@ -2253,6 +2272,11 @@ function on_notify_data(name, info) {
 		trace_call && console.log(qwr_utils.function_name());
 		playlist.on_notify_data(name, info);
 	}
+}
+
+function on_volume_change(val) {
+    trace_call && console.log(qwr_utils.function_name());
+    volume_btn.on_volume_change(val);
 }
 
 var debounced_init_playlist = _.debounce(function (playlistIndex) {
@@ -2894,8 +2918,7 @@ function createButtonObjects(ww, wh) {
 
 	//---> Transport buttons
 	if (pref.show_transport) {
-		var add = 0;
-		var count = 4 + (pref.show_random_button ? 1 : 0) + (pref.show_reload_button ? 1 : 0);
+		var count = 4 + (pref.show_random_button ? 1 : 0) + (pref.show_volume_button ? 1 : 0) + (pref.show_reload_button ? 1 : 0);
 
 		var y = is_4k ? 20 : 10;
 		var w = is_4k ? 64 : 32;
@@ -2906,14 +2929,18 @@ function createButtonObjects(ww, wh) {
 		count = 0;
 
 		btns[count] = new Button(x, y, w, h, "Stop", btnImg.Stop, "Stop");
-		btns[++count] = new Button(x + (w + p) * count, y, w, h, "Previous", btnImg.Previous, '');
-		btns[++count] = new Button(x + (w + p) * count, y, w, h, "Play/Pause", (fb.IsPlaying ? (fb.IsPaused ? btnImg.Play : btnImg.Pause) : btnImg.Play));
-		btns[++count] = new Button(x + (w + p) * count, y, w, h, "Next", btnImg.Next);
+		btns[++count] = new Button(x + (w + p) * count, y, w, h, "Previous", btnImg.Previous, '', 'Previous');
+		btns[++count] = new Button(x + (w + p) * count, y, w, h, "Play/Pause", (fb.IsPlaying ? (fb.IsPaused ? btnImg.Play : btnImg.Pause) : btnImg.Play), 'Play');
+		btns[++count] = new Button(x + (w + p) * count, y, w, h, "Next", btnImg.Next, 'Next');
 		if (pref.show_random_button) {
 			btns[++count] = new Button(x + (w + p) * count, y, w, h, "Playback/Random", btnImg.PlaybackRandom, "Play Random Song");
 		}
+		if (pref.show_volume_button) {
+			btns[++count] = new Button(x + (w + p) * count, y, w, h, 'Volume', btnImg.ShowVolume);
+			volume_btn.set_position(x + (w + p) * count, y, w);
+		}
 		if (pref.show_reload_button) {
-			btns[++count] = new Button(x + (w + p) * count, y, w, h, "Reload", btnImg.Reload);
+			btns[++count] = new Button(x + (w + p) * count, y, w, h, "Reload", btnImg.Reload, 'Reload');
 		}
 	}
 
@@ -3049,6 +3076,13 @@ function createButtonImages() {
 			},
 			PlaybackRandom: {
 				ico: g_guifx.shuffle,
+				font: ft.guifx,
+				type: 'transport',
+				w: 30,
+				h: 30
+			},
+			ShowVolume: {
+				ico:  g_guifx.volume_up,
 				font: ft.guifx,
 				type: 'transport',
 				w: 30,
