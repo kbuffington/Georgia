@@ -52,6 +52,9 @@ function createFonts() {
 	ft.album_lrg = font(fontBold, 36, 0);
 	ft.album_med = font(fontBold, 32, 0);
 	ft.album_sml = font(fontBold, 28, 0);
+	ft.album_lrg_alt = font(fontRegular, 36, 0);
+	ft.album_med_alt = font(fontRegular, 32, 0);
+	ft.album_sml_alt = font(fontRegular, 28, 0);
 	ft.album_substitle_lrg = font(fontBold, 36, g_font_style.italic);
 	ft.album_substitle_med = font(fontBold, 32, g_font_style.italic);
 	ft.album_substitle_sml = font(fontBold, 28, g_font_style.italic);
@@ -617,6 +620,10 @@ function draw_ui(gr) {
 
 			if (str.album) {
 				var font_array = [ft.album_lrg, ft.album_med, ft.album_sml];
+				if (str.album.indexOf('Á') !== -1) {
+					// some fonts don't work correctly with this character 
+					font_array = [ft.album_lrg_alt, ft.album_med_alt, ft.album_sml_alt];
+				}
 				var subtitlefont_array = [ft.album_substitle_lrg, ft.album_substitle_med, ft.album_substitle_sml];
 				if (str.album_subtitle.length) {
 					top += drawMultipleLines(gr, text_width, textLeft, top, col.info_text, str.album, font_array,
