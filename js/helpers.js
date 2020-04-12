@@ -356,3 +356,45 @@ try {
 } catch (e) {
 	var DPI = 96;
 }
+
+_.mixin({
+	runCmd:               function (command, wait, show) {
+		try {
+			WshShell.Run(command, show ? 1 : 0, !_.isNil(wait) ? wait : false);
+			return true;
+		} catch (e) {
+			return false;
+		}
+	},
+	scale:                function (size) {
+        return Math.round(size * DPI / 72);
+    },
+    toDb:                 function (volume) {
+        return 50 * Math.log(0.99 * volume + 0.01) / Math.LN10;
+    },
+    tt:                   function (value, force) {
+        if (g_tooltip.Text !== _.toString(value) || force) {
+            g_tooltip.Text = value;
+            g_tooltip.Activate();
+        }
+    },
+    /** @constructor */
+    tt_handler:           function () {
+        this.showDelayed = function (text) {
+            tt_timer.start(this.id, text);
+        };
+        this.showImmediate = function (text) {
+            tt_timer.stop(this.id);
+            _.tt(text);
+        };
+        this.clear = function () {
+            tt_timer.stop(this.id);
+        };
+        this.stop = function () {
+            tt_timer.force_stop();
+        };
+        this.id = Math.ceil(Math.random().toFixed(8) * 1000);
+
+        var tt_timer = _.tt_handler.tt_timer;
+    },
+});

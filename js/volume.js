@@ -1,39 +1,8 @@
 _.mixin({
-    scale:                function (size) {
-        return Math.round(size * DPI / 72);
-    },
-    toDb:                 function (volume) {
-        return 50 * Math.log(0.99 * volume + 0.01) / Math.LN10;
-    },
-    tt:                   function (value, force) {
-        if (g_tooltip.Text !== _.toString(value) || force) {
-            g_tooltip.Text = value;
-            g_tooltip.Activate();
-        }
-    },
-    /** @constructor */
-    tt_handler:           function () {
-        this.showDelayed = function (text) {
-            tt_timer.start(this.id, text);
-        };
-        this.showImmediate = function (text) {
-            tt_timer.stop(this.id);
-            _.tt(text);
-        };
-        this.clear = function () {
-            tt_timer.stop(this.id);
-        };
-        this.stop = function () {
-            tt_timer.force_stop();
-        };
-        this.id = Math.ceil(Math.random().toFixed(8) * 1000);
-
-        var tt_timer = _.tt_handler.tt_timer;
-    },
     /** @constructor */
     volume: function (x, y, w, h) {
         this.repaint = function () {
-            var expXY = 2,
+            var expXY = 3,
                 expWH = expXY * 2;
             window.RepaintRect(this.x - expXY, this.y - expXY, this.w + expWH, this.h + expWH);
         };
@@ -222,8 +191,8 @@ function VolumeBtn() {
                 var fillHeight = volume_bar.pos('h');
 
                 gr.FillSolidRect(x, y + p, w, h, col.bg);
-                gr.FillSolidRect(x, y + p + h - fillHeight, w, fillHeight, col.progress_fill);
-                gr.DrawRect(x, y + p, w, h, 1, col.progress_bar)
+                gr.FillSolidRect(x, y + p + h - fillHeight, w, fillHeight - 1, col.progress_fill);
+                gr.DrawRect(x, y + p, w, h, 1, col.progress_bar);
             }
         }
    
@@ -339,43 +308,6 @@ function VolumeBtn() {
             that.on_size(1, 1);
         }
     }
- 
-    // function create_buttons(wx, wy, ww, wh) {
-    //     if (buttons) {
-    //         buttons.reset();
-    //     }
- 
-    //     buttons = new _.buttons;
- 
-    //     //---> Playback buttons
-    //     var w = 30;
-    //     var h = 30;
-    //     var p = 4;
-    //     var x = wx + Math.floor(ww / 2 - (w * 5 + p * 4) / 2);
-    //     var y = wy + Math.floor(wh / 2 - w / 2) - 10;
- 
-    //     x += w + p;
-    //     volume_bar_x = x;
-    //     var volValue = _.toVolume(fb.Volume);
- 
-    //     x += w - 38;
-    //     buttons.buttons.volume = new _.button(x, y, button_images.ShowVolume.normal.Width, h, button_images.ShowVolume, function () {
-    //         volume_bar.showVolumeBar(true);
-    //         buttons.leave(); // for state reset
-    //         buttons.buttons.volume.hide = true;
-    //         volume_bar.repaint();
-    //     }, 'Volume');
- 
-    //     buttons.refresh_play_button = function () {
-    //         buttons.buttons.play.set_image((!fb.IsPlaying || fb.IsPaused) ? button_images.Play : button_images.Pause);
-    //         buttons.buttons.play.tiptext = (!fb.IsPlaying || fb.IsPaused) ? 'Play' : 'Pause';
-    //         buttons.buttons.play.repaint();
-    //     };
- 
-    //     buttons.refresh_vol_button = function () {
-    //         var volValue = _.toVolume(fb.Volume);
-    //     };
-    // }
  
     function create_button_images() {
  
