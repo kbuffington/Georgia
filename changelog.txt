@@ -1,5 +1,6 @@
 v1.1.7 - 2020-04-11
  - Invert logos when theme primary color is dark (requires foo_jscript_panel v2.3.6)
+ - Fixed crash when clicking the hyperlink to upgrade. Sorry!
  - Fixed crash when managing grouping presets
  - Added volume control
  - Album labels in playlist are now hyperlinks
