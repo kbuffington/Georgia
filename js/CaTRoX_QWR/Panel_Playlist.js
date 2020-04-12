@@ -747,7 +747,7 @@ function Playlist(x, y) {
                 gr.FillGradRect(this.x, this.list_y - 1, this.list_w, gradiantHeight, 270, RGBtoRGBA(g_theme.colors.panel_back, 0), RGBtoRGBA(g_theme.colors.panel_back, 200));
             }
             if (!this.scrollbar.is_scrolled_down) {
-                gr.FillGradRect(this.x, this.y + this.h - gradiantHeight, this.w, gradiantHeight, 90, RGBtoRGBA(g_theme.colors.panel_back, 0), RGBtoRGBA(g_theme.colors.panel_back, 255));
+                gr.FillGradRect(this.x, this.y + this.h - gradiantHeight, this.w, gradiantHeight, 270, RGBtoRGBA(g_theme.colors.panel_back, 255), RGBtoRGBA(g_theme.colors.panel_back, 0));
             }
         }
 
