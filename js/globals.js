@@ -2,7 +2,7 @@ var globals = PanelProperties.get_instance();
 var pref = PanelProperties.get_instance(); // preferences
 var tf = PanelProperties.get_instance(); // titleformating strings
 
-var currentVersion = '1.1.6';
+var currentVersion = '1.1.7';
 var updateAvailable = false;
 var updateHyperlink;
 
