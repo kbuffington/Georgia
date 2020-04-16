@@ -138,7 +138,7 @@ _.mixin({
 
 function VolumeBtn() {
     this.on_paint = function (gr) {
- 
+           
             // VolBar
             if (show_volume_bar) {
                 var p = 3;
@@ -148,10 +148,11 @@ function VolumeBtn() {
                     h = volume_bar.h;
  
                 var fillHeight = volume_bar.pos('h');
+                var lineThickness = is_4k ? 2 : 1;
 
                 gr.FillSolidRect(x, y + p, w, h, col.bg);
-                gr.FillSolidRect(x, y + p + h - fillHeight, w, fillHeight - 1, col.progress_fill);
-                gr.DrawRect(x, y + p, w, h, 1, col.progress_bar);
+                gr.FillSolidRect(x, y + p + h - fillHeight, w, fillHeight, col.progress_fill);
+                gr.DrawRect(x, y + p, w, h - lineThickness, lineThickness, col.progress_bar);
             }
         }
    
@@ -161,10 +162,9 @@ function VolumeBtn() {
         this.h = window.Height;
  
         var playback_y = this.h - playback_h;
-        // create_buttons(0, playback_y, this.w, playback_h);
- 
+        
         var volume_bar_y = playback_y + Math.floor(playback_h / 2 - volume_bar_w / 2 - 10);
-        volume_bar = new _.volume(volume_bar_x, volume_bar_y, Math.min(this.w - volume_bar_x - 4, 180), volume_bar_w);
+        volume_bar = new _.volume(volume_bar_x, volume_bar_y, Math.min(this.w - volume_bar_x - 4, volume_bar_h), volume_bar_w);
  
     };
 
@@ -175,7 +175,7 @@ function VolumeBtn() {
 
         volume_bar_x = x;
         volume_bar_y = y
-        volume_bar = new _.volume(volume_bar_x + center - volume_bar_w / 2, volume_bar_y + center, volume_bar_w, Math.min(this.h - volume_bar_y - 4, 180));        
+        volume_bar = new _.volume(volume_bar_x + center - volume_bar_w / 2, volume_bar_y + center, volume_bar_w, Math.min(this.h - volume_bar_y - 4, volume_bar_h));        
     }
  
     this.on_mouse_move = function (x, y, m) {
@@ -186,13 +186,14 @@ function VolumeBtn() {
             return;
         }
  
-        if (!mouse_in_panel) {
+        if (show_volume_bar && volume_bar.trace(x, y)) {
             mouse_in_panel = true;
+        } else {
+            mouse_in_panel = false;
         }
  
         if (show_volume_bar) {
-            var trace_pad = 2;
-            if ((volume_bar.x - 2 * trace_pad <= x) && (x <= volume_bar.x + volume_bar.w + trace_pad) && (volume_bar.y - trace_pad <= y) && (y <= volume_bar.y + volume_bar.h + trace_pad)) {
+            if (x > volume_bar.x - trace_pad && x < volume_bar.x + volume_bar.w + trace_pad && y >= volume_bar.y - trace_pad - 3 && y < volume_bar.y + volume_bar.h + trace_pad) {
                 volume_bar.move(x, y);
             }
             else {
@@ -242,10 +243,8 @@ function VolumeBtn() {
         }
  
         if (show_volume_bar) {
-            volume_bar.showVolumeBar(false);
-            buttons.buttons.volume.hide = false;
+            this.showVolumeBar(false);
             volume_bar.repaint();
-            buttons.refresh_vol_button();
         }
     };
  
@@ -261,71 +260,9 @@ function VolumeBtn() {
     }
 
     function initialize() {
-        create_button_images();
- 
         if (!window.IsVisible) {
             that.on_size(1, 1);
         }
-    }
- 
-    function create_button_images() {
- 
-        var fontGuifx_15 = gdi.Font(g_guifx.name, 24);
-        var default_ico_colors =
-            [
-                RGB(160, 160, 160),
-                RGB(100, 100, 100),
-                RGB(100, 100, 100)
-            ];
-        var playbackEllypseColor =
-            [
-                RGB(220, 220, 220),
-                RGB(200, 200, 200),
-                RGB(200, 200, 200)
-            ];
-        var btn =
-            {
-                ShowVolume: {
-                    ico:  g_guifx.mute2,
-                    font: fontGuifx_15,
-                    id:   'transport',
-                    w:    30,
-                    h:    30
-                }
-            };
- 
-        button_images = [];
- 
-        _.forEach(btn, function (item, i) {
-            var w = item.w,
-                h = item.h;
- 
-            var stateImages = []; //0=normal, 1=hover, 2=down;
- 
-            for (var s = 0; s <= 2; s++) {
-                var img = gdi.CreateImage(w, h);
-                var g = img.GetGraphics();
-                lw = 1;
-                g.SetSmoothingMode(SmoothingMode.HighQuality);
-                g.SetTextRenderingHint(TextRenderingHint.AntiAlias);
- 
-                var volumeEllypseColor = playbackEllypseColor[s];
-                // Needs to be fixed ---> g.DrawEllipse(Math.floor(lw / 2) + 1, Math.floor(lw / 2) + 1, w - lw - 2, h - lw - 2, lw, volumeEllypseColor);
-                var ico_color = default_ico_colors[s];
-                g.DrawString(item.ico, item.font, ico_color, (i === 'Stop') ? 0 : 1, 0, w, h);
- 
- 
-                img.ReleaseGraphics(g);
-                stateImages[s] = img;
-            }
- 
-            button_images[i] =
-                {
-                    normal:  stateImages[0],
-                    hover:   stateImages[1],
-                    pressed: stateImages[2]
-                };
-        });
     }
  
     this.x = 0;
@@ -340,7 +277,9 @@ function VolumeBtn() {
      * @type {number}
      */
  
-    var volume_bar_w = is_4k ? 14 : 28;
+    var volume_bar_w = is_4k ? 56 : 28;
+    var trace_pad = Math.min(volume_bar_w / 2);
+    var volume_bar_h = is_4k ? 360 : 180;
     /**
      * @const
      * @type {number}
@@ -348,16 +287,13 @@ function VolumeBtn() {
     var playback_h = 30;
  
     // Const after init
-    var button_images = [];
     var volume_bar_x = 0;
  
     // Runtime state
-    var panel_alpha = 255;
     var mouse_in_panel = false;
     var show_volume_bar = false;
  
     // Objects
-    var buttons = undefined;
     var volume_bar = undefined;
  
     initialize();

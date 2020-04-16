@@ -423,7 +423,7 @@ var pauseBtn = new PauseButton();
 var last_accent_col = undefined;
 var progressAlphaCol = undefined;
 
-var volume_btn = new VolumeBtn();
+var volume_btn;
 
 // Call initialization function
 on_init();
@@ -1542,6 +1542,7 @@ function on_size() {
 			LoadCountryFlags(); // wrong size flag gets loaded on 4k systems
 		}
 		initPlaylist();
+		volume_btn = new VolumeBtn();
         sizeInitialized = true;
         if (str.timeline) {
             str.timeline.setHeight(geo.timeline_h);
@@ -2008,6 +2009,9 @@ function on_mouse_wheel(delta) {
 		refresh_seekbar();
 		return;
 	}
+	if (pref.show_volume_button) {
+		volume_btn.on_mouse_wheel(delta);
+	}
 	if (displayPlaylist) {
 		trace_call && console.log(qwr_utils.function_name());
 		playlist.on_mouse_wheel(delta);
@@ -2022,6 +2026,9 @@ function on_mouse_wheel(delta) {
 
 function on_mouse_leave() {
 
+	if (pref.show_volume_button) {
+		volume_btn.on_mouse_leave();
+	}
 	if (displayPlaylist) {
 		playlist.on_mouse_leave();
 	} else if (displayLibrary) {
