@@ -398,3 +398,41 @@ _.mixin({
         var tt_timer = _.tt_handler.tt_timer;
     },
 });
+
+_.tt_handler.tt_timer = new function () {
+    var tooltip_timer;
+    var tt_caller = undefined;
+
+    this.start = function (id, text) {
+        var old_caller = tt_caller;
+        tt_caller = id;
+
+        if (!tooltip_timer && g_tooltip.Text) {
+            _.tt(text, old_caller !== tt_caller );
+        }
+        else {
+            this.force_stop(); /// < There can be only one tooltip present at all times, so we can kill the timer w/o any worries
+
+            if (!tooltip_timer) {
+                tooltip_timer = window.SetTimeout(_.bind(function () {
+                    _.tt(text);
+                    tooltip_timer = null;
+                }, this), 500);
+            }
+        }
+    };
+
+    this.stop = function (id) {
+        if (tt_caller === id) {// Do not stop other callers
+            this.force_stop();
+        }
+    };
+
+    this.force_stop = function () {
+        _.tt("");
+        if (tooltip_timer) {
+            window.ClearTimeout(tooltip_timer);
+            tooltip_timer = null;
+        }
+    };
+};

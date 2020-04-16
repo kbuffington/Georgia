@@ -40,6 +40,9 @@ function createFonts() {
 		return; // don't redo fonts
 	}
 
+	g_tooltip = window.CreateTooltip('Segoe UI', is_4k ? 30 : 15)
+	g_tooltip.text = '';	// just in case
+
 	function font(name, size, style) {
 		var font;
 		try {
@@ -309,7 +312,6 @@ var fadeAlpha = 255; // full alpha which will be decremented
 var nextPrevAlpha = 255; // full alpha for next/prev icons which will be decremented
 var bandLogoHQ = false; // if true will partially remove the 10 pixel "gutter" around the image that fanart.tv requires around their high-rez images so that logos use more of the available space.
 var t_interval; // milliseconds between screen updates
-// var settingsY = 0;			// location of settings button
 var lastLeftEdge = 0; // the left edge of the record labels. Saved so we don't have to recalculate every on every on_paint unless size has changed
 var displayPlaylist = false;
 var displayLibrary = false;
@@ -328,6 +330,8 @@ var currentLastPlayed = '';
 // Lyrics Variables
 var len_seconds = fb.Titleformat("%length_seconds%");
 var elap_seconds = fb.TitleFormat("%playback_time_seconds%");
+
+var g_tooltip;
 
 var g_playtimer = null;
 var g_timer_abs;

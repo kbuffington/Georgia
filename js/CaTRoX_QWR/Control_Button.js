@@ -1,7 +1,4 @@
-// ====================================== //
-// @name "Button Control (04.08.2013)"
-// @author "eXtremeHunter"
-// ====================================== //
+
 var oldButton, downButton;
 var buttonTimer = null;
 var mainMenuOpen = false;
@@ -10,6 +7,8 @@ var tooltipTimeout = null;
 var lastOverButton = null;
 
 var activatedBtns = [];
+
+var tt = new _.tt_handler;
 
 function buttonEventHandler(x, y, m) {
 
@@ -42,13 +41,14 @@ function buttonEventHandler(x, y, m) {
 				thisButton.changeState(1);
 			}
 
-			if (lastOverButton && lastOverButton != oldButton && lastOverButton.tooltip !== '') {
-				tooltipTimeout && window.ClearInterval(tooltipTimeout);
-				tooltipTimeout = window.SetTimeout(function () {
-					displayTooltip();
-				}, 750);
-			}
-
+			if (lastOverButton) {
+				if (lastOverButton.tooltip) {
+					tt.showDelayed(lastOverButton.tooltip);
+				} else if (lastOverButton.id = 'Volume') {
+					tt.showDelayed(fb.Volume.toFixed(2) + ' dB');
+				}
+			} 
+			
 			oldButton = thisButton;
 			break;
 		case 'on_mouse_lbtn_dblclk':
@@ -93,15 +93,6 @@ function buttonEventHandler(x, y, m) {
 	}
 }
 
-var g_tooltip = window.CreateTooltip();
-g_tooltip.Text = ""; // was seeing stale tooltips when reloading the theme, having another window selected and mousing over the WSHPanel
-
-function displayTooltip() {
-	if (lastOverButton && lastOverButton.tooltip !== "" && g_tooltip.Text !== lastOverButton.tooltip) {
-		g_tooltip.Text = lastOverButton.tooltip;
-		g_tooltip.Activate();
-	}
-}
 // =================================================== //
 WindowState = {
 	Normal: 0,
