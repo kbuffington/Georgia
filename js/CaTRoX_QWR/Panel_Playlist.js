@@ -1208,8 +1208,7 @@ function Playlist(x, y) {
     };
 
     this.on_playlists_changed = function () {
-        if (plman.ActivePlaylist > plman.PlaylistCount
-            || plman.ActivePlaylist === -1) {
+        if ((plman.ActivePlaylist > plman.PlaylistCount || plman.ActivePlaylist === -1) && plman.PlaylistCount > 0) {
             plman.ActivePlaylist = plman.PlaylistCount - 1;
         }
 

@@ -1,3 +1,9 @@
+v1.1.8 - ??
+ - Random now actually randomizes playlist
+ - Improved tooltip handling for buttons
+ - Fixed issues with expanded volume bar disappearing and it's appearance in 4k mode
+ - Fixed crash when deleting last playlist
+
 v1.1.7 - 2020-04-11
  - Invert logos when theme primary color is dark (requires foo_jscript_panel v2.3.6)
  - Fixed crash when clicking the hyperlink to upgrade. Sorry!
