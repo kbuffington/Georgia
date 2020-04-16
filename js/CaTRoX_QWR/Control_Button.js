@@ -146,7 +146,7 @@ Button.prototype.onClick = function () {
 			fb.Next();
 			break;
 		case 'Playback/Random':
-			fb.RunMainMenuCommand("Playback/Random");
+			fb.RunMainMenuCommand('Edit/Sort/Randomize')
 			break;
 		case 'Volume':
 			volume_btn.showVolumeBar(true);

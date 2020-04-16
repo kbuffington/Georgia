@@ -2942,11 +2942,11 @@ function createButtonObjects(ww, wh) {
 		count = 0;
 
 		btns[count] = new Button(x, y, w, h, "Stop", btnImg.Stop, "Stop");
-		btns[++count] = new Button(x + (w + p) * count, y, w, h, "Previous", btnImg.Previous, '', 'Previous');
+		btns[++count] = new Button(x + (w + p) * count, y, w, h, "Previous", btnImg.Previous, 'Previous');
 		btns[++count] = new Button(x + (w + p) * count, y, w, h, "Play/Pause", (fb.IsPlaying ? (fb.IsPaused ? btnImg.Play : btnImg.Pause) : btnImg.Play), 'Play');
 		btns[++count] = new Button(x + (w + p) * count, y, w, h, "Next", btnImg.Next, 'Next');
 		if (pref.show_random_button) {
-			btns[++count] = new Button(x + (w + p) * count, y, w, h, "Playback/Random", btnImg.PlaybackRandom, "Play Random Song");
+			btns[++count] = new Button(x + (w + p) * count, y, w, h, "Playback/Random", btnImg.PlaybackRandom, 'Randomize Playlist');
 		}
 		if (pref.show_volume_button) {
 			btns[++count] = new Button(x + (w + p) * count, y, w, h, 'Volume', btnImg.ShowVolume);
