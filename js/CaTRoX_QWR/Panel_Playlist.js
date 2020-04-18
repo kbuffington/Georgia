@@ -1036,7 +1036,9 @@ function Playlist(x, y) {
             qwr_utils.append_default_context_menu_to(cmm);
         }
 
+        menu_down = true;
         cmm.execute(x, y);
+        menu_down = false;
         cmm.dispose();
 
         this.repaint();
@@ -5854,7 +5856,7 @@ function PlaylistManager(x, y, w, h) {
         if (!this.trace(x, y)) {
             return true;
         }
-
+        
         change_state(state.pressed);
     };
 
@@ -5880,7 +5882,9 @@ function PlaylistManager(x, y, w, h) {
             qwr_utils.append_default_context_menu_to(cmm);
         }
 
+        menu_down = true;
         cmm.execute(x, y);
+        menu_down = false;
         cmm.dispose();
 
         return true;

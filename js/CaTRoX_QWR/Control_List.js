@@ -288,7 +288,9 @@ List.prototype.on_mouse_rbtn_up = function (x, y, m) {
         qwr_utils.append_default_context_menu_to(cmm);
     }
 
-    cmm.execute(x,y);
+    menu_down = true;
+    cmm.execute(x, y);
+    menu_down = false;
     cmm.dispose();
 
     this.repaint();
