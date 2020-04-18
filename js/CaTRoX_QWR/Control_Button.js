@@ -44,11 +44,11 @@ function buttonEventHandler(x, y, m) {
 			if (lastOverButton) {
 				if (lastOverButton.tooltip) {
 					tt.showDelayed(lastOverButton.tooltip);
-				} else if (lastOverButton.id = 'Volume') {
+				} else if (lastOverButton.id === 'Volume') {
 					tt.showDelayed(fb.Volume.toFixed(2) + ' dB');
 				}
 			} 
-			
+
 			oldButton = thisButton;
 			break;
 		case 'on_mouse_lbtn_dblclk':
@@ -107,8 +107,8 @@ function Button(x, y, w, h, id, img, tip) {
 	this.w = w;
 	this.h = h;
 	this.id = id;
-	this.tooltip = typeof tip !== 'undefined' ? tip : '';
 	this.img = img;
+	this.tooltip = typeof tip !== 'undefined' ? tip : '';
 	this.state = 0;
 	this.hoverAlpha = 0;
 	this.downAlpha = 0;
