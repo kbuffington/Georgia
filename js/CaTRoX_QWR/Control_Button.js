@@ -318,7 +318,7 @@ function onPlaylistsMenu(x, y) {
 			break;
 		case 2:
 			plman.CreatePlaylist(playlistCount, "");
-			plman.ActivePlaylist = plman.PlaylistCount;
+			plman.ActivePlaylist = plman.PlaylistCount - 1;
 			break;
 	}
 	for (var i = 0; i != playlistCount; i++) {
