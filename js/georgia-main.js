@@ -456,6 +456,22 @@ function draw_ui(gr) {
 	gr.SetSmoothingMode(SmoothingMode.AntiAliasGridFit);
 	gr.SetInterpolationMode(InterpolationMode.HighQualityBicubic);
 
+	var textLeft = Math.round(Math.min(0.015 * ww, is_4k ? 40 : 20));
+	if (((!displayPlaylist && !displayLibrary) || (!albumart && noArtwork)) && fb.IsPlaying) {
+		var trackInfoHeight = 0;
+		var infoWidth = Math.floor(ww / 3);
+		if (str.trackInfo) {
+			gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
+			trackInfoHeight = gr.MeasureString(str.trackInfo, ft.track_info, 0, 0, 0, 0).Height;
+			gr.DrawString(str.trackInfo, ft.track_info, col.artist, ww - textLeft * 2 - infoWidth, geo.top_bg_h - trackInfoHeight - 15, infoWidth, trackInfoHeight, StringFormat(StringAlignment.Far));
+			gr.SetTextRenderingHint(TextRenderingHint.AntiAliasGridFit);
+		}
+		if (str.year) {
+			height = gr.MeasureString(str.year, ft.year, 0, 0, 0, 0).Height;
+			gr.DrawString(str.year, ft.year, col.artist, ww - textLeft * 2 - infoWidth, geo.top_bg_h - trackInfoHeight - height - 20, infoWidth, height, StringFormat(StringAlignment.Far));
+		}
+	}
+
 	// BIG ALBUMART
 	if (fb.IsPlaying) {
 		if (albumart && albumart_scaled) {
@@ -519,7 +535,6 @@ function draw_ui(gr) {
 		pauseBtn.draw(gr);
 	}
 
-	var textLeft = Math.round(Math.min(0.015 * ww, is_4k ? 40 : 20));
 	if (str.artist) {
 		var availableWidth = displayPlaylist || displayLibrary ? Math.min(ww / 2 - 20, btns.playlist.x - textLeft) : btns.playlist.x - textLeft;
 		var artistFont = chooseFontForWidth(gr, availableWidth, str.artist, [ft.artist_lrg, ft.artist_med, ft.artist_sml]);
@@ -547,18 +562,6 @@ function draw_ui(gr) {
 		text_width = gridSpace;
 
 		if (showExtraDrawTiming) drawTextGrid = fb.CreateProfiler('on_paint -> textGrid');
-
-		var trackInfoHeight = 0;
-		if (str.trackInfo) {
-			gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
-			trackInfoHeight = gr.MeasureString(str.trackInfo, ft.track_info, 0, 0, 0, 0).Height;
-			gr.DrawString(str.trackInfo, ft.track_info, col.artist, ww - textLeft * 2 - text_width, geo.top_bg_h - trackInfoHeight - 15, text_width, trackInfoHeight, StringFormat(StringAlignment.Far));
-			gr.SetTextRenderingHint(TextRenderingHint.AntiAliasGridFit);
-		}
-		if (str.year) {
-			height = gr.MeasureString(str.year, ft.year, 0, 0, 0, 0).Height;
-			gr.DrawString(str.year, ft.year, col.artist, ww - textLeft * 2 - text_width, geo.top_bg_h - trackInfoHeight - height - 20, text_width, height, StringFormat(StringAlignment.Far));
-		}
 
 		var c = new Color(col.info_bg);
 		if (c.brightness > 190) {
