@@ -807,7 +807,7 @@ function draw_ui(gr) {
             var labels = brightBackground ? (recordLabelsInverted.length ? recordLabelsInverted : recordLabels) : recordLabels;
 			var rightSideGap = 20, // how close last label is to right edge
 				labelSpacing = 0,
-				leftEdgeGap = art_off_center ? 20 : 40, // space between art and label
+				leftEdgeGap = (art_off_center ? 20 : 40) * (is_4k ? 1.8 : 1), // space between art and label
 				maxLabelWidth = is_4k ? 400 : 200;
 			leftEdgeWidth = is_4k ? 45 : 30; // how far label background extends on left
 			if (showExtraDrawTiming) drawLabelTime = fb.CreateProfiler("on_paint -> record labels");
@@ -865,7 +865,7 @@ function draw_ui(gr) {
 				leftEdge = lastLeftEdge;
 				labelAreaWidth = ww - leftEdge - rightSideGap;
 			}
-			if (labelAreaWidth >= 50) {
+			if (labelAreaWidth >= (is_4k ? 100 : 50)) {
 				if (labels.length > 1) {
 					labelSpacing = Math.min(12, Math.max(3, Math.round((labelAreaWidth / (labels.length - 1)) * 0.048))); // spacing should be proportional, and between 3 and 12 pixels
 				}
@@ -2698,7 +2698,7 @@ function ResizeArtwork(resetCDPosition) {
 		if (album_scale !== (wh - geo.top_art_spacing - geo.lower_bar_h - 32) / albumart.Height) {
 			// restricted by width
 			var y = geo.top_art_spacing + Math.floor(((wh - geo.top_art_spacing - geo.lower_bar_h - 32) / 2) - albumart_size.h / 2);
-			albumart_size.y = Math.min(y, 160);
+			albumart_size.y = Math.min(y, is_4k ? 310 : 160);	// 150 or 300 + 10? Not sure where 160 comes from
 		} else {
 			albumart_size.y = geo.top_art_spacing; // height of menu bar + spacing + height of Artist text (32+32+32)	// top
 		}
