@@ -488,7 +488,8 @@ function draw_ui(gr) {
 				CreateRotatedCDImage();
 			}
 			if (!pref.cdart_ontop || displayLyrics) {
-				if (rotatedCD && !displayPlaylist && !displayLibrary && pref.display_cdart) {
+				if (rotatedCD && !displayPlaylist && !displayLibrary && pref.display_cdart && 
+						cdart_size.y > albumart_size.y && cdart_size.h < albumart_size.h) {
 					if (showExtraDrawTiming) drawCD = fb.CreateProfiler('cdart');
 					gr.DrawImage(rotatedCD, cdart_size.x, cdart_size.y, cdart_size.w, cdart_size.h, 0, 0, rotatedCD.width, rotatedCD.height, 0);
 					if (showExtraDrawTiming) drawCD.Print();
@@ -496,7 +497,8 @@ function draw_ui(gr) {
 				gr.DrawImage(albumart_scaled, albumart_size.x, albumart_size.y, albumart_size.w, albumart_size.h, 0, 0, albumart_scaled.width, albumart_scaled.height);
 			} else { // draw cdart on top of front cover
 				gr.DrawImage(albumart_scaled, albumart_size.x, albumart_size.y, albumart_size.w, albumart_size.h, 0, 0, albumart_scaled.width, albumart_scaled.height);
-				if (rotatedCD && !displayPlaylist && !displayLibrary && pref.display_cdart) {
+				if (rotatedCD && !displayPlaylist && !displayLibrary && pref.display_cdart && 
+						cdart_size.y > albumart_size.y && cdart_size.h < albumart_size.h) {
 					if (showExtraDrawTiming) drawCD = fb.CreateProfiler('cdart');
 					gr.DrawImage(rotatedCD, cdart_size.x, cdart_size.y, cdart_size.w, cdart_size.h, 0, 0, rotatedCD.width, rotatedCD.height, 0);
 					if (showExtraDrawTiming) drawCD.Print();
@@ -2609,12 +2611,7 @@ function glob_image(index, loadFromCache) {
 		temp_albumart = art_cache.getImage(aa_list[index]);
 	}
 	if (temp_albumart) {
-		// albumart = disposeImg(albumart);
 		albumart = temp_albumart;
-		if (cdart) {
-			ResizeArtwork(false);
-			CreateRotatedCDImage();
-		}
 		if (index === 0 && newTrackFetchingArtwork) {
 			newTrackFetchingArtwork = false;
 			getThemeColors(albumart);
@@ -2627,6 +2624,9 @@ function glob_image(index, loadFromCache) {
 		}
 	}
 	ResizeArtwork(false); // recalculate image positions
+	if (cdart) {
+		CreateRotatedCDImage();
+	}
 	displayLyrics && updateLyricsPositionOnScreen();
 }
 
@@ -2716,7 +2716,26 @@ function ResizeArtwork(resetCDPosition) {
 		albumart_size = new ImageSize(0, 0, 0, 0);
 	}
 	if (cdart) {
-		if (!hasArtwork) {
+		if (hasArtwork) {
+			if (resetCDPosition) {
+				if (ww - (albumart_size.x + albumart_size.w) < albumart_size.h * pref.cdart_amount + 5)
+					cdart_size.x = Math.floor(0.99 * ww - albumart_size.h);
+				else
+					cdart_size.x = Math.floor(albumart_size.x + albumart_size.w - (albumart_size.h - 4) * (1 - pref.cdart_amount));
+				cdart_size.y = albumart_size.y + 2;
+				cdart_size.w = albumart_size.h - 4; // cdart must be square so use the height of album art for width of cdart
+				cdart_size.h = cdart_size.w;
+			} else { // when CDArt moves because folder images are different sizes we want to push it outwards, but not move it back in so it jumps around less
+				cdart_size.x = Math.max(cdart_size.x, Math.floor(Math.min(0.99 * ww - albumart_size.h, albumart_size.x + albumart_size.w - (albumart_size.h - 4) * (1 - pref.cdart_amount))));
+				cdart_size.y = cdart_size.y > 0 ? Math.min(cdart_size.y, albumart_size.y + 2) : albumart_size.y + 2;
+				cdart_size.w = Math.max(cdart_size.w, albumart_size.h - 4);
+				cdart_size.h = cdart_size.w;
+				if (cdart_size.x + cdart_size.w > ww) {
+					cdart_size.x = ww - cdart_size.w - (is_4k ? 30 : 15);
+				}
+			}
+			// console.log(cdart_size.x, cdart_size.y, cdart_size.w, cdart_size.h);
+		} else {
 			// no album art so we need to calc size of disc
 			var album_scale = Math.min(((displayPlaylist || displayLibrary) ? 0.47 * ww : 0.75 * ww) / cdart.Width, (wh - geo.top_art_spacing - geo.lower_bar_h - 32) / cdart.Height);
 			if (displayPlaylist || displayLibrary) {
@@ -2742,23 +2761,8 @@ function ResizeArtwork(resetCDPosition) {
 				cdart_size.y = geo.top_art_spacing; // height of menu bar + spacing + height of Artist text (32+32+32)	// top
 			}
 			pauseBtn.setCoords(cdart_size.x + cdart_size.w / 2, cdart_size.y + cdart_size.h / 2);
-		} else {
-			if (resetCDPosition) {
-				if (ww - (albumart_size.x + albumart_size.w) < albumart_size.h * pref.cdart_amount + 5)
-					cdart_size.x = Math.floor(0.99 * ww - albumart_size.h);
-				else
-					cdart_size.x = Math.floor(albumart_size.x + albumart_size.w - (albumart_size.h - 4) * (1 - pref.cdart_amount));
-				cdart_size.y = albumart_size.y + 2;
-				cdart_size.w = albumart_size.h - 4; // cdart must be square so use the height of album art for width of cdart
-				cdart_size.h = cdart_size.w;
-			} else { // when CDArt moves because folder images are different sizes we want to push it outwards, but not move it back in so it jumps around less
-				cdart_size.x = Math.max(cdart_size.x, Math.floor(Math.min(0.99 * ww - albumart_size.h, albumart_size.x + albumart_size.w - (albumart_size.h - 4) * (1 - pref.cdart_amount))));
-				cdart_size.y = cdart_size.y > 0 ? Math.min(cdart_size.y, albumart_size.y + 2) : albumart_size.y + 2;
-				cdart_size.w = Math.max(cdart_size.w, albumart_size.h - 4);
-				cdart_size.h = cdart_size.w;
-			}
-		}
 		hasArtwork = true;
+		}
 	} else {
 		cdart_size = new ImageSize(0, 0, 0, 0);
 	}
