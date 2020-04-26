@@ -83,32 +83,35 @@ var playlistFontsCreated = false;
 var playlist_geo = {};
 
 function createPlaylistFonts() {
+    var playlistSize = pref.font_size_playlist;
+    var headerSize = pref.font_size_playlist_header;
+
     function font(name, size, style) {
         return gdi.Font(name, is_4k ? Math.min(size * 2) : size, style);
     }
     g_pl_fonts = {
-        title_normal:   font('Segoe Ui', 12),
-        title_selected: font('Segoe Ui', 12),
-        title_playing:  font('Segoe Ui', 12),
+        title_normal:   font('Segoe Ui', playlistSize),
+        title_selected: font('Segoe Ui', playlistSize),
+        title_playing:  font('Segoe Ui', playlistSize),
 
-        artist_normal:          font('Segoe Ui Semibold', 18),
-        artist_playing:         font('Segoe Ui Semibold', 18, g_font_style.underline),
-        artist_normal_compact:  font('Segoe Ui Semibold', 15),
-        artist_playing_compact: font('Segoe Ui Semibold', 15, g_font_style.underline),
+        artist_normal:          font('Segoe Ui Semibold', headerSize + 3),
+        artist_playing:         font('Segoe Ui Semibold', headerSize + 3, g_font_style.underline),
+        artist_normal_compact:  font('Segoe Ui Semibold', headerSize),
+        artist_playing_compact: font('Segoe Ui Semibold', headerSize, g_font_style.underline),
+        album:          font('Segoe Ui Semibold', headerSize),
+        date:           font('Segoe UI Semibold', headerSize + 5, g_font_style.italic),
+        date_compact:   font('Segoe UI Semibold', headerSize),
+        info:           font('Segoe Ui', playlistSize - 1),
+        cover:          font('Segoe Ui Semibold', playlistSize - 1),
 
-        playcount:      font('Segoe Ui', 9),
-        album:          font('Segoe Ui Semibold', 15),
-        date:           font('Segoe UI Semibold', 20, g_font_style.italic),
-        date_compact:   font('Segoe UI Semibold', 15),
-        info:           font('Segoe Ui', 11),
-        cover:          font('Segoe Ui Semibold', 11),
-        rating_not_set: font('Segoe Ui Symbol', 14),
-        rating_set:     font('Segoe Ui Symbol', 16),
-        scrollbar:      font('Segoe Ui Symbol', 15),
+        playcount:      font('Segoe Ui', playlistSize - 3),
+        rating_not_set: font('Segoe Ui Symbol', playlistSize + 2),
+        rating_set:     font('Segoe Ui Symbol', playlistSize + 4),
+        scrollbar:      font('Segoe Ui Symbol', headerSize),
 
-        font_awesome:	font('FontAwesome', 14),
+        font_awesome:	font('FontAwesome', playlistSize + 2),
 
-        dummy_text: font('Segoe Ui', 16)
+        dummy_text: font('Segoe Ui', playlistSize + 1)
     };
 }
 

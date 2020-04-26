@@ -51,7 +51,10 @@ pref.add_properties({
 	lyrics_h_padding: ['Lyrics: Padding Between Lines', 24],
 	lyrics_glow: ['Lyrics: Glow enabled', true],
 	lyrics_text_shadow: ['Lyrics: Text Shadow', true],
-	lyrics_font_size: ['Lyrics: Font Size', 20],
+	
+	font_size_playlist: ['Font Size: Playlist', 12],
+	font_size_playlist_header: ['Font Size: Playlist Header', 15],
+	lyrics_font_size: ['Font Size: Lyrics', 20],
 });
 
 if (pref.art_rotate_delay < 5) {
@@ -165,13 +168,14 @@ tf.glob_paths = [ // simply add, change or re-order entries as needed
 tf.lyr_path = [ // simply add, change or re-order entries as needed
 	'$replace($replace(%path%,%filename_ext%,),\,\\)',
 	fb.ProfilePath + "lyrics\\",
-	// "\\\\Ripley\\Dirs\\lyrics\\"
 ];
 tf.lyr_artist = "$replace(%artist%,'/','_',':','_','\"','_')"; // we need to strip some special characters so we can't use just use tf.artist
 tf.lyr_title = "$replace(%title%,'/','_',':','_','\"','_')"; // we need to strip special characters so we can't just use tf.title
 tf.lyr_filename = [ // filenames to look for lyrics files. Both .lrc and .txt will be searched for each entry in this list
 	tf.lyr_artist + ' - ' + tf.lyr_title,
-	tf.lyr_artist + ' -' + tf.lyr_title
+	tf.lyr_artist + ' -' + tf.lyr_title,
+	tf.tracknum.replace('.','') + ' - ' + tf.lyr_title,
+	tf.tracknum.replace('.','') + ' - ' + tf.lyr_artist + ' - ' + tf.lyr_title,
 ];
 
 tf.labels = [ // Array of fields to test for publisher. Add, change or re-order as needed.
@@ -224,6 +228,10 @@ function migrateCheck(version, storedVersion) {
 				pref.time_zone = null;
 
 			case '1.1.6':
+			case '1.1.7':
+				window.SetPropert('Lyrics: Font Size', null);
+
+			case '1.1.8':
 
 				// after all previous versions have fallen through
 				console.log('Upgrading Georgia Theme settings');
