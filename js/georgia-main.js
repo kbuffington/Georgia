@@ -40,7 +40,7 @@ function createFonts() {
 		return; // don't redo fonts
 	}
 
-	g_tooltip = window.CreateTooltip('Segoe UI', is_4k ? 30 : 15)
+	g_tooltip = window.CreateTooltip('Segoe UI', scaleForDisplay(15));
 	g_tooltip.text = '';	// just in case
 
 	function font(name, size, style) {
@@ -140,13 +140,13 @@ function initColors() {
 initColors();
 
 function setGeometry() {
-	geo.aa_shadow = is_4k ? 16 : 8; // size of albumart shadow
-	geo.pause_size = is_4k ? 300 : 150;
-	geo.prog_bar_h = is_4k ? 24 : (ww > 1920 ? 14 : 12); // height of progress bar
-	geo.lower_bar_h = is_4k ? 160 : 80; // height of song title and time + progress bar area
-	geo.top_art_spacing = is_4k ? 192 : 96; // space between top of theme and artwork
-	geo.top_bg_h = is_4k ? 320 : 160; // height of offset color background
-	geo.timeline_h = is_4k ? 36 : 18; // height of timeline
+	geo.aa_shadow = scaleForDisplay(8); // size of albumart shadow
+	geo.pause_size = scaleForDisplay(150);
+	geo.prog_bar_h = scaleForDisplay(12) + (ww > 1920 ? 2 : 0); // height of progress bar
+	geo.lower_bar_h = scaleForDisplay(80); // height of song title and time + progress bar area
+	geo.top_art_spacing = scaleForDisplay(96); // space between top of theme and artwork
+	geo.top_bg_h = scaleForDisplay(160); // height of offset color background
+	geo.timeline_h = scaleForDisplay(18); // height of timeline
 	if (!pref.show_progress_bar) {
 		geo.lower_bar_h -= geo.prog_bar_h * 2;
 	}
@@ -456,7 +456,7 @@ function draw_ui(gr) {
 	gr.SetSmoothingMode(SmoothingMode.AntiAliasGridFit);
 	gr.SetInterpolationMode(InterpolationMode.HighQualityBicubic);
 
-	var textLeft = Math.round(Math.min(0.015 * ww, is_4k ? 40 : 20));
+	var textLeft = Math.round(Math.min(0.015 * ww, scaleForDisplay(20)));
 	if (((!displayPlaylist && !displayLibrary) || (!albumart && noArtwork)) && fb.IsPlaying) {
 		var trackInfoHeight = 0;
 		var infoWidth = Math.floor(ww / 3);
@@ -541,16 +541,16 @@ function draw_ui(gr) {
 		var availableWidth = displayPlaylist || displayLibrary ? Math.min(ww / 2 - 20, btns.playlist.x - textLeft) : btns.playlist.x - textLeft;
 		var artistFont = chooseFontForWidth(gr, availableWidth, str.artist, [ft.artist_lrg, ft.artist_med, ft.artist_sml]);
 		height = gr.CalcTextHeight(str.artist, artistFont);
-		var artistY = albumart_size.y - height - (is_4k ? 16 : 8);
+		var artistY = albumart_size.y - height - scaleForDisplay(8);
 		gr.DrawString(str.artist, artistFont, col.artist, textLeft, artistY, availableWidth, height, StringFormat(0, 0, 4));
 		width = gr.MeasureString(str.artist, artistFont, 0, 0, 0, 0).Width;
 		if (pref.show_flags && flagImgs.length && width + flagImgs[0].width * flagImgs.length < availableWidth) {
 			var flagWidths = 0;
-			var flagsLeft = textLeft + width + (is_4k ? 30 : 15);
+			var flagsLeft = textLeft + width + scaleForDisplay(15);
 			for (i = 0; i < flagImgs.length; i++) {
 				gr.DrawImage(flagImgs[i], flagsLeft, Math.round(artistY + 1 + height / 2 - flagImgs[i].height / 2),
 					flagImgs[i].width, flagImgs[i].height, 0, 0, flagImgs[i].width, flagImgs[i].height)
-				flagsLeft += flagImgs[i].width + (is_4k ? 10 : 5);
+				flagsLeft += flagImgs[i].width + scaleForDisplay(5);
 			}
 		}
 	}
@@ -572,12 +572,12 @@ function draw_ui(gr) {
 			col.info_text = rgb(255,255,255);
 		}
 
-		var top = (albumart_size.y ? albumart_size.y : geo.top_art_spacing) + (is_4k ? 30 : 15);
+		var top = (albumart_size.y ? albumart_size.y : geo.top_art_spacing) + scaleForDisplay(15);
 		if (gridSpace > 120) {
 			if (str.title) {
 				ft.title = ft.title_lrg;
 				ft.tracknum = ft.tracknum_lrg;
-				var title_spacing = is_4k ? 16 : 8;
+				var title_spacing = scaleForDisplay(8);
 				var trackNumWidth = 0;
 				if (str.tracknum) {
 					trackNumWidth = gr.MeasureString(str.tracknum, ft.tracknum, 0, 0, 0, 0).Width + title_spacing;
@@ -615,7 +615,7 @@ function draw_ui(gr) {
 				gr.DrawString(str.title, ft.title, col.info_text, textLeft + trackNumWidth, top, text_width - trackNumWidth, height, g_string_format.trim_ellipsis_word);
 				// gr.DrawRect(textLeft, top, text_width - trackNumWidth, height, 1, rgb(255,0,0));
 
-				top += height + (is_4k ? 20 : 12);
+				top += height + scaleForDisplay(12);
 				gr.SetTextRenderingHint(TextRenderingHint.AntiAliasGridFit);
 			}
 
@@ -625,7 +625,7 @@ function draw_ui(gr) {
 				str.timeline.draw(gr);
 			}
 
-			top += geo.timeline_h + (is_4k ? 20 : 12);
+			top += geo.timeline_h + scaleForDisplay(12);
 
 			if (str.album) {
 				var font_array = [ft.album_lrg, ft.album_med, ft.album_sml];
@@ -648,7 +648,7 @@ function draw_ui(gr) {
 					height = lineHeight * numLines;
 					gr.DrawString(str.album, ft_album, col.info_text, textLeft, top, text_width, height, g_string_format.trim_ellipsis_word);
 				}
-				top += height + (is_4k ? 20 : 10);
+				top += height + scaleForDisplay(10);
 			}
 
 			if (0 && str.album) {
@@ -687,7 +687,7 @@ function draw_ui(gr) {
 						textLeft + Math.ceil(txtRec.width), top, text_width - Math.ceil(txtRec.width), height, g_string_format.trim_ellipsis_word);
 				}
 
-				top += height + (is_4k ? 20 : 10);
+				top += height + scaleForDisplay(10);
 			}
 
 			// Tag grid
@@ -709,7 +709,7 @@ function draw_ui(gr) {
 					}
 				}
 			}
-			var column_margin = is_4k ? 20 : 10;
+			var column_margin = scaleForDisplay(10);
 			var col2_width = text_width - column_margin - col1_width;
 			var col2_left = textLeft + col1_width + column_margin;
 
@@ -743,7 +743,7 @@ function draw_ui(gr) {
 					}
 					txtRec = gr.MeasureString(value, grid_val_ft, 0, 0, col2_width, wh);
 					if (top + txtRec.Height < albumart_size.y + albumart_size.h) {
-						var border_w = is_4k ? 1 : 0.5;
+						var border_w = scaleForDisplay(0.5);
 						cell_height = txtRec.Height + 5;
 						if (dropShadow) {
 							gr.DrawString(value, grid_val_ft, col.extraDarkAccent, col2_left + border_w, top + border_w, col2_width, cell_height, StringFormat(0, 0, 4));
@@ -810,7 +810,7 @@ function draw_ui(gr) {
 			var rightSideGap = 20, // how close last label is to right edge
 				labelSpacing = 0,
 				leftEdgeGap = (art_off_center ? 20 : 40) * (is_4k ? 1.8 : 1), // space between art and label
-				maxLabelWidth = is_4k ? 400 : 200;
+				maxLabelWidth = scaleForDisplay(200);
 			leftEdgeWidth = is_4k ? 45 : 30; // how far label background extends on left
 			if (showExtraDrawTiming) drawLabelTime = fb.CreateProfiler("on_paint -> record labels");
 			totalLabelWidth = 0;
@@ -867,7 +867,7 @@ function draw_ui(gr) {
 				leftEdge = lastLeftEdge;
 				labelAreaWidth = ww - leftEdge - rightSideGap;
 			}
-			if (labelAreaWidth >= (is_4k ? 100 : 50)) {
+			if (labelAreaWidth >= scaleForDisplay(50)) {
 				if (labels.length > 1) {
 					labelSpacing = Math.min(12, Math.max(3, Math.round((labelAreaWidth / (labels.length - 1)) * 0.048))); // spacing should be proportional, and between 3 and 12 pixels
 				}
@@ -989,14 +989,14 @@ function draw_ui(gr) {
 		var h_spacing = 0;
 		var v_spacing = 0;
 		if (useNeue) {
-			h_spacing = is_4k ? 8 : 4;
-			v_spacing = is_4k ? 2 : 1;
+			h_spacing = scaleForDisplay(4);
+			v_spacing = scaleForDisplay(1);
 		}
 		gr.DrawString(str.original_artist, ft_lower_orig_artist, col.now_playing, pbLeft + trackNumWidth + titleMeasurements.Width + h_spacing, lowerBarTop + v_spacing, 0.95 * ww - width, titleMeasurements.Height, StringFormat(0, 0, 4, 0x00001000));
 	}
 
 	// Progress bar/Seekbar
-	var pbTop = Math.round(lowerBarTop + titleMeasurements.Height) + (is_4k ? 16 : 8);
+	var pbTop = Math.round(lowerBarTop + titleMeasurements.Height) + scaleForDisplay(8);
 	gr.SetSmoothingMode(SmoothingMode.None); // disable smoothing
 	if (pref.show_progress_bar) {
 		// if (pref.darkMode) {
@@ -1055,7 +1055,7 @@ function draw_ui(gr) {
 				updateHyperlink.set_y(lowerBarTop + 2); // +2 counteracts the -2 in the set_y method required for playlist
 				updateHyperlink.set_xOffset(-offset - Math.floor(ww*0.025));
 				updateHyperlink.draw(gr, color);
-				offset += is_4k ? 12 : 6;
+				offset += scaleForDisplay(6);
 			}
 			gr.DrawString(str.time, ft.lower_bar, color, Math.floor(0.725 * ww) - offset, lowerBarTop, 0.25 * ww, geo.lower_bar_h, StringFormat(2, 0));
 		}
@@ -1078,8 +1078,8 @@ function on_paint(gr) {
 
 function show_lyrics(gr, tab, posy) {
 	var i, k, text_colour;
-	divider_spacing = is_4k ? 80 : 40;
-	divider_height = is_4k ? 20 : 10;
+	divider_spacing = scaleForDisplay(40);
+	divider_height = scaleForDisplay(10);
 
 	if (showDebugTiming)
 		show_lyricsTime = fb.CreateProfiler("show_lyrics");
@@ -2698,7 +2698,7 @@ function ResizeArtwork(resetCDPosition) {
 		if (album_scale !== (wh - geo.top_art_spacing - geo.lower_bar_h - 32) / albumart.Height) {
 			// restricted by width
 			var y = geo.top_art_spacing + Math.floor(((wh - geo.top_art_spacing - geo.lower_bar_h - 32) / 2) - albumart_size.h / 2);
-			albumart_size.y = Math.min(y, is_4k ? 310 : 160);	// 150 or 300 + 10? Not sure where 160 comes from
+			albumart_size.y = Math.min(y, scaleForDisplay(150) + 10);	// 150 or 300 + 10? Not sure where 160 comes from
 		} else {
 			albumart_size.y = geo.top_art_spacing; // height of menu bar + spacing + height of Artist text (32+32+32)	// top
 		}
@@ -2731,7 +2731,7 @@ function ResizeArtwork(resetCDPosition) {
 				cdart_size.w = Math.max(cdart_size.w, albumart_size.h - 4);
 				cdart_size.h = cdart_size.w;
 				if (cdart_size.x + cdart_size.w > ww) {
-					cdart_size.x = ww - cdart_size.w - (is_4k ? 30 : 15);
+					cdart_size.x = ww - cdart_size.w - scaleForDisplay(15);
 				}
 			}
 			// console.log(cdart_size.x, cdart_size.y, cdart_size.w, cdart_size.h);
@@ -2761,7 +2761,7 @@ function ResizeArtwork(resetCDPosition) {
 				cdart_size.y = geo.top_art_spacing; // height of menu bar + spacing + height of Artist text (32+32+32)	// top
 			}
 			pauseBtn.setCoords(cdart_size.x + cdart_size.w / 2, cdart_size.y + cdart_size.h / 2);
-		hasArtwork = true;
+			hasArtwork = true;
 		}
 	} else {
 		cdart_size = new ImageSize(0, 0, 0, 0);
@@ -2947,10 +2947,10 @@ function createButtonObjects(ww, wh) {
 	if (pref.show_transport) {
 		var count = 4 + (pref.show_random_button ? 1 : 0) + (pref.show_volume_button ? 1 : 0) + (pref.show_reload_button ? 1 : 0);
 
-		var y = is_4k ? 20 : 10;
-		var w = is_4k ? 64 : 32;
+		var y = scaleForDisplay(10);
+		var w = scaleForDisplay(32);
 		var h = w;
-		var p = is_4k ? 10 : 5; // space between buttons
+		var p = scaleForDisplay(5); // space between buttons
 		var x = (ww - w * count - p * (count - 1)) / 2;
 
 		count = 0;
@@ -3225,7 +3225,7 @@ function createButtonImages() {
 	} catch (e) {
 		var str = pref.lyrics_img;
 		console.log("**********************************");
-		console.log("ATTENTION: Buttons could not be created, most likely because the images were not found in \"" + str.substring(0, str.lastIndexOf("/")) + '\"'); //.Eval().substring(0, str.lastIndexOf("/")));
+		console.log("ATTENTION: Buttons could not be created, most likely because the images were not found in \"" + str.substring(0, str.lastIndexOf("/")) + '\"');
 		console.log("Make sure you installed the theme correctly to your configuration folder.")
 		console.log("**********************************");
 	}

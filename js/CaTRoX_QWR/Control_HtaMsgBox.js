@@ -53,8 +53,8 @@ var g_hta_window = {
             '<script language="JScript" id="a' + hta_wnd_id + '"\>' +
             '    eval; ' +
             '    document.title="' + title.replace(/"/g, '\'') + '";' +
-            '    var width = ' + (w || (is_4k ? 400 : 200)) + ';' +
-            '    var height = ' + (h || (is_4k ? 400 : 200)) + ';' +
+            '    var width = ' + (w || scaleForDisplay(200)) + ';' +
+            '    var height = ' + (h || scaleForDisplay(200)) + ';' +
             '    resizeTo(width, height);' +
             '    moveTo(' + (x || '(screen.width-width)/2') + ',' + (y || '(screen.height-height)/2') + ');' +
             '    document.getElementById("a' + hta_wnd_id + '").removeNode();' +
@@ -232,9 +232,8 @@ g_hta_window.msg_box_multiple = function(x,y,prompt,title,defval,on_finish_fn) {
         '   </body>' +
         '</html>';
 
-    var window_h = 29 * val_count + 83;
-    if (is_4k) window_h *= 2;
-    var wnd = g_hta_window.manager.open(x, y, is_4k ? 740 : 370, window_h, title, content, g_hta_window.default_features);
+    var window_h = scaleForDisplay(29 * val_count + 83);
+    var wnd = g_hta_window.manager.open(x, y, scaleForDisplay(370), window_h, title, content, g_hta_window.default_features);
     if (!wnd) {
         return false;
     }

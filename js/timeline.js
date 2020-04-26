@@ -37,7 +37,7 @@ function Timeline (height) {
 
 Timeline.prototype.draw = function (gr) {
     if (this.addedCol && this.playedCol && this.unplayedCol) {
-        var extraLeftSpace = is_4k ? 6 : 3; // add a little space to the left so songs that were played a long time ago show more in the "added" stage
+        var extraLeftSpace = scaleForDisplay(3); // add a little space to the left so songs that were played a long time ago show more in the "added" stage
         var lineWidth = is_4k ? 3 : 2;
         gr.SetSmoothingMode(SmoothingMode.None); // disable smoothing
         width = Math.floor(this.w - extraLeftSpace - 1 - lineWidth + lineWidth / 2);

@@ -217,7 +217,7 @@ function userinterface() {
 	this.arrow_pad = 0;
 	// this.grip_h = parseFloat(sbar_w[7]);
 	// if (isNaN(this.grip_h))
-	this.grip_h = is_4k ? 40 : 20;
+	this.grip_h = scaleForDisplay(20);
 	// if (this.scr_w != scr_w_o) {
 	// 	this.scr_but_w = parseFloat(sbar_w[3]);
 	// 	if (isNaN(this.scr_but_w))
@@ -392,16 +392,16 @@ function userinterface() {
 		library_tree.create_images();	// is this needed??
 		// zoom_node = Math.round(this.node_sz / node_sz * 100);
 		// libraryProps.nodeZoom = zoom_node;
-		sp = Math.max(Math.round(g.CalcTextWidth(" ", this.font)), is_4k ? 8 : 4);
-		sp1 = is_4k ? 20 : 10; //Math.max(Math.round(sp * 1.5), 6);
+		sp = Math.max(Math.round(g.CalcTextWidth(" ", this.font)), scaleForDisplay(4));
+		sp1 = scaleForDisplay(10); //Math.max(Math.round(sp * 1.5), 6);
 		if (!this.node_style) {
 			var sp_e = g.MeasureString(this.expand, this.icon_font, 0, 0, 500, 500).Width;
 			var sp_c = g.MeasureString(this.collapse, this.icon_font, 0, 0, 500, 500).Width;
 			sp2 = Math.round(Math.max(sp_e, sp_c) + sp / 3);
 		}
-		this.l_s1 = Math.round(sp1 / 2) + (is_4k ? 2 : 1); //Math.max(sp1 / 2, 4);
+		this.l_s1 = Math.round(sp1 / 2) + scaleForDisplay(1); //Math.max(sp1 / 2, 4);
 		this.l_s2 = Math.ceil(this.node_sz / 2);
-		this.l_s3 = Math.max(is_4k ? 16 : 8, this.node_sz / 2)
+		this.l_s3 = Math.max(scaleForDisplay(8), this.node_sz / 2)
 		this.icon_w = this.node_style ? this.node_sz + sp1 : sp + sp2;
 		this.sel = (this.node_style ? sp1 : sp + Math.round(sp / 3)) / 2;
 		this.tt = this.node_style ? -Math.ceil(sp1 / 2 - 3) + sp1 : sp;
@@ -1963,7 +1963,7 @@ function LibraryTree() {
 				last_row = this.tree.length < start_row + p.rows ? this.tree.length : start_row + p.rows,
 				sel_x = 0,
 				sel_w = 0;
-			var lineWidth = is_4k ? 2 : 1;
+			var lineWidth = scaleForDisplay(1);
 			check_node(gr);
 			var depthRows = [];
 			for (var j = 0; j <= this.tree[start_row].tr; j++) {
@@ -2030,7 +2030,7 @@ function LibraryTree() {
 				nm = item.name + item.count;
 				item_x = Math.round(ui.x + ui.pad * item.tr + ui.margin);
 				item_w = gr.CalcTextWidth(nm, ui.font);
-				var nodeLineWidth = is_4k ? 4 : 2;
+				var nodeLineWidth = scaleForDisplay(2);
 				if (libraryProps.tooltips && libraryProps.fullLine) item.tt_w = item_w;
 				var y2 = Math.round(ui.y + ui.row_h * (i + 0.5) + p.s_h - sbar.delta) - 1;
 				if (!item.track) {
@@ -2345,7 +2345,7 @@ function searchLibrary() {
 		shift = false,
 		shift_x = 0,
 		txt_w = 0
-		cursor_width = is_4k ? 2 : 1;
+		cursor_width = scaleForDisplay(1);
 	var calc_text = function () {var im = gdi.CreateImage(1, 1), g = im.GetGraphics(); txt_w = g.CalcTextWidth(p.s_txt.substr(offset), ui.font); im.ReleaseGraphics(g); im.Dispose();}
 	var drawcursor = function (gr) {
 		if (p.s_search && p.s_cursor && s == f && cx >= offset) {
@@ -2670,7 +2670,7 @@ function LibraryPanel() {
 		ui.y = y;
 		ui.w = width;
 		ui.h = height;
-		ui.margin = is_4k ? 20 : 10;
+		ui.margin = scaleForDisplay(10);
 		if (!ui.w || !ui.h) return;
 		// ui.blurReset();
 		ui.get_font();

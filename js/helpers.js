@@ -351,6 +351,10 @@ function checkFor4k(w, h) {
 	}
 }
 
+function scaleForDisplay(number) {
+	return is_4k ? number * 2 : number;
+}
+
 try {
 	var DPI = WshShell.RegRead('HKCU\\Control Panel\\Desktop\\WindowMetrics\\AppliedDPI');
 } catch (e) {
@@ -393,7 +397,7 @@ _.mixin({
         this.stop = function () {
             tt_timer.force_stop();
         };
-        this.id = Math.ceil(Math.random().toFixed(8) * 1000);
+		this.id = Math.ceil(Math.random().toFixed(8) * 1000);
 
         var tt_timer = _.tt_handler.tt_timer;
     },

@@ -9,8 +9,8 @@ function ArtCache(maxCacheSize) {
         try {
             var h = img.Height;
             var w = img.Width;
-            var max_w = is_4k ? max_width * 2 : max_width;
-            var max_h = is_4k ? max_height * 2 : max_height;
+            var max_w = scaleForDisplay(max_width);
+            var max_h = scaleForDisplay(max_height);
             if (w > max_w || h > max_h) {
                 var scale_factor = w / max_w;
                 if (scale_factor < h / max_h) {
@@ -40,8 +40,6 @@ function ArtCache(maxCacheSize) {
     }
 
     this.getImage = function(path) {
-        var image = null;
-
         if (art_cache[path]) {
             debugLog('cache hit: ' + path);
             return art_cache[path];

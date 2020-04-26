@@ -120,7 +120,7 @@ g_hta_window.group_presets_mngr = function(x, y, group_presets, cur_group_name, 
         '</body>' +
         '</html>';
 
-    var wnd = g_hta_window.manager.open(x, y, is_4k ? 1300 : 650, is_4k ? 850 : 425, 'Foobar2000: Manage grouping presets', content, g_hta_window.default_features);
+    var wnd = g_hta_window.manager.open(x, y, scaleForDisplay(650), scaleForDisplay(425), 'Foobar2000: Manage grouping presets', content, g_hta_window.default_features);
     if (!wnd) {
         return false;
     }

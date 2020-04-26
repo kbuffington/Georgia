@@ -53,9 +53,8 @@ List = function (x, y, w, h, content) {
     this.h = h;
 
     /** @const {number}*/
-    this.row_h = is_4k ? g_properties.row_h * 2 : g_properties.row_h;   // also see playlist.reinitialize
-    // console.log('>>>>>', this.row_h, is_4k);
-
+    this.row_h = scaleForDisplay(g_properties.row_h);   // also see playlist.reinitialize
+    
     /** @type {number} */
     this.background_color = g_theme.colors.pss_back;
     /** @type {number} */

@@ -12,7 +12,7 @@ function PauseButton() {
 	}
 
 	this.draw = function (gr) {
-		var pauseBorderWidth = is_4k ? 4 : 2;
+		var pauseBorderWidth = scaleForDisplay(2);
 		var halfBorderWidth = Math.floor(pauseBorderWidth / 2);
 
 		gr.FillRoundRect(this.left, this.top, geo.pause_size, geo.pause_size,
