@@ -160,6 +160,7 @@ tf.lyrics = '[$if3(%LYRICS%,%LYRIC%,%UNSYNCED LYRICS%,%UNSYNCED LYRIC%)]';
 // GLOB PICTURES
 tf.glob_paths = [ // simply add, change or re-order entries as needed
 	'$replace(%path%,%filename_ext%,)folder*',
+	'$replace(%path%,%filename_ext%,)cover*',
 	'$replace(%path%,%filename_ext%,)*.jpg',
 	'$replace(%path%,%filename_ext%,)*.png',
 	'$replace(%path%,%directoryname%\\%filename_ext%,)folder*' // all folder images in parent directory
@@ -190,8 +191,6 @@ pref.vinyl_path = "$replace(%path%,%filename_ext%,)vinyl.png" // vinyl cdart nam
 pref.cdartdisc_path = "$replace(%path%,%filename_ext%,)cd$ifgreater(%totaldiscs%,1,%discnumber%,).png"; // cdart named cd1.png, cd2.png, etc.
 pref.cdart_path = "$replace(%path%,%filename_ext%,)cd.png"; // cdart named cd.png  (the far more common single disc albums)
 pref.cdart_amount = 0.48; // show 48% of the CD image if it will fit on the screen
-
-pref.display_menu = true; // true: show the menu bar at the top of the theme (only useful in CUI); false: don't show menu bar
 
 function migrateCheck(version, storedVersion) {
 	if (version !== storedVersion) {

@@ -2896,10 +2896,14 @@ function fetchNewArtwork(metadb) {
 			aa_list = aa_list.concat(utils.Glob($(tf.glob_paths[k])).toArray());
 		}
 		pattern = /(cd|vinyl)([0-9]*|[a-h])\.png/i;
+		// remove duplicates and cd/vinyl art
 		aa_list = _.remove(_.uniq(aa_list), function (path) {
 			return !pattern.test(path);
 		});
-		// remove duplicates
+		imageTest = /jpg|png$/i
+		aa_list = _.remove(aa_list, function (path) {
+			return imageTest.test(path);
+		})
 
 		if (aa_list.length) {
 			noArtwork = false;
