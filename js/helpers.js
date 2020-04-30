@@ -334,6 +334,71 @@ function isNewerVersion (oldVer, newVer) {
 	return false
 }
 
+var menuStartIndex = 500;	// attempt to avoid collisions with other menu variables
+function Menu() {
+	Menu.itemIndex++;
+	this.callbacks = [];
+	this.variables = [];
+	this.menu = window.CreatePopupMenu();
+
+	this.addItem = function(menu, label, enabled, callback, disabled) {
+		this.addItemWithVariable(menu, label, enabled, undefined, callback, disabled);
+	}
+	
+	/** similar to addItem, but takes an object and property name which will automatically be set when the callback is called, 
+	  * before calling any user specified callback. If the property you wish to toggle is options.repeat, then propertiesObj
+	  * is options, and the propertyName must be "repeat" as a string.
+	  **/
+	this.addToggleItem = function(menu, label, propertiesObj, propertyName, callback, disabled) {
+		this.addItem(menu, label, propertiesObj[propertyName], function () {
+			propertiesObj[propertyName] = !propertiesObj[propertyName];
+			if (callback) {
+				callback();
+			}
+		}, disabled);
+	}
+
+	// creates a set of radio items and checks the value specified 
+	this.addRadioItems = function(menu, labels, radioValue, variables, callback) {
+		var startIndex = Menu.itemIndex;
+		var selectedIndex;
+		for (var i = 0; i < labels.length; i++) {
+			menu.AppendMenuItem(MF_STRING, Menu.itemIndex, labels[i]);
+			this.callbacks[Menu.itemIndex] = callback;
+			this.variables[Menu.itemIndex] = variables[i];
+			if (radioValue === variables[i]) {
+				selectedIndex = Menu.itemIndex;
+			}
+			Menu.itemIndex++;
+		}
+		menu.CheckMenuRadioItem(startIndex, Menu.itemIndex - 1, selectedIndex);
+	}
+
+	this.createRadioSubMenu = function(parentMenu, subMenuName, labels, radioValue, variables, callback) {
+		var subMenu = window.CreatePopupMenu();
+		this.addRadioItems(subMenu, labels, radioValue, variables, callback);
+		subMenu.appendTo(parentMenu, MF_STRING, subMenuName);
+	}
+
+	this.addItemWithVariable = function(menu, label, enabled, variable, callback, disabled) {
+		menu.AppendMenuItem(MF_STRING | disabled ? MF_DISABLED : 0, Menu.itemIndex, label);
+		menu.CheckMenuItem(Menu.itemIndex, enabled);
+		this.callbacks[Menu.itemIndex] = callback;
+		if (typeof variable !== 'undefined') {
+			this.variables[Menu.itemIndex] = variable;
+		}
+		Menu.itemIndex++;
+	}
+
+	this.doCallback = function(idx) {
+		if (idx > menuStartIndex) {
+			this.callbacks[idx](this.variables[idx]);
+		}
+	}
+}
+Menu.itemIndex = menuStartIndex;	// TODO: in SMP initialize this inside the class
+
+// setup variables for 4k check
 var sizeInitialized = false;
 var last_size = undefined;
 
