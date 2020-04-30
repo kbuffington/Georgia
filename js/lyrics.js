@@ -15,7 +15,7 @@ sentence = function () {
 
 function refresh_lyrics() {
 	if (fb.IsPlaying || fb.IsPaused) {
-		if (showLyricsTiming) refresh_lyrics_time = fb.CreateProfiler("refresh_lyrics");
+		if (timings.showLyricsTiming) refresh_lyrics_time = fb.CreateProfiler("refresh_lyrics");
 		console.log("in refresh_lyrics() - g_lyrics_status = " + g_lyrics_status);
 		g_scroll = 0;
 		g_is_scrolling = false;
@@ -32,7 +32,7 @@ function refresh_lyrics() {
 			delta = (g_tab[g_tab.length-1].ante_lines + g_tab[g_tab.length-1].total_lines);
 			lyrPos = Math.round((albumart_size.h / 2) - (delta * pref.lyrics_line_height / 2));
 		}
-		if (showLyricsTiming) refresh_lyrics_time.Print();
+		if (timings.showLyricsTiming) refresh_lyrics_time.Print();
 	}
 }
 
@@ -58,7 +58,7 @@ function grab_timer(t_tab) {
 	var i, k, f_sentence, b, c, delta, repeat_text;
 	var tab = [];
 	var str = String();
-	if (showLyricsTiming) grab_timer_time = fb.CreateProfiler("grab_timer");
+	if (timings.showLyricsTiming) grab_timer_time = fb.CreateProfiler("grab_timer");
 	console.log("in grab_timer()");
 	for (i=0; i<t_tab.length; i++) {
 		t_tab[i] = t_tab[i].replace(/\u2019/g,"'").replace(/\uFF07/g,"'"); // replace apostrophes
@@ -115,7 +115,7 @@ function grab_timer(t_tab) {
 		//f_sentence.text = "---";
 		tab.push(f_sentence);
 	}
-	if (showLyricsTiming) grab_timer_time.Print();
+	if (timings.showLyricsTiming) grab_timer_time.Print();
 	return calc_lines(sort_tab(tab));
 }
 
@@ -207,7 +207,7 @@ function change_focus() {
 
 function calc_lines(ctab) {
 	console.log("in calc_lines");
-	if (showLyricsTiming) calc_lines_time = fb.CreateProfiler("calc_lines");
+	if (timings.showLyricsTiming) calc_lines_time = fb.CreateProfiler("calc_lines");
 	if (displayLyrics) {
 		var i, j;
 		var tmp_img;
@@ -240,7 +240,7 @@ function calc_lines(ctab) {
 		//console.log("albumart_size.w=" + albumart_size.w + " linew = " + linew);
 		tmp_img.ReleaseGraphics(gp);
 	}
-	if (showLyricsTiming) calc_lines_time.Print();
+	if (timings.showLyricsTiming) calc_lines_time.Print();
 	return ctab;
 }
 
@@ -412,7 +412,7 @@ function IsTimestamped(str) {
 }
 
 function check_file(path, filename) {
-	if (showLyricsTiming) load_file_time = fb.CreateProfiler("check_file");
+	if (timings.showLyricsTiming) load_file_time = fb.CreateProfiler("check_file");
 	var found = true;
 	g_lyrics_path = path;
 	if (IsFile(path+filename+".lrc")) {
@@ -423,13 +423,13 @@ function check_file(path, filename) {
 		g_lyrics_path = null;
 		found = false;
 	}
-	if (showLyricsTiming) load_file_time.Print();
+	if (timings.showLyricsTiming) load_file_time.Print();
  	return found;
 }
 
 function get_lyrics() {
 	console.log("in get_lyrics()");
-	showLyricsTiming && (get_lyrics_time = fb.CreateProfiler("get_lyrics"));
+	timings.showLyricsTiming && (get_lyrics_time = fb.CreateProfiler("get_lyrics"));
 	var i, count, delta, tag;
 	var tpath = Array();
 	var tfilename= Array();
@@ -481,7 +481,7 @@ function get_lyrics() {
 			g_tab[i].timer = i * Math.floor(len_seconds.Eval() * 100 / g_tab.length);
 		}
 	}
-	showLyricsTiming && get_lyrics_time.Print();
+	timings.showLyricsTiming && get_lyrics_time.Print();
 }
 // EOF
 

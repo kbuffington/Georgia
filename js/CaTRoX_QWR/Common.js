@@ -76,8 +76,10 @@ function trimArray(array, count, fromHead ){
         }
     }
 
-var MF_STRING = 0x00000000;
-var MF_GRAYED = 0x00000001;
+var MF_STRING   = 0x00000000;
+var MF_GRAYED   = 0x00000001;
+var MF_DISABLED = 0x00000002;
+var MF_POPUP    = 0x00000010;
 
 // Mask for mouse callbacks
 var MK_LBUTTON = 0x0001;

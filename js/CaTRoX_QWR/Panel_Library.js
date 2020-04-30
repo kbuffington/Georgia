@@ -1954,7 +1954,7 @@ function LibraryTree() {
 				return gr.GdiDrawText(lib_manager.empty, ui.font, ui.textcol, ui.x + ui.margin, ui.y + p.s_h, sbar.tree_w, ui.row_h * 5, 0x00000004 | 0x00000400);
 			if (!this.tree.length)
 				return gr.GdiDrawText(lib_manager.none, ui.font, ui.textcol, ui.x + ui.margin, ui.y + p.s_h, sbar.tree_w, ui.row_h, 0x00000004 | 0x00000400);
-			var libraryProfiler = showDrawTiming && fb.CreateProfiler('library_tree');
+			var libraryProfiler = timings.showDrawTiming && fb.CreateProfiler('library_tree');
 			var item_x = 0,
 				item_y = 0,
 				item_w = 0,
@@ -2065,7 +2065,7 @@ function LibraryTree() {
 					gr.GdiDrawText(item.name, ui.font, txt_c, item_x, item_y, sbar.tree_w - item_x - ui.sel, ui.row_h, p.lc);
 					gr.GdiDrawText(item.count, ui.font, ui.countscol, item_x + name_w, item_y, sbar.tree_w - item_x - ui.sel - name_w, ui.row_h, p.lc);
 				}
-				if (showDrawTiming) {
+				if (timings.showDrawTiming) {
 					libraryProfiler.Print();
 				}
 			}
