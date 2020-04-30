@@ -76,8 +76,8 @@ tf.add_properties({
 	artist_country: ['Tag Fields: Country', '%artistcountry%'], // we call meta_num(artistcountry) so don't wrap this in % signs
 	disc: ['Tag Fields: Disc String', '$ifgreater(%totaldiscs%,1,CD %discnumber%/%totaldiscs%,)'],
 	disc_subtitle: ['Tag Fields: Disc Subtitle', '%discsubtitle%'],
-	year: ['Tag Fields: Year', '$puts(d,$if3(%original release date%,%originaldate%,%date%,%fy_upload_date%))$if($strcmp($year($get(d)),$get(d)),$get(d),)'],
-	date: ['Tag Fields: Date', '$puts(d,$if3(%original release date%,%originaldate%,%date%,%fy_upload_date%))$if($strcmp($year($get(d)),$get(d)),,$get(d))'],
+	year: ['Tag Fields: Year', '$if3(%original release date%,%originaldate%,%date%,%fy_upload_date%)'],
+	date: ['Tag Fields: Date', '$if3(%original release date%,%originaldate%,%date%,%fy_upload_date%)'],
 	last_played: ['Tag Fields: Last Played', '[$if2(%last_played_enhanced%,%last_played%)]'],
 	title: ['Tag Fields: Song Title String', "%title%[ '['%translation%']']"],
 	vinyl_side: ['Tag Fields: Vinyl Side', '%vinyl side%'], // the tag used for determining what side a song appears on for vinyl releases - i.e. song A1 has a %vinyl side% of "A"
@@ -135,8 +135,8 @@ $ifgreater($meta_num(ArtistFilter),1,$puts(mArtist,$meta(ArtistFilter,0))$if($pu
 tf.grid = [
 	{ label: 'Disc',         val: '$if('+ tf.disc_subtitle +',[Disc %discnumber% - ]'+ tf.disc_subtitle +')' },
 	{ label: 'Release Type', val: '$if($strstr(%releasetype%,Album),,[%releasetype%])' },
-	{ label: 'Year',         val: tf.year },            // tf.year is used if the date is YYYY
-	{ label: 'Release Date', val: tf.date, age: true }, // tf.date is used if the date is YYYY-MM-DD
+	{ label: 'Year',         val: '$puts(d,'+tf.year+')$if($strcmp($year($get(d)),$get(d)),$get(d),)' },            // tf.year is used if the date is YYYY
+	{ label: 'Release Date', val: '$puts(d,'+tf.date+')$if($strcmp($year($get(d)),$get(d)),,$get(d))', age: true }, // tf.date is used if the date is YYYY-MM-DD
 	{ label: 'Edition',      val: tf.edition },
 	{ label: 'Label',        val: '[$replace(%label%,\', \',\' • \')]' },
 	{ label: 'Catalog #',    val: '[%catalognumber%]' },
@@ -228,7 +228,8 @@ function migrateCheck(version, storedVersion) {
 
 			case '1.1.6':
 			case '1.1.7':
-				window.SetPropert('Lyrics: Font Size', null);
+				window.SetProperty('Lyrics: Font Size', null);
+				window.SetProperty('user.header.original_date.show', null);
 
 			case '1.1.8':
 

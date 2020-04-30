@@ -36,7 +36,6 @@ g_properties.add_properties(
         show_album_art:     ['user.header.this.art.show', true],
         auto_album_art:     ['user.header.this.art.auto', false],
         show_group_info:    ['user.header.info.show', true],
-        show_original_date: ['user.header.original_date.show', false],
         show_disc_header:   ['user.header.disc_header.show', true],
 
         alternate_row_color:  ['user.row.alternate_color', true],
@@ -2062,14 +2061,6 @@ function Playlist(x, y) {
                 {is_checked: g_properties.show_disc_header}
             );
 
-            appear_header.append_item(
-                'Show original release date',
-                function () {
-                    g_properties.show_original_date = !g_properties.show_original_date;
-                },
-                {is_checked: g_properties.show_original_date}
-            );
-
             if (!g_properties.use_compact_header) {
                 appear_header.append_item(
                     'Show group info',
@@ -3823,7 +3814,7 @@ function Header(parent, x, y, w, h, idx) {
 
             //---> DATE
             if (grouping_handler.show_date()) {
-                var date_query = '[$year($if3(%original release date%,%originaldate%,%date%,%fy_upload_date%))]'; // Mordred: my date query
+                var date_query = '$year(' + tf.year + ')';
 
                 var date_text = _.tf(date_query, metadb);
                 if (date_text) {
@@ -4108,7 +4099,7 @@ function Header(parent, x, y, w, h, idx) {
 
         //---> DATE
         if (grouping_handler.show_date()) {
-            var date_query = tf.year;
+            var date_query = '$year(' + tf.year + ')';
 
             var date_text = _.tf(date_query, metadb);
             if (date_text) {
@@ -4213,7 +4204,7 @@ function Header(parent, x, y, w, h, idx) {
         var date_font = g_pl_fonts.date;
         var artist_font = g_pl_fonts.artist_normal;
 
-        date_query = tf.year; // Mordred: my date query
+        date_query = '$year(' + tf.year + ')'; // Mordred: my date query
 
         var date_text = _.tf(date_query, metadb);
         if (date_text) {
