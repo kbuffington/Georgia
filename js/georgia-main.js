@@ -2576,8 +2576,10 @@ function ResizeArtwork(resetCDPosition) {
 	} else {
 		cdart_size = new ImageSize(0, 0, 0, 0);
 	}
-	if (hasArtwork && !pref.darkMode) {
-		createDropShadow();
+	if (hasArtwork) {
+		if (!pref.darkMode) {
+			createDropShadow();
+		}
 	} else {
 		if (displayLibrary || displayPlaylist) {
 			pauseBtn.setCoords(ww * (0.33 + .167 / 2), wh / 2);
