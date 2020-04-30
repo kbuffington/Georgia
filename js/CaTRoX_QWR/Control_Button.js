@@ -197,7 +197,7 @@ Button.prototype.onClick = function () {
 			onPlaylistsMenu(this.x, this.y + this.h);
 			break;
 		case 'Options':
-			onSettingsMenu(this.x, this.y + this.h);
+			onOptionsMenu(this.x, this.y + this.h);
 			break;
 		case 'Repeat':
 			var pbo = fb.PlaybackOrder;
