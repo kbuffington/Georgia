@@ -146,7 +146,30 @@ Button.prototype.onClick = function () {
 			fb.Next();
 			break;
 		case 'Playback/Random':
-			fb.RunMainMenuCommand('Edit/Sort/Randomize')
+			fb.RunMainMenuCommand('Edit/Sort/Randomize');
+			if (fb.IsPlaying) {
+				var playing_location = plman.GetPlayingItemLocation();
+				if (playing_location.IsValid) {
+					var pl = playing_location.PlaylistIndex;
+					var handles = plman.GetPlaylistItems(pl);
+					handles.RemoveById(playing_location.PlaylistItemIndex);
+					plman.ClearPlaylistSelection(pl);
+					plman.SetPlaylistSelection(pl, [playing_location.PlaylistItemIndex], true);
+			
+					plman.RemovePlaylistSelection(pl, true);
+					plman.InsertPlaylistItems(pl, 1, handles);
+					plman.EnsurePlaylistItemVisible(pl, 0);
+					if (displayPlaylist) {
+						playlist.on_playback_new_track(fb.GetNowPlaying());	// used to scroll item into view
+					}
+				}
+			} else {
+				var pl = plman.ActivePlaylist;
+				plman.ClearPlaylistSelection(pl);
+				plman.SetPlaylistSelection(pl, [0], true);
+				plman.AddPlaylistItemToPlaybackQueue(pl, 0);
+				fb.RunMainMenuCommand('Playback/Play');
+			}
 			break;
 		case 'Volume':
 			volume_btn.showVolumeBar(true);

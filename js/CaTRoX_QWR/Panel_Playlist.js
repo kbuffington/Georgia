@@ -940,8 +940,6 @@ function Playlist(x, y) {
         var has_selected_item = selection_handler.has_selected_items();
         var is_cur_playlist_empty = !this.cnt.rows.length;
 
-        plman.SetActivePlaylistContext();
-
         var cmm = new Context.MainMenu();
 
         if (fb.IsPlaying) {

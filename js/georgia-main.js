@@ -1322,6 +1322,10 @@ function on_init() {
 	g_playtimer && window.ClearInterval(g_playtimer);
 	g_playtimer = null;
 
+	/** Workaround so we can use the Edit menu or run fb.RunMainMenuCommand("Edit/Something...")
+		when the panel has focus and a dedicated playlist viewer doesn't. */
+	plman.SetActivePlaylistContext(); // once on startup
+
 	if (pref.start_Playlist) {
 		displayPlaylist = false;
 		setTimeout(function () {
@@ -2099,6 +2103,9 @@ function on_focus(is_focused) {
 	if (displayPlaylist) {
 		trace_call && console.log(qwr_utils.function_name());
 		playlist.on_focus(is_focused);
+	}
+	if (is_focused) {
+		plman.SetActivePlaylistContext(); // When the panel gets focus but not on every click.
 	}
 }
 

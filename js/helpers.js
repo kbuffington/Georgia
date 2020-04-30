@@ -402,7 +402,6 @@ function Menu(title) {
 	// handles callback and automatically Disposes menu
 	this.doCallback = function(idx) {
 		if (idx > menuStartIndex) {
-			console.log(idx);
 			Menu.callbacks[idx](Menu.variables[idx]);
 		}
 		this.menu.Dispose();
