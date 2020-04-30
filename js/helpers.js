@@ -334,23 +334,28 @@ function isNewerVersion (oldVer, newVer) {
 	return false
 }
 
-var menuStartIndex = 500;	// attempt to avoid collisions with other menu variables
-function Menu() {
+var menuStartIndex = 100;	// can be anything except 0
+function Menu(title) {
 	Menu.itemIndex++;
-	this.callbacks = [];
-	this.variables = [];
+	Menu.callbacks;
+	Menu.variables;
 	this.menu = window.CreatePopupMenu();
+	this.title = title;
 
-	this.addItem = function(menu, label, enabled, callback, disabled) {
-		this.addItemWithVariable(menu, label, enabled, undefined, callback, disabled);
+	this.addSeparator = function() {
+		this.menu.AppendMenuSeparator();
+	}
+
+	this.addItem = function(label, enabled, callback, disabled) {
+		this.addItemWithVariable(label, enabled, undefined, callback, disabled);
 	}
 	
 	/** similar to addItem, but takes an object and property name which will automatically be set when the callback is called, 
 	  * before calling any user specified callback. If the property you wish to toggle is options.repeat, then propertiesObj
 	  * is options, and the propertyName must be "repeat" as a string.
 	  **/
-	this.addToggleItem = function(menu, label, propertiesObj, propertyName, callback, disabled) {
-		this.addItem(menu, label, propertiesObj[propertyName], function () {
+	this.addToggleItem = function(label, propertiesObj, propertyName, callback, disabled) {
+		this.addItem(label, propertiesObj[propertyName], function () {
 			propertiesObj[propertyName] = !propertiesObj[propertyName];
 			if (callback) {
 				callback();
@@ -359,44 +364,60 @@ function Menu() {
 	}
 
 	// creates a set of radio items and checks the value specified 
-	this.addRadioItems = function(menu, labels, radioValue, variables, callback) {
+	this.addRadioItems = function(labels, radioValue, variables, callback) {
 		var startIndex = Menu.itemIndex;
 		var selectedIndex;
 		for (var i = 0; i < labels.length; i++) {
-			menu.AppendMenuItem(MF_STRING, Menu.itemIndex, labels[i]);
-			this.callbacks[Menu.itemIndex] = callback;
-			this.variables[Menu.itemIndex] = variables[i];
+			this.menu.AppendMenuItem(MF_STRING, Menu.itemIndex, labels[i]);
+			Menu.callbacks[Menu.itemIndex] = callback;
+			Menu.variables[Menu.itemIndex] = variables[i];
 			if (radioValue === variables[i]) {
 				selectedIndex = Menu.itemIndex;
 			}
 			Menu.itemIndex++;
 		}
-		menu.CheckMenuRadioItem(startIndex, Menu.itemIndex - 1, selectedIndex);
+		this.menu.CheckMenuRadioItem(startIndex, Menu.itemIndex - 1, selectedIndex);
 	}
 
-	this.createRadioSubMenu = function(parentMenu, subMenuName, labels, radioValue, variables, callback) {
-		var subMenu = window.CreatePopupMenu();
-		this.addRadioItems(subMenu, labels, radioValue, variables, callback);
-		subMenu.appendTo(parentMenu, MF_STRING, subMenuName);
+	this.createRadioSubMenu = function(subMenuName, labels, radioValue, variables, callback) {
+		var subMenu = new Menu(subMenuName);
+		subMenu.addRadioItems(labels, radioValue, variables, callback);
+		subMenu.appendTo(this);
 	}
 
-	this.addItemWithVariable = function(menu, label, enabled, variable, callback, disabled) {
-		menu.AppendMenuItem(MF_STRING | disabled ? MF_DISABLED : 0, Menu.itemIndex, label);
-		menu.CheckMenuItem(Menu.itemIndex, enabled);
-		this.callbacks[Menu.itemIndex] = callback;
+	this.addItemWithVariable = function(label, enabled, variable, callback, disabled) {
+		this.menu.AppendMenuItem(MF_STRING | disabled ? MF_DISABLED : 0, Menu.itemIndex, label);
+		this.menu.CheckMenuItem(Menu.itemIndex, enabled);
+		Menu.callbacks[Menu.itemIndex] = callback;
 		if (typeof variable !== 'undefined') {
-			this.variables[Menu.itemIndex] = variable;
+			Menu.variables[Menu.itemIndex] = variable;
 		}
 		Menu.itemIndex++;
 	}
 
+	this.appendTo = function(parentMenu) {
+		this.menu.appendTo(parentMenu.menu, MF_STRING, this.title);
+	}
+
+	// handles callback and automatically Disposes menu
 	this.doCallback = function(idx) {
 		if (idx > menuStartIndex) {
-			this.callbacks[idx](this.variables[idx]);
+			console.log(idx);
+			Menu.callbacks[idx](Menu.variables[idx]);
 		}
+		this.menu.Dispose();
+		Menu.callbacks = [];
+		Menu.variables = [];
+		Menu.itemIndex = menuStartIndex;
+	}
+
+	this.trackPopupMenu = function (x, y) {
+		return this.menu.TrackPopupMenu(x, y);
 	}
 }
-Menu.itemIndex = menuStartIndex;	// TODO: in SMP initialize this inside the class
+Menu.itemIndex = menuStartIndex;	// TODO: in SMP initialize these values inside the class
+Menu.callbacks = [];
+Menu.variables = [];
 
 // setup variables for 4k check
 var sizeInitialized = false;

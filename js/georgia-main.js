@@ -1126,63 +1126,36 @@ function show_lyrics(gr, tab, posy) {
 
 
 function onRatingMenu(x, y) {
-	var MF_SEPARATOR = 0x00000800;
-	var MF_STRING = 0x00000000;
-	var idx;
-	var _menu = window.CreatePopupMenu();
-
 	menu_down = true;
 
 	var rating = fb.TitleFormat("$if2(%rating%,0)").Eval();
 
-	_menu.AppendMenuItem(MF_STRING, 1, "No rating");
-	_menu.CheckMenuItem(1, rating == 0);
-	_menu.AppendMenuItem(MF_STRING, 11, "1 Star");
-	_menu.CheckMenuItem(11, rating == 1);
-	_menu.AppendMenuItem(MF_STRING, 12, "2 Stars");
-	_menu.CheckMenuItem(12, rating == 2);
-	_menu.AppendMenuItem(MF_STRING, 13, "3 Stars");
-	_menu.CheckMenuItem(13, rating == 3);
-	_menu.AppendMenuItem(MF_STRING, 14, "4 Stars");
-	_menu.CheckMenuItem(14, rating == 4);
-	_menu.AppendMenuItem(MF_STRING, 15, "5 Stars");
-	_menu.CheckMenuItem(15, rating == 5);
-
-	idx = _menu.TrackPopupMenu(x, y);
-	switch (true) {
-		case idx == 0:
-			break;
-		case idx == 1:
+	var menu = new Menu();
+	menu.addRadioItems(['No rating', '1 Star', '2 Stars', '3 Stars', '4 Stars', '5 Stars'], parseInt(rating), [0,1,2,3,4,5], function (rating) {
+		if (rating === 0) {
 			fb.RunContextCommand("Playback Statistics/Rating/<not set>");
-			break;
-		default:
-			fb.RunContextCommand("Playback Statistics/Rating/" + (idx - 10));
-			break;
-	}
-	_menu.Dispose();
+		} else {
+			fb.RunContextCommand("Playback Statistics/Rating/" + rating);
+		}
+	});
+
+	var idx = menu.trackPopupMenu(x, y);
+	menu.doCallback(idx);
+
 	menu_down = false;
 }
 
 function onOptionsMenu(x, y) {
-	var idx;
-
 	menu_down = true;
 
 	var menu = new Menu();	// helper class for creating simple menu items. See helpers.js
-
-	// Settings
-	var _menu = window.CreatePopupMenu();
-	var _debugMenu = window.CreatePopupMenu();
-	var _libraryMenu = window.CreatePopupMenu();
-
-	// DO NOT USE ITEM 0 OR THINGS BREAK
-	menu.addToggleItem(_menu, 'Check for Theme Updates', pref, 'checkForUpdates');
-	menu.createRadioSubMenu(_menu, 'Use 4K mode', ['Auto-detect', 'Never', 'Always'], pref.use_4k, ['auto', 'never', 'always'], function(mode) {
+	menu.addToggleItem('Check for Theme Updates', pref, 'checkForUpdates');
+	menu.createRadioSubMenu('Use 4K mode', ['Auto-detect', 'Never', 'Always'], pref.use_4k, ['auto', 'never', 'always'], function(mode) {
 		pref.use_4k = mode;
 		on_size();
 		RepaintWindow();
 	});
-	menu.addToggleItem(_menu, 'Use Dark Theme', pref, 'darkMode', function () {
+	menu.addToggleItem('Use Dark Theme', pref, 'darkMode', function () {
 		initColors();
 		if (fb.IsPlaying) {
 			albumart = null;
@@ -1192,7 +1165,7 @@ function onOptionsMenu(x, y) {
 			RepaintWindow();
 		}
 	});
-	menu.addToggleItem(_menu, 'Cycle Through All Artwork', pref, 'aa_glob', function () {
+	menu.addToggleItem('Cycle Through All Artwork', pref, 'aa_glob', function () {
 		if (!pref.aa_glob) {
 			window.ClearTimeout(globTimer);
 			globTimer = 0;
@@ -1200,91 +1173,93 @@ function onOptionsMenu(x, y) {
 			doRotateImage();
 		}
 	});
-	menu.addToggleItem(_menu, 'Display CD Art (cd.pngs)', pref, 'display_cdart', function () {
+	menu.addToggleItem('Display CD Art (cd.pngs)', pref, 'display_cdart', function () {
 		if (fb.IsPlaying) fetchNewArtwork(fb.GetNowPlaying());
 		lastLeftEdge = 0; // resize labels
 		ResizeArtwork(true);
 		RepaintWindow();
 	});
-	menu.addToggleItem(_menu, 'Rotate CD Art on track change', pref, 'rotate_cdart', function () { RepaintWindow(); }, !pref.display_cdart);	
-	menu.createRadioSubMenu(_menu, 'CD Art Rotation Amount', ['2 degrees', '3 degrees', '4 degrees', '5 degrees'], parseInt(pref.rotation_amt), [2,3,4,5], function (rot) {
+	menu.addToggleItem('Rotate CD Art on track change', pref, 'rotate_cdart', function () { RepaintWindow(); }, !pref.display_cdart);	
+	menu.createRadioSubMenu('CD Art Rotation Amount', ['2 degrees', '3 degrees', '4 degrees', '5 degrees'], parseInt(pref.rotation_amt), [2,3,4,5], function (rot) {
 		pref.rotation_amt = rot;
 		CreateRotatedCDImage();
 		RepaintWindow();		
 	});
 
-	menu.addItem(_menu, 'Display CD Art above cover', pref.cdart_ontop, function () {
+	menu.addItem('Display CD Art above cover', pref.cdart_ontop, function () {
 		pref.cdart_ontop = !pref.cdart_ontop;
 		RepaintWindow();
 	}, !pref.display_cdart);
 
-	_menu.AppendMenuSeparator();
+	menu.addSeparator();
 
-	menu.addToggleItem(_menu, 'Display playlist on startup', pref, 'start_Playlist');
-	menu.addToggleItem(_menu, 'Show Transport Controls', pref, 'show_transport', function () { 
+	menu.addToggleItem('Display playlist on startup', pref, 'start_Playlist');
+	menu.addToggleItem('Show Transport Controls', pref, 'show_transport', function () { 
 		createButtonImages();
 		createButtonObjects(ww, wh);
 		ResizeArtwork(true);
 		RepaintWindow();
 	});
-	menu.addToggleItem(_menu, 'Show Volume Control', pref, 'show_volume_button', function () { 
+	menu.addToggleItem('Show Volume Control', pref, 'show_volume_button', function () { 
 		createButtonObjects(ww, wh);
 		RepaintWindow();
 	});
-	menu.addToggleItem(_menu, 'Show Progress Bar', pref, 'show_progress_bar', function () { 
+	menu.addToggleItem('Show Progress Bar', pref, 'show_progress_bar', function () { 
 		setGeometry();
 		ResizeArtwork(true);
 		RepaintWindow();
 	});
-	menu.addToggleItem(_menu, 'Update Progress Bar frequently (higher CPU)', pref, 'freq_update', function () { SetProgressBarRefresh(); });
+	menu.addToggleItem('Update Progress Bar frequently (higher CPU)', pref, 'freq_update', function () { SetProgressBarRefresh(); });
 
-	_menu.AppendMenuSeparator();
+	menu.addSeparator();
 
-	menu.addToggleItem(_menu, 'Use Vinyl Style Numbering if Available', pref, 'use_vinyl_nums', function () { RepaintWindow(); });
+	menu.addToggleItem('Use Vinyl Style Numbering if Available', pref, 'use_vinyl_nums', function () { RepaintWindow(); });
 
-	_menu.AppendMenuSeparator();
+	menu.addSeparator();
 
-	menu.addToggleItem(_menu, 'Show Artist Country Flags', pref, 'show_flags', function () {
+	menu.addToggleItem('Show Artist Country Flags', pref, 'show_flags', function () {
 		LoadCountryFlags();
 		RepaintWindow();
 	});
 
-	_menu.AppendMenuSeparator();
+	menu.addSeparator();
 
-	menu.addToggleItem(_menu, 'Follow Hyperlinks only if CTRL-key is down', pref, 'hyperlinks_ctrl');
+	menu.addToggleItem('Follow Hyperlinks only if CTRL-key is down', pref, 'hyperlinks_ctrl');
 
-	_menu.AppendMenuSeparator(); 
+	menu.addSeparator(); 
 
-	menu.addToggleItem(_libraryMenu, 'Remember Library State', libraryProps, 'rememberTree');
-	menu.addToggleItem(_libraryMenu, 'Full Line Clickable', libraryProps, 'fullLine');
-	menu.addToggleItem(_libraryMenu, 'Show Tooltips', libraryProps, 'tooltips', function () { setLibrarySize(); });
-	menu.createRadioSubMenu(_libraryMenu, 'Root Node Type', ['Hide', '"All Music"', 'View Name'], libraryProps.rootNode, [0,1,2], function (nodeIndex) {
+	libraryMenu = new Menu('Library Settings');
+	libraryMenu.addToggleItem('Remember Library State', libraryProps, 'rememberTree');
+	libraryMenu.addToggleItem('Full Line Clickable', libraryProps, 'fullLine');
+	libraryMenu.addToggleItem('Show Tooltips', libraryProps, 'tooltips', function () { setLibrarySize(); });
+	libraryMenu.createRadioSubMenu('Root Node Type', ['Hide', '"All Music"', 'View Name'], libraryProps.rootNode, [0,1,2], function (nodeIndex) {
 		libraryProps.rootNode = nodeIndex;
 		lib_manager.rootNodes(1);
 	});
-	menu.createRadioSubMenu(_libraryMenu, 'Node Item Counts', ['Hidden', '# Tracks', '# Sub-Items'], libraryProps.nodeItemCounts, [0,1,2], function (nodeIndex) {
+	libraryMenu.createRadioSubMenu('Node Item Counts', ['Hidden', '# Tracks', '# Sub-Items'], libraryProps.nodeItemCounts, [0,1,2], function (nodeIndex) {
 		libraryProps.nodeItemCounts = nodeIndex;
 		lib_manager.rootNodes(1);
 	});
-	menu.addToggleItem(_libraryMenu, 'Show Library Scrollbar', libraryProps, 'showScrollbar', function () { setLibrarySize(); });
-	menu.addToggleItem(_libraryMenu, 'Send files to Current Playlist', libraryProps, 'sendToCurrent');
-	menu.addToggleItem(_libraryMenu, 'Auto-Fill Playlist on Selection', libraryProps, 'autoFill');
-	menu.createRadioSubMenu(_libraryMenu, 'Double Click Action', ['Expand/Collapse Folders', 'Send and Play', 'Send to Playlist'], libraryProps.doubleClickAction, [0,1,2], function(action) {
+	libraryMenu.addToggleItem('Show Library Scrollbar', libraryProps, 'showScrollbar', function () { setLibrarySize(); });
+	libraryMenu.addToggleItem('Send files to Current Playlist', libraryProps, 'sendToCurrent');
+	libraryMenu.addToggleItem('Auto-Fill Playlist on Selection', libraryProps, 'autoFill');
+	libraryMenu.createRadioSubMenu('Double Click Action', ['Expand/Collapse Folders', 'Send and Play', 'Send to Playlist'], libraryProps.doubleClickAction, [0,1,2], function(action) {
 		libraryProps.doubleClickAction = action;
 	});
-	menu.addToggleItem(_libraryMenu, 'Auto Collapse Nodes', libraryProps, 'autoCollapse');
-	menu.addItem(_libraryMenu, 'Reset Library Zoom', false, function () {
+	libraryMenu.addToggleItem('Auto Collapse Nodes', libraryProps, 'autoCollapse');
+	libraryMenu.addItem('Reset Library Zoom', false, function () {
 		libraryProps.filterZoom = 100;
 		libraryProps.fontZoom = 100;
 		libraryProps.nodeZoom = 100;
 		setLibrarySize();
 	});
-	_libraryMenu.AppendTo(_menu, MF_STRING, 'Library Settings');
+	libraryMenu.appendTo(menu);
 
-	_menu.AppendMenuSeparator();
+	menu.addSeparator();
 
-	menu.addToggleItem(_debugMenu, 'Enable debug output', pref, 'show_debug_log');
-	menu.addItem(_debugMenu, 'Enable theme debug output', pref.show_theme_log, function () {
+	debugMenu = new Menu('Debug Settings');
+	debugMenu.addToggleItem('Enable debug output', pref, 'show_debug_log');
+	debugMenu.addItem('Enable theme debug output', pref.show_theme_log, function () {
 		pref.show_theme_log = !pref.show_theme_log;
 		if (pref.show_theme_log) {
 			// this is overkill, but it'll print the theme logging at least
@@ -1293,29 +1268,19 @@ function onOptionsMenu(x, y) {
 			on_playback_new_track(fb.GetNowPlaying());
 		}
 	});
-	menu.addToggleItem(_debugMenu, 'Show draw timing', timings, 'showDrawTiming');
-	menu.addToggleItem(_debugMenu, 'Show extra draw timing', timings, 'showExtraDrawTiming');
-	menu.addToggleItem(_debugMenu, 'Show debug timing', timings, 'showDebugTiming');
-	menu.addToggleItem(_debugMenu, 'Show Reload button', pref, 'show_reload_button', function () { window.Reload(); });
-	_debugMenu.AppendTo(_menu, MF_STRING, 'Debug Settings');
+	debugMenu.addToggleItem('Show draw timing', timings, 'showDrawTiming');
+	debugMenu.addToggleItem('Show extra draw timing', timings, 'showExtraDrawTiming');
+	debugMenu.addToggleItem('Show debug timing', timings, 'showDebugTiming');
+	debugMenu.addToggleItem('Show Reload button', pref, 'show_reload_button', function () { window.Reload(); });
+	debugMenu.appendTo(menu);
 
-	_menu.AppendMenuSeparator();
-	_menu.AppendMenuItem(MF_STRING, 100, 'Lock Right Click...');
-	_menu.CheckMenuItem(100, pref.locked);
-	_menu.AppendMenuItem(MF_STRING, 101, 'Restart');
+	menu.addSeparator();
 
-	idx = _menu.TrackPopupMenu(x, y);
-	switch (idx) {
-		case 100:
-			pref.locked = !pref.locked;
-			break;
-		case 101:
-			fb.RunMainMenuCommand("File/Restart");
-			break;
-		default:
-			menu.doCallback(idx);
-	}
-	_menu.Dispose();
+	menu.addToggleItem('Lock Right Click...', pref, 'locked');
+	menu.addItem('Restart', false, function () { fb.RunMainMenuCommand("File/Restart"); });
+
+	var idx = menu.trackPopupMenu(x, y);
+	menu.doCallback(idx);
 
 	menu_down = false;
 	window.RepaintRect(pad_x, pad_y, menu_width, 24);

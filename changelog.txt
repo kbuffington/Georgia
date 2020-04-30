@@ -3,6 +3,8 @@ v1.1.8 - ??
  - Improved tooltip handling for buttons
  - Fixed issues with expanded volume bar disappearing and it's appearance in 4k mode
  - Fixed crash when deleting last playlist
+ - CD Rotation values were bogus
+ - Refactored all menus using new `Menu` helper class, which cut menu code length in half and made adding new options much easier
 
 v1.1.7 - 2020-04-11
  - Invert logos when theme primary color is dark (requires foo_jscript_panel v2.3.6)
