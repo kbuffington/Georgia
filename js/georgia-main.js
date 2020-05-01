@@ -2163,6 +2163,8 @@ function on_focus(is_focused) {
 	}
 	if (is_focused) {
 		plman.SetActivePlaylistContext(); // When the panel gets focus but not on every click.
+	} else {
+		window.ClearTimeout(hideCursor); // not sure this is required, but I think the mouse was occasionally disappearing
 	}
 }
 
