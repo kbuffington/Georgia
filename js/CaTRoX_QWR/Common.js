@@ -651,9 +651,6 @@ var qwr_utils = {
             case 'googleimages':
                 site = (search_term ? 'http://images.google.com/images?hl=en&q=' + search_term + '&ie=utf-8' : null);
                 break;
-            case 'ecover':
-                site = (search_term || album ? 'http://ecover.to/?Module=ExtendedSearch&SearchString=' + search_term + '+' + album + '&ie=utf-8' : null);
-                break;
             case 'wikipedia':
                 site = (artist ? 'http://en.wikipedia.org/wiki/' + artist.replace(/\+/g, '_') : null);
                 break;
@@ -674,7 +671,7 @@ var qwr_utils = {
             return;
         }
 
-        _.run(site);
+        _.runCmd(site);
     },
     MouseMoveSuppress:    function () {
         this.is_supressed = function (x, y, m) {
