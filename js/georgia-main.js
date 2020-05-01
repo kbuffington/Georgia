@@ -293,7 +293,6 @@ var loadFromCache = true; // always load art from cache unless this is set
 var str = new Object();
 var state = new Object(); // panel state
 
-var metadb_handle = null; // watch db for tag changes
 // TIMERS
 var progressTimer; // 40ms repaint of progress bar
 var globTimer; // Timer for rotating globs
@@ -329,31 +328,7 @@ var lastDiscNumber;
 var lastVinylSide;
 var currentLastPlayed = '';
 
-// Lyrics Variables
-var len_seconds = fb.Titleformat("%length_seconds%");
-var elap_seconds = fb.TitleFormat("%playback_time_seconds%");
-
 var g_tooltip;
-
-var g_playtimer = null;
-var g_timer_abs;
-
-// TODO change these variable names
-var g_tab = Array();
-var g_scroll = 0;
-var g_lyrics_path;
-var g_lyrics_filename;
-var g_lyrics_status;
-var focus = 0;
-var focus_next = 0;
-var hundredth = 0;
-var g_is_scrolling = false;
-var g_tab_length;
-
-var midpoint; // this is the center of the lyrics, where the highlighted line will display
-var lyrPos; // this is the absolute yPosition of the very first line in the lyrics. It will start at midpoint and then move up and off the screen
-var lyricsWidth = 0; // minimum width needed to display the lyrics to speed up drawing
-
 
 // MENU STUFF
 var pad_x = 4;
@@ -508,7 +483,7 @@ function draw_ui(gr) {
 			}
 			if (displayLyrics && albumart_scaled && fb.IsPlaying) {
 				gr.FillSolidRect(albumart_size.x - 1, albumart_size.y - 1, albumart_size.w + 1, albumart_size.h + 1, RGBA(0, 0, 0, 155));
-				show_lyrics(gr, g_tab, Math.floor(lyrPos - pref.lyrics_h_padding));
+				drawLyrics(gr, g_tab, Math.floor(lyrPos - pref.lyrics_h_padding));
 			}
 			if (timings.showExtraDrawTiming) drawArt.Print();
 		} else {
@@ -1075,55 +1050,8 @@ function on_paint(gr) {
 		drawStuff.Print();
 	}
 }
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-function show_lyrics(gr, tab, posy) {
-	var i, k, text_colour;
-	divider_spacing = scaleForDisplay(40);
-	divider_height = scaleForDisplay(10);
-
-	if (timings.showDebugTiming)
-		show_lyricsTime = fb.CreateProfiler("show_lyrics");
-	gr.SetTextRenderingHint(TextRenderingHint.AntiAliasGridFit);
-	var g_txt_align = cc_stringformat;
-
-	if (dividerImg && dividerImg.width < (albumart_size.w - 10) && posy - divider_spacing - dividerImg.height >= albumart_size.y + pref.lyrics_h_padding) {
-		gr.FillRoundRect(albumart_size.x + Math.floor(albumart_size.w * .2) - 1, posy - divider_spacing - divider_height + 1, Math.floor(albumart_size.w * 0.6), divider_height, divider_height / 2, divider_height / 2, col.darkAccent);
-		gr.FillRoundRect(albumart_size.x + Math.floor(albumart_size.w * .2), posy - divider_spacing - divider_height, Math.floor(albumart_size.w * 0.6), divider_height, divider_height / 2, divider_height / 2, col.info_bg);
-	}
-	for (i = 0; i < tab.length; i++) {
-		if (posy >= albumart_size.y + pref.lyrics_h_padding && posy < albumart_size.h - pref.lyrics_h_padding) {
-			if (i == focus && g_lyrics_status == 1) {
-				text_colour = g_txt_highlightcolour;
-			} else {
-				if (g_lyrics_status == 0) {
-					text_colour = g_txt_highlightcolour;
-				} else {
-					text_colour = g_txt_normalcolour;
-				}
-			}
-			lineHeight = tab[i].total_lines * pref.lyrics_line_height;
-			// maybe redo this to use albumart_size.x+(albumart_size.w-lyricsWidth)/2  and  lyricsWidth
-			pref.lyrics_glow && gr.DrawString(tab[i].text, ft.lyrics, g_txt_shadowcolor, albumart_size.x + (albumart_size.w - lyricsWidth) / 2 - 1, posy, lyricsWidth, lineHeight, g_txt_align);
-			pref.lyrics_glow && gr.DrawString(tab[i].text, ft.lyrics, g_txt_shadowcolor, albumart_size.x + (albumart_size.w - lyricsWidth) / 2, posy - 1, lyricsWidth, lineHeight, g_txt_align);
-			pref.lyrics_text_shadow && gr.DrawString(tab[i].text, ft.lyrics, g_txt_shadowcolor, albumart_size.x + (albumart_size.w - lyricsWidth) / 2 + 2, posy + 2, lyricsWidth, lineHeight, g_txt_align);
-			gr.DrawString(tab[i].text, ft.lyrics, text_colour, albumart_size.x + (albumart_size.w - lyricsWidth) / 2, posy, lyricsWidth, lineHeight, g_txt_align);
-		}
-		posy = Math.floor(posy + pref.lyrics_line_height + ((tab[i].total_lines - 1) * pref.lyrics_line_height));
-	}
-	posy += divider_spacing;
-	if (dividerImg && dividerImg.width < (albumart_size.w - 10) && posy < albumart_size.h - pref.lyrics_h_padding) {
-		// gr.DrawImage(dividerImg, albumart_size.x+(albumart_size.w-dividerImg.width)/2, posy, dividerImg.width, dividerImg.height, 0,0,dividerImg.width,dividerImg.height);
-		gr.FillRoundRect(albumart_size.x + Math.floor(albumart_size.w * .2) - 1, posy + 1, Math.floor(albumart_size.w * 0.6), divider_height, divider_height / 2, divider_height / 2, col.darkAccent);
-		gr.FillRoundRect(albumart_size.x + Math.floor(albumart_size.w * .2), posy, Math.floor(albumart_size.w * 0.6), divider_height, divider_height / 2, divider_height / 2, col.info_bg);
-	}
-
-	if (timings.showDebugTiming)
-		show_lyricsTime.Print();
-}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 function onRatingMenu(x, y) {
 	menu_down = true;
@@ -1563,9 +1491,7 @@ function on_playback_new_track(metadb) {
 	lastVinylSide = $('$if2(" + tf.vinyl_side + ",ZZ)');
 	currentLastPlayed = $(tf.last_played);
 
-	// enable "watch for tag changes" on new track
-	metadb_handle = fb.GetNowPlaying();
-	if (metadb_handle) {
+	if (fb.GetNowPlaying()) {
 		on_metadb_changed(); // refresh panel
 	}
 
@@ -1697,7 +1623,6 @@ function on_metadb_changed(handle_list, fromhook) {
 			}
 		}
 	}
-	// createHyperlinks();
 	if (displayPlaylist) {
 		trace_call && console.log(qwr_utils.function_name());
 		playlist.on_metadb_changed(handle_list, fromhook);
@@ -1725,8 +1650,6 @@ function on_playback_seek() {
 	on_playback_time();
 	refresh_seekbar();
 }
-
-var onMouseLbtnDown = false;
 
 function on_mouse_lbtn_down(x, y, m) {
 	if (y > wh - geo.lower_bar_h) {
@@ -1789,8 +1712,6 @@ function on_mouse_lbtn_up(x, y, m) {
 		on_mouse_move(x, y);
 		buttonEventHandler(x, y, m);
 	}
-
-	onMouseLbtnDown = false;
 }
 
 function on_mouse_lbtn_dblclk(x, y, m) {
@@ -2094,9 +2015,6 @@ function on_playback_stop(reason) {
         while (recordLabelsInverted.length) {
             disposeImg(recordLabelsInverted.pop());
         }
-		if (metadb_handle) {
-			metadb_handle = null;
-		}
 		createButtonObjects(ww, wh); // switch pause button to play
 		loadFromCache = false;
 	}
@@ -2261,7 +2179,6 @@ function refresh_seekbar() {
 	window.RepaintRect(0.025 * ww, wh - geo.lower_bar_h, 0.95 * ww, geo.lower_bar_h);
 }
 
-
 // TIMER Callback functions
 function doRotateImage() {
 	debugLog("Repainting in doRotateImate: " + albumArtIndex);
@@ -2272,45 +2189,6 @@ function doRotateImage() {
 	globTimer = window.SetTimeout(function () {
 		doRotateImage();
 	}, pref.art_rotate_delay * 1000);
-}
-
-function timerTick(id) {
-	if (displayLyrics) {
-		var t1 = elap_seconds.Eval() * 100 + hundredth;
-		var t2 = len_seconds.Eval() * 100;
-		var p1, p2;
-
-		if (t1 > t2 - 200) {
-			// stop scrolling in final 2 seconds to make sure we clear interval
-			console.log('clearing g_playtimer because t1 > t2-200 - t1 = ' + t1 + ', t2 = ' + t2);
-			g_playtimer && window.clearInterval(g_playtimer);
-			g_playtimer = null;
-		}
-
-		if (g_playtimer) {
-			if (!g_is_scrolling && t1 >= g_tab[focus_next].timer) {
-				p1 = g_tab[focus].ante_lines * pref.lyrics_line_height;
-				p2 = g_tab[focus_next].ante_lines * pref.lyrics_line_height;
-				g_scroll = (p2 - p1);
-				// console.log("about to scroll " + g_scroll + " pixels");
-				change_focus();
-				g_is_scrolling = true;
-			}
-			g_timer_abs--;
-			if (g_scroll > 0) {
-				lyrPos -= g_scroll < SCROLL_STEP ? g_scroll : SCROLL_STEP;
-				g_scroll -= g_scroll < SCROLL_STEP ? g_scroll : SCROLL_STEP;
-				if (g_timer_abs <= 1) {
-					g_timer_abs = 4;
-					window.RepaintRect(albumart_size.x + (albumart_size.w - lyricsWidth) / 2, albumart_size.y + pref.lyrics_h_padding, lyricsWidth, albumart_size.h - pref.lyrics_h_padding * 2);
-				}
-			} else {
-				g_timer_abs = 4;
-				g_is_scrolling = false;
-			}
-		}
-	}
-	hundredth = (hundredth + 1) % 100;
 }
 
 function createShadowRect(width, height) {
@@ -2504,18 +2382,6 @@ function glob_image(index, loadFromCache) {
 		CreateRotatedCDImage();
 	}
 	displayLyrics && updateLyricsPositionOnScreen();
-}
-
-function fisherYates(myArray) {
-	var i = myArray.length;
-	if (i == 0) return false;
-	while (--i) {
-		var j = Math.floor(Math.random() * (i + 1));
-		var tempi = myArray[i];
-		var tempj = myArray[j];
-		myArray[i] = tempj;
-		myArray[j] = tempi;
-	}
 }
 
 /* I use the debugLog function instead of console.log so that I can easily hide messages that I don't want cluttering the console constantly */
@@ -2811,10 +2677,6 @@ function fetchNewArtwork(metadb) {
 function RepaintWindow() {
 	debugLog("Repainting from RepaintWindow()");
 	window.Repaint();
-}
-
-function createHyperlinks() {
-	hyperlinks = [];
 }
 
 function createButtonObjects(ww, wh) {
@@ -3204,18 +3066,4 @@ function createButtonImages() {
 
 	}
 	if (timings.showExtraDrawTiming) createButtonTime.Print();
-}
-
-// =================================================== //
-
-function resizeDone() {
-	console.log("resizeDone()");
-	// to speed up draw times, we scale the bg image once, and then draw it without scaling in on_paint which is up to 3-4x faster
-
-	progressMoved = true;
-	SetProgressBarRefresh();
-	window.Repaint();
-	if (displayPlaylist && listLength) {
-		getAlbumArt();
-	}
 }

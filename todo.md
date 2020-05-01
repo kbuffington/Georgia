@@ -1,4 +1,4 @@
-My unprioritized todo list
+### My unprioritized todo list
 
 * ~Added menu based playlist scaling~
 * Convert to using foo_spider_monkey_panel instead of foo_jscript
@@ -8,3 +8,4 @@ My unprioritized todo list
 * Better resolution handling for intermediate sizes (scaling? DPI based?)
 * ~Add option to move transport controls below artwork~
 * Show played date tooltip(?) when hovering over highlights on timeline
+* Move progress bar code to ui-components and turn it into a class
