@@ -21,16 +21,19 @@ function $(field, metadb) {
 	return tf;
 }
 
-function StringFormat() {
-	var h_align = 0, v_align = 0, trimming = 0, flags = 0;
-	switch (arguments.length) {
-		// fall-through
-		case 4: flags = arguments[3];
-		case 3: trimming = arguments[2];
-		case 2: v_align = arguments[1];
-		case 1: h_align = arguments[0]; break;
-		default: return 0;
-	}
+/**
+ * Accepts 1-4 parameters, corresponding to h_align, v_align, trimming, flags
+ * @param {number} [h_align] - 0: Near, 1: Center, 2: Far
+ * @param {number} [v_align] - 0: Near, 1: Center, 2: Far
+ * @param {number} [trimming] - 0: None, 1: Char, 2: Word, 3: Ellipses char, 4: Ellipses word, 5: Ellipses path
+ * @param {number} [flags] - `|`'d together flags. See g_string_format in Common.js
+ */
+function StringFormat(h_align, v_align, trimming, flags) {
+	if (!h_align) h_align = 0;
+	if (!v_align) v_align = 0;
+	if (!trimming) trimming = 0;
+	if (!flags) flags = 0;
+
 	return ((h_align << 28) | (v_align << 24) | (trimming << 20) | flags);
 }
 

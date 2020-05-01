@@ -297,12 +297,8 @@ g_callbacks = {
     }
 };
 
+// TODO: why do these still exist?
 var g_theme = {};
-g_theme.name = 'Georgia';
-// g_theme.version = '4.2.1';
-// g_theme.folder_name = 'CaTRoX';
-// g_theme.script_folder = 'themes\\' + g_theme.folder_name + '\\Scripts\\';
-
 g_theme.colors = {};
 g_theme.colors.pss_back = RGB(25, 25, 25);
 g_theme.colors.panel_back = RGB(30, 30, 30);
@@ -323,7 +319,7 @@ var g_string_format = {
 
     align_center: 0x11000000,
 
-    trim_none:          0x00100000,
+    trim_none:          0x00000000,
     trim_char:          0x00100000,
     trim_word:          0x00200000,
     trim_ellipsis_char: 0x00300000,

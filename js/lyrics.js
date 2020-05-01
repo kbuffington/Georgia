@@ -2,7 +2,6 @@
 var len_seconds = fb.Titleformat("%length_seconds%");
 var elap_seconds = fb.TitleFormat("%playback_time_seconds%");
 
-var g_playtimer = null;
 var g_timer_abs;
 
 // TODO: Improve this variable names
@@ -45,7 +44,7 @@ function drawLyrics(gr, tab, posy) {
 	if (timings.showDebugTiming)
 		drawLyricsTime = fb.CreateProfiler("drawLyrics");
 	gr.SetTextRenderingHint(TextRenderingHint.AntiAliasGridFit);
-	var g_txt_align = cc_stringformat;
+	var g_txt_align = StringFormat(1, 1);
 
 	if (dividerImg && dividerImg.width < (albumart_size.w - 10) && posy - divider_spacing - dividerImg.height >= albumart_size.y + pref.lyrics_h_padding) {
 		gr.FillRoundRect(albumart_size.x + Math.floor(albumart_size.w * .2) - 1, posy - divider_spacing - divider_height + 1, Math.floor(albumart_size.w * 0.6), divider_height, divider_height / 2, divider_height / 2, col.darkAccent);

@@ -220,7 +220,6 @@ var listRight = 15;
 var listBottom = 15;
 var showNowPlayingCalled = false; //TODO: Remove?
 
-//--->
 var listLength = maxRows = listX = listY = listW = listH = 0;
 var listStep = [];
 var rowDrag = fileDrag = makeSelectionDrag = linkToLastItem = false;
@@ -230,24 +229,9 @@ var keyPressed = false;
 var guiInstanceType = window.InstanceType;
 var tempFocusItemIndex;
 var btns = [];
-var hyperlinks = [];
-//--->
-AlbumArtId = {
-	front: 0,
-	back: 1,
-	disc: 2,
-	icon: 3,
-	artist: 4
-};
 // =================================================== //
-//--->
+
 var thisPanelName = "Playlist"; //Don't change!! needed in Scrollbar.txt.
-//---> Fonts
-var playlistFontSize = window.GetProperty("Playlist: Font Size", 12);
-if (playlistFontSize < 7) {
-	playlistFontSize = 7;
-	window.SetProperty("Playlist: Font Size", playlistFontSize);
-}
 
 // END OF CONFIGURATION /////////////////////////////////
 
@@ -330,6 +314,8 @@ var currentLastPlayed = '';
 
 var g_tooltip;
 
+var g_playtimer = null;
+
 // MENU STUFF
 var pad_x = 4;
 var pad_y = 2;
@@ -339,21 +325,6 @@ var menu_down = false;
 var menu_padx = pad_x;
 var menu_pady = pad_y + 4;
 var menu_width = 250; // this will get sized based on the font later
-
-StringAlignment = {
-	Near: 0,
-	Centre: 1,
-	Far: 2
-};
-var lt_stringformat = StringFormat(StringAlignment.Near, StringAlignment.Near);
-var ct_stringformat = StringFormat(StringAlignment.Centre, StringAlignment.Near);
-var rt_stringformat = StringFormat(StringAlignment.Far, StringAlignment.Near);
-var lc_stringformat = StringFormat(StringAlignment.Near, StringAlignment.Centre);
-var cc_stringformat = StringFormat(StringAlignment.Centre, StringAlignment.Centre);
-var rc_stringformat = StringFormat(StringAlignment.Far, StringAlignment.Centre);
-var lb_stringformat = StringFormat(StringAlignment.Near, StringAlignment.Far);
-var cb_stringformat = StringFormat(StringAlignment.Centre, StringAlignment.Far);
-var rb_stringformat = StringFormat(StringAlignment.Far, StringAlignment.Far);
 
 // Flags, used with GdiDrawText()
 // For more information, see: http://msdn.microsoft.com/en-us/library/dd162498(VS.85).aspx
@@ -440,12 +411,12 @@ function draw_ui(gr) {
 		if (str.trackInfo) {
 			gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
 			trackInfoHeight = gr.MeasureString(str.trackInfo, ft.track_info, 0, 0, 0, 0).Height;
-			gr.DrawString(str.trackInfo, ft.track_info, col.artist, ww - textLeft * 2 - infoWidth, geo.top_bg_h - trackInfoHeight - 15, infoWidth, trackInfoHeight, StringFormat(StringAlignment.Far));
+			gr.DrawString(str.trackInfo, ft.track_info, col.artist, ww - textLeft * 2 - infoWidth, geo.top_bg_h - trackInfoHeight - 15, infoWidth, trackInfoHeight, StringFormat(2));
 			gr.SetTextRenderingHint(TextRenderingHint.AntiAliasGridFit);
 		}
 		if (str.year) {
 			height = gr.MeasureString(str.year, ft.year, 0, 0, 0, 0).Height;
-			gr.DrawString(str.year, ft.year, col.artist, ww - textLeft * 2 - infoWidth, geo.top_bg_h - trackInfoHeight - height - 20, infoWidth, height, StringFormat(StringAlignment.Far));
+			gr.DrawString(str.year, ft.year, col.artist, ww - textLeft * 2 - infoWidth, geo.top_bg_h - trackInfoHeight - height - 20, infoWidth, height, StringFormat(2));
 		}
 	}
 
