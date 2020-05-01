@@ -905,24 +905,6 @@ function draw_ui(gr) {
 		}
 	} /* if (!displayPlaylist && !displayLibrary) */
 
-	// MENUBAR
-	timings.showExtraDrawTiming && (drawMenuBar = fb.CreateProfiler("on_paint -> menu bar"));
-	for (var i in btns) {
-		var x = btns[i].x,
-			y = btns[i].y,
-			w = btns[i].w,
-			h = btns[i].h,
-			img = btns[i].img;
-
-		if (img) { // TODO: fix
-			gr.DrawImage(img[0], x, y, w, h, 0, 0, w, h, 0, 255); // normal
-			gr.DrawImage(img[1], x, y, w, h, 0, 0, w, h, 0, btns[i].hoverAlpha);
-			gr.DrawImage(img[2], x, y, w, h, 0, 0, w, h, 0, btns[i].downAlpha);
-		}
-	}
-
-	timings.showExtraDrawTiming && drawMenuBar.Print();
-
 	// LOWER BAR
 	var lowerBarTop = wh - geo.lower_bar_h;
 	var pbLeft = Math.round(0.025 * ww);
@@ -958,6 +940,24 @@ function draw_ui(gr) {
 			gr.DrawRect(libraryPanel.x - 1, libraryPanel.y - 1, libraryPanel.w + 2, libraryPanel.h + 2, 1, rgb(64,64,64));
 		}
 	}
+
+	// MENUBAR
+	timings.showExtraDrawTiming && (drawMenuBar = fb.CreateProfiler("on_paint -> menu bar"));
+	for (var i in btns) {
+		var x = btns[i].x,
+			y = btns[i].y,
+			w = btns[i].w,
+			h = btns[i].h,
+			img = btns[i].img;
+
+		if (img) { // TODO: fix
+			gr.DrawImage(img[0], x, y, w, h, 0, 0, w, h, 0, 255); // normal
+			gr.DrawImage(img[1], x, y, w, h, 0, 0, w, h, 0, btns[i].hoverAlpha);
+			gr.DrawImage(img[2], x, y, w, h, 0, 0, w, h, 0, btns[i].downAlpha);
+		}
+	}
+
+	timings.showExtraDrawTiming && drawMenuBar.Print();
 
     gr.SetTextRenderingHint(TextRenderingHint.AntiAliasGridFit);
 
@@ -1193,18 +1193,30 @@ function onOptionsMenu(x, y) {
 
 	menu.addSeparator();
 
-	menu.addToggleItem('Display playlist on startup', pref, 'start_Playlist');
-	menu.addToggleItem('Show Transport Controls', pref, 'show_transport', function () { 
+	var transportMenu = new Menu('Transport controls');
+	transportMenu.addToggleItem('Show transport controls', pref, 'show_transport', function () { 
 		createButtonImages();
 		createButtonObjects(ww, wh);
 		ResizeArtwork(true);
 		RepaintWindow();
 	});
-	menu.addToggleItem('Show Volume Control', pref, 'show_volume_button', function () { 
+	transportMenu.addToggleItem('Show transport below art', pref, 'show_transport_below', function () { 
+		createButtonObjects(ww, wh);
+		ResizeArtwork(true);
+		RepaintWindow();
+	}, !pref.show_transport);
+	transportMenu.addToggleItem('Show random button', pref, 'show_random_button', function () { 
 		createButtonObjects(ww, wh);
 		RepaintWindow();
-	});
-	menu.addToggleItem('Show Progress Bar', pref, 'show_progress_bar', function () { 
+	}, !pref.show_transport);
+	transportMenu.addToggleItem('Show volume control', pref, 'show_volume_button', function () { 
+		createButtonObjects(ww, wh);
+		RepaintWindow();
+	}, !pref.show_transport);
+	transportMenu.addToggleItem('Show reload button', pref, 'show_reload_button', function () { window.Reload(); }, !pref.show_transport);
+	transportMenu.appendTo(menu);
+
+	menu.addToggleItem('Show progress bar', pref, 'show_progress_bar', function () { 
 		setGeometry();
 		ResizeArtwork(true);
 		RepaintWindow();
@@ -1399,7 +1411,8 @@ function setLibrarySize() {
 		var x = Math.round(ww * .5);
 		var y = btns[30].y + btns[30].h + 10 + listTop;
 		var library_w = ww - x;
-		var library_h = Math.max(0, wh - geo.lower_bar_h - 10 - y - listBottom);
+		var lowerSpace = pref.show_transport_below ? geo.lower_bar_h + scaleForDisplay(32) : geo.lower_bar_h;
+		var library_h = Math.max(0, wh - lowerSpace - scaleForDisplay(10) - y - listBottom);
 		ui.sizedNode = false;
 		ui.node_sz = Math.round(16 * ui.scale);
 		p.setFilterFont();	// resets filter font in case the zoom was reset
@@ -2493,10 +2506,11 @@ function CreateRotatedCDImage() {
 function ResizeArtwork(resetCDPosition) {
 	debugLog('Resizing artwork');
 	var hasArtwork = false;
+	var lowerSpace = pref.show_transport_below ? geo.lower_bar_h + scaleForDisplay(32 + 9) : geo.lower_bar_h + scaleForDisplay(16);
 	if (albumart && albumart.Width && albumart.Height) {
 		// Size for big albumart
 		var album_scale = Math.min(((displayPlaylist || displayLibrary) ? 0.47 * ww : 0.75 * ww) / albumart.Width,
-								   (wh - geo.top_art_spacing - geo.lower_bar_h - 32) / albumart.Height);
+								   (wh - geo.top_art_spacing - lowerSpace - scaleForDisplay(16)) / albumart.Height);
 		if (displayPlaylist || displayLibrary) {
 			xCenter = 0.25 * ww;
 		} else if (ww / wh < 1.40) { // when using a roughly 4:3 display the album art crowds, so move it slightly off center
@@ -2512,9 +2526,9 @@ function ResizeArtwork(resetCDPosition) {
 		albumart_size.w = Math.floor(albumart.Width * album_scale); // width
 		albumart_size.h = Math.floor(albumart.Height * album_scale); // height
 		albumart_size.x = Math.floor(xCenter - 0.5 * albumart_size.w); // left
-		if (album_scale !== (wh - geo.top_art_spacing - geo.lower_bar_h - 32) / albumart.Height) {
+		if (album_scale !== (wh - geo.top_art_spacing - lowerSpace - 16) / albumart.Height) {
 			// restricted by width
-			var y = geo.top_art_spacing + Math.floor(((wh - geo.top_art_spacing - geo.lower_bar_h - 32) / 2) - albumart_size.h / 2);
+			var y = geo.top_art_spacing + Math.floor(((wh - geo.top_art_spacing - lowerSpace - scaleForDisplay(16)) / 2) - albumart_size.h / 2);
 			albumart_size.y = Math.min(y, scaleForDisplay(150) + 10);	// 150 or 300 + 10? Not sure where 160 comes from
 		} else {
 			albumart_size.y = geo.top_art_spacing; // height of menu bar + spacing + height of Artist text (32+32+32)	// top
@@ -2554,7 +2568,7 @@ function ResizeArtwork(resetCDPosition) {
 			// console.log(cdart_size.x, cdart_size.y, cdart_size.w, cdart_size.h);
 		} else {
 			// no album art so we need to calc size of disc
-			var album_scale = Math.min(((displayPlaylist || displayLibrary) ? 0.47 * ww : 0.75 * ww) / cdart.Width, (wh - geo.top_art_spacing - geo.lower_bar_h - 32) / cdart.Height);
+			var album_scale = Math.min(((displayPlaylist || displayLibrary) ? 0.47 * ww : 0.75 * ww) / cdart.Width, (wh - geo.top_art_spacing - lowerSpace - scaleForDisplay(16)) / cdart.Height);
 			if (displayPlaylist || displayLibrary) {
 				xCenter = 0.25 * ww;
 			} else if (ww / wh < 1.40) { // when using a roughly 4:3 display the album art crowds, so move it slightly off center
@@ -2570,9 +2584,9 @@ function ResizeArtwork(resetCDPosition) {
 			cdart_size.w = Math.floor(cdart.Width * album_scale); // width
 			cdart_size.h = Math.floor(cdart.Height * album_scale); // height
 			cdart_size.x = Math.floor(xCenter - 0.5 * cdart_size.w); // left
-			if (album_scale !== (wh - geo.top_art_spacing - geo.lower_bar_h - 32) / cdart.Height) {
+			if (album_scale !== (wh - geo.top_art_spacing - lowerSpace - scaleForDisplay(16)) / cdart.Height) {
 				// restricted by width
-				var y = geo.top_art_spacing + Math.floor(((wh - geo.top_art_spacing - geo.lower_bar_h - 32) / 2) - cdart_size.h / 2);
+				var y = geo.top_art_spacing + Math.floor(((wh - geo.top_art_spacing - lowerSpace - scaleForDisplay(16)) / 2) - cdart_size.h / 2);
 				cdart_size.y = Math.min(y, 160);
 			} else {
 				cdart_size.y = geo.top_art_spacing; // height of menu bar + spacing + height of Artist text (32+32+32)	// top
@@ -2766,12 +2780,13 @@ function createButtonObjects(ww, wh) {
 		createButtonImages();
 	}
 
+	var buttonSize = scaleForDisplay(32);
 	//---> Transport buttons
 	if (pref.show_transport) {
 		var count = 4 + (pref.show_random_button ? 1 : 0) + (pref.show_volume_button ? 1 : 0) + (pref.show_reload_button ? 1 : 0);
 
-		var y = scaleForDisplay(10);
-		var w = scaleForDisplay(32);
+		var y = pref.show_transport_below ? wh - geo.lower_bar_h - scaleForDisplay(10) - buttonSize : scaleForDisplay(10);
+		var w = buttonSize;
 		var h = w;
 		var p = scaleForDisplay(5); // space between buttons
 		var x = (ww - w * count - p * (count - 1)) / 2;
