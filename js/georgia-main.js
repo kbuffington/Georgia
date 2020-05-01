@@ -1236,7 +1236,51 @@ function onOptionsMenu(x, y) {
 
 	menu.addSeparator();
 
-	menu.addToggleItem('Follow Hyperlinks only if CTRL-key is down', pref, 'hyperlinks_ctrl');
+	playlistMenu = new Menu('Playlist Settings');
+	var playlistCallback = function () {
+		playlist.on_size(ww, wh);
+		window.Repaint();
+	};
+	playlistMenu.addToggleItem('Display playlist on startup', pref, 'start_Playlist');
+	playlistMenu.addToggleItem('Show group header', g_properties, 'show_header', playlistCallback);
+	playlistMenu.addToggleItem('Use compact group header', g_properties, 'use_compact_header', playlistCallback, !g_properties.show_header);
+	playlistMenu.createRadioSubMenu('Header font size', ['-1', '14px', '15px (default)', '16px', '18px', '20px', '22px', '+1'], pref.font_size_playlist_header, 
+		[-1, 14, 15, 16, 18, 20, 22, 999], 
+		function (size) {
+			if (size === -1) {
+				pref.font_size_playlist_header--;
+			} else if (size === 999) {
+				pref.font_size_playlist_header++;
+			} else {
+				pref.font_size_playlist_header = size;
+			}
+			playlist.on_size(ww, wh);
+			window.Repaint();
+		});
+		
+	var rowsMenu = new Menu('Rows');
+	rowsMenu.createRadioSubMenu('Row font size', ['-1', '11px', '12px (default)', '13px', '14px', '16px', '18px', '+1'], pref.font_size_playlist,
+		[-1, 11, 12, 13, 14, 16, 18, 999],
+		function (size) {
+			if (size === -1) {
+				pref.font_size_playlist--;
+			} else if (size === 999) {
+				pref.font_size_playlist++;
+			} else {
+				pref.font_size_playlist = size;
+			}
+			playlist.on_size(ww, wh);
+			window.Repaint();
+		});
+	rowsMenu.addToggleItem('Alternate row color', g_properties, 'alternate_row_color', playlistCallback);
+	rowsMenu.addToggleItem('Show play count', g_properties, 'show_playcount', playlistCallback, !g_component_playcount);
+	rowsMenu.addToggleItem('Show queue position', g_properties, 'show_queue_position', playlistCallback);
+	rowsMenu.addToggleItem('Show rating', g_properties, 'show_rating', playlistCallback);
+	rowsMenu.appendTo(playlistMenu);
+
+	playlistMenu.addToggleItem('Follow hyperlinks only if CTRL is down', pref, 'hyperlinks_ctrl');
+	playlistMenu.addToggleItem('Show weblinks in context menu', pref, 'show_weblinks');
+	playlistMenu.appendTo(menu);
 
 	menu.addSeparator(); 
 
