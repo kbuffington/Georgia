@@ -230,7 +230,9 @@ function VolumeBtn() {
                     fb.VolumeDown();
                 }
             }
+            return true;
         }
+        return false;
     };
  
     this.on_mouse_leave = function () {

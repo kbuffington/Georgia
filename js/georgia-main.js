@@ -1829,7 +1829,7 @@ function on_mouse_wheel(delta) {
 		return;
 	}
 	if (pref.show_volume_button) {
-		volume_btn.on_mouse_wheel(delta);
+		if (volume_btn.on_mouse_wheel(delta)) return;
 	}
 	if (displayPlaylist) {
 		trace_call && console.log(qwr_utils.function_name());
