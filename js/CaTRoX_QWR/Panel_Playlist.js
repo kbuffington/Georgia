@@ -397,6 +397,8 @@ function PlaylistPanel(x, y) {
         this.x = x;
         this.y = y;
 
+        g_properties.row_h = Math.round(pref.font_size_playlist * 1.667);
+
         playlist_info_h = scaleForDisplay(g_properties.row_h + 4);
         playlist_info_and_gap_h = playlist_info_h + scaleForDisplay(2);
         playlist.on_size(playlist_w, playlist_h - (g_properties.show_playlist_info ? playlist_info_and_gap_h : 0),
@@ -990,7 +992,9 @@ function Playlist(x, y) {
 
             append_sort_menu_to(cmm);
 
-            append_weblinks_menu_to(cmm, metadb);
+            if (pref.show_weblinks) {
+                append_weblinks_menu_to(cmm, metadb);
+            }
 
             if (has_selected_item) {
                 append_send_items_menu_to(cmm);
@@ -1775,6 +1779,7 @@ function Playlist(x, y) {
             g_properties.scroll_pos = _.isNil(scroll_pos_list[plman.ActivePlaylist]) ? 0 : scroll_pos_list[plman.ActivePlaylist];
         }
         this.row_h = scaleForDisplay(g_properties.row_h);
+        header_h_in_rows = calcHeaderRows();
         this.initialize_list();
         scroll_to_focused();
     };
@@ -2044,7 +2049,7 @@ function Playlist(x, y) {
                 'Use compact group header',
                 _.bind(function () {
                     g_properties.use_compact_header = !g_properties.use_compact_header;
-                    header_h_in_rows = g_properties.use_compact_header ? g_properties.rows_in_compact_header : g_properties.rows_in_header;
+                    header_h_in_rows = calcHeaderRows();
                     this.initialize_list();
                     scroll_to_focused_or_now_playing();
                 }, that),
@@ -2776,9 +2781,22 @@ function Playlist(x, y) {
     // private:
     var that = this;
 
+    function calcHeaderRows() {
+        var numRows;
+        if (g_properties.use_compact_header) {
+            numRows = g_properties.rows_in_compact_header;
+        } else {
+            numRows = g_properties.rows_in_header;
+            if ((pref.font_size_playlist_header * 2 + 3 + pref.font_size_playlist) > (g_properties.rows_in_header * g_properties.row_h * 0.6)) {
+                numRows++;
+            }
+        }
+        return numRows;
+    }
+
     // Constants
     /** @type {number} */
-    var header_h_in_rows = g_properties.use_compact_header ? g_properties.rows_in_compact_header : g_properties.rows_in_header;
+    var header_h_in_rows = calcHeaderRows();    
 
     // Window state
     var was_on_size_called = false;
@@ -2910,7 +2928,7 @@ PlaylistContent = function () {
         function iterate_level(sub_items) {
             if (_.isInstanceOf(_.head(sub_items), BaseHeader)) {
                 var header_h_in_rows = Math.round(_.head(sub_items).h / row_h);
-
+ 
                 for (var i = 0; i < sub_items.length; ++i) {
                     var header = sub_items[i];
                     if (cur_row + header_h_in_rows - 1 >= row_shift && !header.dont_draw) {
@@ -4851,7 +4869,7 @@ function Rating(x, y, max_w, h, metadb) {
      * @const
      * @type {number}
      */
-    var btn_w = scaleForDisplay(14);
+    var btn_w = scaleForDisplay(pref.font_size_playlist + 2);
 
     /**
      * @const
