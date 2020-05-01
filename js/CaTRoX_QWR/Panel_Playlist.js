@@ -14,9 +14,6 @@ g_script_list.push('Panel_Playlist.js');
 // Should be used only for default panel properties initialization
 var g_is_mini_panel = _.includes(window.name.toLowerCase(), 'mini');
 
-var g_component_playcount = utils.CheckComponent('foo_playcount');
-var g_component_utils = utils.CheckComponent('foo_utils');
-
 // Niceties:
 // TODO: grouping presets manager: other EsPlaylist grouping features - sorting, playlist association
 // Low priority:
@@ -42,7 +39,6 @@ g_properties.add_properties(
         show_playcount:       ['user.row.play_count.show', g_component_playcount],
         show_rating:          ['user.row.rating.show', g_component_playcount && !g_is_mini_panel],
         use_rating_from_tags: ['user.row.rating.from_tags', false],
-        show_focused_row:     ['user.row.focused.show', true],
         show_queue_position:  ['user.row.queue_position.show', true],
 
         auto_colapse:                ['user.header.collapse.auto', g_is_mini_panel],
@@ -2114,14 +2110,6 @@ function Playlist(x, y) {
                 g_properties.alternate_row_color = !g_properties.alternate_row_color;
             },
             {is_checked: g_properties.alternate_row_color}
-        );
-
-        appear_row.append_item(
-            'Show focus item',
-            function () {
-                g_properties.show_focused_row = !g_properties.show_focused_row;
-            },
-            {is_checked: g_properties.show_focused_row}
         );
 
         appear_row.append_item(
@@ -4489,12 +4477,6 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
         }
 
         //--->
-        if (g_properties.show_focused_row && this.is_focused) {
-            // last item is cropped
-            // var rect_h = this.is_cropped ? this.h - 2 : this.h - 1;
-            // gr.DrawRect(this.x + 1, this.y, this.w - 2, rect_h, 1, row_color_focus);
-        }
-
         if (this.is_drop_top_selected) {
             gr.DrawLine(this.x, this.y + 1, this.x + this.w, this.y + 1, 2, this.is_drop_boundary_reached ? RGB(255, 165, 0) : RGB(140, 142, 144));
         }

@@ -6,6 +6,10 @@ var currentVersion = '1.1.7';
 var updateAvailable = false;
 var updateHyperlink;
 
+var g_component_playcount = utils.CheckComponent('foo_playcount');
+var g_component_utils = utils.CheckComponent('foo_utils');
+var componentEnhancedPlaycount = utils.CheckComponent('foo_enhanced_playcount');
+
 // these used to be initialized in js_marc2003/js/helpers.js
 var doc = new ActiveXObject('htmlfile');
 var app = new ActiveXObject('Shell.Application');
@@ -51,6 +55,8 @@ pref.add_properties({
 	lyrics_h_padding: ['Lyrics: Padding Between Lines', 24],
 	lyrics_glow: ['Lyrics: Glow enabled', true],
 	lyrics_text_shadow: ['Lyrics: Text Shadow', true],
+
+	show_weblinks: ['Playlist: Show weblinks', true],
 	
 	font_size_playlist: ['Font Size: Playlist', 12],
 	font_size_playlist_header: ['Font Size: Playlist Header', 15],
@@ -91,7 +97,6 @@ tf.add_properties({
 // Playlist TF strings, not currently saved in globals:
 // %album%[ — '['$if(%original release date%,$ifequal($year(%original release date%),$year(%date%),,$year(%date%) ))%edition%']']
 
-var componentEnhancedPlaycount = utils.CheckComponent('foo_enhanced_playcount');
 if (!componentEnhancedPlaycount) {
 	console.log('foo_enhanced_playcount not loaded');
 	tf.played_times = '';
@@ -230,6 +235,7 @@ function migrateCheck(version, storedVersion) {
 			case '1.1.7':
 				window.SetProperty('Lyrics: Font Size', null);
 				window.SetProperty('user.header.original_date.show', null);
+				window.SetProperty('user.row.focused.show', null);
 
 			case '1.1.8':
 
