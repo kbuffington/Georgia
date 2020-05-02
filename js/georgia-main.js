@@ -1766,13 +1766,13 @@ function on_mouse_move(x, y, m) {
 }
 
 function on_mouse_wheel(delta) {
+	if (pref.show_volume_button) {
+		if (volume_btn.on_mouse_wheel(delta)) return;
+	}
 	if (state["mouse_y"] > wh - geo.lower_bar_h) {
 		fb.PlaybackTime = fb.PlaybackTime - delta * pref.mouse_wheel_seek_speed;
 		refresh_seekbar();
 		return;
-	}
-	if (pref.show_volume_button) {
-		if (volume_btn.on_mouse_wheel(delta)) return;
 	}
 	if (displayPlaylist) {
 		trace_call && console.log(qwr_utils.function_name());
