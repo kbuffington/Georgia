@@ -1100,8 +1100,15 @@ function onOptionsMenu(x, y) {
 		RepaintWindow();
 	});
 	transportMenu.addToggleItem('Show transport below art', pref, 'show_transport_below', function () { 
+		createButtonImages();
 		createButtonObjects(ww, wh);
 		ResizeArtwork(true);
+		if (displayPlaylist) {
+			playlist.on_size(ww, wh);
+		}
+		if (displayLibrary) {
+			setLibrarySize();
+		}
 		RepaintWindow();
 	}, !pref.show_transport);
 	transportMenu.addToggleItem('Show random button', pref, 'show_random_button', function () { 
@@ -2996,26 +3003,30 @@ function createButtonImages() {
                 g.SetTextRenderingHint(TextRenderingHint.AntiAlias)
             }
 
+			var useDarkTransport = !pref.darkMode && pref.show_transport_below;
+			var transportButtonColor = useDarkTransport ? new Color(rgb(110, 112, 114)) : new Color(rgb(150, 152, 154));
+			var transportOutlineColor = useDarkTransport ? new Color(rgb(90, 90, 90)) : new Color(rgb(120, 120, 120));
+
 			var menuTextColor = RGB(140, 142, 144);
 			var menuRectColor = RGB(120, 122, 124);
 			var captionIcoColor = RGB(140, 142, 144);
-			var playbackIcoColor = RGB(150, 152, 154);
-			var playbackEllypseColor = RGB(80, 80, 80);
+			var transportIconColor = transportButtonColor.val;
+			var transportEllipseColor = transportOutlineColor.val;
 			var iconAlpha = 140;
 
-			if (s == 1) {
+			if (s == 1) {	// hover
 				menuTextColor = RGB(180, 182, 184);
 				menuRectColor = RGB(160, 162, 164);
 				captionIcoColor = RGB(190, 192, 194);
-				playbackIcoColor = RGB(190, 192, 194);
-				playbackEllypseColor = RGB(190, 195, 200);
+				transportIconColor = useDarkTransport ? shadeColor(transportButtonColor.val, 30) : tintColor(transportButtonColor.val, 30);
+				transportEllipseColor = useDarkTransport ? shadeColor(transportOutlineColor.val, 30) : tintColor(transportOutlineColor.val, 35);
 				iconAlpha = 215;
-			} else if (s == 2) {
-				menuTextColor = RGB(120, 122, 124);
-				menuRectColor = RGB(110, 112, 114);
+			} else if (s == 2) {	// down
+				menuTextColor = RGB(180, 182, 184);
+				menuRectColor = RGB(160, 162, 164);
 				captionIcoColor = RGB(100, 102, 104);
-				playbackIcoColor = RGB(90, 90, 90);
-				playbackEllypseColor = RGB(80, 80, 80);
+				transportIconColor = useDarkTransport ? tintColor(transportButtonColor.val, 15) : shadeColor(transportButtonColor.val, 20);
+				transportEllipseColor = useDarkTransport ? tintColor(transportOutlineColor.val, 15) : shadeColor(transportOutlineColor.val, 20);
 				iconAlpha = 190;
 			}
 
@@ -3026,8 +3037,8 @@ function createButtonImages() {
 			} else if (btn[i].type == 'caption') {
 				g.DrawString(btn[i].ico, btn[i].font, captionIcoColor, 0, 0, w, h, StringFormat(1, 1));
 			} else if (btn[i].type == 'transport') {
-				g.DrawEllipse(Math.floor(lw / 2) + 1, Math.floor(lw / 2) + 1, w - lw - 2, h - lw - 2, lw, playbackEllypseColor);
-				g.DrawString(btn[i].ico, btn[i].font, playbackIcoColor, 1, (i == 'Stop' || i == 'Reload') ? 0 : 1, w, h, StringFormat(1, 1));
+				g.DrawEllipse(Math.floor(lw / 2) + 1, Math.floor(lw / 2) + 1, w - lw - 2, h - lw - 2, lw, transportEllipseColor);
+				g.DrawString(btn[i].ico, btn[i].font, transportIconColor, 1, (i == 'Stop' || i == 'Reload') ? 0 : 1, w, h, StringFormat(1, 1));
 			} else if (btn[i].type == 'image') {
 				g.DrawImage(btn[i].ico, Math.round((w - btn[i].ico.width) / 2), Math.round((h - btn[i].ico.height) / 2), btn[i].ico.width, btn[i].ico.height, 0, 0, btn[i].ico.width, btn[i].ico.height, 0, iconAlpha);
 			}
