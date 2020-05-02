@@ -2962,8 +2962,8 @@ function createButtonImages() {
 		}
 
 		var w = btn[i].w
-		h = btn[i].h,
-			lw = 2;
+			h = btn[i].h,
+			lw = scaleForDisplay(2);
 
 		if (is_4k && btn[i].type === 'transport') {
 			w *= 2;
@@ -2991,7 +2991,7 @@ function createButtonImages() {
 
 			var useDarkTransport = !pref.darkMode && pref.show_transport_below;
 			var transportButtonColor = useDarkTransport ? new Color(rgb(110, 112, 114)) : new Color(rgb(150, 152, 154));
-			var transportOutlineColor = useDarkTransport ? new Color(rgb(90, 90, 90)) : new Color(rgb(120, 120, 120));
+			var transportOutlineColor = useDarkTransport ? new Color(rgb(100, 100, 100)) : new Color(rgb(120, 120, 120));
 
 			var menuTextColor = RGB(140, 142, 144);
 			var menuRectColor = RGB(120, 122, 124);
@@ -3004,8 +3004,8 @@ function createButtonImages() {
 				menuTextColor = RGB(180, 182, 184);
 				menuRectColor = RGB(160, 162, 164);
 				captionIcoColor = RGB(190, 192, 194);
-				transportIconColor = useDarkTransport ? shadeColor(transportButtonColor.val, 30) : tintColor(transportButtonColor.val, 30);
-				transportEllipseColor = useDarkTransport ? shadeColor(transportOutlineColor.val, 30) : tintColor(transportOutlineColor.val, 35);
+				transportIconColor = useDarkTransport ? shadeColor(transportButtonColor.val, 40) : tintColor(transportButtonColor.val, 30);
+				transportEllipseColor = useDarkTransport ? shadeColor(transportOutlineColor.val, 35) : tintColor(transportOutlineColor.val, 35);
 				iconAlpha = 215;
 			} else if (s == 2) {	// down
 				menuTextColor = RGB(180, 182, 184);
