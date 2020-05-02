@@ -325,16 +325,24 @@ function makeHttpRequest(type, url, successCB) {
 	}, this);
 }
 
+// from: https://github.com/substack/semver-compare/issues/1#issuecomment-594765531
 function isNewerVersion (oldVer, newVer) {
-	var oldParts = oldVer.split('.');
-	var newParts = newVer.split('.');
-	for (var i = 0; i < newParts.length; i++) {
-		var a = parseInt(newParts[i]) || 0
-		var b = parseInt(oldParts[i]) || 0
-		if (a > b) return true
-		if (a < b) return false
+	a = newVer.split('-');
+	b = oldVer.split('-');
+	var pa = a[0].split('.');
+	var pb = b[0].split('.');
+	for (var i = 0; i < 3; i++) {
+		var na = Number(pa[i]);
+		var nb = Number(pb[i]);
+		if (na > nb) return true;
+		if (nb > na) return false;
+		if (!isNaN(na) && isNaN(nb)) return true;
+		if (isNaN(na) && !isNaN(nb)) return false;
 	}
-	return false
+	if (a[1] && b[1]) {
+		return a[1] > b[1] ? true : false;
+	}
+	return !a[1] && b[1] ? true : false;
 }
 
 var menuStartIndex = 100;	// can be anything except 0
