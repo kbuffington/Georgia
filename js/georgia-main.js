@@ -214,20 +214,6 @@ var PLAYTIMER_VALUE = 01; // do not modify this value
 
 
 // PLAYLIST JUNK
-var listLeft = 15;
-var listTop = 15;
-var listRight = 15;
-var listBottom = 15;
-var showNowPlayingCalled = false; //TODO: Remove?
-
-var listLength = maxRows = listX = listY = listW = listH = 0;
-var listStep = [];
-var rowDrag = fileDrag = makeSelectionDrag = linkToLastItem = false;
-var nowPlayingGroupNr = -1;
-var focusGroupNr = -1;
-var keyPressed = false;
-var guiInstanceType = window.InstanceType;
-var tempFocusItemIndex;
 var btns = [];
 // =================================================== //
 
