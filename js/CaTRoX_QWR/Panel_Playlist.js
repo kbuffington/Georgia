@@ -384,10 +384,10 @@ function PlaylistPanel(x, y) {
 
         rescalePlaylist();
         var x = Math.round(ww *.5);
-        var y = btns[30].y + btns[30].h + scaleForDisplay(10) + listTop;
-        var lowerSpace = pref.show_transport_below ? geo.lower_bar_h + scaleForDisplay(32) : geo.lower_bar_h;
+        var y = btns[30].y + btns[30].h + scaleForDisplay(16) + 2;
+        var lowerSpace = calcLowerSpace();
         var playlist_w = w - x;
-        var playlist_h = Math.max(0, h - lowerSpace - scaleForDisplay(10) - y - listBottom);
+        var playlist_h = Math.max(0, h - lowerSpace - scaleForDisplay(16) - y);
 
         this.h = playlist_h;
         this.w = playlist_w;

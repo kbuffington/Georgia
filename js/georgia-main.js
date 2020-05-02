@@ -1352,10 +1352,11 @@ function on_size() {
 function setLibrarySize() {
 	if (typeof libraryPanel !== 'undefined') {
 		var x = Math.round(ww * .5);
-		var y = btns[30].y + btns[30].h + 10 + listTop;
+		var y = btns[30].y + btns[30].h + scaleForDisplay(16) + 2;
+		var lowerSpace = calcLowerSpace();
 		var library_w = ww - x;
-		var lowerSpace = pref.show_transport_below ? geo.lower_bar_h + scaleForDisplay(32) : geo.lower_bar_h;
-		var library_h = Math.max(0, wh - lowerSpace - scaleForDisplay(10) - y - listBottom);
+		var library_h = Math.max(0, wh - lowerSpace - scaleForDisplay(16) - y);
+
 		ui.sizedNode = false;
 		ui.node_sz = Math.round(16 * ui.scale);
 		p.setFilterFont();	// resets filter font in case the zoom was reset
@@ -2386,10 +2387,14 @@ function CreateRotatedCDImage() {
 	}
 }
 
+function calcLowerSpace() {
+	return pref.show_transport_below ? geo.lower_bar_h + scaleForDisplay(32 + 9) : geo.lower_bar_h + scaleForDisplay(16);
+}
+
 function ResizeArtwork(resetCDPosition) {
 	debugLog('Resizing artwork');
 	var hasArtwork = false;
-	var lowerSpace = pref.show_transport_below ? geo.lower_bar_h + scaleForDisplay(32 + 9) : geo.lower_bar_h + scaleForDisplay(16);
+	var lowerSpace = calcLowerSpace();
 	if (albumart && albumart.Width && albumart.Height) {
 		// Size for big albumart
 		var album_scale = Math.min(((displayPlaylist || displayLibrary) ? 0.47 * ww : 0.75 * ww) / albumart.Width,
