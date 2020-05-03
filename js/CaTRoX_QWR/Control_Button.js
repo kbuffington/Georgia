@@ -25,8 +25,9 @@ function buttonEventHandler(x, y, m) {
 			break;
 		}
 	}
-	if (lastOverButton != thisButton)
-		g_tooltip.Deactivate();
+	if (lastOverButton != thisButton) {
+		tt.stop();
+	}
 	lastOverButton = thisButton;
 
 	switch (c) {
