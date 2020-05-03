@@ -2276,7 +2276,6 @@ function Playlist(x, y) {
         var web_links = [
             ['Google', 'google'],
             ['Google Images', 'googleImages'],
-            ['eCover', 'eCover'],
             ['Wikipedia', 'wikipedia'],
             ['YouTube', 'youTube'],
             ['Last FM', 'lastFM'],
