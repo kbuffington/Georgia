@@ -46,6 +46,8 @@ pref.add_properties({
 
 	show_timeline_tooltips: ['Show timeline tooltips', true], // true: show tooltips when hovering over the timeline that show information on plays
 
+	menu_font_size: ['Menu font size', 12],	
+
 	freq_update: ['Frequent progress bar updates', true], // true: update progress bar multiple times a second. Smoother, but uses more CPU
 	time_zone: ['Time-zone (formatted +/-HH:MM, e.g. -06:00)', '+00:00'], // used to create accurate timezone offsets. "Z", "-06:00", "+06:00", etc. are all valid values
     hyperlinks_ctrl: ['Playlist: Hyperlinks require CTRL Key', false], // true: clicking on hyperlinks only works if CTRL key is held down

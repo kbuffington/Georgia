@@ -38,11 +38,6 @@ var useNeue = false;
 var fontsCreated = null;
 
 function createFonts() {
-	var font_size = is_4k.toString();
-	if (fontsCreated && fontsCreated == font_size) {
-		return; // don't redo fonts
-	}
-
 	g_tooltip = window.CreateTooltip('Segoe UI', scaleForDisplay(15));
 	g_tooltip.setMaxWidth(scaleForDisplay(300));
 	g_tooltip.text = '';	// just in case
@@ -50,7 +45,7 @@ function createFonts() {
 	function font(name, size, style) {
 		var font;
 		try {
-			font = gdi.Font(name, font_size === 'true' ? Math.min(size * 2) : size, style);
+			font = gdi.Font(name, Math.round(scaleForDisplay(size)), style);
 		} catch (e) {
 			console.log('Failed to load font >>>', name, size, style);
 		}
@@ -100,7 +95,7 @@ function createFonts() {
 	ft.small_font = font(fontRegular, 14, 0);
 	ft.guifx = font(fontGuiFx, 16, 0);
 	ft.Marlett = font('Marlett', 13, 0);
-	ft.SegoeUi = font('Segoe Ui Semibold', 12, 0);
+	ft.SegoeUi = font('Segoe Ui Semibold', pref.menu_font_size, 0);
 	ft.library_tree = font('Segoe UI', libraryProps.baseFontSize, 0);
 	ft.lyrics = font(fontRegular, pref.lyrics_font_size || 20, 1);
 }
@@ -1082,6 +1077,21 @@ function onOptionsMenu(x, y) {
 	}, !pref.display_cdart);
 
 	menu.addSeparator();
+	var menuFontMenu = new Menu('Menu font size');
+	menuFontMenu.addRadioItems(['-1', '11px', '12px (default)', '13px', '14px', '16px', '+1'], pref.menu_font_size, [-1,11,12,13,14,16,999], function (size) {
+		if (size === -1) {
+			pref.menu_font_size--;
+		} else if (size === 999) {
+			pref.menu_font_size++;
+		} else {
+			pref.menu_font_size = size;
+		}
+		ft.SegoeUi = gdi.Font('Segoe Ui Semibold', scaleForDisplay(pref.menu_font_size), 0); //font('Segoe Ui Semibold', pref.menu_font_size, 0);
+		createButtonImages();
+		createButtonObjects(ww, wh);
+		RepaintWindow();
+	});
+	menuFontMenu.appendTo(menu);
 
 	var transportMenu = new Menu('Transport controls');
 	transportMenu.addToggleItem('Show transport controls', pref, 'show_transport', function () { 
