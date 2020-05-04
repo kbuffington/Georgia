@@ -365,15 +365,16 @@ function onMainMenu(x, y, name) {
 		if (name === 'Help') {
 			var statusMenu = new Menu('Georgia Theme Status');
 
-			statusMenu.addItem('All fonts installed', fontsInstalled);
-			statusMenu.addItem('Artist logos found', IsFile(pref.logo_hq + 'Metallica.png'));
-			statusMenu.addItem('Record label logos found', IsFile(pref.label_base + 'Republic.png'))
-			statusMenu.addItem('Flag images found', IsFile(pref.flags_base + (is_4k ? '64\\' : '32\\') + 'United-States.png'));
+			statusMenu.addItem('All fonts installed', fontsInstalled, undefined, true);
+			statusMenu.addItem('Artist logos found', IsFile(pref.logo_hq + 'Metallica.png'), undefined, true);
+			statusMenu.addItem('Record label logos found', IsFile(pref.label_base + 'Republic.png'), undefined, true);
+			statusMenu.addItem('Flag images found', IsFile(pref.flags_base + (is_4k ? '64\\' : '32\\') + 'United-States.png'), undefined, true);
 			statusMenu.addItem('foo_enhanced_playcount installed', componentEnhancedPlaycount, function() { _.runCmd('https://www.foobar2000.org/components/view/foo_enhanced_playcount') });
 
 			statusMenu.appendTo(menu);
 			
 			menu.addItem('Georgia releases', false, function() { _.runCmd('https://github.com/kbuffington/Georgia/releases') });
+			menu.addItem('Georgia Changelog', false, function() { _.runCmd('https://github.com/kbuffington/Georgia/blob/master/changelog.md') });
 			menu.addItem('Check for updated version of Georgia', false, function() { checkForUpdates(true); });
 			menu.addItem('Report an issue with Georgia', false, function() { _.runCmd('https://github.com/kbuffington/Georgia/issues') });
 		}
