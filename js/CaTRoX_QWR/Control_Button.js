@@ -359,25 +359,30 @@ function onMainMenu(x, y, name) {
 	mainMenuOpen = true;
 	menu_down = true;
 
-	var menuManager = fb.CreateMainMenuManager();
-
-	var menu = window.CreatePopupMenu();
-	var ret;
-
 	if (name) {
+		var menu = new Menu();
+		
+		if (name === 'Help') {
+			var statusMenu = new Menu('Georgia Theme Status');
 
-		menuManager.Init(name);
-		menuManager.BuildMenu(menu, 1);
+			statusMenu.addItem('All fonts installed', fontsInstalled);
+			statusMenu.addItem('Artist logos found', IsFile(pref.logo_hq + 'Metallica.png'));
+			statusMenu.addItem('Record label logos found', IsFile(pref.label_base + 'Republic.png'))
+			statusMenu.addItem('Flag images found', IsFile(pref.flags_base + (is_4k ? '64\\' : '32\\') + 'United-States.png'));
+			statusMenu.addItem('foo_enhanced_playcount installed', componentEnhancedPlaycount, function() { _.runCmd('https://www.foobar2000.org/components/view/foo_enhanced_playcount') });
 
-		ret = menu.TrackPopupMenu(x, y);
-
-		if (ret > 0) {
-			menuManager.ExecuteByID(ret - 1);
+			statusMenu.appendTo(menu);
+			
+			menu.addItem('Georgia releases', false, function() { _.runCmd('https://github.com/kbuffington/Georgia/releases') });
+			menu.addItem('Check for updated version of Georgia', false, function() { checkForUpdates(true); });
+			menu.addItem('Report an issue with Georgia', false, function() { _.runCmd('https://github.com/kbuffington/Georgia/issues') });
 		}
+		menu.initFoobarMenu(name);
+
+		var ret = menu.trackPopupMenu(x, y);
+		menu.doCallback(ret);
 	}
 
-	menuManager.Dispose();
-	menu.Dispose();
 	menu_down = false;
 
 }

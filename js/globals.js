@@ -253,8 +253,7 @@ function migrateCheck(version, storedVersion) {
 }
 
 migrateCheck(currentVersion, globals.version);
-
-if (pref.checkForUpdates) {
+function checkForUpdates(openUrl) {
 	var url = 'https://api.github.com/repos/kbuffington/Georgia/tags';
 	makeHttpRequest('GET', url, function (resp) {
 		try {
@@ -269,9 +268,18 @@ if (pref.checkForUpdates) {
 					RepaintWindow();
 				}
 				updateHyperlink = new Hyperlink('Update Available', ft.lower_bar, 'update', 0, 0, window.Width);
+				if (openUrl) {
+					updateHyperlink.click();
+				}
+			} else {
+				console.log('You are on the most current version of Georgia');
 			}
 		} catch (e) {
 			console.log('Could not check latest version');
 		}
 	});
+}
+
+if (pref.checkForUpdates) {
+	checkForUpdates(false);
 }

@@ -91,7 +91,9 @@ function ImageSize(x, y, w, h) {
 function testFont(fontName) {
 	if (!utils.checkFont(fontName)) {
 		console.log('Error: Font "' + fontName + '" was not found. Please install it from the fonts folder');
+		return false;
 	}
+	return true;
 }
 
 function calculateGridMaxTextWidth(gr, gridArray, font) {
@@ -352,6 +354,17 @@ function Menu(title) {
 	Menu.variables;
 	this.menu = window.CreatePopupMenu();
 	this.title = title;
+	this.systemMenu = false;
+	this.menuManager = null;
+
+	this.initFoobarMenu = function(name) {
+		if (name) {
+			this.systemMenu = true;
+			this.menuManager = fb.CreateMainMenuManager();
+			this.menuManager.Init(name);
+			this.menuManager.BuildMenu(this.menu, 1);
+		}
+	}
 
 	this.addSeparator = function() {
 		this.menu.AppendMenuSeparator();
@@ -360,7 +373,8 @@ function Menu(title) {
 	this.addItem = function(label, enabled, callback, disabled) {
 		this.addItemWithVariable(label, enabled, undefined, callback, disabled);
 	}
-	
+
+
 	/** similar to addItem, but takes an object and property name which will automatically be set when the callback is called, 
 	  * before calling any user specified callback. If the property you wish to toggle is options.repeat, then propertiesObj
 	  * is options, and the propertyName must be "repeat" as a string.
@@ -412,8 +426,11 @@ function Menu(title) {
 
 	// handles callback and automatically Disposes menu
 	this.doCallback = function(idx) {
-		if (idx > menuStartIndex) {
+		if (idx > menuStartIndex && Menu.callbacks[idx]) {
 			Menu.callbacks[idx](Menu.variables[idx]);
+		} else if (this.systemMenu) {
+			idx && this.menuManager.ExecuteByID(idx - 1);
+			this.menuManager.Dispose();
 		}
 		this.menu.Dispose();
 		Menu.callbacks = [];
@@ -458,6 +475,12 @@ try {
 }
 
 _.mixin({
+	isFile:               function (file) {
+        return _.isString(file) ? fso.FileExists(file) : false;
+    },
+    isFolder:             function (folder) {
+        return _.isString(folder) ? fso.FolderExists(folder) : false;
+    },
 	runCmd:               function (command, wait, show) {
 		try {
 			WshShell.Run(command, show ? 1 : 0, !_.isNil(wait) ? wait : false);

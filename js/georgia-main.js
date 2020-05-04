@@ -22,14 +22,17 @@ var fontLight = 'HelveticaNeueLT Pro 45 Lt';
 var fontRegular = 'HelveticaNeueLT Pro 55 Roman';
 var fontBold = 'HelveticaNeueLT Pro 65 Md';
 var fontLightAlternate = 'NeueHaasGroteskDisp Pro XLt';
+var fontGuiFx = 'Guifx v2 Transports';
+
+var fontList = [fontThin, fontLight, fontRegular, fontBold, fontLightAlternate, fontGuiFx];
 
 // FONTS
-testFont(fontThin);
-testFont(fontLight);
-testFont(fontRegular);
-testFont(fontBold);
-testFont(fontLightAlternate);
-testFont('Guifx v2 Transports');
+var fontsInstalled = true;
+fontList.forEach(function(fontName) {
+	if (!testFont(fontName)) {
+		fontsInstalled = false;
+	}
+});
 
 var useNeue = false;
 var fontsCreated = null;
@@ -94,7 +97,7 @@ function createFonts() {
 		ft.lower_bar_artist_sml = font(fontThin, 27, g_font_style.italic);
 	}
 	ft.small_font = font(fontRegular, 14, 0);
-	ft.guifx = font('Guifx v2 Transports', 16, 0);
+	ft.guifx = font(fontGuiFx, 16, 0);
 	ft.Marlett = font('Marlett', 13, 0);
 	ft.SegoeUi = font('Segoe Ui Semibold', 12, 0);
 	ft.library_tree = font('Segoe UI', libraryProps.baseFontSize, 0);
@@ -1225,7 +1228,7 @@ function onOptionsMenu(x, y) {
 	menu.addSeparator();
 
 	menu.addToggleItem('Lock right click...', pref, 'locked');
-	menu.addItem('Restart', false, function () { fb.RunMainMenuCommand("File/Restart"); });
+	menu.addItem('Restart foobar', false, function () { fb.RunMainMenuCommand("File/Restart"); });
 
 	var idx = menu.trackPopupMenu(x, y);
 	menu.doCallback(idx);
