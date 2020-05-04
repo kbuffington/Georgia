@@ -44,6 +44,7 @@ function createFonts() {
 	}
 
 	g_tooltip = window.CreateTooltip('Segoe UI', scaleForDisplay(15));
+	g_tooltip.setMaxWidth(scaleForDisplay(300));
 	g_tooltip.text = '';	// just in case
 
 	function font(name, size, style) {
@@ -302,6 +303,7 @@ var lastVinylSide;
 var currentLastPlayed = '';
 
 var g_tooltip;
+var tt = new _.tt_handler;
 
 var g_playtimer = null;
 
@@ -1111,6 +1113,7 @@ function onOptionsMenu(x, y) {
 	transportMenu.addToggleItem('Show reload button', pref, 'show_reload_button', function () { window.Reload(); }, !pref.show_transport);
 	transportMenu.appendTo(menu);
 
+	menu.addToggleItem('Show timeline tooltips', pref, 'show_timeline_tooltips');
 	menu.addToggleItem('Show progress bar', pref, 'show_progress_bar', function () { 
 		setGeometry();
 		ResizeArtwork(true);
@@ -1759,8 +1762,8 @@ function on_mouse_move(x, y, m) {
 			playlist.on_mouse_move(x, y, m);
 		} else if (displayLibrary && library.mouse_in_this(x, y)) {
 			library.on_mouse_move(x, y, m);
-        } else {
-            // str.timeline.mouse_in_this(x, y);
+        } else if (str.timeline && str.timeline.mouse_in_this(x, y)) {
+			str.timeline.on_mouse_move(x, y, m);
 		}
 		if (pref.show_volume_button) {
 			volume_btn.on_mouse_move(x, y, m);
@@ -2300,6 +2303,7 @@ function calcDateRatios(dontUpdateLastPlayed, currentLastPlayed) {
             }
 		} else {
 			playedTimesRatios = [tl_firstPlayedRatio, tl_lastPlayedRatio];
+			playedTimes = [first_played, last_played];
 		}
 
 		var j = 0;
@@ -2309,6 +2313,7 @@ function calcDateRatios(dontUpdateLastPlayed, currentLastPlayed) {
 			while (j < lfmPlayedTimes.length &&
 				(ratio = calcAgeRatio(lfmPlayedTimes[j], age)) < tempPlayedTimesRatios[i]) {
 				playedTimesRatios.push(ratio);
+				playedTimes.push(lfmPlayedTimes[j]);
 				j++;
 			}
 			if (ratio === tempPlayedTimesRatios[i]) { // skip one instance
@@ -2317,6 +2322,7 @@ function calcDateRatios(dontUpdateLastPlayed, currentLastPlayed) {
 			}
 		}
 		playedTimesRatios.sort();
+		playedTimes.sort();
 
 		tl_firstPlayedRatio = playedTimesRatios[0];
 		tl_lastPlayedRatio = playedTimesRatios[Math.max(0, playedTimesRatios.length - (dontUpdateLastPlayed ? 2 : 1))];
@@ -2324,7 +2330,7 @@ function calcDateRatios(dontUpdateLastPlayed, currentLastPlayed) {
 		tl_firstPlayedRatio = 0.33;
 		tl_lastPlayedRatio = 0.66;
 	}
-	str.timeline.setPlayTimes(tl_firstPlayedRatio, tl_lastPlayedRatio, playedTimesRatios);
+	str.timeline.setPlayTimes(tl_firstPlayedRatio, tl_lastPlayedRatio, playedTimesRatios, playedTimes);
 }
 
 function glob_image(index, loadFromCache) {

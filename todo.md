@@ -7,5 +7,7 @@
 * Color picker menu with meta_db saving of seleted color based on arist/album/disc
 * Better resolution handling for intermediate sizes (scaling? DPI based?)
 * ~Add option to move transport controls below artwork~
-* Show played date tooltip(?) when hovering over highlights on timeline
+* ~Show played date tooltip(?) when hovering over highlights on timeline~
 * Move progress bar code to ui-components and turn it into a class
+* Change sizes of menu fonts through menus
+* Change sizes of Transport control buttons through menus

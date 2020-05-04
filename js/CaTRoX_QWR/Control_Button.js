@@ -8,8 +8,6 @@ var lastOverButton = null;
 
 var activatedBtns = [];
 
-var tt = new _.tt_handler;
-
 function buttonEventHandler(x, y, m) {
 
 	// var CtrlKeyPressed = utils.IsKeyPressed(VK_CONTROL);
