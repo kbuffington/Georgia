@@ -11,6 +11,7 @@
  - Option to move transport controls below artwork
  - Visual improvements in 4k mode (ensuring spacing between elements is scaled correctly)
  - Adding Georgia entries to "Help" menu to quickly debug if the theme is installed correctly
+ - Added tooltips on hovering over timeline
  
 ### v1.1.7 - 2020-04-11
  - Invert logos when theme primary color is dark (requires foo_jscript_panel v2.3.6)
