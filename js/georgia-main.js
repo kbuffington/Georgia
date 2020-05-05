@@ -421,18 +421,14 @@ function draw_ui(gr) {
 			if (!pref.cdart_ontop || displayLyrics) {
 				if (rotatedCD && !displayPlaylist && !displayLibrary && pref.display_cdart &&
 						cdart_size.y > albumart_size.y && cdart_size.h < albumart_size.h) {
-					if (timings.showExtraDrawTiming) drawCD = fb.CreateProfiler('cdart');
-					gr.DrawImage(rotatedCD, cdart_size.x, cdart_size.y, cdart_size.w, cdart_size.h, 0, 0, rotatedCD.width, rotatedCD.height, 0);
-					if (timings.showExtraDrawTiming) drawCD.Print();
+					drawCdArt(gr);
 				}
 				gr.DrawImage(albumart_scaled, albumart_size.x, albumart_size.y, albumart_size.w, albumart_size.h, 0, 0, albumart_scaled.width, albumart_scaled.height);
 			} else { // draw cdart on top of front cover
 				gr.DrawImage(albumart_scaled, albumart_size.x, albumart_size.y, albumart_size.w, albumart_size.h, 0, 0, albumart_scaled.width, albumart_scaled.height);
 				if (rotatedCD && !displayPlaylist && !displayLibrary && pref.display_cdart &&
 						cdart_size.y > albumart_size.y && cdart_size.h < albumart_size.h) {
-					if (timings.showExtraDrawTiming) drawCD = fb.CreateProfiler('cdart');
-					gr.DrawImage(rotatedCD, cdart_size.x, cdart_size.y, cdart_size.w, cdart_size.h, 0, 0, rotatedCD.width, rotatedCD.height, 0);
-					if (timings.showExtraDrawTiming) drawCD.Print();
+					drawCdArt(gr);
 				}
 			}
 			if (displayLyrics && albumart_scaled && fb.IsPlaying) {
@@ -442,9 +438,7 @@ function draw_ui(gr) {
 			if (timings.showExtraDrawTiming) drawArt.Print();
 		} else {
 			if (rotatedCD && pref.display_cdart) {
-				if (timings.showExtraDrawTiming) drawCD = fb.CreateProfiler('cdart');
-				gr.DrawImage(rotatedCD, cdart_size.x, cdart_size.y, cdart_size.w, cdart_size.h, 0, 0, rotatedCD.width, rotatedCD.height, 0);
-				if (timings.showExtraDrawTiming) drawCD.Print();
+				drawCdArt(gr);
 			}
 		}
 	}
@@ -981,6 +975,12 @@ function draw_ui(gr) {
 		}
 	}
     gr.SetSmoothingMode(SmoothingMode.AntiAliasGridFit);
+}
+
+function drawCdArt(gr) {
+	if (timings.showExtraDrawTiming) drawCD = fb.CreateProfiler('cdart');
+	gr.DrawImage(rotatedCD, cdart_size.x, cdart_size.y, cdart_size.w, cdart_size.h, 0, 0, rotatedCD.width, rotatedCD.height, 0);
+	if (timings.showExtraDrawTiming) drawCD.Print();
 }
 
 function on_paint(gr) {
