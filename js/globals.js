@@ -243,6 +243,11 @@ function migrateCheck(version, storedVersion) {
 				window.SetProperty('user.header.original_date.show', null);
 				window.SetProperty('user.row.focused.show', null);
 
+			case '1.1.8-beta1':
+			case '1.1.8-beta2':
+				tf.date = null;
+				tf.year = null;
+
 			case '1.1.8':
 
 				// after all previous versions have fallen through
