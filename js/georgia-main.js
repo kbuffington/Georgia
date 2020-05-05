@@ -408,21 +408,18 @@ function draw_ui(gr) {
 
 	// BIG ALBUMART
 	if (fb.IsPlaying) {
+		if (cdart && !rotatedCD && !displayPlaylist && !displayLibrary && pref.display_cdart) {
+			CreateRotatedCDImage();
+		}
+		if (!pref.darkMode && (albumart_scaled || rotatedCD)) {
+			shadow_image && gr.DrawImage(shadow_image, -geo.aa_shadow, albumart_size.y - geo.aa_shadow, shadow_image.Width, shadow_image.Height,
+				0, 0, shadow_image.Width, shadow_image.Height);
+			// gr.DrawRect(-geo.aa_shadow, albumart_size.y - geo.aa_shadow, shadow_image.Width, shadow_image.Height, 1, RGBA(0,0,255,125));	// viewing border line
+		}
 		if (albumart && albumart_scaled) {
 			if (timings.showExtraDrawTiming) drawArt = fb.CreateProfiler('on_paint -> artwork');
-			if (!pref.darkMode) {
-				if (!shadow_image) { // when switching views, the drop shadow won't get created initially which is very jarring when it suddenly appears later, so create it if we don't have it.
-					createDropShadow();
-				}
-				shadow_image && gr.DrawImage(shadow_image, -geo.aa_shadow, albumart_size.y - geo.aa_shadow, shadow_image.Width, shadow_image.Height,
-					0, 0, shadow_image.Width, shadow_image.Height);
-				// gr.DrawRect(-geo.aa_shadow, albumart_size.y - geo.aa_shadow, shadow_image.Width, shadow_image.Height, 1, RGBA(0,0,255,125));	// viewing border line
-			}
-			if (cdart && !rotatedCD && !displayPlaylist && !displayLibrary && pref.display_cdart) {
-				CreateRotatedCDImage();
-			}
 			if (!pref.cdart_ontop || displayLyrics) {
-				if (rotatedCD && !displayPlaylist && !displayLibrary && pref.display_cdart && 
+				if (rotatedCD && !displayPlaylist && !displayLibrary && pref.display_cdart &&
 						cdart_size.y > albumart_size.y && cdart_size.h < albumart_size.h) {
 					if (timings.showExtraDrawTiming) drawCD = fb.CreateProfiler('cdart');
 					gr.DrawImage(rotatedCD, cdart_size.x, cdart_size.y, cdart_size.w, cdart_size.h, 0, 0, rotatedCD.width, rotatedCD.height, 0);
@@ -431,7 +428,7 @@ function draw_ui(gr) {
 				gr.DrawImage(albumart_scaled, albumart_size.x, albumart_size.y, albumart_size.w, albumart_size.h, 0, 0, albumart_scaled.width, albumart_scaled.height);
 			} else { // draw cdart on top of front cover
 				gr.DrawImage(albumart_scaled, albumart_size.x, albumart_size.y, albumart_size.w, albumart_size.h, 0, 0, albumart_scaled.width, albumart_scaled.height);
-				if (rotatedCD && !displayPlaylist && !displayLibrary && pref.display_cdart && 
+				if (rotatedCD && !displayPlaylist && !displayLibrary && pref.display_cdart &&
 						cdart_size.y > albumart_size.y && cdart_size.h < albumart_size.h) {
 					if (timings.showExtraDrawTiming) drawCD = fb.CreateProfiler('cdart');
 					gr.DrawImage(rotatedCD, cdart_size.x, cdart_size.y, cdart_size.w, cdart_size.h, 0, 0, rotatedCD.width, rotatedCD.height, 0);
@@ -444,18 +441,8 @@ function draw_ui(gr) {
 			}
 			if (timings.showExtraDrawTiming) drawArt.Print();
 		} else {
-			if (cdart && !rotatedCD && !displayPlaylist && !displayLibrary && pref.display_cdart) {
-				CreateRotatedCDImage();
-			}
-			if (!shadow_image && !pref.darkMode) { // when switching views, the drop shadow won't get created initially which is very jarring when it suddenly appears later, so create it if we don't have it.
-				createDropShadow();
-			}
 			if (rotatedCD && pref.display_cdart) {
 				if (timings.showExtraDrawTiming) drawCD = fb.CreateProfiler('cdart');
-				if (!pref.darkMode) {
-					shadow_image && gr.DrawImage(shadow_image, -geo.aa_shadow, albumart_size.y - geo.aa_shadow, shadow_image.Width, shadow_image.Height,
-						0, 0, shadow_image.Width, shadow_image.Height);
-				}
 				gr.DrawImage(rotatedCD, cdart_size.x, cdart_size.y, cdart_size.w, cdart_size.h, 0, 0, rotatedCD.width, rotatedCD.height, 0);
 				if (timings.showExtraDrawTiming) drawCD.Print();
 			}
@@ -563,7 +550,7 @@ function draw_ui(gr) {
 			if (str.album) {
 				var font_array = [ft.album_lrg, ft.album_med, ft.album_sml];
 				if (str.album.indexOf('Á') !== -1) {
-					// some fonts don't work correctly with this character 
+					// some fonts don't work correctly with this character
 					font_array = [ft.album_lrg_alt, ft.album_med_alt, ft.album_sml_alt];
 				}
 				var subtitlefont_array = [ft.album_substitle_lrg, ft.album_substitle_med, ft.album_substitle_sml];
@@ -1002,7 +989,7 @@ function on_paint(gr) {
 	if (pref.show_volume_button) {
 		volume_btn.on_paint(gr);
 	}
-	
+
 	if (timings.showDrawTiming) {
 		drawStuff.Print();
 	}
@@ -1064,11 +1051,11 @@ function onOptionsMenu(x, y) {
 		ResizeArtwork(true);
 		RepaintWindow();
 	});
-	menu.addToggleItem('Rotate CD art on track change', pref, 'rotate_cdart', function () { RepaintWindow(); }, !pref.display_cdart);	
+	menu.addToggleItem('Rotate CD art on track change', pref, 'rotate_cdart', function () { RepaintWindow(); }, !pref.display_cdart);
 	menu.createRadioSubMenu('CD art Rotation Amount', ['2 degrees', '3 degrees', '4 degrees', '5 degrees'], parseInt(pref.rotation_amt), [2,3,4,5], function (rot) {
 		pref.rotation_amt = rot;
 		CreateRotatedCDImage();
-		RepaintWindow();		
+		RepaintWindow();
 	});
 
 	menu.addItem('Display CD art above cover', pref.cdart_ontop, function () {
@@ -1094,13 +1081,13 @@ function onOptionsMenu(x, y) {
 	menuFontMenu.appendTo(menu);
 
 	var transportMenu = new Menu('Transport controls');
-	transportMenu.addToggleItem('Show transport controls', pref, 'show_transport', function () { 
+	transportMenu.addToggleItem('Show transport controls', pref, 'show_transport', function () {
 		createButtonImages();
 		createButtonObjects(ww, wh);
 		ResizeArtwork(true);
 		RepaintWindow();
 	});
-	transportMenu.addToggleItem('Show transport below art', pref, 'show_transport_below', function () { 
+	transportMenu.addToggleItem('Show transport below art', pref, 'show_transport_below', function () {
 		createButtonImages();
 		createButtonObjects(ww, wh);
 		ResizeArtwork(true);
@@ -1112,11 +1099,11 @@ function onOptionsMenu(x, y) {
 		}
 		RepaintWindow();
 	}, !pref.show_transport);
-	transportMenu.addToggleItem('Show random button', pref, 'show_random_button', function () { 
+	transportMenu.addToggleItem('Show random button', pref, 'show_random_button', function () {
 		createButtonObjects(ww, wh);
 		RepaintWindow();
 	}, !pref.show_transport);
-	transportMenu.addToggleItem('Show volume control', pref, 'show_volume_button', function () { 
+	transportMenu.addToggleItem('Show volume control', pref, 'show_volume_button', function () {
 		createButtonObjects(ww, wh);
 		RepaintWindow();
 	}, !pref.show_transport);
@@ -1124,7 +1111,7 @@ function onOptionsMenu(x, y) {
 	transportMenu.appendTo(menu);
 
 	menu.addToggleItem('Show timeline tooltips', pref, 'show_timeline_tooltips');
-	menu.addToggleItem('Show progress bar', pref, 'show_progress_bar', function () { 
+	menu.addToggleItem('Show progress bar', pref, 'show_progress_bar', function () {
 		setGeometry();
 		ResizeArtwork(true);
 		RepaintWindow();
@@ -1152,8 +1139,8 @@ function onOptionsMenu(x, y) {
 	playlistMenu.addToggleItem('Display playlist on startup', pref, 'start_Playlist');
 	playlistMenu.addToggleItem('Show group header', g_properties, 'show_header', playlistCallback);
 	playlistMenu.addToggleItem('Use compact group header', g_properties, 'use_compact_header', playlistCallback, !g_properties.show_header);
-	playlistMenu.createRadioSubMenu('Header font size', ['-1', '14px', '15px (default)', '16px', '18px', '20px', '22px', '+1'], pref.font_size_playlist_header, 
-		[-1, 14, 15, 16, 18, 20, 22, 999], 
+	playlistMenu.createRadioSubMenu('Header font size', ['-1', '14px', '15px (default)', '16px', '18px', '20px', '22px', '+1'], pref.font_size_playlist_header,
+		[-1, 14, 15, 16, 18, 20, 22, 999],
 		function (size) {
 			if (size === -1) {
 				pref.font_size_playlist_header--;
@@ -1165,7 +1152,7 @@ function onOptionsMenu(x, y) {
 			playlist.on_size(ww, wh);
 			window.Repaint();
 		});
-		
+
 	var rowsMenu = new Menu('Rows');
 	rowsMenu.createRadioSubMenu('Row font size', ['-1', '11px', '12px (default)', '13px', '14px', '16px', '18px', '+1'], pref.font_size_playlist,
 		[-1, 11, 12, 13, 14, 16, 18, 999],
@@ -1190,7 +1177,7 @@ function onOptionsMenu(x, y) {
 	playlistMenu.addToggleItem('Show weblinks in context menu', pref, 'show_weblinks');
 	playlistMenu.appendTo(menu);
 
-	menu.addSeparator(); 
+	menu.addSeparator();
 
 	libraryMenu = new Menu('Library Settings');
 	libraryMenu.addToggleItem('Remember library state', libraryProps, 'rememberTree');
@@ -1652,7 +1639,7 @@ function on_mouse_lbtn_down(x, y, m) {
 		if (updateHyperlink && !fb.IsPlaying && updateHyperlink.trace(x, y)) {
 			updateHyperlink.click();
 		}
-	
+
 		if (displayPlaylist) {// && playlist.mouse_in_this(x, y)) {
 			trace_call && console.log(qwr_utils.function_name());
 			playlist.on_mouse_lbtn_down(x, y, m);
@@ -1670,15 +1657,15 @@ function on_mouse_lbtn_up(x, y, m) {
 		// not handled by volume_btn
 		if (displayPlaylist && playlist.mouse_in_this(x, y)) {
 			trace_call && console.log(qwr_utils.function_name());
-	
+
 			playlist.on_mouse_lbtn_up(x, y, m);
-	
+
 			qwr_utils.EnableSizing(m);
 		} else if (displayLibrary && library.mouse_in_this(x, y)) {
 			trace_call && console.log(qwr_utils.function_name());
 			library.on_mouse_lbtn_up(x, y, m);
 		} else {
-	
+
 			if (just_dblclicked) {
 				// You just did a double-click, so do nothing
 				just_dblclicked = false;
