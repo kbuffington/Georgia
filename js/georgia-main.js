@@ -565,45 +565,6 @@ function draw_ui(gr) {
 				top += height + scaleForDisplay(10);
 			}
 
-			if (0 && str.album) {
-				var drawSubtitle = !!str.album_subtitle.length;
-				ft_album = ft.album_lrg;
-				ft_subtitle = ft.album_substitle_lrg;
-				txtRec = gr.MeasureString(str.album, ft_album, 0, 0, text_width, wh);
-				subtitleRec = gr.MeasureString(str.album_subtitle, ft_subtitle, 0, 0, text_width, wh);
-				if (txtRec.lines > 2 || subtitleRec.lines > 2) {
-					ft_album = ft.album_med;
-					txtRec = gr.MeasureString(str.album, ft_album, 0, 0, text_width, wh);
-					if (txtRec.lines > 2) {
-						ft.album = ft.album_sml;
-					}
-					album_text = str.album + str.album_subtitle;
-					drawSubtitle = false;
-				} else if (txtRec.width + subtitleRec.width > text_width) {
-					album_text = str.album + str.album_subtitle;
-					txtRec = gr.MeasureString(album_text, ft_album, 0, 0, text_width, wh);
-					var lineText = gr.EstimateLineWrap(album_text, ft_album, text_width).toArray();
-					lineText.forEach(function (l) {
-						console.log(JSON.stringify(l));
-					});
-					drawSubtitle = false;
-				} else {
-					// draw subtitle separately
-					album_text = str.album;
-				}
-				var numLines = Math.min(2, txtRec.lines);
-				height = gr.CalcTextHeight(album_text, ft_album) * numLines;
-
-				gr.DrawString(album_text, ft_album, col.info_text, textLeft, top, text_width, height, g_string_format.trim_ellipsis_word);
-				// console.log(drawSubtitle, str.album_subtitle, txtRec.width, subtitleRec.width, text_width);
-				if (drawSubtitle) {
-					gr.DrawString(str.album_subtitle, ft_subtitle, col.info_text,
-						textLeft + Math.ceil(txtRec.width), top, text_width - Math.ceil(txtRec.width), height, g_string_format.trim_ellipsis_word);
-				}
-
-				top += height + scaleForDisplay(10);
-			}
-
 			// Tag grid
 			grid_key_ft = ft.grd_key_lrg;
 			col1_width = calculateGridMaxTextWidth(gr, str.grid, grid_key_ft);
