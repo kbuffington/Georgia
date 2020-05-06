@@ -391,6 +391,7 @@ function draw_ui(gr) {
 	gr.SetInterpolationMode(InterpolationMode.HighQualityBicubic);
 
 	var textLeft = Math.round(Math.min(0.015 * ww, scaleForDisplay(20)));
+	// Top bar Year, and track info
 	if (((!displayPlaylist && !displayLibrary) || (!albumart && noArtwork)) && fb.IsPlaying) {
 		var trackInfoHeight = 0;
 		var infoWidth = Math.floor(ww / 3);
@@ -436,10 +437,9 @@ function draw_ui(gr) {
 				drawLyrics(gr, g_tab, Math.floor(lyrPos - pref.lyrics_h_padding));
 			}
 			if (timings.showExtraDrawTiming) drawArt.Print();
-		} else {
-			if (rotatedCD && pref.display_cdart) {
-				drawCdArt(gr);
-			}
+		} else if (rotatedCD && pref.display_cdart) {
+			// cdArt, but no album art
+			drawCdArt(gr);
 		}
 	}
 	if (fb.IsPlaying && (albumart || !cdart)) {
@@ -469,6 +469,7 @@ function draw_ui(gr) {
 		}
 	}
 
+	// text info grid
 	if (((!displayPlaylist && !displayLibrary) || (!albumart && noArtwork)) && fb.IsPlaying) {
 		if (!albumart && cdart) {
 			gridSpace = Math.round(cdart_size.x - geo.aa_shadow - textLeft);
@@ -566,24 +567,20 @@ function draw_ui(gr) {
 			}
 
 			// Tag grid
-			grid_key_ft = ft.grd_key_lrg;
-			col1_width = calculateGridMaxTextWidth(gr, str.grid, grid_key_ft);
-			if (col1_width < text_width / 3) {
-				grid_val_ft = ft.grd_val_lrg;
-			} else {
-				grid_key_ft = ft.grd_key_med;
-				col1_width = calculateGridMaxTextWidth(gr, str.grid, grid_key_ft);
-				if (col1_width < text_width / 3) {
-					grid_val_ft = ft.grd_val_med;
-				} else {
-					grid_key_ft = ft.grd_key_sml;
-					grid_val_ft = ft.grd_val_sml;
-					col1_width = calculateGridMaxTextWidth(gr, str.grid, grid_key_ft);
-					if (col1_width > text_width / 3) {
-						col1_width = Math.floor(text_width / 3);
+			var font_array = [ft.grd_key_lrg, ft.grd_key_med, ft.grd_key_sml];
+			var key_font_array = [ft.grd_val_lrg, ft.grd_val_med, ft.grd_val_sml];
+			str.grid.forEach(function(el) {
+				if (font_array.length > 1) {	// only check if there's more than one entry in font_array
+					grid_key_ft = chooseFontForWidth(gr, text_width / 3, el, font_array);
+					while (grid_key_ft !== font_array[0]) {	// if font returned was first item in the array, then everything fits, otherwise pare down array
+						font_array.shift();
+						key_font_array.shift();
 					}
 				}
-			}
+			});
+			grid_val_ft = key_font_array.shift();
+			col1_width = calculateGridMaxTextWidth(gr, str.grid, grid_key_ft);
+
 			var column_margin = scaleForDisplay(10);
 			var col2_width = text_width - column_margin - col1_width;
 			var col2_left = textLeft + col1_width + column_margin;
