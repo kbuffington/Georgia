@@ -26,7 +26,12 @@ I run the theme in Columns UI with a super simple setup using the JScript Panel,
 7. *(Optional Step)* This theme also makes heavy use of [the foo_enhanced_playcount](https://www.foobar2000.org/components/view/foo_enhanced_playcount) component. I recommend installing that as well, otherwise the timeline will not be as interesting. You'll probably also want [foo_playcount](https://www.foobar2000.org/components/view/foo_playcount) if you don't have that one yet.
 8. Now add JScript Panel to a new theme. If you're using CUI I recommend the setup I'm [using](https://imgur.com/nJ71Vn1) but feel free to configure it how you want. Typically it will look best if the panel takes up the majority of foobar. Close foobar's properties.
 9. Now right click on the JScript panel and select Configure. In the dialog that opens up, first make sure the Script Engine is set to "Chakra". Now select all the text in the text box and replace it with the contents of [Georgia.txt](https://github.com/kbuffington/Georgia/blob/master/Georgia.txt). It should look something like [this](https://imgur.com/3Ekc1HL). Hit OK and if you followed the instructions, the theme should have loaded working properly. If it didn't, most likely file paths are wrong. Check the console for more information.
+10. If the theme loaded, the last step is to verify that all optional items are installed correctly. Go to the Help => Georgia Theme Status submenu.
 
+If everything is loaded correctly it should look like this:
+![theme status menu](https://user-images.githubusercontent.com/2282004/80932111-8a5ffc80-8d83-11ea-80f2-8951069b1638.png)
+
+If something is unchecked, either you chose not to install it, or it's probably in the wrong location.
 
 ### Theme Highlights and Secrets
 
@@ -59,4 +64,4 @@ The official discussion thread for this theme is located at https://hydrogenaud.
 
 Thanks goes to Peter for fb2k. Also massive thanks to Marc2003 for foo_jscript_panel. Also, 90% of the playlist is ripped directly from TheQwertiest's amazing "CaTRoX (QWR)" theme. Thanks to him for his hard work, putting up with my stupid ideas, and letting me use it here. The LibraryTree is all WilB's work, I just modified it to fit the theme and stripped out a few of the more advanced features that would be hard to support.
 
-Also, I want to thank the Hydrogen Audio and Reddit community for supporting this theme from the get-go, providing valuable feedback and testing, and requests.
+Also, I want to thank the Hydrogen Audio and Reddit community for supporting this theme from the get-go, providing valuable feedback, testing, the occasional beer, and making tons of requests. It's all very much appreciated.
