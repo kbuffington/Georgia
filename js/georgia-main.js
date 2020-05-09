@@ -93,7 +93,7 @@ function createFonts() {
 		ft.lower_bar_artist_sml = font(fontThin, 27, g_font_style.italic);
 	}
 	ft.small_font = font(fontRegular, 14, 0);
-	ft.guifx = font(fontGuiFx, 16, 0);
+	ft.guifx = font(fontGuiFx, Math.floor(pref.transport_buttons_size / 2), 0);
 	ft.Marlett = font('Marlett', 13, 0);
 	ft.SegoeUi = font('Segoe Ui Semibold', pref.menu_font_size, 0);
 	ft.library_tree = font('Segoe UI', libraryProps.baseFontSize, 0);
@@ -625,9 +625,6 @@ function draw_ui(gr) {
 						}
 						gr.DrawString(key, grid_key_ft, col.info_text, textLeft, top, col1_width, cell_height, g_string_format.trim_ellipsis_char); // key
 						gr.DrawString(value, grid_val_ft, grid_val_col, col2_left, top, col2_width, cell_height, StringFormat(0, 0, 4));
-						// Attempting to solve white on light color
-						// gr.DrawString(value, grid_val_ft, rgb(128,128,128), col2_left + border_w, top + border_w, col2_width, cell_height, StringFormat(0, 0, 4));
-						// gr.DrawString(value, grid_val_ft, rgb(255,255,255), col2_left, top, col2_width, cell_height, StringFormat(0, 0, 4));
 
 						if (playCountVerifiedByLastFm && showLastFmImage) {
                             var lastFmLogo = lastFmImg;
@@ -1031,7 +1028,7 @@ function onOptionsMenu(x, y) {
 		} else {
 			pref.menu_font_size = size;
 		}
-		ft.SegoeUi = gdi.Font('Segoe Ui Semibold', scaleForDisplay(pref.menu_font_size), 0); //font('Segoe Ui Semibold', pref.menu_font_size, 0);
+		ft.SegoeUi = gdi.Font('Segoe Ui Semibold', scaleForDisplay(pref.menu_font_size), 0);
 		createButtonImages();
 		createButtonObjects(ww, wh);
 		RepaintWindow();
@@ -1067,6 +1064,25 @@ function onOptionsMenu(x, y) {
 	}, !pref.show_transport);
 	transportMenu.addToggleItem('Show reload button', pref, 'show_reload_button', function () { window.Reload(); }, !pref.show_transport);
 	transportMenu.appendTo(menu);
+
+	transportSizeMenu = new Menu('Transport Button Size');
+	transportSizeMenu.addRadioItems(['-2', '28px', '32px (default)', '36px', '40px', '44px', '+2'], pref.transport_buttons_size, [-1,28,32,36,40,44,999], function (size) {
+		if (size === -1) {
+			pref.transport_buttons_size -= 2;
+		} else if (size === 999) {
+			pref.transport_buttons_size += 2;
+		} else {
+			pref.transport_buttons_size = size;
+		}
+		ft.guifx = gdi.Font(fontGuiFx, scaleForDisplay(Math.floor(pref.transport_buttons_size / 2)), 0);
+		createButtonImages();
+		createButtonObjects(ww, wh);
+		if (pref.show_transport_below) {
+			ResizeArtwork(true);
+		}
+		RepaintWindow();
+	});
+	transportSizeMenu.appendTo(transportMenu);
 
 	menu.addToggleItem('Show timeline tooltips', pref, 'show_timeline_tooltips');
 	menu.addToggleItem('Show progress bar', pref, 'show_progress_bar', function () {
@@ -2345,7 +2361,7 @@ function CreateRotatedCDImage() {
 }
 
 function calcLowerSpace() {
-	return pref.show_transport_below ? geo.lower_bar_h + scaleForDisplay(32 + 9) : geo.lower_bar_h + scaleForDisplay(16);
+	return pref.show_transport_below ? geo.lower_bar_h + scaleForDisplay(pref.transport_buttons_size + 10) : geo.lower_bar_h + scaleForDisplay(16);
 }
 
 function ResizeArtwork(resetCDPosition) {
@@ -2621,7 +2637,7 @@ function createButtonObjects(ww, wh) {
 		createButtonImages();
 	}
 
-	var buttonSize = scaleForDisplay(32);
+	var buttonSize = scaleForDisplay(pref.transport_buttons_size);
 	//---> Transport buttons
 	if (pref.show_transport) {
 		var count = 4 + (pref.show_random_button ? 1 : 0) + (pref.show_volume_button ? 1 : 0) + (pref.show_reload_button ? 1 : 0);
@@ -2741,6 +2757,7 @@ function createButtonObjects(ww, wh) {
 
 function createButtonImages() {
 	if (timings.showExtraDrawTiming) createButtonTime = fb.CreateProfiler('createButtonImages');
+	var transportCircleSize = Math.round(pref.transport_buttons_size * 0.93333);
 
 	try {
 		var btn = {
@@ -2749,57 +2766,57 @@ function createButtonImages() {
 				ico: g_guifx.stop,
 				font: ft.guifx,
 				type: 'transport',
-				w: 30,
-				h: 30
+				w: transportCircleSize,
+				h: transportCircleSize
 			},
 			Previous: {
 				ico: g_guifx.previous,
 				font: ft.guifx,
 				type: 'transport',
-				w: 30,
-				h: 30
+				w: transportCircleSize,
+				h: transportCircleSize
 			},
 			Play: {
 				ico: g_guifx.play,
 				font: ft.guifx,
 				type: 'transport',
-				w: 30,
-				h: 30
+				w: transportCircleSize,
+				h: transportCircleSize
 			},
 			Pause: {
 				ico: g_guifx.pause,
 				font: ft.guifx,
 				type: 'transport',
-				w: 30,
-				h: 30
+				w: transportCircleSize,
+				h: transportCircleSize
 			},
 			Next: {
 				ico: g_guifx.next,
 				font: ft.guifx,
 				type: 'transport',
-				w: 30,
-				h: 30
+				w: transportCircleSize,
+				h: transportCircleSize
 			},
 			PlaybackRandom: {
 				ico: g_guifx.shuffle,
 				font: ft.guifx,
 				type: 'transport',
-				w: 30,
-				h: 30
+				w: transportCircleSize,
+				h: transportCircleSize
 			},
 			ShowVolume: {
 				ico:  g_guifx.volume_up,
 				font: ft.guifx,
 				type: 'transport',
-				w: 30,
-				h: 30
+				w: transportCircleSize,
+				h: transportCircleSize
 			},
 			Reload: {
 				ico: g_guifx.power,
 				font: ft.guifx,
 				type: 'transport',
-				w: 30,
-				h: 30
+				w: transportCircleSize,
+				h: transportCircleSize
 			},
 			Minimize: {
 				ico: "0",
