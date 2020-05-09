@@ -46,7 +46,7 @@ function buttonEventHandler(x, y, m) {
 				} else if (lastOverButton.id === 'Volume') {
 					tt.showDelayed(fb.Volume.toFixed(2) + ' dB');
 				}
-			} 
+			}
 
 			oldButton = thisButton;
 			break;
@@ -154,7 +154,7 @@ Button.prototype.onClick = function () {
 					handles.RemoveById(playing_location.PlaylistItemIndex);
 					plman.ClearPlaylistSelection(pl);
 					plman.SetPlaylistSelection(pl, [playing_location.PlaylistItemIndex], true);
-			
+
 					plman.RemovePlaylistSelection(pl, true);
 					plman.InsertPlaylistItems(pl, 1, handles);
 					plman.EnsurePlaylistItemVisible(pl, 0);
@@ -359,7 +359,7 @@ function onMainMenu(x, y, name) {
 
 	if (name) {
 		var menu = new Menu();
-		
+
 		if (name === 'Help') {
 			var statusMenu = new Menu('Georgia Theme Status');
 
@@ -370,9 +370,9 @@ function onMainMenu(x, y, name) {
 			statusMenu.addItem('foo_enhanced_playcount installed', componentEnhancedPlaycount, function() { _.runCmd('https://www.foobar2000.org/components/view/foo_enhanced_playcount') });
 
 			statusMenu.appendTo(menu);
-			
+
 			menu.addItem('Georgia releases', false, function() { _.runCmd('https://github.com/kbuffington/Georgia/releases') });
-			menu.addItem('Georgia Changelog', false, function() { _.runCmd('https://github.com/kbuffington/Georgia/blob/master/changelog.md') });
+			menu.addItem('Georgia changelog', false, function() { _.runCmd('https://github.com/kbuffington/Georgia/blob/master/changelog.md') });
 			menu.addItem('Check for updated version of Georgia', false, function() { checkForUpdates(true); });
 			menu.addItem('Report an issue with Georgia', false, function() { _.runCmd('https://github.com/kbuffington/Georgia/issues') });
 		}

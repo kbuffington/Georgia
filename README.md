@@ -3,9 +3,11 @@
 
 Georgia is a theme for foobar2000 designed to change dynamically based on album art. It's original purpose was to be used on a HTPC so it has large album artwork, plenty of logos and other eye candy. Over time it's evolved to add a playlist and other features which make it perfectly suitable for using on a desktop as well. It can be run in a window and it resizes pretty well, but it usually looks best at full screen.
 
-Georgia also supports 4k resolutions, and will adjust based on window size.
+Georgia supports 4k resolutions, and will adjust theme elements based on window size. It also supports both a dark mode (default) and light mode.
 
+Dark Mode:
 ![Lights](https://i.imgur.com/Eu9Q1Mv.jpg)
+Light Mode:
 ![BladeRunner 2049](https://i.imgur.com/pspQQeb.png)
 Gallery of images [here](https://imgur.com/a/TtjUS) with explanation of some of the features.
 
