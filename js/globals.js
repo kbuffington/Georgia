@@ -2,7 +2,7 @@ var globals = PanelProperties.get_instance();
 var pref = PanelProperties.get_instance(); // preferences
 var tf = PanelProperties.get_instance(); // titleformating strings
 
-var currentVersion = '1.1.8-beta2';
+var currentVersion = '1.1.8';
 var updateAvailable = false;
 var updateHyperlink;
 
@@ -47,7 +47,7 @@ pref.add_properties({
 
 	show_timeline_tooltips: ['Show timeline tooltips', true], // true: show tooltips when hovering over the timeline that show information on plays
 
-	menu_font_size: ['Menu font size', 12],	
+	menu_font_size: ['Menu font size', 12],
 
 	freq_update: ['Frequent progress bar updates', true], // true: update progress bar multiple times a second. Smoother, but uses more CPU
 	time_zone: ['Time-zone (formatted +/-HH:MM, e.g. -06:00)', '+00:00'], // used to create accurate timezone offsets. "Z", "-06:00", "+06:00", etc. are all valid values
@@ -64,7 +64,7 @@ pref.add_properties({
 	lyrics_text_shadow: ['Lyrics: Text Shadow', true],
 
 	show_weblinks: ['Playlist: Show weblinks', true],
-	
+
 	font_size_playlist: ['Font Size: Playlist', 12],
 	font_size_playlist_header: ['Font Size: Playlist Header', 15],
 	lyrics_font_size: ['Font Size: Lyrics', 20],
