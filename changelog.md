@@ -1,4 +1,4 @@
-### v1.1.8 - ??
+### v1.1.8 - 2020-05-09
  - Random now actually randomizes playlist
  - Fixed volume control issues
  - Improved tooltip handling for buttons
