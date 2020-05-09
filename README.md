@@ -5,13 +5,13 @@ Georgia is a theme for foobar2000 designed to change dynamically based on album 
 
 Georgia also supports 4k resolutions, and will adjust based on window size.
 
+![Lights](https://i.imgur.com/Eu9Q1Mv.jpg)
 ![BladeRunner 2049](https://i.imgur.com/pspQQeb.png)
-![Iron Maiden Powerslave](https://i.imgur.com/f4VnU9f.png)
-Gallery → https://imgur.com/a/TtjUS
+Gallery of images [here](https://imgur.com/a/TtjUS) with explanation of some of the features.
 
 ### Installation Instructions
 
-Unlike most themes I don't include an .fcl with mine. This makes getting setup *slightly* more work for you, but ensures that you can use it however you want. It works with both DUI and CUI, and all it really requires is a single [JScript Panel](https://github.com/kbuffington/foo_jscript_panel/releases) version 2.1.1 or greater (tested up through 2.3.5). 
+Unlike most themes I don't include an .fcl with mine. This makes getting setup *slightly* more work for you, but ensures that you can use it however you want. It works with both DUI and CUI, and all it really requires is a single [JScript Panel](https://github.com/kbuffington/foo_jscript_panel/releases) version 2.1.1 or greater (tested up through 2.3.5).
 
 I run the theme in Columns UI with a super simple setup using the JScript Panel, an auto-hiding vertical splitter, and two filter panels. You can see my setup [here](https://imgur.com/nJ71Vn1). Currently there's no library search mechanism built in, so unless you use foo_http_control (which I also recommend for HTPC use!), choosing what to play will be limited to your current playlists.
 
