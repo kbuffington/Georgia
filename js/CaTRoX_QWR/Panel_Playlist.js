@@ -388,13 +388,16 @@ function PlaylistPanel(x, y) {
         var lowerSpace = calcLowerSpace();
         var playlist_w = w - x;
         var playlist_h = Math.max(0, h - lowerSpace - scaleForDisplay(16) - y);
+        var row_h_calc = Math.round(pref.font_size_playlist * 1.667);
 
         this.h = playlist_h;
         this.w = playlist_w;
         this.x = x;
         this.y = y;
 
-        g_properties.row_h = Math.round(pref.font_size_playlist * 1.667);
+        if( row_h_calc > g_properties.row_h ) {
+            g_properties.row_h = row_h_calc;
+        }
 
         playlist_info_h = scaleForDisplay(g_properties.row_h + 4);
         playlist_info_and_gap_h = playlist_info_h + scaleForDisplay(2);
