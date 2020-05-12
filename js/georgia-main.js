@@ -1084,6 +1084,21 @@ function onOptionsMenu(x, y) {
 	});
 	transportSizeMenu.appendTo(transportMenu);
 
+	transportSpaceMenu = new Menu('Transport Button Spacing');
+	transportSpaceMenu.addRadioItems(['-2', '0', '5 (default)', '10', '20', '25', '+2'], pref.transport_buttons_spacing, [-1,0,5,10,20,25,999], function (spacing) {
+		if (spacing === -1) {
+			pref.transport_buttons_spacing -= 2;
+			if(pref.transport_buttons_spacing < 0) pref.transport_buttons_spacing = 0;
+		} else if (spacing === 999) {
+			pref.transport_buttons_spacing += 2;
+		} else {
+			pref.transport_buttons_spacing = spacing;
+		}
+		createButtonObjects(ww, wh);
+		RepaintWindow();
+	});
+	transportSpaceMenu.appendTo(transportMenu);
+
 	menu.addToggleItem('Show timeline tooltips', pref, 'show_timeline_tooltips');
 	menu.addToggleItem('Show progress bar', pref, 'show_progress_bar', function () {
 		setGeometry();
@@ -2645,7 +2660,7 @@ function createButtonObjects(ww, wh) {
 		var y = pref.show_transport_below ? wh - geo.lower_bar_h - scaleForDisplay(10) - buttonSize : scaleForDisplay(10);
 		var w = buttonSize;
 		var h = w;
-		var p = scaleForDisplay(5); // space between buttons
+		var p = scaleForDisplay(pref.transport_buttons_spacing); // space between buttons
 		var x = (ww - w * count - p * (count - 1)) / 2;
 
 		count = 0;
