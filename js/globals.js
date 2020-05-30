@@ -26,6 +26,7 @@ pref.add_properties({
 	locked: ['Lock theme', false], // true: prevent changing theme with right click
 	rotation_amt: ['Art: Degrees to rotate CDart', 3], // # of degrees to rotate per track change.
 	aa_glob: ['Art: Cycle through all images', true], // true: use glob, false: use albumart reader (front only)
+	artwork_cdart_filename: ['Art: CDart alternate filename', ''], // string: example "discart" if metadata consumer uses that name for cdart and you don't want those as albumart
 	display_cdart: ['Art: Display CD art', true], // true: show CD artwork behind album artwork. This artwork is expected to be named cd.png and have transparent backgrounds (can be found at fanart.tv)
 	art_rotate_delay: ['Art: Seconds to display each art', 30], // seconds per image
 	rotate_cdart: ['Art: Rotate CD art on new track', true], // true: rotate cdArt based on track number. i.e. rotationAmt = %tracknum% * x degrees
@@ -201,7 +202,11 @@ tf.labels = [ // Array of fields to test for publisher. Add, change or re-order 
 pref.vinylside_path = "$replace(%path%,%filename_ext%,)vinyl$if2(" + tf.vinyl_side + ",).png" // vinyl cdart named vinylA.png, vinylB.png, etc.
 pref.vinyl_path = "$replace(%path%,%filename_ext%,)vinyl.png" // vinyl cdart named vinylA.png, vinylB.png, etc.
 pref.cdartdisc_path = "$replace(%path%,%filename_ext%,)cd$ifgreater(%totaldiscs%,1,%discnumber%,).png"; // cdart named cd1.png, cd2.png, etc.
-pref.cdart_path = "$replace(%path%,%filename_ext%,)cd.png"; // cdart named cd.png  (the far more common single disc albums)
+if( tf.artwork_cdart_filename.trim() == "" ) {
+	pref.cdart_path = "$replace(%path%,%filename_ext%,)cd.png"; // cdart named cd.png  (the far more common single disc albums)
+} else {
+	pref.cdart_path = "$replace(%path%,%filename_ext%,)"+tf.artwork_cdart_filename.trim()+".png"; // cdart named custom.png  (in the case your metadata differs)
+}
 pref.cdart_amount = 0.48; // show 48% of the CD image if it will fit on the screen
 
 function migrateCheck(version, storedVersion) {
