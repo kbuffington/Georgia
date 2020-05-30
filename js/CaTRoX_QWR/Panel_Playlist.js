@@ -394,8 +394,6 @@ function PlaylistPanel(x, y) {
         this.x = x;
         this.y = y;
 
-        g_properties.row_h = Math.round(pref.font_size_playlist * 1.667);
-
         playlist_info_h = scaleForDisplay(g_properties.row_h + 4);
         playlist_info_and_gap_h = playlist_info_h + scaleForDisplay(2);
         playlist.on_size(playlist_w, playlist_h - (g_properties.show_playlist_info ? playlist_info_and_gap_h : 0),
