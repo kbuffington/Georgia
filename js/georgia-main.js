@@ -2547,6 +2547,7 @@ function fetchNewArtwork(metadb) {
 	if (timings.showDebugTiming) artworkTime = fb.CreateProfiler('fetchNewArtwork');
 	console.log('Fetching new art'); // can remove this soon
 	aa_list = [];
+	aa_filter = [];
 	var disc_art_exists = true;
 
 	if (pref.display_cdart && !isStreaming) { // we must attempt to load CD/vinyl art first so that the shadow is drawn correctly
@@ -2590,7 +2591,8 @@ function fetchNewArtwork(metadb) {
 		for (k = 0; k < tf.glob_paths.length; k++) {
 			aa_list = aa_list.concat(utils.Glob($(tf.glob_paths[k])).toArray());
 		}
-		pattern = /(cd|vinyl)([0-9]*|[a-h])\.png/i;
+		aa_filter = tf.artwork_filter.split('|');
+		pattern = new RegExp("((cd|vinyl)([0-9]*|[a-h])\.png|(" + aa_filter + ")([0-9]*|[a-h])\.(?:jpg|png))", 'i');
 		// remove duplicates and cd/vinyl art
 		aa_list = _.remove(_.uniq(aa_list), function (path) {
 			return !pattern.test(path);
