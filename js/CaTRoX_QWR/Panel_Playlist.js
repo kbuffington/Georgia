@@ -3820,10 +3820,10 @@ function Header(parent, x, y, w, h, idx) {
 
             //---> DATE
             if (grouping_handler.show_date()) {
-                var date_query = '$year(' + tf.year + ')';
+                var date_query = '[$year(' + tf.year + ')]';
 
                 var date_text = _.tf(date_query, metadb);
-                if (date_text) {
+                if (date_text && date_text !== '0000') {
                     var date_w = Math.ceil(gr.MeasureString(date_text, date_font, 0, 0, 0, 0).Width + 5);
                     var date_x = this.w - date_w - 5;
 
@@ -4244,8 +4244,6 @@ function Header(parent, x, y, w, h, idx) {
             hyperlinks.album = new Hyperlink(album_text, g_pl_fonts.album, 'album', left_pad, album_y, this.w);
         }
 
-        // var info_text_w = Math.ceil(gr.MeasureString(info_text, g_pl_fonts.info, 0, 0, 0, 0).Width + 5);    // TODO: Mordred - should only call MeasureString once
-        // var label_string = $('$if2(%label%,[%publisher%])', metadb).replace(/, /g,' \u2022 ');
         var label_string = _.tf('$if2(%label%,[%publisher%])', metadb).replace(', Inc.', '= Inc.');
         var labels = label_string.split(', ');
         var label_left = -right_edge;    // -5 offset from right edge
@@ -5604,6 +5602,7 @@ function QueueHandler(rows_arg, cur_playlist_idx_arg) {
 
             var cur_queued_row = rows[queued_item.PlaylistItemIndex];
             var has_row = _.find(queued_rows, function (queued_row) {
+                // got a crash here once when queuing a bunch of songs. Not sure if queued_row or cur_queued_row was undefined
                 return queued_row.idx === cur_queued_row.idx;
             });
 
@@ -6597,4 +6596,3 @@ setTimeout(function () {
     rescalePlaylist();  // set fonts for 4k
     initPlaylist();
 });
-

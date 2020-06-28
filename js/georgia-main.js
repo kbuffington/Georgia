@@ -1486,6 +1486,9 @@ function on_metadb_changed(handle_list, fromhook) {
 			str.original_artist = original_artist;
             str.artist = artist;
             str.year = $('[$year($if3(%original release date%,%originaldate%,%date%,%fy_upload_date%))]');
+			if (str.year === '0000') {
+				str.year = '';
+			}
             str.album = $("[%album%][ '['" + tf.album_trans + "']']");
 			str.album_subtitle = $("[ '['" + tf.album_subtitle + "']']");
 			var codec = $("$lower($if2(%codec%,$ext(%path%)))");

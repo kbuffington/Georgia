@@ -13,6 +13,6 @@
 * ~Change sizes of Transport control buttons through menus~ (implemented in 1.1.8)
 * Investigate using a config.json file to control grid data, codec information, etc.
 * Simplify handling of labels in playlist (actually use meta values instead of splitting on ',') and elsewhere
-* Hide large date if none was found. (Wrap in []?)
+* ~Hide large date if none was found.~ (implemented in 1.1.9)
 * If too many label/genre tags ensure hyperlinks do not overlap in playlist
 * Add option to draw labels directly on background
