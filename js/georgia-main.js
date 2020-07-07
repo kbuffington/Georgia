@@ -2594,7 +2594,7 @@ function fetchNewArtwork(metadb) {
 		for (k = 0; k < tf.glob_paths.length; k++) {
 			aa_list = aa_list.concat(utils.Glob($(tf.glob_paths[k])).toArray());
 		}
-		pattern = /(cd|vinyl)([0-9]*|[a-h])\.png/i;
+		pattern = new RegExp('(cd|vinyl|' + pref.artwork_cdart_filename + ')([0-9]*|[a-h])\.png', 'i');
 		// remove duplicates and cd/vinyl art
 		aa_list = _.remove(_.uniq(aa_list), function (path) {
 			return !pattern.test(path);

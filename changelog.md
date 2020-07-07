@@ -1,5 +1,6 @@
 ### v1.1.9 - 2020-??-??
  - Fix library panel not showing tracks with foo_jscript_panel 2.4.x
+ - Allow specifying a custom cdart filename
 
 ### v1.1.8 - 2020-05-09
  - Random now actually randomizes playlist

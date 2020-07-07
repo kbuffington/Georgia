@@ -27,6 +27,7 @@ pref.add_properties({
 	rotation_amt: ['Art: Degrees to rotate CDart', 3], // # of degrees to rotate per track change.
 	aa_glob: ['Art: Cycle through all images', true], // true: use glob, false: use albumart reader (front only)
 	display_cdart: ['Art: Display CD art', true], // true: show CD artwork behind album artwork. This artwork is expected to be named cd.png and have transparent backgrounds (can be found at fanart.tv)
+	artwork_cdart_filename: ['Art: CD art filename (without file extension)', 'cd'], // string: example "discart" if metadata consumer uses that name for cdart and you want those filtered from showing as albumart
 	art_rotate_delay: ['Art: Seconds to display each art', 30], // seconds per image
 	rotate_cdart: ['Art: Rotate CD art on new track', true], // true: rotate cdArt based on track number. i.e. rotationAmt = %tracknum% * x degrees
 	cdart_ontop: ['Art: Show CD art above front cover', false], // true: display cdArt above front cover
@@ -70,9 +71,11 @@ pref.add_properties({
 	lyrics_font_size: ['Font Size: Lyrics', 20],
 });
 
+// safety checks
 if (pref.art_rotate_delay < 5) {
 	pref.art_rotate_delay = 5;
 }
+pref.artwork_cdart_filename = pref.artwork_cdart_filename.trim().length ? pref.artwork_cdart_filename.trim() : 'cd';
 
 // Lyrics variables
 // lyrics color definitions
@@ -198,10 +201,10 @@ tf.labels = [ // Array of fields to test for publisher. Add, change or re-order 
 
 // CD-ART SETTINGS
 // we expect cd-art will be in .png with transparent background, best found at fanart.tv.
-pref.vinylside_path = "$replace(%path%,%filename_ext%,)vinyl$if2(" + tf.vinyl_side + ",).png" // vinyl cdart named vinylA.png, vinylB.png, etc.
-pref.vinyl_path = "$replace(%path%,%filename_ext%,)vinyl.png" // vinyl cdart named vinylA.png, vinylB.png, etc.
-pref.cdartdisc_path = "$replace(%path%,%filename_ext%,)cd$ifgreater(%totaldiscs%,1,%discnumber%,).png"; // cdart named cd1.png, cd2.png, etc.
-pref.cdart_path = "$replace(%path%,%filename_ext%,)cd.png"; // cdart named cd.png  (the far more common single disc albums)
+pref.vinylside_path = '$replace(%path%,%filename_ext%,)vinyl$if2(' + tf.vinyl_side + ',).png' // vinyl cdart named vinylA.png, vinylB.png, etc.
+pref.vinyl_path = '$replace(%path%,%filename_ext%,)vinyl.png' // vinyl cdart named vinylA.png, vinylB.png, etc.
+pref.cdartdisc_path = '$replace(%path%,%filename_ext%,)' + pref.artwork_cdart_filename + '$ifgreater(%totaldiscs%,1,%discnumber%,).png'; // cdart named cd1.png, cd2.png, etc.
+pref.cdart_path = '$replace(%path%,%filename_ext%,)' + pref.artwork_cdart_filename + '.png'; // cdart named cd.png (or whatever custom value was specified). This is the most common single disc case.
 pref.cdart_amount = 0.48; // show 48% of the CD image if it will fit on the screen
 
 function migrateCheck(version, storedVersion) {
