@@ -1138,6 +1138,7 @@ function onOptionsMenu(x, y) {
 			} else {
 				pref.font_size_playlist = size;
 			}
+			g_properties.row_h = Math.round(pref.font_size_playlist * 1.667);
 			playlist.on_size(ww, wh);
 			window.Repaint();
 		});
