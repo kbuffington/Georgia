@@ -258,8 +258,19 @@ function toDatetime(dateTimeStr) {
     return dateTimeStr.replace(' ', 'T');
 }
 
+var timezoneOffset = 0;
+function updateTimezoneOffset() {
+	// this method is called from on_playback_new_track so we can gracefully handle DST adjustments and the like
+	var temp = new Date();
+	timezoneOffset = temp.getTimezoneOffset() * 60 * 1000;
+}
+
 function toTime(dateTimeStr) {
-	return new Date(toDatetime(dateTimeStr)).getTime();
+    /* foobar time strings are already in local time, so converting them to date objects treats
+     * them as UTC time, and again adjusts to local time, and the timezone offset is applied twice.
+     * Therefore we need to add it back in here.
+     */
+	return new Date(toDatetime(dateTimeStr)).getTime() + timezoneOffset;
 }
 
 function calcAge(date) {
@@ -375,7 +386,7 @@ function Menu(title) {
 	}
 
 
-	/** similar to addItem, but takes an object and property name which will automatically be set when the callback is called, 
+	/** similar to addItem, but takes an object and property name which will automatically be set when the callback is called,
 	  * before calling any user specified callback. If the property you wish to toggle is options.repeat, then propertiesObj
 	  * is options, and the propertyName must be "repeat" as a string.
 	  **/
@@ -388,7 +399,7 @@ function Menu(title) {
 		}, disabled);
 	}
 
-	// creates a set of radio items and checks the value specified 
+	// creates a set of radio items and checks the value specified
 	this.addRadioItems = function(labels, radioValue, variables, callback) {
 		var startIndex = Menu.itemIndex;
 		var selectedIndex;

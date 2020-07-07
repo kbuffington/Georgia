@@ -51,7 +51,6 @@ pref.add_properties({
 	menu_font_size: ['Menu font size', 12],
 
 	freq_update: ['Frequent progress bar updates', true], // true: update progress bar multiple times a second. Smoother, but uses more CPU
-	time_zone: ['Time-zone (formatted +/-HH:MM, e.g. -06:00)', '+00:00'], // used to create accurate timezone offsets. "Z", "-06:00", "+06:00", etc. are all valid values
     hyperlinks_ctrl: ['Playlist: Hyperlinks require CTRL Key', false], // true: clicking on hyperlinks only works if CTRL key is held down
     darkMode: ['Use Dark Theme', true], // true: use a darker background
 	use_4k: ['Detect 4k', 'auto'], // auto: switch to 4k mode when window width wide enough, never: never use 4k mode, always: always use 4k mode
@@ -258,11 +257,14 @@ function migrateCheck(version, storedVersion) {
 				window.SetProperty('Show Reload Button', null);
 
 			case '1.1.8':
+				window.SetProperty('Time-zone (formatted +/-HH:MM, e.g. -06:00)', null);
 
+			case '1.1.9':
 				// after all previous versions have fallen through
 				console.log('Upgrading Georgia Theme settings');
                 globals.version = currentVersion;
 				window.Reload();
+
             default:
                 globals.version = currentVersion;
 				break;

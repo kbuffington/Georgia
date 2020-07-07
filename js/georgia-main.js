@@ -1347,6 +1347,7 @@ function on_playback_new_track(metadb) {
 	lastLeftEdge = 0;
 	newTrackFetchingArtwork = true;
 	themeColorSet = false;
+	updateTimezoneOffset();
 
 	isStreaming = metadb ? !metadb.RawPath.match(/^file\:\/\//) : false;
 	if (!isStreaming) {
@@ -2224,7 +2225,6 @@ var playedTimesJsonLast = '';
 
 function calcDateRatios(dontUpdateLastPlayed, currentLastPlayed) {
     var newDate = new Date();
-    var timezoneOffset = newDate.getTimezoneOffset();
 	dontUpdateLastPlayed = dontUpdateLastPlayed || false;
 
 	playedTimesRatios = [];
@@ -2237,12 +2237,6 @@ function calcDateRatios(dontUpdateLastPlayed, currentLastPlayed) {
 	} else {
 		last_played = toTime(last_played);
     }
-    /* first_played and last_played are already in local time, converting them to date objects treats
-     * them as UTC time, and again adjusts to local time, so the timezone offset is applied twice.
-     * therefore we need to add it back in here.
-     */
-    first_played += timezoneOffset * 60000;
-    last_played += timezoneOffset * 60000;
 
 	var lfmPlayedTimes = [];
 	var playedTimes = [];
