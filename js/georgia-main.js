@@ -1165,6 +1165,7 @@ function onOptionsMenu(x, y) {
 		libraryProps.nodeItemCounts = nodeIndex;
 		lib_manager.rootNodes(1);
 	});
+	libraryMenu.addToggleItem('Show Tracks', libraryProps, 'nodeShowTracks', function () { library_tree.collapseAll(); });
 	libraryMenu.addToggleItem('Show library scrollbar', libraryProps, 'showScrollbar', function () { setLibrarySize(); });
 	libraryMenu.addToggleItem('Send files to current playlist', libraryProps, 'sendToCurrent');
 	libraryMenu.addToggleItem('Auto-fill playlist on selection', libraryProps, 'autoFill');

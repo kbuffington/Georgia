@@ -34,6 +34,7 @@ libraryProps.add_properties({
 	autoCollapse: [prefix + 'Node: Auto Collapse', false],
 	nodeItemCounts: [prefix + 'Node Item Counts: 0=Hide 1=# Tracks 2=Sub-Items', 1],
 	nodeHighlight: ['Library: Highlight Node on Hover', false],
+	nodeShowTracks: [prefix + 'Node: Show Tracks', true],
 	autoFill: ['Library: Playlist: AutoFill', true],
 	playlistCustomSort: [prefix + 'Playlist: Custom Sort', ''],
 	sendToCurrent: ['Library: Send to Current Playlist', false],
@@ -861,7 +862,8 @@ function panel_operations() {
 	this.tf = "";
 
 	libraryProps.rootNode = Math.max(Math.min(libraryProps.rootNode, 2), 0);
-	this.syncType = window.GetProperty(" Library Sync: Auto-0, Initialisation Only-1") !== undefined ? window.GetProperty(" Library Sync: Auto-0, Initialisation Only-1") : 1;
+	//this.syncType = window.GetProperty(" Library Sync: Auto-0, Initialisation Only-1") !== undefined ? window.GetProperty(" Library Sync: Auto-0, Initialisation Only-1") : 1;
+	this.syncType = 1;	// init only
 	this.scale = Math.max(libraryProps.filterZoom / 100, 0.9);
 	libraryProps.filterZoom = this.scale * 100;
 
@@ -885,7 +887,6 @@ function panel_operations() {
 		// window.MaxHeight = window.MinHeight = this.pn_h;
 		// window.SetProperty("SYSTEM.Height", this.pn_h);
 	// }
-	this.show_tracks = window.GetProperty(" Node: Show Tracks") !== undefined ? window.GetProperty(" Node: Show Tracks") : true;
 	this.sort = function(li) {switch (this.view_by) {case this.folder_view: li.OrderByRelativePath(); break; default: var tfo = fb.TitleFormat(this.grp_sort); li.OrderByFormat(tfo, 1); tfo.Dispose(); break;}}
 	var paint_y = Math.floor(libraryProps.searchMode || !libraryProps.showScrollbar ? this.s_h : 0);
 	this.tree_paint = function() {window.RepaintRect(ui.x, ui.y + paint_y, ui.w, ui.h - paint_y + 1);}
@@ -1587,7 +1588,7 @@ function LibraryTree() {
 					if (base || get && l < lib_manager.node[pos].length - 1) n = lib_manager.node[pos][l]
 					else n = '#get_track#';
 					// if (get) {if (l < lib_manager.node[pos].length - 1) n = lib_manager.node[pos][l]; else n = "#get_track#";}
-					isTrack = p.show_tracks ? false : l < lib_manager.node[pos].length - 2 ? false : true;
+					isTrack = libraryProps.nodeShowTracks ? false : l < lib_manager.node[pos].length - 2 ? false : true;
 					if (n == "#get_track#") {n = lib_manager.node[pos][l]; isTrack = true;}
 					nU = n.toUpperCase();
 					if (n_o != nU) {
@@ -1613,7 +1614,7 @@ function LibraryTree() {
 					try {
 						if (base) n = lib_manager.node[pos][l];
 						if (get) {if (l < lib_manager.node[pos].length - 1) n = lib_manager.node[pos][l]; else n = "#get_track#";}
-						isTrack = p.show_tracks ? false : l < lib_manager.node[pos].length - 2 ? false : true;
+						isTrack = libraryProps.nodeShowTracks ? false : l < lib_manager.node[pos].length - 2 ? false : true;
 						if (n == "#get_track#") {n = lib_manager.node[pos][l]; isTrack = true;}
 						nU = n.toUpperCase();
 						if (n_o != nU) {
@@ -1642,7 +1643,7 @@ function LibraryTree() {
 					try {
 						if (base) n = lib_manager.node[pos][l];
 						if (get) {if (l < lib_manager.node[pos].length - 1) n = lib_manager.node[pos][l]; else n = "#get_track#";}
-						isTrack = p.show_tracks ? false : l < lib_manager.node[pos].length - 2 ? false : true;
+						isTrack = libraryProps.nodeShowTracks ? false : l < lib_manager.node[pos].length - 2 ? false : true;
 						if (n == "#get_track#") {n = lib_manager.node[pos][l]; isTrack = true;}
 						nU = n.toUpperCase();
 						if (n_o != nU) {
@@ -1704,7 +1705,7 @@ function LibraryTree() {
             if (!node || node && !full) br.sort(sort);
             i = br.length; while (i--) {if (i != 0 && br[i].name.toUpperCase() == br[i - 1].name.toUpperCase()) {br[i - 1].item = br[i - 1].item.concat(br[i].item.slice()); br.splice(i, 1);}}
 		}
-		var folderView = p.view_by == p.folder_view ? true : false, par = this.tree.length - 1; if (tr == 0) this.tree = []; br_l = br.length;
+		var par = this.tree.length - 1; if (tr == 0) this.tree = []; br_l = br.length;
 		if (libraryProps.nodeItemCounts == 2) var type = p.s_txt ? "search" : p.filter_by > 0 && libraryProps.searchMode > 1 ? "filter" : "standard";
 		for (i = 0; i < br_l; i++) {
 			j = this.tree.length; this.tree[j] = br[i];
@@ -1713,10 +1714,11 @@ function LibraryTree() {
 			this.tree[j].ix = j; this.tree[j].tr = tr; this.tree[j].par = par;
 			if (libraryProps.nodeItemCounts == 2 && tr > 1) var pr = this.tree[par].par;
 			switch (true) {
-				case l != -1 && !p.show_tracks: for (var r = 0; r < this.tree[j].item.length; r++) {if (lib_manager.node[this.tree[j].item[r]].length == l + 1 || lib_manager.node[this.tree[j].item[r]].length == l + 2) {this.tree[j].track = true; break;}} break;
+				case l != -1 && !libraryProps.nodeShowTracks: for (var r = 0; r < this.tree[j].item.length; r++) {if (lib_manager.node[this.tree[j].item[r]].length == l + 1 || lib_manager.node[this.tree[j].item[r]].length == l + 2) {this.tree[j].track = true; break;}} break;
 				case l == 0 && lib_manager.node[this.tree[j].item[0]].length == 1: this.tree[j].track = true; break;
 			}
-			this.tree[j].count = !this.tree[j].track || !p.show_tracks  ? (libraryProps.nodeItemCounts == 1 ? " (" + this.tree[j].item.length + ")" : libraryProps.nodeItemCounts == 2 ?  " (" + this.branchCounts(this.tree[j], !libraryProps.rootNode || j ? false : true, true, false, tr + (tr > 2 ? this.tree[this.tree[pr].par].name : "") + (tr > 1 ? this.tree[pr].name : "") + (tr > 0 ? this.tree[par].name : "") + this.tree[j].name, type) + ")" : "") : ""; if (!p.show_tracks && this.tree[j].count == " (0)") this.tree[j].count = "";
+			this.tree[j].count = !this.tree[j].track || !libraryProps.nodeShowTracks  ? (libraryProps.nodeItemCounts == 1 ? " (" + this.tree[j].item.length + ")" : libraryProps.nodeItemCounts == 2 ?  " (" + this.branchCounts(this.tree[j], !libraryProps.rootNode || j ? false : true, true, false, tr + (tr > 2 ? this.tree[this.tree[pr].par].name : "") + (tr > 1 ? this.tree[pr].name : "") + (tr > 0 ? this.tree[par].name : "") + this.tree[j].name, type) + ")" : "") : "";
+			if (!libraryProps.nodeShowTracks && this.tree[j].count == " (0)") this.tree[j].count = "";
 			if (br[i].child.length > 0) this.buildTree(br[i].child, tr + 1, node, libraryProps.rootNode && tr == 0 ? true : false);
 		}
 		if (!block) {if (libraryProps.rootNode && this.tree.length == 1) this.line_l = 0; sbar.set_rows(this.tree.length); p.tree_paint();}
