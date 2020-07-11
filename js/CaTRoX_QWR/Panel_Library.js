@@ -1546,8 +1546,7 @@ function LibraryTree() {
 
 	this.create_tooltip = function() {
 		if (!libraryProps.tooltips) return;
-		if (tt) tt.Dispose();
-		tt = window.CreateTooltip(ui.font.Name, ui.font.Size, ui.font.Style);
+		tt = g_tooltip;
 		tt_y = ui.row_h - libraryProps.rowVertPadding;
 		tt_y = p.s_h - Math.floor((ui.row_h - tt_y) / 2)
 		tt.SetDelayTime(0, 500);
@@ -2694,7 +2693,7 @@ function button_manager() {
 	arrow_symb = 0;
 	var b_x,
 		b3 = ["scrollUp", "scrollDn"],
-		but_tt = window.CreateTooltip("Segoe UI", 15 * ui.scale * libraryProps.btnTooltipZoom / 100, 0),
+		but_tt = g_tooltip,
 		bx, by, bh, byDn, byUp, fw, hot_o, i, qx, qy, qh, s_img = [],
 		scr = [],
 		scrollBut_x, scrollDn_y, scrollUp_y;
