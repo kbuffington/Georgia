@@ -18,7 +18,7 @@ function Hyperlink(text, font, type, x_offset, y_offset, container_w) {
 	this.y = y_offset;
 	this.container_w = container_w;
 	this.state = HyperlinkStates.Normal;
-	
+
 	var link_dimensions;
 
 	this.get_w = function () {
@@ -59,7 +59,7 @@ function Hyperlink(text, font, type, x_offset, y_offset, container_w) {
 		this.hoverFont = gdi.font(font.Name, font.Size, font.Style | g_font_style.underline);
 		link_dimensions = this.updateDimensions();
 	}
-	
+
 	this.setFont(font);
 }
 
@@ -89,6 +89,18 @@ Hyperlink.prototype.repaint = function () {
 
 Hyperlink.prototype.click = function () {
     var query = this.type + ' IS ' + this.text;
+	var populatePlaylist = function (query) {
+		var handle_list = fb.GetQueryItems(fb.GetLibraryItems(), query);
+		if (handle_list.Count) {
+			var pl = plman.FindOrCreatePlaylist('Search', true);
+			plman.ClearPlaylist(pl);
+			plman.InsertPlaylistItems(pl, 0, handle_list);
+			plman.SortByFormat(pl, '$if2(%artist sort order%,%album artist%) $if3(%album sort order%,%original release date%,%date%) %album% %edition% %codec% %discnumber% %tracknumber%');
+			plman.ActivePlaylist = pl;
+			return true;
+		}
+		return false;
+	}
 
 	if (this.type === 'update') {
 		// get update
@@ -97,13 +109,12 @@ Hyperlink.prototype.click = function () {
 		if (this.type === 'date') {
 			query = '"$year(%date%)" IS ' + this.text;
 		}
-		var handle_list = fb.GetQueryItems(fb.GetLibraryItems(), query);
-		if (handle_list.Count) {
-			var pl = plman.FindOrCreatePlaylist('Search', true);
-			plman.ClearPlaylist(pl);
-			plman.InsertPlaylistItems(pl, 0, handle_list);
-			plman.SortByFormat(pl, '$if2(%artist sort order%,%album artist%) $if3(%album sort order%,%original release date%,%date%) %album% %edition% %codec% %discnumber% %tracknumber%');
-			plman.ActivePlaylist = pl;
+		if (!populatePlaylist(query)) {
+			var start = this.text.indexOf('[');
+			if (start) {
+				query = this.type + ' IS ' + this.text.substr(0, start - 3);	// remove ' - [...]' from end of string
+				populatePlaylist(query);
+			}
 		}
 	}
 }
