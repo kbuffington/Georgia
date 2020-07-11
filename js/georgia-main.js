@@ -1488,7 +1488,7 @@ function on_metadb_changed(handle_list, fromhook) {
 			str.title_lower = '  ' + title;
 			str.original_artist = original_artist;
             str.artist = artist;
-            str.year = $('[$year($if3(%original release date%,%originaldate%,%date%,%fy_upload_date%))]');
+			str.year = $('[$year($if3(%original release date%,%originaldate%,%date%,%fy_upload_date%))]');
 			if (str.year === '0000') {
 				str.year = '';
 			}
@@ -1510,6 +1510,8 @@ function on_metadb_changed(handle_list, fromhook) {
 				else codec = codec + "-" + $("$info(codec_profile)");
 			}
 			str.trackInfo = $(codec + '[ | %replaygain_album_gain%]');
+			// TODO: Add LUFS option?
+			// str.trackInfo += $('$if(%replaygain_track_gain%, | LUFS $puts(l,$sub(-1800,$replace(%replaygain_track_gain%,.,)))$div($get(l),100).$right($get(l),2) dB,)');
 
 			str.disc = fb.TitleFormat(tf.disc).Eval();
 
