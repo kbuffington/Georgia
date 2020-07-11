@@ -2782,7 +2782,7 @@ function Playlist(x, y) {
 
     // Constants
     /** @type {number} */
-    var header_h_in_rows = calcHeaderRows();    
+    var header_h_in_rows = calcHeaderRows();
 
     // Window state
     var was_on_size_called = false;
@@ -2914,7 +2914,7 @@ PlaylistContent = function () {
         function iterate_level(sub_items) {
             if (_.isInstanceOf(_.head(sub_items), BaseHeader)) {
                 var header_h_in_rows = Math.round(_.head(sub_items).h / row_h);
- 
+
                 for (var i = 0; i < sub_items.length; ++i) {
                     var header = sub_items[i];
                     if (cur_row + header_h_in_rows - 1 >= row_shift && !header.dont_draw) {
@@ -3664,6 +3664,64 @@ function Header(parent, x, y, w, h, idx) {
         return DiscHeader.create_headers(that, that.x, 0, that.w, playlist_geo.row_h, prepared_rows, rows_to_proccess_count);
     }
 
+    this.getGroupInfoString = function (is_radio, hasGenreTags) {
+        var bitspersample = _.tf('$Info(bitspersample)', metadb);
+        var samplerate = _.tf('$Info(samplerate)', metadb);
+        var sample = ((bitspersample > 16 || samplerate > 44100) ? _.tf(' [$Info(bitspersample)bit/]', metadb) + samplerate / 1000 + 'khz' : '');
+        var codec = _.tf('$ext(%path%)', metadb);
+
+        if (codec == "dca (dts coherent acoustics)") {
+            codec = "dts";
+        }
+        if (codec === 'cue') {
+            codec = _.tf('$ext($Info(referenced_file))', metadb);
+        }
+        else if (codec === 'mpc') {
+            codec += _.tf('[-$Info(codec_profile)]', metadb).replace('quality ', 'q');
+        }
+        else if (codec === 'dts' || codec === 'ac3' || codec === 'atsc a/52') {
+            codec += _.tf("[ $replace($replace($replace($info(channel_mode), + LFE,),' front, ','/'),' rear surround channels',$if($strstr($info(channel_mode),' + LFE'),.1,.0))] %bitrate%", metadb) + ' kbps';
+            codec = codec.replace('atsc a/52', 'Dolby Digital');
+        }
+        else if (_.tf('$Info(encoding)', metadb) === 'lossy') {
+            if (_.tf('$Info(codec_profile)', metadb) === 'CBR') {
+                codec += _.tf('[-%bitrate% kbps]', metadb);
+            }
+            else {
+                codec += _.tf('[-$Info(codec_profile)]', metadb);
+            }
+        }
+        if (codec) {
+            codec = codec + sample;
+        }
+        else {
+            codec = (_.startsWith(metadb.RawPath, '3dydfy:') || _.startsWith(metadb.RawPath, 'fy+')) ? 'yt' : metadb.Path;
+        }
+
+        var track_count = this.sub_items.length;
+        var has_discs = false;
+        if (_.isInstanceOf(this.sub_items[0], DiscHeader)) {
+            track_count = 0;
+            has_discs = true;
+            _.forEach(this.sub_items, function(discHeader) {
+                track_count += discHeader.sub_items.length
+            });
+        }
+
+        var disc_number = (!grouping_handler.show_cd() && _.tf('[%totaldiscs%]', metadb) !== '1') ? _.tf('[ | Disc: %discnumber%[/%totaldiscs%]]', metadb) : '';
+        var track_text = is_radio ? '' : ' | ' +
+                (grouping_handler.show_cd() && has_discs ? this.sub_items.length + ' Discs - ' : '') +
+                track_count + (track_count === 1 ? ' Track' : ' Tracks');
+        var info_text = _.tf(codec + disc_number + '[ | %replaygain_album_gain%]', metadb) + track_text;
+        if (hasGenreTags) {
+            info_text = ' | ' + info_text;
+        }
+        if (this.get_duration()) {
+            info_text += ' | Time: ' + utils.FormatDuration(this.get_duration());
+        }
+        return info_text;
+    }
+
     /** @override */
     this.draw = function (gr, top, bottom) {
         // drawProfiler = fb.CreateProfiler('Header.draw items:' + this.sub_items.length);
@@ -3909,87 +3967,36 @@ function Header(parent, x, y, w, h, idx) {
                 var info_h = part_h;//row_h;
                 var info_w = this.w - info_x;
 
-                var bitspersample = _.tf('$Info(bitspersample)', metadb);
-                var samplerate = _.tf('$Info(samplerate)', metadb);
-                var sample = ((bitspersample > 16 || samplerate > 44100) ? _.tf(' [$Info(bitspersample)bit/]', metadb) + samplerate / 1000 + 'khz' : '');
-                var codec = _.tf('$ext(%path%)', metadb);
-
-                if (codec == "dca (dts coherent acoustics)") {
-                    codec = "dts";
-                }
-                if (codec === 'cue') {
-                    codec = _.tf('$ext($Info(referenced_file))', metadb);
-                }
-                else if (codec === 'mpc') {
-                    codec += _.tf('[-$Info(codec_profile)]', metadb).replace('quality ', 'q');
-                }
-                else if (codec === 'dts' || codec === 'ac3' || codec === 'atsc a/52') {
-                    codec += _.tf("[ $replace($replace($replace($info(channel_mode), + LFE,),' front, ','/'),' rear surround channels',$if($strstr($info(channel_mode),' + LFE'),.1,.0))] %bitrate%", metadb) + ' kbps';
-                    codec = codec.replace('atsc a/52', 'Dolby Digital');
-                }
-                else if (_.tf('$Info(encoding)', metadb) === 'lossy') {
-                    if (_.tf('$Info(codec_profile)', metadb) === 'CBR') {
-                        codec += _.tf('[-%bitrate% kbps]', metadb);
-                    }
-                    else {
-                        codec += _.tf('[-$Info(codec_profile)]', metadb);
-                    }
-                }
-                if (codec) {
-                    codec = codec + sample;
-                }
-                else {
-                    codec = (_.startsWith(metadb.RawPath, '3dydfy:') || _.startsWith(metadb.RawPath, 'fy+')) ? 'yt' : metadb.Path;
-                }
-
-                var track_count = this.sub_items.length;
-                var has_discs = false;
-                if (_.isInstanceOf(this.sub_items[0], DiscHeader)) {
-                    track_count = 0;
-                    has_discs = true;
-                    _.forEach(this.sub_items, function(discHeader) {
-                        track_count += discHeader.sub_items.length
-                    });
-                }
                 var genre_text_w = 0;
-                var extraGenreSpacing = 3;
+                var extraGenreSpacing = 0; //is_4k ? 6 : 8;  // don't use scaleForDisplay due to font differences
+                var genreX = info_x;
                 if (!is_radio && grouping_handler.get_query_name() !== 'artist') {
-                    var genre_text = _.tf('[%genre%]', metadb).replace(/, /g,' \u2022 ');
-                    genre_text_w = Math.ceil(gr.MeasureString(genre_text, g_pl_fonts.info, 0, 0, 0, 0).Width + extraGenreSpacing);
                     if (!hyperlinks.genre0) {
-                        grClip.DrawString(genre_text, g_pl_fonts.info, info_color, info_x, info_y, info_w, info_h, info_text_format);
+                        var genre_text = _.tf('[%genre%]', metadb).replace(/, /g,' \u2022 ');
+                        genre_text_w = Math.ceil(gr.MeasureString(genre_text, g_pl_fonts.info, 0, 0, 0, 0).Width + extraGenreSpacing);
+                        grClip.DrawString(genre_text, g_pl_fonts.info, info_color, genreX, info_y, info_w, info_h, info_text_format);
                     } else {
                         var i = 0;
                         while (hyperlinks['genre' + i]) {
                             if (i > 0) {
-                                grClip.DrawString(' \u2022 ', g_pl_fonts.info, info_color, genre_hyperlink.x + genre_hyperlink.get_w(), info_y, scaleForDisplay(8), info_h);
+                                grClip.DrawString(' \u2022 ', g_pl_fonts.info, info_color, genre_hyperlink.x + genre_hyperlink.get_w(), info_y, scaleForDisplay(20), info_h);
                             }
                             genre_hyperlink = hyperlinks['genre' + i];
                             genre_hyperlink.draw_playlist(grClip, info_color);
+                            genreX = genre_hyperlink.x;
+                            genre_text_w = genre_hyperlink.get_w();
                             i++;
                         }
                     }
                 }
-                var disc_number = (!grouping_handler.show_cd() && _.tf('[%totaldiscs%]', metadb) !== '1') ? _.tf('[ | Disc: %discnumber%[/%totaldiscs%]]', metadb) : '';
-                var track_text = is_radio ? '' : ' | ' +
-                        (grouping_handler.show_cd() && has_discs ? this.sub_items.length + ' Discs - ' : '') +
-                        track_count + (track_count === 1 ? ' Track' : ' Tracks');
-                var info_text = _.tf(codec + disc_number + '[ | %replaygain_album_gain%]', metadb) + track_text;
-                if (genre_text_w <= extraGenreSpacing) {
-                    genre_text_w = 0;   // don't leave space if no genre
-                } else {
-                    info_text = '| ' + info_text;
-                }
-                if (this.get_duration()) {
-                    info_text += ' | Time: ' + utils.FormatDuration(this.get_duration());
-                }
 
+                var info_text = this.getGroupInfoString(is_radio, genre_text_w > 0)
                 var info_text_format = g_string_format.trim_ellipsis_char | g_string_format.no_wrap;
-                grClip.DrawString(info_text, g_pl_fonts.info, info_color, info_x + genre_text_w, info_y, info_w, info_h, info_text_format);
+                grClip.DrawString(info_text, g_pl_fonts.info, info_color, genreX + genre_text_w, info_y, info_w - (genreX - info_x) - genre_text_w, info_h, info_text_format);
+                var info_text_w = Math.ceil(gr.MeasureString(info_text, g_pl_fonts.info, 0, 0, 0, 0).Width);    // TODO: Mordred - should only call MeasureString once
 
                 //---> Record labels
                 if (!hyperlinks.label0) {
-                    var info_text_w = Math.ceil(gr.MeasureString(info_text, g_pl_fonts.info, 0, 0, 0, 0).Width + 5);    // TODO: Mordred - should only call MeasureString once
                     var label_string = $('$if2(%label%,[%publisher%])', metadb).replace(/, /g,' \u2022 ');
                     var label_w = Math.ceil(gr.MeasureString(label_string, g_pl_fonts.info, 0, 0, 0, 0).Width + 10);
                     if (info_w > label_w + info_text_w) {
@@ -3997,12 +4004,18 @@ function Header(parent, x, y, w, h, idx) {
                     }
                 } else {
                     var i = 0;
+                    var drawCount = 0;
+                    var lastLabel;
                     while (hyperlinks['label' + i]) {
-                        if (i > 0) {
-                            grClip.DrawString(' \u2022 ', g_pl_fonts.info, info_color, label_hyperlink.x + label_hyperlink.w + 1, info_y, scaleForDisplay(8), info_h);
+                        var label_hyperlink = hyperlinks['label' + i];
+                        if (label_hyperlink.x > genreX + genre_text_w + info_text_w) {
+                            if (drawCount > 0) {
+                                grClip.DrawString(' \u2022', g_pl_fonts.info, info_color, lastLabel.x + lastLabel.get_w(), info_y, scaleForDisplay(20), info_h);
+                            }
+                            label_hyperlink.draw_playlist(grClip, info_color);
+                            drawCount++;
                         }
-                        label_hyperlink = hyperlinks['label' + i];
-                        label_hyperlink.draw_playlist(grClip, info_color);
+                        lastLabel = label_hyperlink;    // we want to draw bullet AFTER the previous label
                         i++;
                     }
                 }
@@ -4242,16 +4255,22 @@ function Header(parent, x, y, w, h, idx) {
             hyperlinks.album = new Hyperlink(album_text, g_pl_fonts.album, 'album', left_pad, album_y, this.w);
         }
 
+        var separatorWidth = gr.MeasureString(' \u2020', g_pl_fonts.info, 0, 0, 0, 0).Width;
+        var bulletWidth = Math.ceil(gr.MeasureString('\u2020', g_pl_fonts.info, 0, 0, 0, 0).Width);
+        var spaceWidth = Math.ceil(separatorWidth - bulletWidth) + scaleForDisplay(1);
+
         var label_string = _.tf('$if2(%label%,[%publisher%])', metadb).replace(', Inc.', '= Inc.');
         var labels = label_string.split(', ');
-        var label_left = -right_edge;    // -5 offset from right edge
+        var label_left = -right_edge * 2;
         label_y = Math.round(2 * this.h / 3);
         for (var i = labels.length - 1; i >= 0; --i) {
+            if (i != labels.length - 1) {
+                label_left -= (bulletWidth + spaceWidth * 2);   // spacing between labels
+            }
             labels[i] = labels[i].replace('= Inc.', ', Inc.');
-            var label_w = gr.MeasureString(labels[i], g_pl_fonts.info, 0, 0, 0, 0).Width + 10;
+            var label_w = gr.MeasureString(labels[i], g_pl_fonts.info, 0, 0, 0, 0).Width;
             label_left -= label_w;
             hyperlinks['label' + i] = new Hyperlink(labels[i], g_pl_fonts.info, 'label', label_left, label_y, this.w);
-            label_left -= is_4k ? 16 : 4;  // spacing between labels - not doubled in 4k due to font differences
         }
 
         var genre_string = _.tf('[%genre%]', metadb);
@@ -4259,7 +4278,10 @@ function Header(parent, x, y, w, h, idx) {
         var genre_left = left_pad;
         var genre_y = label_y;
         for (var i = 0; i < genres.length; i++) {
-            var genre_w = gr.MeasureString(genres[i], g_pl_fonts.info, 0, 0, 0, 0).Width + scaleForDisplay(10);
+            if (i > 0) {
+                genre_left += bulletWidth + spaceWidth * 2;   // spacing between genres
+            }
+            var genre_w = gr.MeasureString(genres[i], g_pl_fonts.info, 0, 0, 0, 0).Width;
             hyperlinks['genre' + i] = new Hyperlink(genres[i], g_pl_fonts.info, 'genre', genre_left, genre_y, this.w);
             genre_left += genre_w;
         }
@@ -5845,7 +5867,7 @@ function PlaylistManager(x, y, w, h) {
         if (!this.trace(x, y)) {
             return true;
         }
-        
+
         change_state(state.pressed);
     };
 
