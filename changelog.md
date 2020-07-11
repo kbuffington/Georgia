@@ -1,6 +1,11 @@
-### v1.1.9 - 2020-??-??
+### v1.1.9 - 2020-07-10
  - Fix library panel not showing tracks with foo_jscript_panel 2.4.x
  - Allow specifying a custom cdart filename
+ - No longer show "0000" for date
+ - Allow override of playlist row_h
+ - Fix issues related to font-sizes in playlist header
+ - Prevent labels in playlist header from being drawn over group info
+ - Handle hyperlinks searching for albums with editions listed
 
 ### v1.1.8 - 2020-05-09
  - Random now actually randomizes playlist

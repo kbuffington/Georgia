@@ -2,7 +2,7 @@ var globals = PanelProperties.get_instance();
 var pref = PanelProperties.get_instance(); // preferences
 var tf = PanelProperties.get_instance(); // titleformating strings
 
-var currentVersion = '1.1.8';
+var currentVersion = '1.1.9';
 var updateAvailable = false;
 var updateHyperlink;
 
@@ -51,7 +51,7 @@ pref.add_properties({
 	menu_font_size: ['Menu font size', 12],
 
 	freq_update: ['Frequent progress bar updates', true], // true: update progress bar multiple times a second. Smoother, but uses more CPU
-    hyperlinks_ctrl: ['Playlist: Hyperlinks require CTRL Key', false], // true: clicking on hyperlinks only works if CTRL key is held down
+	hyperlinks_ctrl: ['Playlist: Hyperlinks require CTRL Key', false], // true: clicking on hyperlinks only works if CTRL key is held down
     darkMode: ['Use Dark Theme', true], // true: use a darker background
 	use_4k: ['Detect 4k', 'auto'], // auto: switch to 4k mode when window width wide enough, never: never use 4k mode, always: always use 4k mode
 	checkForUpdates: ['Check for Updates', true], // true: check github repo to determine if updates exist
@@ -238,7 +238,6 @@ function migrateCheck(version, storedVersion) {
 			case '1.1.5':
 				tf.date = null;
 				tf.year = null;
-				pref.time_zone = null;
 
 			case '1.1.6':
 			case '1.1.7':
