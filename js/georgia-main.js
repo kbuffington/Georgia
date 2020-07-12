@@ -295,7 +295,8 @@ var currentLastPlayed = '';
 var g_tooltip;
 var tt = new _.tt_handler;
 
-var g_playtimer = null;
+let g_playtimer = null;
+let g_initLibraryTimer = null;
 
 // MENU STUFF
 var menu_down = false;
@@ -975,7 +976,7 @@ function onOptionsMenu(x, y) {
 	});
 	menu.addToggleItem('Cycle through all artwork', pref, 'aa_glob', () => {
 		if (!pref.aa_glob) {
-			window.ClearTimeout(globTimer);
+			clearTimeout(globTimer);
 			globTimer = 0;
 		} else {
 			doRotateImage();
@@ -1220,7 +1221,7 @@ function on_init() {
 		on_playback_new_track(fb.GetNowPlaying());
 	}
 
-	g_playtimer && window.ClearInterval(g_playtimer);
+	g_playtimer && clearInterval(g_playtimer);
 	g_playtimer = null;
 
 	/** Workaround so we can use the Edit menu or run fb.RunMainMenuCommand("Edit/Something...")
@@ -1334,7 +1335,7 @@ function on_playback_new_track(metadb) {
 	SetProgressBarRefresh();
 
 	if (globTimer) {
-		window.ClearTimeout(globTimer);
+		clearTimeout(globTimer);
 		globTimer = 0;
 	}
 
@@ -1425,7 +1426,7 @@ function on_playback_new_track(metadb) {
 	}
 
 	// Lyrics stuff
-	g_playtimer && window.ClearInterval(g_playtimer);
+	g_playtimer && clearInterval(g_playtimer);
 	g_playtimer = null;
 	if (displayLyrics) { // no need to try retrieving them if we aren't going to display them now
 		updateLyricsPositionOnScreen();
@@ -1691,8 +1692,8 @@ function on_mouse_move(x, y, m) {
 		state["mouse_x"] = x;
 		state["mouse_y"] = y;
 		if (pref.hide_cursor) {
-			window.ClearTimeout(hideCursor);
-			hideCursor = window.SetTimeout(function () {
+			clearTimeout(hideCursor);
+			hideCursor = setTimeout(() => {
 				// if there's a menu id (i.e. a menu is down) we don't want the cursor to ever disappear
 				if (!menu_down) {
 					window.SetCursor(-1); // hide cursor
@@ -1903,13 +1904,13 @@ function on_playback_pause(state) {
 		window.RepaintRect(btns[2].x, btns[2].y, btns[2].w, btns[2].h); // redraw play/pause button
 	}
 	if (state) { // pausing
-		if (progressTimer) window.ClearInterval(progressTimer);
+		if (progressTimer) clearInterval(progressTimer);
 		progressTimer = 0;
 		window.RepaintRect(0.015 * ww, 0.12 * wh, Math.max(albumart_size.x - 0.015 * ww, 0.015 * ww), wh - geo.lower_bar_h - 0.12 * wh);
 	} else { // unpausing
-		if (progressTimer > 0) window.ClearInterval(progressTimer); // clear to avoid multiple progressTimers which can happen depending on the playback state when theme is loaded
+		if (progressTimer > 0) clearInterval(progressTimer); // clear to avoid multiple progressTimers which can happen depending on the playback state when theme is loaded
 		debugLog("on_playback_pause: creating refresh_seekbar() interval with delay = " + t_interval);
-		progressTimer = window.SetInterval(function () {
+		progressTimer = setInterval(function () {
 			refresh_seekbar();
 		}, t_interval);
 	}
@@ -1941,9 +1942,9 @@ function on_playback_stop(reason) {
 		createButtonObjects(ww, wh); // switch pause button to play
 		loadFromCache = false;
 	}
-	progressTimer && window.ClearInterval(progressTimer);
+	progressTimer && clearInterval(progressTimer);
 	if (globTimer)
-		window.ClearTimeout(globTimer);
+		clearTimeout(globTimer);
 	if (albumart && ((pref.aa_glob && aa_list.length != 1) || last_path == '')) {
 		debugLog("disposing artwork");
 		albumart = null;
@@ -1957,7 +1958,7 @@ function on_playback_stop(reason) {
 	rotatedCD = disposeImg(rotatedCD);
 	globTimer = 0;
 
-	g_playtimer && window.ClearInterval(g_playtimer);
+	g_playtimer && clearInterval(g_playtimer);
 	g_playtimer = null;
 	if (reason === 0) {
 		// Stop
@@ -2005,7 +2006,7 @@ function on_focus(is_focused) {
 	if (is_focused) {
 		plman.SetActivePlaylistContext(); // When the panel gets focus but not on every click.
 	} else {
-		window.ClearTimeout(hideCursor); // not sure this is required, but I think the mouse was occasionally disappearing
+		clearTimeout(hideCursor); // not sure this is required, but I think the mouse was occasionally disappearing
 	}
 }
 
@@ -2085,7 +2086,7 @@ function doRotateImage() {
 	glob_image(albumArtIndex, true);
 	lastLeftEdge = 0;
 	RepaintWindow();
-	globTimer = window.SetTimeout(() => {
+	globTimer = setTimeout(() => {
 		doRotateImage();
 	}, pref.art_rotate_delay * 1000);
 }
@@ -2147,10 +2148,10 @@ function SetProgressBarRefresh() {
 		if (timings.showDebugTiming)
 			console.log("Progress bar will update every " + t_interval + "ms or " + 1000 / t_interval + " times per second.");
 
-		progressTimer && window.ClearInterval(progressTimer);
+		progressTimer && clearInterval(progressTimer);
 		progressTimer = null;
 		if (!fb.IsPaused) { // only create progressTimer if actually playing
-			progressTimer = window.SetInterval(() => {
+			progressTimer = setInterval(() => {
 				refresh_seekbar();
 			}, t_interval);
 		}
@@ -2565,7 +2566,7 @@ function fetchNewArtwork(metadb) {
 		if (aa_list.length) {
 			noArtwork = false;
 			if (aa_list.length > 1 && pref.aa_glob) {
-				globTimer = window.SetTimeout(function () {
+				globTimer = setTimeout(() => {
 					doRotateImage();
 				}, pref.art_rotate_delay * 1000);
 			}

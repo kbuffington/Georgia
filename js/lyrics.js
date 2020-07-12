@@ -83,7 +83,7 @@ function timerTick(id) {
 		if (t1 > t2 - 200 && g_playtimer) {
 			// stop scrolling in final 2 seconds to make sure we clear interval
 			console.log('clearing g_playtimer because t1 > t2-200 - t1 = ' + t1 + ', t2 = ' + t2);
-			window.ClearInterval(g_playtimer);
+			clearInterval(g_playtimer);
 			g_playtimer = null;
 		}
 
@@ -125,8 +125,8 @@ function refresh_lyrics() {
 		if (g_lyrics_status > 0) {
 			var k = g_tab[focus].ante_lines * pref.lyrics_line_height;
 			lyrPos = midpoint - k;
-			g_playtimer && window.ClearInterval(g_playtimer);
-			g_playtimer = window.SetInterval(function() { timerTick(); }, PLAYTIMER_VALUE);
+			g_playtimer && clearInterval(g_playtimer);
+			g_playtimer = setInterval(() => { timerTick(); }, PLAYTIMER_VALUE);
 			g_timer_abs = 4;
 		} else {
 			delta = (g_tab[g_tab.length-1].ante_lines + g_tab[g_tab.length-1].total_lines);
@@ -146,8 +146,8 @@ function updateLyricsPositionOnScreen() {
 		refresh_lyrics();
 		console.log("updatePosition: lyrPos = " + lyrPos + ' - Could set timerTick() - g_lyrics_status = ' + g_lyrics_status);
 		if (g_lyrics_status > 0) {
-			g_playtimer && window.ClearInterval(g_playtimer);
-			g_playtimer = window.SetInterval(function(){ timerTick(); },PLAYTIMER_VALUE);
+			g_playtimer && clearInterval(g_playtimer);
+			g_playtimer = setInterval(() => { timerTick(); }, PLAYTIMER_VALUE);
 			g_timer_abs = 4;
 		}
 	}

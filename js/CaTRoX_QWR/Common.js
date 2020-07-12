@@ -194,28 +194,13 @@ var IDC_HAND = 32649;
 var IDC_HELP = 32651;
 
 
-
-// timeout and interval shims
-function setInterval(func, wait){
-    return window.SetInterval(func, wait);
-}
-function clearInterval(id) {
-    window.ClearInterval(id);
-}
-function setTimeout(func, wait){
-    return window.SetTimeout(func, wait);
-}
-function clearTimeout(id) {
-    window.ClearTimeout(id);
-}
-
 function _alpha_timer(items_arg, hover_predicate_arg) {
     this.start = function () {
         var hover_in_step = 50;
         var hover_out_step = 15;
 
         if (!alpha_timer_internal) {
-            alpha_timer_internal = window.SetInterval(_.bind(function () {
+            alpha_timer_internal = setInterval(_.bind(function () {
                 _.forEach(items, function (item) {
                     var saved_alpha = item.hover_alpha;
                     if (hover_predicate(item)) {
@@ -243,7 +228,7 @@ function _alpha_timer(items_arg, hover_predicate_arg) {
 
     this.stop = function () {
         if (alpha_timer_internal) {
-            window.ClearInterval(alpha_timer_internal);
+            clearInterval(alpha_timer_internal);
             alpha_timer_internal = null;
         }
     };

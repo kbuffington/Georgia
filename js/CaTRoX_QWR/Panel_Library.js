@@ -562,7 +562,7 @@ function userinterface() {
 				gr.DrawImage(blurImg, this.x, this.y, this.w, this.h, 0, 0, blurImg.Width, blurImg.Height);
 		} catch (e) {}
 	}
-	this.focus_changed = function(ms) {k++; if (k == 1) {this.on_playback_new_track(); timer.reset(timer.focus, timer.focusi); timer.focus = window.SetTimeout(function() {k = 0; timer.focus = false;}, ms); return;} timer.reset(timer.focus, timer.focusi); timer.focus = window.SetTimeout(function() {ui.on_playback_new_track(); k = 0; timer.focus = false;}, ms);}
+	this.focus_changed = function(ms) {k++; if (k == 1) {this.on_playback_new_track(); timer.reset(timer.focus, timer.focusi); timer.focus = setTimeout(function() {k = 0; timer.focus = false;}, ms); return;} timer.reset(timer.focus, timer.focusi); timer.focus = setTimeout(function() {ui.on_playback_new_track(); k = 0; timer.focus = false;}, ms);}
 	// this.get_album_art_done = function (image, image_path) {
 	// 	console.log('library.get_album_art_done');
 	// 	if (image_path_o == image_path && blurImg && image) {
@@ -666,7 +666,7 @@ function scrollbar() {
 	this.leave = function() {if (this.b_is_dragging) return; this.hover = !this.hover; this.paint(); this.hover = false; this.hover_o = false;}
 	this.nearest = function(y) {y = (y - this.but_h) / this.scrollbar_height * this.scrollable_lines * this.row_h; y = y / this.row_h; y = Math.round(y) * this.row_h; return y;}
 	this.reset = function() {this.delta = this.scroll = this.s1 = this.s2 = 0; this.metrics(this.x, this.y, this.w, this.h, this.rows_drawn, this.row_h);}
-	this.scroll_timer = function() {var that = this; this.draw_timer = window.SetInterval(function() {if (ui.w < 1 || !window.IsVisible) return; that.smooth_scroll();}, 16);}
+	this.scroll_timer = function() {var that = this; this.draw_timer = setInterval(function() {if (ui.w < 1 || !window.IsVisible) return; that.smooth_scroll();}, 16);}
 	this.set_rows = function(row_count) {this.row_count = row_count; this.metrics(this.x, this.y, this.w, this.h, this.rows_drawn, this.row_h);}
 	this.wheel = function(step, pgkey) {this.check_scroll(this.scroll + step * - (libraryProps.pageScroll || pgkey ? this.rows_drawn - 1 : 3) * this.row_h);}
 
@@ -717,15 +717,15 @@ function scrollbar() {
 
 	this.paint = function() {
 		if (this.hover) this.init = false; if (this.init) return; this.alpha = this.hover ? alpha1 : alpha2; var that = this
-		window.ClearTimeout(this.bar_timer); this.bar_timer = false;
-		this.bar_timer = window.SetInterval(function() {that.alpha = that.hover ? Math.min(that.alpha += inStep, alpha2) : Math.max(that.alpha -= 3, alpha1); window.RepaintRect(that.x, that.y, that.w, that.h);
-			if (that.hover && that.alpha == alpha2 || !that.hover && that.alpha == alpha1) {that.hover_o = that.hover; window.ClearTimeout(that.bar_timer); that.bar_timer = false;}}, 25);
+		clearTimeout(this.bar_timer); this.bar_timer = false;
+		this.bar_timer = setInterval(function() {that.alpha = that.hover ? Math.min(that.alpha += inStep, alpha2) : Math.max(that.alpha -= 3, alpha1); window.RepaintRect(that.x, that.y, that.w, that.h);
+			if (that.hover && that.alpha == alpha2 || !that.hover && that.alpha == alpha1) {that.hover_o = that.hover; clearTimeout(that.bar_timer); that.bar_timer = false;}}, 25);
 	}
 
 	this.lbtn_up = function(p_x, p_y) {
 		var x = p_x - this.x; var y = p_y - this.y;
 		if (!this.hover && this.b_is_dragging) this.paint(); else window.RepaintRect(this.x, this.y, this.w, this.h); if (this.b_is_dragging) {this.b_is_dragging = false; but.Dn = false;} this.initial_drag_y = 0;
-		if (this.timer_but) {window.ClearTimeout(this.timer_but); this.timer_but = false;}; this.count = -1;
+		if (this.timer_but) {clearTimeout(this.timer_but); this.timer_but = false;}; this.count = -1;
 	}
 
 	this.lbtn_dn = function(p_x, p_y) {
@@ -762,12 +762,12 @@ function scrollbar() {
 		if (Math.abs(this.scroll - this.delta) > 0.5) {
 			this.s1 += (this.scroll - this.s1) * smoothness; this.s2 += (this.s1 - this.s2) * smoothness; this.delta += (this.s2 - this.delta) * smoothness;
 			this.bar_y = this.but_h + this.scrollbar_travel * (this.delta * this.ratio) / (this.row_count * this.row_h); p.tree_paint();
-		} else if (this.draw_timer) {window.ClearTimeout(this.draw_timer); this.draw_timer = false; lib_manager.treeState(false, libraryProps.rememberTree);}
+		} else if (this.draw_timer) {clearTimeout(this.draw_timer); this.draw_timer = false; lib_manager.treeState(false, libraryProps.rememberTree);}
 	}
 
 	this.but = function(dir) {
 		this.check_scroll(this.scroll + (dir * -this.row_h));
-		if (!this.timer_but) {var that = this; this.timer_but = window.SetInterval(function() {if (that.count > 6) {that.check_scroll(that.scroll + (dir * -that.row_h));} else that.count++;}, 40);}
+		if (!this.timer_but) {var that = this; this.timer_but = setInterval(function() {if (that.count > 6) {that.check_scroll(that.scroll + (dir * -that.row_h));} else that.count++;}, 40);}
 	}
 }
 
@@ -2441,7 +2441,7 @@ function searchLibrary() {
 	this.reset_cursor_timer = function () {
 		timer.reset(timer.search_cursor, timer.search_cursori);
 		p.s_cursor = true;
-		timer.search_cursor = window.SetInterval(function() {
+		timer.search_cursor = setInterval(function() {
 			p.s_cursor = !p.s_cursor;
 			p.search_paint();
 		}, 530);
@@ -2498,9 +2498,9 @@ function searchLibrary() {
 				break;
 		}
 		if (code == v.copy || code == v.selAll) return;
-		if (!timer.search_cursor) timer.search_cursor = window.SetInterval(function() {p.s_cursor = !p.s_cursor; p.search_paint();}, 530);
+		if (!timer.search_cursor) timer.search_cursor = setInterval(function() {p.s_cursor = !p.s_cursor; p.search_paint();}, 530);
 		p.search_paint(); lib_manager.upd_search = true; timer.reset(timer.search, timer.searchi);
-		timer.search = window.SetTimeout(function() {
+		timer.search = setTimeout(function() {
 			lib_manager.time.Reset(); library_tree.subCounts.search = {};
 			lib_manager.treeState(false, libraryProps.rememberTree);
 			lib_manager.rootNodes();
@@ -2550,13 +2550,13 @@ function searchLibrary() {
 				}
 				p.s_cursor = true;
 				timer.reset(timer.search_cursor, timer.search_cursori);
-				timer.search_cursor = window.SetInterval(function() {
+				timer.search_cursor = setInterval(function() {
 					p.s_cursor = !p.s_cursor; p.search_paint();
 				}, 530);
 				break;
 			case v.home:
 			case v.end:
-				if (vkey == v.home) offset = s = f = cx = 0; else s = f = cx = p.s_txt.length; p.s_cursor = true; timer.reset(timer.search_cursor, timer.search_cursori); timer.search_cursor = window.SetInterval(function() {p.s_cursor = !p.s_cursor; p.search_paint();}, 530);
+				if (vkey == v.home) offset = s = f = cx = 0; else s = f = cx = p.s_txt.length; p.s_cursor = true; timer.reset(timer.search_cursor, timer.search_cursori); timer.search_cursor = setInterval(function() {p.s_cursor = !p.s_cursor; p.search_paint();}, 530);
 				break;
 			case v.shift:
 				shift = true;
@@ -2630,7 +2630,7 @@ var j_Search = function() {
 			library_tree.sel_items = []; jump_search = true;
 			window.RepaintRect(ui.x, j_y, ui.w, j_h + 1);
 			timer.reset(timer.jsearch, timer.jsearchi);
-			timer.jsearch = window.SetTimeout(function () {
+			timer.jsearch = setTimeout(function () {
 				for (i = 0; i < library_tree.tree.length; i++) {
 					if (library_tree.tree[i].name != p.baseName && library_tree.tree[i].name.substring(0, jSearch.length).toLowerCase() == jSearch.toLowerCase()) {
 						found = true;
@@ -2651,7 +2651,7 @@ var j_Search = function() {
 			}, 500);
 
 			timer.reset(timer.clear_jsearch, timer.clear_jsearchi);
-			timer.clear_jsearch = window.SetTimeout(function () {
+			timer.clear_jsearch = setTimeout(function () {
 				if (found && libraryProps.autoFill)
 					library_tree.load(library_tree.sel_items, true, false, false, library_tree.gen_pl, false); jSearch = "";
 				window.RepaintRect(ui.x, j_y, ui.w, j_h + 1);
@@ -2810,7 +2810,7 @@ function button_manager() {
 		} catch (e) {}
 	}
 	this.move = function(x, y) {
-		if (sbar.timer_but) {if ((this.btns["scrollUp"].down || this.btns["scrollDn"].down) && !this.btns["scrollUp"].trace(x, y) && !this.btns["scrollDn"].trace(x, y)) {this.btns["scrollUp"].changestate("normal"); this.btns["scrollDn"].changestate("normal"); window.ClearTimeout(sbar.timer_but); sbar.timer_but = false; sbar.count = -1;}}
+		if (sbar.timer_but) {if ((this.btns["scrollUp"].down || this.btns["scrollDn"].down) && !this.btns["scrollUp"].trace(x, y) && !this.btns["scrollDn"].trace(x, y)) {this.btns["scrollUp"].changestate("normal"); this.btns["scrollDn"].changestate("normal"); clearTimeout(sbar.timer_but); sbar.timer_but = false; sbar.count = -1;}}
 		else for (j = 0; j < b3.length; j++) if (this.b == b3[j] && this.btns[this.b].down) {this.btns[this.b].changestate("down"); this.btns[this.b].l_dn();}
 		var b = null, hand = false;
 		for (i in this.btns) {
@@ -3125,10 +3125,10 @@ function menu_object() {
 function timers() {
 	var timer_arr = ["clear_jsearch", "focus", "jsearch", "search", "search_cursor", "tt", "update"];
 	for (var i = 0; i < timer_arr.length; i++) {this[timer_arr[i]] = false; this[timer_arr[i] + "i"] = i;}
-	this.reset = function(timer, n) {if (timer) window.ClearTimeout(timer); this[timer_arr[n]] = false;}
-	this.lib = function() {window.SetTimeout(function() {if ((ui.w < 1 || !window.IsVisible) && libraryProps.rememberTree) lib_manager.init = true; lib_manager.get_library(); lib_manager.rootNodes(libraryProps.rememberTree ? 1 : 0, lib_manager.process);}, 5);}
-	this.tooltip = function() {this.reset(this.tt, this.tti); this.tt = window.SetTimeout(function() {library_tree.deActivate_tooltip(); timer.tt = false;}, 5000);}
-	this.lib_update = function() {this.reset(this.update, this.updatei); this.update = window.SetTimeout(function() {lib_manager.time.Reset(); library_tree.subCounts =  {"standard": {}, "search": {}, "filter": {}}; lib_manager.rootNodes(2, lib_manager.process); timer.update = false;}, 500);}
+	this.reset = function(timer, n) {if (timer) clearTimeout(timer); this[timer_arr[n]] = false;}
+	this.lib = function() {setTimeout(function() {if ((ui.w < 1 || !window.IsVisible) && libraryProps.rememberTree) lib_manager.init = true; lib_manager.get_library(); lib_manager.rootNodes(libraryProps.rememberTree ? 1 : 0, lib_manager.process);}, 5);}
+	this.tooltip = function() {this.reset(this.tt, this.tti); this.tt = setTimeout(function() {library_tree.deActivate_tooltip(); timer.tt = false;}, 5000);}
+	this.lib_update = function() {this.reset(this.update, this.updatei); this.update = setTimeout(function() {lib_manager.time.Reset(); library_tree.subCounts =  {"standard": {}, "search": {}, "filter": {}}; lib_manager.rootNodes(2, lib_manager.process); timer.update = false;}, 500);}
 }
 // var timer = new timers();
 // timer.lib();

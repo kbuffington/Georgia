@@ -414,7 +414,7 @@ function buttonAlphaTimer() {
 
 	if (!buttonTimer) {
 
-		buttonTimer = window.SetInterval(function () {
+		buttonTimer = setInterval(() => {
 
 			for (var i in activatedBtns) {
 				switch (activatedBtns[i].state) {
@@ -445,7 +445,7 @@ function buttonAlphaTimer() {
 			}
 
 			if (!activatedBtns.length) {
-				window.ClearInterval(buttonTimer);
+				clearInterval(buttonTimer);
 				buttonTimer = null;
 				trace && console.log("buttonTimerStarted = false");
 			}

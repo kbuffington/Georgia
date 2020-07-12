@@ -570,7 +570,7 @@ _.tt_handler.tt_timer = new function () {
 	this.force_stop = function () {
 		_.tt('');
 		if (tooltip_timer) {
-			window.ClearTimeout(tooltip_timer);
+			clearTimeout(tooltip_timer);
 			tooltip_timer = null;
 		}
 	};
