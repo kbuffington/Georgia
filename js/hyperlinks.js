@@ -1,4 +1,4 @@
-HyperlinkStates = {
+const HyperlinkStates = {
 	Normal: 0,
 	Hovered: 1
 }
