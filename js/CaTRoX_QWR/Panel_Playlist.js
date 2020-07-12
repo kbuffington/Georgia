@@ -6598,9 +6598,3 @@ function initPlaylist() {
     playlist = new PlaylistPanel(0, 0);
     playlist.initialize();
 }
-
-setTimeout(function () {
-    // need to delay until we have Window.height for checking 4k
-    rescalePlaylist();  // set fonts for 4k
-    initPlaylist();
-});

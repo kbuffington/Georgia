@@ -1261,6 +1261,7 @@ function on_size() {
 		if (fb.IsPlaying) {
 			LoadCountryFlags(); // wrong size flag gets loaded on 4k systems
 		}
+		rescalePlaylist();
 		initPlaylist();
 		volume_btn = new VolumeBtn();
         sizeInitialized = true;
@@ -1360,7 +1361,7 @@ function on_playback_new_track(metadb) {
 			labelStrings.push($('$meta(' + tf.labels[i] + ',' + j + ')'));
 		}
 	}
-	labelStrings = _.uniq(labelStrings);
+	labelStrings = [... new Set(labelStrings)];
 	for (i = 0; i < labelStrings.length; i++) {
 		var addLabel = LoadLabelImage(labelStrings[i]);
 		if (addLabel != null) {

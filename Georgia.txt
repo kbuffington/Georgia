@@ -1,2 +1,4 @@
-// The following line will load the entire theme including all required scripts
+// The following lines will load the entire theme including all required scripts
+"use strict";
+
 include(fb.ProfilePath + '\\Georgia\\georgia-configuration.js');
