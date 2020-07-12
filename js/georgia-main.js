@@ -246,8 +246,8 @@ var labelShadowImg = null; // shadow behind labels
 var playlist_shadow = null; // shadow behind the playlist
 var flagImgs = []; // array of flag images
 var rotatedCD = null; // drawing cdArt rotated is slow, so first draw it rotated into the rotatedCD image, and then draw rotatedCD image unrotated
-var disc_art_loading; // for on_load_image_done()
-var album_art_loading; // for on_load_image_done()
+let disc_art_loading; // for on_load_image_done()
+let album_art_loading; // for on_load_image_done()
 var isStreaming = false; // is the song from a streaming source?
 var retrieveThemeColorsWhenLoaded = false; // only load theme colors on first image in aa_array
 var newTrackFetchingArtwork = false; // only load theme colors when newTrackFetchingArtwork = true
@@ -631,7 +631,7 @@ function draw_ui(gr) {
 	if ((fb.IsPlaying && !displayPlaylist && !displayLibrary) || (!albumart && !cdart && noArtwork)) {
         // BAND LOGO drawing code
         var brightBackground = (new Color(col.info_bg).brightness) > 190;
-		timings.showExtraDrawTiming && (drawBandLogos = fb.CreateProfiler("on_paint -> band logos"));
+		timings.showExtraDrawTiming && (drawBandLogos = fb.CreateProfiler('on_paint -> band logos'));
         availableSpace = albumart_size.y + albumart_size.h - top;
         var logo = brightBackground ? (invertedBandLogo ? invertedBandLogo : bandLogo) : bandLogo;
 		if (logo && availableSpace > 75) {
@@ -662,7 +662,7 @@ function draw_ui(gr) {
 				leftEdgeGap = (art_off_center ? 20 : 40) * (is_4k ? 1.8 : 1), // space between art and label
 				maxLabelWidth = scaleForDisplay(200);
 			leftEdgeWidth = is_4k ? 45 : 30; // how far label background extends on left
-			if (timings.showExtraDrawTiming) drawLabelTime = fb.CreateProfiler("on_paint -> record labels");
+			if (timings.showExtraDrawTiming) drawLabelTime = fb.CreateProfiler('on_paint -> record labels');
 			totalLabelWidth = 0;
 			for (i = 0; i < labels.length; i++) {
 				if (labels[i].Width > maxLabelWidth) {
@@ -791,7 +791,7 @@ function draw_ui(gr) {
 	}
 
 	// MENUBAR
-	timings.showExtraDrawTiming && (drawMenuBar = fb.CreateProfiler("on_paint -> menu bar"));
+	timings.showExtraDrawTiming && (drawMenuBar = fb.CreateProfiler('on_paint -> menu bar'));
 	for (var i in btns) {
 		var x = btns[i].x,
 			y = btns[i].y,
@@ -958,12 +958,12 @@ function onOptionsMenu(x, y) {
 
 	var menu = new Menu();	// helper class for creating simple menu items. See helpers.js
 	menu.addToggleItem('Check for theme updates', pref, 'checkForUpdates');
-	menu.createRadioSubMenu('Use 4K mode', ['Auto-detect', 'Never', 'Always'], pref.use_4k, ['auto', 'never', 'always'], function(mode) {
+	menu.createRadioSubMenu('Use 4K mode', ['Auto-detect', 'Never', 'Always'], pref.use_4k, ['auto', 'never', 'always'], (mode) => {
 		pref.use_4k = mode;
 		on_size();
 		RepaintWindow();
 	});
-	menu.addToggleItem('Use dark theme', pref, 'darkMode', function () {
+	menu.addToggleItem('Use dark theme', pref, 'darkMode', () => {
 		initColors();
 		if (fb.IsPlaying) {
 			albumart = null;
@@ -973,7 +973,7 @@ function onOptionsMenu(x, y) {
 			RepaintWindow();
 		}
 	});
-	menu.addToggleItem('Cycle through all artwork', pref, 'aa_glob', function () {
+	menu.addToggleItem('Cycle through all artwork', pref, 'aa_glob', () => {
 		if (!pref.aa_glob) {
 			window.ClearTimeout(globTimer);
 			globTimer = 0;
@@ -981,27 +981,27 @@ function onOptionsMenu(x, y) {
 			doRotateImage();
 		}
 	});
-	menu.addToggleItem('Display CD art (cd.pngs)', pref, 'display_cdart', function () {
+	menu.addToggleItem('Display CD art (cd.pngs)', pref, 'display_cdart', () => {
 		if (fb.IsPlaying) fetchNewArtwork(fb.GetNowPlaying());
 		lastLeftEdge = 0; // resize labels
 		ResizeArtwork(true);
 		RepaintWindow();
 	});
-	menu.addToggleItem('Rotate CD art on track change', pref, 'rotate_cdart', function () { RepaintWindow(); }, !pref.display_cdart);
+	menu.addToggleItem('Rotate CD art on track change', pref, 'rotate_cdart', () => { RepaintWindow(); }, !pref.display_cdart);
 	menu.createRadioSubMenu('CD art Rotation Amount', ['2 degrees', '3 degrees', '4 degrees', '5 degrees'], parseInt(pref.rotation_amt), [2,3,4,5], function (rot) {
 		pref.rotation_amt = rot;
 		CreateRotatedCDImage();
 		RepaintWindow();
 	});
 
-	menu.addItem('Display CD art above cover', pref.cdart_ontop, function () {
+	menu.addItem('Display CD art above cover', pref.cdart_ontop, () => {
 		pref.cdart_ontop = !pref.cdart_ontop;
 		RepaintWindow();
 	}, !pref.display_cdart);
 
 	menu.addSeparator();
 	var menuFontMenu = new Menu('Menu font size');
-	menuFontMenu.addRadioItems(['-1', '11px', '12px (default)', '13px', '14px', '16px', '+1'], pref.menu_font_size, [-1,11,12,13,14,16,999], function (size) {
+	menuFontMenu.addRadioItems(['-1', '11px', '12px (default)', '13px', '14px', '16px', '+1'], pref.menu_font_size, [-1,11,12,13,14,16,999], (size) => {
 		if (size === -1) {
 			pref.menu_font_size--;
 		} else if (size === 999) {
@@ -1017,13 +1017,13 @@ function onOptionsMenu(x, y) {
 	menuFontMenu.appendTo(menu);
 
 	var transportMenu = new Menu('Transport controls');
-	transportMenu.addToggleItem('Show transport controls', pref, 'show_transport', function () {
+	transportMenu.addToggleItem('Show transport controls', pref, 'show_transport', () => {
 		createButtonImages();
 		createButtonObjects(ww, wh);
 		ResizeArtwork(true);
 		RepaintWindow();
 	});
-	transportMenu.addToggleItem('Show transport below art', pref, 'show_transport_below', function () {
+	transportMenu.addToggleItem('Show transport below art', pref, 'show_transport_below', () => {
 		createButtonImages();
 		createButtonObjects(ww, wh);
 		ResizeArtwork(true);
@@ -1035,19 +1035,19 @@ function onOptionsMenu(x, y) {
 		}
 		RepaintWindow();
 	}, !pref.show_transport);
-	transportMenu.addToggleItem('Show random button', pref, 'show_random_button', function () {
+	transportMenu.addToggleItem('Show random button', pref, 'show_random_button', () => {
 		createButtonObjects(ww, wh);
 		RepaintWindow();
 	}, !pref.show_transport);
-	transportMenu.addToggleItem('Show volume control', pref, 'show_volume_button', function () {
+	transportMenu.addToggleItem('Show volume control', pref, 'show_volume_button', () => {
 		createButtonObjects(ww, wh);
 		RepaintWindow();
 	}, !pref.show_transport);
-	transportMenu.addToggleItem('Show reload button', pref, 'show_reload_button', function () { window.Reload(); }, !pref.show_transport);
+	transportMenu.addToggleItem('Show reload button', pref, 'show_reload_button', () => { window.Reload(); }, !pref.show_transport);
 	transportMenu.appendTo(menu);
 
 	transportSizeMenu = new Menu('Transport Button Size');
-	transportSizeMenu.addRadioItems(['-2', '28px', '32px (default)', '36px', '40px', '44px', '+2'], pref.transport_buttons_size, [-1,28,32,36,40,44,999], function (size) {
+	transportSizeMenu.addRadioItems(['-2', '28px', '32px (default)', '36px', '40px', '44px', '+2'], pref.transport_buttons_size, [-1,28,32,36,40,44,999], (size) => {
 		if (size === -1) {
 			pref.transport_buttons_size -= 2;
 		} else if (size === 999) {
@@ -1066,20 +1066,20 @@ function onOptionsMenu(x, y) {
 	transportSizeMenu.appendTo(transportMenu);
 
 	menu.addToggleItem('Show timeline tooltips', pref, 'show_timeline_tooltips');
-	menu.addToggleItem('Show progress bar', pref, 'show_progress_bar', function () {
+	menu.addToggleItem('Show progress bar', pref, 'show_progress_bar', () => {
 		setGeometry();
 		ResizeArtwork(true);
 		RepaintWindow();
 	});
-	menu.addToggleItem('Update progress bar frequently (higher CPU)', pref, 'freq_update', function () { SetProgressBarRefresh(); }, !pref.show_progress_bar);
+	menu.addToggleItem('Update progress bar frequently (higher CPU)', pref, 'freq_update', () => { SetProgressBarRefresh(); }, !pref.show_progress_bar);
 
 	menu.addSeparator();
 
-	menu.addToggleItem('Use vinyl style numbering if available', pref, 'use_vinyl_nums', function () { RepaintWindow(); });
+	menu.addToggleItem('Use vinyl style numbering if available', pref, 'use_vinyl_nums', () => { RepaintWindow(); });
 
 	menu.addSeparator();
 
-	menu.addToggleItem('Show artist country flags', pref, 'show_flags', function () {
+	menu.addToggleItem('Show artist country flags', pref, 'show_flags', () => {
 		LoadCountryFlags();
 		RepaintWindow();
 	});
@@ -1096,7 +1096,7 @@ function onOptionsMenu(x, y) {
 	playlistMenu.addToggleItem('Use compact group header', g_properties, 'use_compact_header', playlistCallback, !g_properties.show_header);
 	playlistMenu.createRadioSubMenu('Header font size', ['-1', '14px', '15px (default)', '16px', '18px', '20px', '22px', '+1'], pref.font_size_playlist_header,
 		[-1, 14, 15, 16, 18, 20, 22, 999],
-		function (size) {
+		(size) => {
 			if (size === -1) {
 				pref.font_size_playlist_header--;
 			} else if (size === 999) {
@@ -1111,7 +1111,7 @@ function onOptionsMenu(x, y) {
 	var rowsMenu = new Menu('Rows');
 	rowsMenu.createRadioSubMenu('Row font size', ['-1', '11px', '12px (default)', '13px', '14px', '16px', '18px', '+1'], pref.font_size_playlist,
 		[-1, 11, 12, 13, 14, 16, 18, 999],
-		function (size) {
+		(size) => {
 			if (size === -1) {
 				pref.font_size_playlist--;
 			} else if (size === 999) {
@@ -1138,7 +1138,7 @@ function onOptionsMenu(x, y) {
 	libraryMenu = new Menu('Library Settings');
 	libraryMenu.addToggleItem('Remember library state', libraryProps, 'rememberTree');
 	libraryMenu.addToggleItem('Full line clickable', libraryProps, 'fullLine');
-	libraryMenu.addToggleItem('Show tooltips', libraryProps, 'tooltips', function () { setLibrarySize(); });
+	libraryMenu.addToggleItem('Show tooltips', libraryProps, 'tooltips', () => { setLibrarySize(); });
 	libraryMenu.createRadioSubMenu('Root node type', ['Hide', '"All Music"', 'View name'], libraryProps.rootNode, [0,1,2], function (nodeIndex) {
 		libraryProps.rootNode = nodeIndex;
 		lib_manager.rootNodes(1);
@@ -1147,15 +1147,15 @@ function onOptionsMenu(x, y) {
 		libraryProps.nodeItemCounts = nodeIndex;
 		lib_manager.rootNodes(1);
 	});
-	libraryMenu.addToggleItem('Show Tracks', libraryProps, 'nodeShowTracks', function () { library_tree.collapseAll(); });
-	libraryMenu.addToggleItem('Show library scrollbar', libraryProps, 'showScrollbar', function () { setLibrarySize(); });
+	libraryMenu.addToggleItem('Show Tracks', libraryProps, 'nodeShowTracks', () => { library_tree.collapseAll(); });
+	libraryMenu.addToggleItem('Show library scrollbar', libraryProps, 'showScrollbar', () => { setLibrarySize(); });
 	libraryMenu.addToggleItem('Send files to current playlist', libraryProps, 'sendToCurrent');
 	libraryMenu.addToggleItem('Auto-fill playlist on selection', libraryProps, 'autoFill');
 	libraryMenu.createRadioSubMenu('Double-click action', ['Expand/Collapse Folders', 'Send and Play', 'Send to Playlist'], libraryProps.doubleClickAction, [0,1,2], function(action) {
 		libraryProps.doubleClickAction = action;
 	});
 	libraryMenu.addToggleItem('Auto collapse nodes', libraryProps, 'autoCollapse');
-	libraryMenu.addItem('Reset library zoom', false, function () {
+	libraryMenu.addItem('Reset library zoom', false, () => {
 		libraryProps.filterZoom = 100;
 		libraryProps.fontZoom = 100;
 		libraryProps.nodeZoom = 100;
@@ -1167,7 +1167,7 @@ function onOptionsMenu(x, y) {
 
 	debugMenu = new Menu('Debug Settings');
 	debugMenu.addToggleItem('Enable debug output', pref, 'show_debug_log');
-	debugMenu.addItem('Enable theme debug output', pref.show_theme_log, function () {
+	debugMenu.addItem('Enable theme debug output', pref.show_theme_log, () => {
 		pref.show_theme_log = !pref.show_theme_log;
 		if (pref.show_theme_log) {
 			albumart = null;
@@ -1177,13 +1177,13 @@ function onOptionsMenu(x, y) {
 	debugMenu.addToggleItem('Show draw timing (doesn\'t persist)', timings, 'showDrawTiming');
 	debugMenu.addToggleItem('Show extra draw timing (doesn\'t persist)', timings, 'showExtraDrawTiming');
 	debugMenu.addToggleItem('Show debug timing (doesn\'t persist)', timings, 'showDebugTiming');
-	debugMenu.addToggleItem('Show reload button', pref, 'show_reload_button', function () { window.Reload(); });
+	debugMenu.addToggleItem('Show reload button', pref, 'show_reload_button', () => { window.Reload(); });
 	debugMenu.appendTo(menu);
 
 	menu.addSeparator();
 
 	menu.addToggleItem('Lock right click...', pref, 'locked');
-	menu.addItem('Restart foobar', false, function () { fb.RunMainMenuCommand("File/Restart"); });
+	menu.addItem('Restart foobar', false, () => { fb.RunMainMenuCommand("File/Restart"); });
 
 	var idx = menu.trackPopupMenu(x, y);
 	menu.doCallback(idx);
@@ -1532,9 +1532,7 @@ function on_metadb_changed(handle_list, fromhook) {
 				}
 			}
 
-			lp = str.grid.find(function (value) {
-				return value.label === 'Last Played';
-			});
+			const lp = str.grid.find(value => value.label === 'Last Played');
 			if (lp) {
 				lp.val = $date(currentLastPlayed);
 				if (calcAgeDateString(lp.val)) {
@@ -2894,10 +2892,10 @@ function createButtonImages() {
 		};
 	} catch (e) {
 		var str = pref.lyrics_img;
-		console.log("**********************************");
-		console.log("ATTENTION: Buttons could not be created, most likely because the images were not found in \"" + str.substring(0, str.lastIndexOf("/")) + '\"');
-		console.log("Make sure you installed the theme correctly to your configuration folder.")
-		console.log("**********************************");
+		console.log('**********************************');
+		console.log('ATTENTION: Buttons could not be created, most likely because the images were not found in "' + str.substring(0, str.lastIndexOf('/')) + '"');
+		console.log('Make sure you installed the theme correctly to ' + fb.ProfilePath + '.');
+		console.log('**********************************');
 	}
 
 

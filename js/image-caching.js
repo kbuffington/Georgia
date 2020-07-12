@@ -50,7 +50,7 @@ function ArtCache(maxCacheSize) {
     this.clear = function() {
         while (art_cache_indexes.length) {
             var remove = art_cache_indexes.shift();
-            disposeImg(art_cache[remove]);
+            art_cache[remove] = null;
             delete art_cache[remove];
         }
     }

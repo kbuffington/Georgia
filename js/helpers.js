@@ -391,7 +391,7 @@ function Menu(title) {
 	  * is options, and the propertyName must be "repeat" as a string.
 	  **/
 	this.addToggleItem = function(label, propertiesObj, propertyName, callback, disabled) {
-		this.addItem(label, propertiesObj[propertyName], function () {
+		this.addItem(label, propertiesObj[propertyName], () => {
 			propertiesObj[propertyName] = !propertiesObj[propertyName];
 			if (callback) {
 				callback();

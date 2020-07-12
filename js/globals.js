@@ -2,20 +2,20 @@ var globals = PanelProperties.get_instance();
 var pref = PanelProperties.get_instance(); // preferences
 var tf = PanelProperties.get_instance(); // titleformating strings
 
-var currentVersion = '1.1.9';
-var updateAvailable = false;
-var updateHyperlink;
+const currentVersion = '1.1.9';
+let updateAvailable = false;
+let updateHyperlink;
 
-var g_component_playcount = utils.CheckComponent('foo_playcount');
-var g_component_utils = utils.CheckComponent('foo_utils');
-var componentEnhancedPlaycount = utils.CheckComponent('foo_enhanced_playcount');
+const g_component_playcount = utils.CheckComponent('foo_playcount');
+const g_component_utils = utils.CheckComponent('foo_utils');
+const componentEnhancedPlaycount = utils.CheckComponent('foo_enhanced_playcount');
 
 // these used to be initialized in js_marc2003/js/helpers.js
-var doc = new ActiveXObject('htmlfile');
-var app = new ActiveXObject('Shell.Application');
-var WshShell = new ActiveXObject('WScript.Shell');
-var fso = new ActiveXObject('Scripting.FileSystemObject');
-var vb = new ActiveXObject('ScriptControl');
+const doc = new ActiveXObject('htmlfile');
+const app = new ActiveXObject('Shell.Application');
+const WshShell = new ActiveXObject('WScript.Shell');
+const fso = new ActiveXObject('Scripting.FileSystemObject');
+const vb = new ActiveXObject('ScriptControl');
 
 globals.add_properties({
 	version: ['_theme_version (do not hand edit!)', 'NONE']
