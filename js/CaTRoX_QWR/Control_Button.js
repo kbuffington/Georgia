@@ -93,7 +93,7 @@ function buttonEventHandler(x, y, m) {
 }
 
 // =================================================== //
-WindowState = {
+const WindowState = {
 	Normal: 0,
 	Minimized: 1,
 	Maximized: 2
@@ -174,8 +174,13 @@ Button.prototype.onClick = function () {
 			volume_btn.showVolumeBar(true);
 			break;
 		case 'Reload':
-			art_cache.clear();
-			g_tooltip.Deactivate();
+			// art_cache.clear();
+			// Header.art_cache.clear();
+			// g_tooltip.Deactivate();
+			// playlist = null;
+			// freeLibraryPanel();
+			// clearTimeout(g_initLibraryTimer);
+
 			window.Reload();
 			break;
 		case 'Console':
@@ -224,30 +229,18 @@ Button.prototype.onClick = function () {
 			break;
 		case 'Repeat':
 			var pbo = fb.PlaybackOrder;
-			if (pbo == playbackOrder.Default) fb.PlaybackOrder = playbackOrder.RepeatPlaylist;
-			else if (pbo == playbackOrder.RepeatPlaylist) fb.PlaybackOrder = playbackOrder.RepeatTrack;
-			else if (pbo == playbackOrder.RepeatTrack) fb.PlaybackOrder = playbackOrder.Default;
-			else fb.PlaybackOrder = playbackOrder.RepeatPlaylist;
+			if (pbo == PlaybackOrder.Default) fb.PlaybackOrder = PlaybackOrder.RepeatPlaylist;
+			else if (pbo == PlaybackOrder.RepeatPlaylist) fb.PlaybackOrder = PlaybackOrder.RepeatTrack;
+			else if (pbo == PlaybackOrder.RepeatTrack) fb.PlaybackOrder = PlaybackOrder.Default;
+			else fb.PlaybackOrder = PlaybackOrder.RepeatPlaylist;
 			break;
 		case 'Shuffle':
 			var pbo = fb.PlaybackOrder;
-			if (pbo != playbackOrder.ShuffleTracks) fb.PlaybackOrder = playbackOrder.ShuffleTracks;
-			else fb.PlaybackOrder = playbackOrder.Default;
+			if (pbo != PlaybackOrder.ShuffleTracks) fb.PlaybackOrder = PlaybackOrder.ShuffleTracks;
+			else fb.PlaybackOrder = PlaybackOrder.Default;
 			break;
 		case 'Mute':
 			fb.VolumeMute();
-			break;
-		case 'Front':
-			coverSwitch(0);
-			break;
-		case 'Back':
-			coverSwitch(1);
-			break;
-		case 'CD':
-			coverSwitch(2);
-			break;
-		case 'Artist':
-			coverSwitch(3);
 			break;
 		case 'Settings':
 			fb.ShowPreferences();
@@ -302,22 +295,6 @@ Button.prototype.onDblClick = function () {
 }
 // =================================================== //
 
-function getPlaybackOrder() {
-
-	var order;
-
-	for (var i in playbackOrder) {
-
-		if (fb.PlaybackOrder == playbackOrder[i]) {
-			order = i;
-			break;
-		}
-	}
-
-	return order;
-}
-// =================================================== //
-
 function onPlaylistsMenu(x, y) {
 
 	mainMenuOpen = true;
@@ -358,7 +335,7 @@ function onMainMenu(x, y, name) {
 	menu_down = true;
 
 	if (name) {
-		var menu = new Menu();
+		var menu = new Menu(name);
 
 		if (name === 'Help') {
 			var statusMenu = new Menu('Georgia Theme Status');
@@ -437,7 +414,7 @@ function buttonAlphaTimer() {
 			}
 
 			//---> Test button alpha values and turn button timer off when it's not required;
-			for (i = activatedBtns.length - 1; i >= 0; i--) {
+			for (let i = activatedBtns.length - 1; i >= 0; i--) {
 				if ((!activatedBtns[i].hoverAlpha && !activatedBtns[i].downAlpha) ||
 					activatedBtns[i].hoverAlpha === 255 || activatedBtns[i].downAlpha === 255) {
 					activatedBtns.splice(i, 1);
