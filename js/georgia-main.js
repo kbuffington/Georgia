@@ -2052,30 +2052,6 @@ function on_get_album_art_done(metadb, art_id, image, image_path) {
 	}
 }
 
-// returned from LoadImageAsync
-function on_load_image_done(cookie, image) {
-	console.log('on_load_image_done returned');
-	if (cookie == disc_art_loading) {
-		disposeCDImg(cdart); // delay disposal so we don't get flashing
-		cdart = art_cache.encache(image, cdartPath);
-		ResizeArtwork(true);
-		CreateRotatedCDImage();
-		lastLeftEdge = 0; // recalc label location
-	} else if (cookie == album_art_loading) {
-		albumart = art_cache.encache(image, album_art_path);
-		if (retrieveThemeColorsWhenLoaded && newTrackFetchingArtwork) {
-			getThemeColors(albumart);
-			retrieveThemeColorsWhenLoaded = false;
-			newTrackFetchingArtwork = false;
-		}
-		ResizeArtwork(true);
-		cdart && CreateRotatedCDImage();
-		lastLeftEdge = 0; // recalc label location
-		displayLyrics && updateLyricsPositionOnScreen();
-	}
-	RepaintWindow();
-}
-
 function on_script_unload() {
 	console.log('Unloading Script');
 	// it appears we don't need to dispose the images which we loaded using gdi.Image in their declaration for some reason. Attempting to dispose them causes a script error.
@@ -2108,7 +2084,7 @@ function doRotateImage() {
 	glob_image(albumArtIndex, true);
 	lastLeftEdge = 0;
 	RepaintWindow();
-	globTimer = window.SetTimeout(function () {
+	globTimer = window.SetTimeout(() => {
 		doRotateImage();
 	}, pref.art_rotate_delay * 1000);
 }
@@ -2173,7 +2149,7 @@ function SetProgressBarRefresh() {
 		progressTimer && window.ClearInterval(progressTimer);
 		progressTimer = null;
 		if (!fb.IsPaused) { // only create progressTimer if actually playing
-			progressTimer = window.SetInterval(function () {
+			progressTimer = window.SetInterval(() => {
 				refresh_seekbar();
 			}, t_interval);
 		}
@@ -2289,7 +2265,19 @@ function glob_image(index, loadFromCache) {
 			getThemeColors(albumart);
 		}
 	} else {
-		album_art_loading = gdi.LoadImageAsync(window.ID, aa_list[index]);
+		gdi.LoadImageAsyncV2(window.ID, aa_list[index]).then(coverImage => {
+			albumart = art_cache.encache(coverImage, album_art_path);
+			if (retrieveThemeColorsWhenLoaded && newTrackFetchingArtwork) {
+				getThemeColors(albumart);
+				retrieveThemeColorsWhenLoaded = false;
+				newTrackFetchingArtwork = false;
+			}
+			ResizeArtwork(true);
+			cdart && CreateRotatedCDImage();
+			lastLeftEdge = 0; // recalc label location
+			displayLyrics && updateLyricsPositionOnScreen();
+			RepaintWindow();
+		});
 		album_art_path = aa_list[index];
 		if (index === 0) {
 			retrieveThemeColorsWhenLoaded = true;
@@ -2314,7 +2302,7 @@ function disposeImg(oldImage) {
 
 function disposeCDImg(cdImage) {
 	cdart_size = new ImageSize(0, 0, 0, 0);
-	// disposeImg(cdImage);
+	cdImage = null;
 	return null;
 }
 
@@ -2544,7 +2532,14 @@ function fetchNewArtwork(metadb) {
 				ResizeArtwork(true);
 				CreateRotatedCDImage();
 			} else {
-				disc_art_loading = gdi.LoadImageAsync(window.ID, cdartPath);
+				gdi.LoadImageAsyncV2(window.ID, cdartPath).then(cdImage => {
+					disposeCDImg(cdart); // delay disposal so we don't get flashing
+					cdart = art_cache.encache(cdImage, cdartPath);
+					ResizeArtwork(true);
+					CreateRotatedCDImage();
+					lastLeftEdge = 0; // recalc label location
+					RepaintWindow();
+				});
 			}
 		} else {
 			cdart = disposeCDImg(cdart);
@@ -2562,14 +2557,9 @@ function fetchNewArtwork(metadb) {
 			aa_list = aa_list.concat(utils.Glob($(tf.glob_paths[k])));
 		}
 		pattern = new RegExp('(cd|vinyl|' + pref.artwork_cdart_filename + ')([0-9]*|[a-h])\.png', 'i');
-		// remove duplicates and cd/vinyl art
-		aa_list = _.remove(_.uniq(aa_list), function (path) {
-			return !pattern.test(path);
-		});
-		imageTest = /jpg|png$/i
-		aa_list = _.remove(aa_list, function (path) {
-			return imageTest.test(path);
-		})
+		imageTest = /jpg|png$/i;
+		// remove duplicates and cd/vinyl art and make sure all files are jpg or pngs
+		aa_list = [... new Set(aa_list)].filter(path => !pattern.test(path) && imageTest.test(path));
 
 		if (aa_list.length) {
 			noArtwork = false;
