@@ -170,7 +170,6 @@ function setGeometry() {
 var playedTimesRatios = [];
 
 // PATHS
-pref.bg_image = fb.ProfilePath + 'georgia/images/wallpaper-blueish.jpg';
 pref.settng_img = fb.ProfilePath + 'georgia/images/settings.png';
 pref.prop_img = fb.ProfilePath + 'georgia/images/properties.png';
 pref.list_img = fb.ProfilePath + 'georgia/images/playlist.png';
@@ -227,7 +226,6 @@ var albumart = null; // albumart image
 var albumart_size = new ImageSize(0, 0, 0, 0); // position (big image)
 var cdart = null; // cdart image
 var cdart_size = new ImageSize(0, 0, 0, 0); // cdart position (offset from albumart_size)
-var image_bg = gdi.Image(pref.bg_image); // background image
 var albumart_scaled = null; // pre-scaled album art to speed up drawing considerably
 var recordLabels = []; // array of record label images
 var recordLabelsInverted = []; // array of inverted record label images

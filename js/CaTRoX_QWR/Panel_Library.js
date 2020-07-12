@@ -50,7 +50,6 @@ libraryProps.add_properties({
 });
 
 String.prototype.strip = function() {return this.replace(/[\.,\!\?\:;'\u2019"\-_\u2010\s+]/g, "").toLowerCase();}
-if (!String.prototype.trim) {String.prototype.trim = function () {return this.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, '');};}
 
 function userinterface() {
 	try {
@@ -626,17 +625,6 @@ function userinterface() {
 		image_path_o = n ? "noitem" : "stub";
 		return noimg[n].Clone(0, 0, noimg[n].Width, noimg[n].Height);
 	}
-}
-// var ui = new userinterface();
-
-function on_font_changed() {
-	ui.get_font();
-	sbar.reset();
-	p.on_size();
-	library_tree.create_tooltip();
-	if (libraryProps.searchMode || libraryProps.showScrollbar)
-		but.refresh(true);
-	window.Repaint();
 }
 
 function scrollbar() {
