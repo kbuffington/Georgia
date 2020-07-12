@@ -99,7 +99,7 @@ function testFont(fontName) {
 function calculateGridMaxTextWidth(gr, gridArray, font) {
 	var maxWidth = 0;
 	gridArray && gridArray.forEach(function (el) {
-        width = Math.ceil(gr.MeasureString(el.label, font, 0, 0, ww, wh).Width) + 1;
+		width = Math.ceil(gr.MeasureString(el.label, font, 0, 0, ww, wh).Width) + 1;
 		if (width > maxWidth) {
 			maxWidth = width;
 		}
@@ -111,7 +111,7 @@ function calculateGridMaxTextWidth(gr, gridArray, font) {
  *  availableSpace, or the last font in the list (should be the smallest and text will be truncated)
  * */
 function chooseFontForWidth(gr, availableWidth, text, fontList, maxLines) {
-    maxLines = (typeof maxLines !== 'undefined') ? maxLines : 1;
+	maxLines = (typeof maxLines !== 'undefined') ? maxLines : 1;
 	var fontIndex = undefined;
 	for (var i = 0; i < fontList.length; i++) {
 		fontIndex = i;
@@ -185,52 +185,52 @@ function drawMultipleLines(gr, availableWidth, left, top, color, text1, fontList
 }
 
 function dateDiff(startingDate, endingDate) {
-    var hasStartDay = (startingDate.length > 7) ? true : false;
-    if (!hasStartDay) {
-        startingDate = startingDate + '-02';    // avoid timezone issues
-    }
-    var startDate = new Date(new Date(startingDate).toISOString().substr(0, 10));
-    if (!endingDate) {
-        endingDate = new Date().toISOString().substr(0, 10);    // need date in YYYY-MM-DD format
+	var hasStartDay = (startingDate.length > 7) ? true : false;
+	if (!hasStartDay) {
+		startingDate = startingDate + '-02';    // avoid timezone issues
+	}
+	var startDate = new Date(new Date(startingDate).toISOString().substr(0, 10));
+	if (!endingDate) {
+		endingDate = new Date().toISOString().substr(0, 10);    // need date in YYYY-MM-DD format
 	}
 	var endDate = new Date(endingDate);
-    if (startDate > endDate) {
-        var swap = startDate;
-        startDate = endDate;
-        endDate = swap;
-    }
-    var startYear = startDate.getFullYear();
-    var february = (startYear % 4 === 0 && startYear % 100 !== 0) || startYear % 400 === 0 ? 29 : 28;
-    var daysInMonth = [31, february, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+	if (startDate > endDate) {
+		var swap = startDate;
+		startDate = endDate;
+		endDate = swap;
+	}
+	var startYear = startDate.getFullYear();
+	var february = (startYear % 4 === 0 && startYear % 100 !== 0) || startYear % 400 === 0 ? 29 : 28;
+	var daysInMonth = [31, february, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
-    var yearDiff = endDate.getFullYear() - startYear;
-    var monthDiff = endDate.getMonth() - startDate.getMonth();
-    if (monthDiff < 0) {
-        yearDiff--;
-        monthDiff += 12;
-    }
-    var dayDiff = 0;
-    if (hasStartDay) {
-        dayDiff = endDate.getDate() - startDate.getDate();
-        if (dayDiff < 0) {
-            if (monthDiff > 0) {
-                monthDiff--;
-            } else {
-                yearDiff--;
-                monthDiff = 11;
-            }
-            dayDiff += daysInMonth[startDate.getMonth()];
-        }
-    }
+	var yearDiff = endDate.getFullYear() - startYear;
+	var monthDiff = endDate.getMonth() - startDate.getMonth();
+	if (monthDiff < 0) {
+		yearDiff--;
+		monthDiff += 12;
+	}
+	var dayDiff = 0;
+	if (hasStartDay) {
+		dayDiff = endDate.getDate() - startDate.getDate();
+		if (dayDiff < 0) {
+			if (monthDiff > 0) {
+				monthDiff--;
+			} else {
+				yearDiff--;
+				monthDiff = 11;
+			}
+			dayDiff += daysInMonth[startDate.getMonth()];
+		}
+	}
 
-    return (yearDiff ? yearDiff + 'y ' : '') + (monthDiff > 0 ? monthDiff + 'm ': '') + (dayDiff ? dayDiff + 'd': '');
+	return (yearDiff ? yearDiff + 'y ' : '') + (monthDiff > 0 ? monthDiff + 'm ': '') + (dayDiff ? dayDiff + 'd': '');
 }
 
 function calcAgeDateString(date) {
 	var str = '';
 	if (date.length) {
 		try {
-            str = dateDiff($date(date));
+			str = dateDiff($date(date));
 		} catch (e) {
 			console.log(e);
 			console.log('date:', date);
@@ -239,23 +239,23 @@ function calcAgeDateString(date) {
 		}
 	}
 
-    return str.trim();
+	return str.trim();
 }
 
 function $date(dateStr) {
-    return $('$date(' + dateStr + ')');
+	return $('$date(' + dateStr + ')');
 }
 
 function dateToYMD(date) {
-    var d = date.getDate();
-    var m = date.getMonth() + 1; //Month from 0 to 11
-    var y = date.getFullYear();
-    return '' + y + '-' + (m<=9 ? '0' + m : m) + '-' + (d <= 9 ? '0' + d : d);
+	var d = date.getDate();
+	var m = date.getMonth() + 1; //Month from 0 to 11
+	var y = date.getFullYear();
+	return '' + y + '-' + (m<=9 ? '0' + m : m) + '-' + (d <= 9 ? '0' + d : d);
 }
 
 function toDatetime(dateTimeStr) {
 	// convert FB datetime string into one that we can call new Date() on
-    return dateTimeStr.replace(' ', 'T');
+	return dateTimeStr.replace(' ', 'T');
 }
 
 var timezoneOffset = 0;
@@ -266,10 +266,10 @@ function updateTimezoneOffset() {
 }
 
 function toTime(dateTimeStr) {
-    /* foobar time strings are already in local time, so converting them to date objects treats
-     * them as UTC time, and again adjusts to local time, and the timezone offset is applied twice.
-     * Therefore we need to add it back in here.
-     */
+	/* foobar time strings are already in local time, so converting them to date objects treats
+	 * them as UTC time, and again adjusts to local time, and the timezone offset is applied twice.
+	 * Therefore we need to add it back in here.
+	 */
 	return new Date(toDatetime(dateTimeStr)).getTime() + timezoneOffset;
 }
 
@@ -286,7 +286,7 @@ function calcAgeRatio(num, divisor) {
 }
 
 function toFixed(number, precision) {
-    var factor = Math.pow(10, precision);
+	var factor = Math.pow(10, precision);
 	return Math.round(number * factor) / factor;
 }
 
@@ -301,18 +301,18 @@ function printColorObj(obj) {
 }
 
 function colorToHSLString(col) {
-    return leftPad(col.hue, 3) + ' '  + leftPad(col.saturation, 3) + ' ' + leftPad(col.lightness,3);
+	return leftPad(col.hue, 3) + ' '  + leftPad(col.saturation, 3) + ' ' + leftPad(col.lightness,3);
 }
 
 function toPaddedHexString(num, len) {
-    return padNumber(num, len, 16);
+	return padNumber(num, len, 16);
 }
 
 function padNumber(num, len, base) {
-    if (!base) {
-        base = 10;
-    }
-    return ('000000' + num.toString(base)).substr(-len);
+	if (!base) {
+		base = 10;
+	}
+	return ('000000' + num.toString(base)).substr(-len);
 }
 
 function leftPad(val, size, ch) {
@@ -489,11 +489,11 @@ try {
 
 _.mixin({
 	isFile:               function (file) {
-        return _.isString(file) ? fso.FileExists(file) : false;
-    },
-    isFolder:             function (folder) {
-        return _.isString(folder) ? fso.FolderExists(folder) : false;
-    },
+		return _.isString(file) ? fso.FileExists(file) : false;
+	},
+	isFolder:             function (folder) {
+		return _.isString(folder) ? fso.FolderExists(folder) : false;
+	},
 	runCmd:               function (command, wait, show) {
 		try {
 			WshShell.Run(command, show ? 1 : 0, !_.isNil(wait) ? wait : false);
@@ -503,72 +503,75 @@ _.mixin({
 		}
 	},
 	scale:                function (size) {
-        return Math.round(size * DPI / 72);
-    },
-    toDb:                 function (volume) {
-        return 50 * Math.log(0.99 * volume + 0.01) / Math.LN10;
-    },
-    tt:                   function (text, force) {
-        if (g_tooltip.Text !== _.toString(text) || force) {
-            g_tooltip.Text = text;
-            g_tooltip.Activate();
-        }
-    },
-    /** @constructor */
-    tt_handler:           function () {
-        this.showDelayed = function (text) {
-            tt_timer.start(this.id, text);
-        };
-        this.showImmediate = function (text) {
+		return Math.round(size * DPI / 72);
+	},
+	toDb:                 function (volume) {
+		return 50 * Math.log(0.99 * volume + 0.01) / Math.LN10;
+	},
+	tt:                   function (text, force) {
+		if (!text) {
+			g_tooltip.Text = '';
+			g_tooltip.Deactivate();
+		} else if (g_tooltip.Text !== _.toString(text) || force) {
+			g_tooltip.Text = text;
+			g_tooltip.Activate();
+		}
+	},
+	/** @constructor */
+	tt_handler:           function () {
+		this.showDelayed = function (text) {
+			tt_timer.start(this.id, text);
+		};
+		this.showImmediate = function (text) {
 			tt_timer.stop(this.id);
-            _.tt(text);
-        };
-        this.clear = function () {
-            tt_timer.stop(this.id);
-        };
-        this.stop = function () {
-            tt_timer.force_stop();
-        };
+			_.tt(text);
+		};
+		this.clear = function () {
+			tt_timer.stop(this.id);
+		};
+		this.stop = function () {
+			tt_timer.force_stop();
+		};
 		this.id = Math.ceil(Math.random().toFixed(8) * 1000);
 
-        var tt_timer = _.tt_handler.tt_timer;
-    },
+		var tt_timer = _.tt_handler.tt_timer;
+	},
 });
 
 _.tt_handler.tt_timer = new function () {
-    var tooltip_timer;
-    var tt_caller = undefined;
+	var tooltip_timer;
+	var tt_caller = undefined;
 
-    this.start = function (id, text) {
-        var old_caller = tt_caller;
-        tt_caller = id;
+	this.start = function (id, text) {
+		var old_caller = tt_caller;
+		tt_caller = id;
 
-        if (!tooltip_timer && g_tooltip.Text) {
-            _.tt(text, old_caller !== tt_caller );
-        }
-        else {
-            this.force_stop(); /// < There can be only one tooltip present at all times, so we can kill the timer w/o any worries
+		if (!tooltip_timer && g_tooltip.Text) {
+			_.tt(text, old_caller !== tt_caller );
+		}
+		else {
+			this.force_stop(); /// < There can be only one tooltip present at all times, so we can kill the timer w/o any worries
 
-            if (!tooltip_timer) {
-                tooltip_timer = window.SetTimeout(_.bind(function () {
-                    _.tt(text);
-                    tooltip_timer = null;
-                }, this), 500);
-            }
-        }
-    };
+			if (!tooltip_timer) {
+				tooltip_timer = setTimeout(() => {
+					_.tt(text);
+					tooltip_timer = null;
+				}, 500);
+			}
+		}
+	};
 
-    this.stop = function (id) {
-        if (tt_caller === id) {// Do not stop other callers
-            this.force_stop();
-        }
-    };
+	this.stop = function (id) {
+		if (tt_caller === id) {// Do not stop other callers
+			this.force_stop();
+		}
+	};
 
-    this.force_stop = function () {
-        g_tooltip.Deactivate();
-        if (tooltip_timer) {
-            window.ClearTimeout(tooltip_timer);
-            tooltip_timer = null;
-        }
-    };
+	this.force_stop = function () {
+		_.tt('');
+		if (tooltip_timer) {
+			window.ClearTimeout(tooltip_timer);
+			tooltip_timer = null;
+		}
+	};
 };
