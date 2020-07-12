@@ -1,0 +1,2 @@
+// The following line will load the entire theme including all required scripts
+include(fb.ProfilePath + '\\Georgia\\georgia-configuration.js');
