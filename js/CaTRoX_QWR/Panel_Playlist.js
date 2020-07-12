@@ -3698,7 +3698,7 @@ function Header(parent, x, y, w, h, idx) {
                         var date_h = this.h - 4;
                         grClip.DrawString(date_text, date_font, date_color, date_x, date_y, date_w, date_h, g_string_format.v_align_center);
                     } else {
-                        hyperlinks.date.draw_playlist(grClip, date_color);
+                        hyperlinks.date.draw(grClip, date_color);
                     }
 
                     part2_right_pad += this.w - date_x;
@@ -3724,7 +3724,7 @@ function Header(parent, x, y, w, h, idx) {
                     if (is_radio || !hyperlinks.artist)  {
                         grClip.DrawString(artist_text, artist_font, artist_color, artist_x, 0, artist_w, artist_h, artist_text_format);
                     } else {
-                        hyperlinks.artist.draw_playlist(grClip, artist_color);
+                        hyperlinks.artist.draw(grClip, artist_color);
                     }
                     //part1_cur_x += artist_w;
                 }
@@ -3754,7 +3754,7 @@ function Header(parent, x, y, w, h, idx) {
                     if (!hyperlinks.album) {
                         grClip.DrawString(album_text, g_pl_fonts.album, album_color, album_x, album_y, album_w, album_h, album_text_format);
                     } else {
-                        hyperlinks.album.draw_playlist(grClip, album_color);
+                        hyperlinks.album.draw(grClip, album_color);
                     }
 
                     var album_text_w = Math.ceil(
@@ -3789,12 +3789,12 @@ function Header(parent, x, y, w, h, idx) {
                         var i = 0;
                         while (hyperlinks['genre' + i]) {
                             if (i > 0) {
-                                grClip.DrawString(' \u2022 ', g_pl_fonts.info, info_color, genre_hyperlink.x + genre_hyperlink.get_w(), info_y, scaleForDisplay(20), info_h);
+                                grClip.DrawString(' \u2022 ', g_pl_fonts.info, info_color, genre_hyperlink.x + genre_hyperlink.getWidth(), info_y, scaleForDisplay(20), info_h);
                             }
                             genre_hyperlink = hyperlinks['genre' + i];
-                            genre_hyperlink.draw_playlist(grClip, info_color);
+                            genre_hyperlink.draw(grClip, info_color);
                             genreX = genre_hyperlink.x;
-                            genre_text_w = genre_hyperlink.get_w();
+                            genre_text_w = genre_hyperlink.getWidth();
                             i++;
                         }
                     }
@@ -3820,9 +3820,9 @@ function Header(parent, x, y, w, h, idx) {
                         var label_hyperlink = hyperlinks['label' + i];
                         if (label_hyperlink.x > genreX + genre_text_w + info_text_w) {
                             if (drawCount > 0) {
-                                grClip.DrawString(' \u2022', g_pl_fonts.info, info_color, lastLabel.x + lastLabel.get_w(), info_y, scaleForDisplay(20), info_h);
+                                grClip.DrawString(' \u2022', g_pl_fonts.info, info_color, lastLabel.x + lastLabel.getWidth(), info_y, scaleForDisplay(20), info_h);
                             }
-                            label_hyperlink.draw_playlist(grClip, info_color);
+                            label_hyperlink.draw(grClip, info_color);
                             drawCount++;
                         }
                         lastLabel = label_hyperlink;    // we want to draw bullet AFTER the previous label
@@ -4037,7 +4037,7 @@ function Header(parent, x, y, w, h, idx) {
             var date_x = -date_w - right_edge;
             var date_y = Math.floor((this.h / 2) - scaleForDisplay(17));
 
-            hyperlinks.date = new Hyperlink(date_text, date_font, 'date', date_x, date_y, this.w);
+            hyperlinks.date = new Hyperlink(date_text, date_font, 'date', date_x, date_y, this.w, true);
         }
 
         var left_pad = scaleForDisplay(10);
@@ -4053,14 +4053,14 @@ function Header(parent, x, y, w, h, idx) {
             if (artist_text) {
                 var artist_x = left_pad;
 
-                hyperlinks.artist = new Hyperlink(artist_text, artist_font, 'artist', artist_x, 5, this.w);
+                hyperlinks.artist = new Hyperlink(artist_text, artist_font, 'artist', artist_x, 5, this.w, true);
             }
         }
 
         var album_y = part_h + scaleForDisplay(3);
         var album_text = _.tf(grouping_handler.get_sub_title_query(), metadb);
         if (album_text) {
-            hyperlinks.album = new Hyperlink(album_text, g_pl_fonts.album, 'album', left_pad, album_y, this.w);
+            hyperlinks.album = new Hyperlink(album_text, g_pl_fonts.album, 'album', left_pad, album_y, this.w, true);
         }
 
         var separatorWidth = gr.MeasureString(' \u2020', g_pl_fonts.info, 0, 0, 0, 0).Width;
@@ -4078,7 +4078,7 @@ function Header(parent, x, y, w, h, idx) {
             labels[i] = labels[i].replace('= Inc.', ', Inc.');
             var label_w = gr.MeasureString(labels[i], g_pl_fonts.info, 0, 0, 0, 0).Width;
             label_left -= label_w;
-            hyperlinks['label' + i] = new Hyperlink(labels[i], g_pl_fonts.info, 'label', label_left, label_y, this.w);
+            hyperlinks['label' + i] = new Hyperlink(labels[i], g_pl_fonts.info, 'label', label_left, label_y, this.w, true);
         }
 
         var genre_string = _.tf('[%genre%]', metadb);
@@ -4090,7 +4090,7 @@ function Header(parent, x, y, w, h, idx) {
                 genre_left += bulletWidth + spaceWidth * 2;   // spacing between genres
             }
             var genre_w = gr.MeasureString(genres[i], g_pl_fonts.info, 0, 0, 0, 0).Width;
-            hyperlinks['genre' + i] = new Hyperlink(genres[i], g_pl_fonts.info, 'genre', genre_left, genre_y, this.w);
+            hyperlinks['genre' + i] = new Hyperlink(genres[i], g_pl_fonts.info, 'genre', genre_left, genre_y, this.w, true);
             genre_left += genre_w;
         }
 
@@ -4159,7 +4159,7 @@ function Header(parent, x, y, w, h, idx) {
         });
 
         for (h in hyperlinks) {
-            hyperlinks[h].set_w(w);
+            hyperlinks[h].setContainerWidth(w);
         }
     }
 

@@ -899,9 +899,9 @@ function draw_ui(gr) {
 			var color = pref.darkMode ? tintColor(col.bg,20) : shadeColor(col.bg, 20);
 			var offset = 0;
 			if (updateAvailable) {
-				offset = updateHyperlink.get_w();
-				updateHyperlink.set_w(ww);
-				updateHyperlink.set_y(lowerBarTop + 2); // +2 counteracts the -2 in the set_y method required for playlist
+				offset = updateHyperlink.getWidth();
+				updateHyperlink.setContainerWidth(ww);
+				updateHyperlink.set_y(lowerBarTop);
 				updateHyperlink.set_xOffset(-offset - Math.floor(ww*0.025));
 				updateHyperlink.draw(gr, color);
 				offset += scaleForDisplay(6);
