@@ -89,7 +89,7 @@ function ImageSize(x, y, w, h) {
 }
 
 function testFont(fontName) {
-	if (!utils.checkFont(fontName)) {
+	if (!utils.CheckFont(fontName)) {
 		console.log('Error: Font "' + fontName + '" was not found. Please install it from the fonts folder');
 		return false;
 	}
@@ -116,7 +116,7 @@ function chooseFontForWidth(gr, availableWidth, text, fontList, maxLines) {
 	for (var i = 0; i < fontList.length; i++) {
 		fontIndex = i;
 		var measurements = gr.MeasureString(text, fontList[fontIndex], 0, 0, availableWidth, 0);
-		if (measurements.lines <= maxLines)
+		if (measurements.Lines <= maxLines)
 			break;
 	}
 	return fontIndex !== undefined ? fontList[fontIndex] : null;
@@ -139,20 +139,20 @@ function drawMultipleLines(gr, availableWidth, left, top, color, text1, fontList
 		lineHeight = Math.max(gr.CalcTextHeight(text1, fontList1[fontIndex]),
 							  gr.CalcTextHeight(text2, fontList2[fontIndex]))
 		var continuation = false;	// does font change on same line
-		var lineText = gr.EstimateLineWrap(text1, fontList1[fontIndex], availableWidth).toArray();
+		var lineText = gr.EstimateLineWrap(text1, fontList1[fontIndex], availableWidth);
 		for (var i = 0; i < lineText.length; i += 2) {
 			textArray.push({ text: lineText[i], x_offset: 0, font: fontList1[fontIndex] });
 		}
 		if (textArray.length <= maxLines) {
 			var lastLineWidth = lineText[lineText.length - 1];
-			var secondaryText = gr.EstimateLineWrap(text2, fontList2[fontIndex], availableWidth - lastLineWidth - 5).toArray();
+			var secondaryText = gr.EstimateLineWrap(text2, fontList2[fontIndex], availableWidth - lastLineWidth - 5);
 			firstSecondaryLine = secondaryText[0];
 			textRemainder = text2.substr(firstSecondaryLine.length).trim();
 			if (firstSecondaryLine.trim().length) {
 				textArray.push({ text: firstSecondaryLine, x_offset: lastLineWidth + 5, font: fontList2[fontIndex] });
 				continuation = true;	// font changes on same line
 			}
-			secondaryText = gr.EstimateLineWrap(textRemainder, fontList2[fontIndex], availableWidth).toArray();
+			secondaryText = gr.EstimateLineWrap(textRemainder, fontList2[fontIndex], availableWidth);
 			for (var i = 0; i < secondaryText.length; i += 2) {
 				textArray.push({ text: secondaryText[i], x_offset: 0, font: fontList2[fontIndex] });
 			}
@@ -373,7 +373,7 @@ function Menu(title) {
 			this.systemMenu = true;
 			this.menuManager = fb.CreateMainMenuManager();
 			this.menuManager.Init(name);
-			this.menuManager.BuildMenu(this.menu, 1);
+			this.menuManager.BuildMenu(this.menu, 1, 200);
 		}
 	}
 
@@ -412,7 +412,9 @@ function Menu(title) {
 			}
 			Menu.itemIndex++;
 		}
-		this.menu.CheckMenuRadioItem(startIndex, Menu.itemIndex - 1, selectedIndex);
+		if (selectedIndex) {
+			this.menu.CheckMenuRadioItem(startIndex, Menu.itemIndex - 1, selectedIndex);
+		}
 	}
 
 	this.createRadioSubMenu = function(subMenuName, labels, radioValue, variables, callback) {
@@ -432,7 +434,7 @@ function Menu(title) {
 	}
 
 	this.appendTo = function(parentMenu) {
-		this.menu.appendTo(parentMenu.menu, MF_STRING, this.title);
+		this.menu.AppendTo(parentMenu.menu, MF_STRING, this.title);
 	}
 
 	// handles callback and automatically Disposes menu
@@ -441,9 +443,9 @@ function Menu(title) {
 			Menu.callbacks[idx](Menu.variables[idx]);
 		} else if (this.systemMenu) {
 			idx && this.menuManager.ExecuteByID(idx - 1);
-			this.menuManager.Dispose();
+			this.menuManager = null;
 		}
-		this.menu.Dispose();
+		this.menu = null;
 		Menu.callbacks = [];
 		Menu.variables = [];
 		Menu.itemIndex = menuStartIndex;
@@ -506,9 +508,9 @@ _.mixin({
     toDb:                 function (volume) {
         return 50 * Math.log(0.99 * volume + 0.01) / Math.LN10;
     },
-    tt:                   function (value, force) {
-        if (g_tooltip.Text !== _.toString(value) || force) {
-            g_tooltip.Text = value;
+    tt:                   function (text, force) {
+        if (g_tooltip.Text !== _.toString(text) || force) {
+            g_tooltip.Text = text;
             g_tooltip.Activate();
         }
     },
@@ -518,7 +520,7 @@ _.mixin({
             tt_timer.start(this.id, text);
         };
         this.showImmediate = function (text) {
-            tt_timer.stop(this.id);
+			tt_timer.stop(this.id);
             _.tt(text);
         };
         this.clear = function () {
@@ -563,7 +565,7 @@ _.tt_handler.tt_timer = new function () {
     };
 
     this.force_stop = function () {
-        _.tt('');
+        g_tooltip.Deactivate();
         if (tooltip_timer) {
             window.ClearTimeout(tooltip_timer);
             tooltip_timer = null;

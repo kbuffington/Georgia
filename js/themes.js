@@ -125,7 +125,6 @@ function findClosestTheme(color) {
 	var red = getRed(color);
 	var green = getGreen(color);
 	var blue = getBlue(color);
-	var colorArray = [red, green, blue];
 	var closest;
 	var closestDistance = 999;
 
@@ -155,7 +154,7 @@ function getThemeColorsJson(image, maxColorsToPull) {
 	var maxBrightness = pref.darkMode ? 255 : 212;
 
 	try {
-		colorsWeighted = JSON.parse(image.GetColourSchemeJson(maxColorsToPull));
+		colorsWeighted = JSON.parse(image.GetColourSchemeJSON(maxColorsToPull));
 		colorsWeighted.forEach(function (c, i) {
 			colorsWeighted[i].col = new Color(c.col);
 		});
@@ -201,7 +200,7 @@ function getThemeColorsJson(image, maxColorsToPull) {
 		if (pref.show_theme_log) console.log('Selected Color:', selectedColor.getRGB(true));
 		return selectedColor.val;
 	} catch (e) {
-		return undefined;
+		console.log('<Error: GetColourSchemeJSON failed.>');
 	}
 }
 

@@ -49,7 +49,6 @@ libraryProps.add_properties({
 	baseFontSize: [systemPrefix + 'Font Size', 18],
 });
 
-if (!("Version" in utils) || utils.Version < 2100) fb.ShowPopupMessage("Requires: JScript Panel 2.1.0+", "Library Tree");
 String.prototype.strip = function() {return this.replace(/[\.,\!\?\:;'\u2019"\-_\u2010\s+]/g, "").toLowerCase();}
 if (!String.prototype.trim) {String.prototype.trim = function () {return this.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, '');};}
 
@@ -124,6 +123,7 @@ function userinterface() {
 	this.l_s1 = 4;
 	this.l_s2 = 6;
 	this.l_s3 = 7;
+	this.l_width = scaleForDisplay(1);
 	this.linecol = "";
 	this.pen = 1;
 	this.pen_c = 0x55888888;
@@ -142,7 +142,7 @@ function userinterface() {
 	this.w = 0;
 	this.alternate = true; // window.GetProperty(" Row Stripes", false);
 	// this.local = false; //typeof conf === 'undefined' ? false : true;
-	this.margin = 8; // window.GetProperty(" Margin", 8);
+	this.margin = 8;
 	this.node_sz = Math.round(16 * this.scale);
 	this.trace = function(message) {
 		var trace = true;
@@ -196,7 +196,6 @@ function userinterface() {
 			window.SetProperty(" Scrollbar Type Default-0 Styled-1 Themed-2", "" + 1 + "");
 		}
 		im.ReleaseGraphics(j);
-		im.Dispose();
 	}
 	var themed_w = 21;
 	try {
@@ -387,7 +386,8 @@ function userinterface() {
 	}
 
 	this.calc_text = function() {
-		var i = gdi.CreateImage(1, 1), g = i.GetGraphics();
+		var i = gdi.CreateImage(1, 1),
+			g = i.GetGraphics();
 		this.row_h = Math.round(g.CalcTextHeight("String", this.font)) + libraryProps.rowVertPadding;
 		this.node_sz = Math.round(Math.max(Math.min(this.node_sz, this.row_h - 2), 7));
 		library_tree.create_images();	// is this needed??
@@ -406,7 +406,7 @@ function userinterface() {
 		this.icon_w = this.node_style ? this.node_sz + sp1 : sp + sp2;
 		this.sel = (this.node_style ? sp1 : sp + Math.round(sp / 3)) / 2;
 		this.tt = this.node_style ? -Math.ceil(sp1 / 2 - 3) + sp1 : sp;
-		i.ReleaseGraphics(g); i.Dispose();
+		i.ReleaseGraphics(g);
 	}
 
 	this.wheel = function(step) {
@@ -478,7 +478,7 @@ function userinterface() {
 	// 			gb.DrawImage(iFull, this.x - offset, this.y - offset, this.w + offset * 2, this.h + offset * 2, 0, 0, iFull.Width, iFull.Height, 0, 63 * ui.blurAlpha);
 	// 		} else {
 	// 			gb.DrawImage(image, this.x, this.y, this.w, this.h, 0, 0, image.Width, image.Height); if (this.blurLevel > 1) blurImg.StackBlur(this.blurLevel);
-	// 			var colorScheme_array = blurImg.GetColourScheme(1).toArray(),
+	// 			var colorScheme_array = blurImg.GetColourScheme(1),
 	// 				light_cover = get_textselcol(colorScheme_array[0], true) == 50 ? true : false;
 	// 			gb.FillSolidRect(this.x, this.y, this.w, this.h, light_cover ? this.bg_color_light : this.bg_color_dark);
 	// 		}
@@ -592,7 +592,6 @@ function userinterface() {
 			return;
 		image = stub(1);
 		if (!image) {
-			if (blurImg) blurImg.Dispose();
 			blurImg = false;
 			return;
 		}
@@ -605,11 +604,10 @@ function userinterface() {
 		var handle = fb.IsPlaying ? fb.GetNowPlaying() : fb.GetFocusItem();
 		if (!handle) {
 			if (this.upd_handle_list) {
-				handle_list.Dispose();
 				handle_list = plman.GetPlaylistItems(plman.ActivePlaylist);
 				this.upd_handle_list = false;
 			}
-			if (handle_list.Count) handle = handle_list.Item(0);
+			if (handle_list.Count) handle = handle_list[0];
 		}
 		return handle;
 	}
@@ -887,7 +885,7 @@ function panel_operations() {
 		// window.MaxHeight = window.MinHeight = this.pn_h;
 		// window.SetProperty("SYSTEM.Height", this.pn_h);
 	// }
-	this.sort = function(li) {switch (this.view_by) {case this.folder_view: li.OrderByRelativePath(); break; default: var tfo = fb.TitleFormat(this.grp_sort); li.OrderByFormat(tfo, 1); tfo.Dispose(); break;}}
+	this.sort = function(li) {switch (this.view_by) {case this.folder_view: li.OrderByRelativePath(); break; default: var tfo = fb.TitleFormat(this.grp_sort); li.OrderByFormat(tfo, 1); break;}}
 	var paint_y = Math.floor(libraryProps.searchMode || !libraryProps.showScrollbar ? this.s_h : 0);
 	this.tree_paint = function() {window.RepaintRect(ui.x, ui.y + paint_y, ui.w, ui.h - paint_y + 1);}
 	this.view_by = window.GetProperty("SYSTEM.View By", 1);
@@ -904,7 +902,6 @@ function panel_operations() {
 		this.filter_x1 = ui.x + ui.w - ui.margin - this.f_w[this.filter_by] - this.f_sw;
 		this.s_w2 = libraryProps.searchMode > 1 ? this.filter_x1 - this.s_x - 11 : this.s_w1 - Math.round(ui.row_h * 0.75) - this.s_x + 1;
 		im.ReleaseGraphics(g);
-		im.Dispose();
 	}
 
 	this.getBaseName = function() {
@@ -1111,10 +1108,10 @@ function library_manager() {
 			if (a[i] !== b[i]) return false;
 		return true;
 	}
-	var binaryInsert = function(item) {var min = 0, max = p.list.Count, index = Math.floor((min + max) / 2); while (max > min) {var tmp = fb.CreateHandleList(item); tmp.Add(p.list.Item(index)); p.sort(tmp); if (item.Compare(tmp.Item(0))) max = index; else min = index + 1; index = Math.floor((min + max) / 2); tmp.Dispose();} return index;}
+	var binaryInsert = function(item) {var min = 0, max = p.list.Count, index = Math.floor((min + max) / 2); while (max > min) {var tmp = fb.CreateHandleList(item); tmp.Add(p.list[index]); p.sort(tmp); if (item.Compare(tmp[0])) max = index; else min = index + 1; index = Math.floor((min + max) / 2); } return index;}
 	this.checkTree = function() {if (!this.upd && !(this.init && libraryProps.rememberTree)) return; this.init = false; timer.reset(timer.update, timer.updatei); this.time.Reset(); library_tree.subCounts =  {"standard": {}, "search": {}, "filter": {}}; this.rootNodes(this.upd == 2 ? 2 : 1, this.process); this.upd = 0;}
-	this.removed_f = function(handle_list) {var j = handle_list.Count; while (j--) {var i = this.list.Find(handle_list.Item(j)); if (i != -1) {this.list.RemoveById(i); node.splice(i, 1);}}}
-	this.removed_s = function(handle_list) {var j = handle_list.Count; while (j--) {var i = p.list.Find(handle_list.Item(j)); if (i != -1) {p.list.RemoveById(i); node_s.splice(i, 1);}}}
+	this.removed_f = function(handle_list) {var j = handle_list.Count; while (j--) {var i = this.list.Find(handle_list[j]); if (i != -1) {this.list.RemoveById(i); node.splice(i, 1);}}}
+	this.removed_s = function(handle_list) {var j = handle_list.Count; while (j--) {var i = p.list.Find(handle_list[j]); if (i != -1) {p.list.RemoveById(i); node_s.splice(i, 1);}}}
 	var sort = function (a, b) {return a.toString().replace(/^\?/,"").replace(/(\d+)/g, function (n) {return ('0000' + n).slice(-5)}).localeCompare(b.toString().replace(/^\?/,"").replace(/(\d+)/g, function (n) {return ('0000' + n).slice(-5)}));}
 	var tr_sort = function(data) {data.sort(function(a, b) {return parseFloat(a.tr) - parseFloat(b.tr)}); return data;}
 
@@ -1152,21 +1149,27 @@ function library_manager() {
 		}
 		else {
 			switch (n) {
-				case 0: this.added(handle_list); if (ui.w < 1 || !window.IsVisible) this.upd = 2; else timer.lib_update(); break;
+				case 0:
+					this.added(handle_list);
+					if (ui.w < 1 || !window.IsVisible)
+						this.upd = 2;
+					else
+						timer.lib_update();
+					break;
 				case 1:
 					var upd_done = false, tree_type = p.view_by != p.folder_view ? 0 : 1;
 					switch (tree_type) { // check for changes to items; any change updates all
 						case 0:
-							var tfo = fb.TitleFormat(p.view), items_b = tfo.EvalWithMetadbs(handle_list).toArray();
+							var tfo = fb.TitleFormat(p.view), items_b = tfo.EvalWithMetadbs(handle_list);
 							for (var j = 0; j < handle_list.Count; j++) {
-								var h = this.list.Find(handle_list.Item(j));
+								var h = this.list.Find(handle_list[j]);
 								if (h != -1) {if (!arraysIdentical(node[h], items_b[j].split("|"))) {this.removed(handle_list); this.added(handle_list); if (ui.w < 1 || !window.IsVisible) this.upd = 2; else timer.lib_update(); upd_done = true; break;}}
 							}
-							tfo.Dispose(); break;
+							break;
 						case 1:
-							var items_b = handle_list.GetLibraryRelativePaths().toArray();
+							var items_b = handle_list.GetLibraryRelativePaths();
                             for (var j = 0; j < handle_list.Count; j++) {
-                                var h = this.list.Find(handle_list.Item(j));
+                                var h = this.list.Find(handle_list[j]);
                                 if (h != -1) {if (!arraysIdentical(node[h], items_b[j].split("\\"))) {this.removed(handle_list); this.added(handle_list); if (ui.w < 1 || !window.IsVisible) this.upd = 2; else timer.lib_update(); upd_done = true; break;}};
                             }
                             break;
@@ -1189,10 +1192,9 @@ function library_manager() {
 						removeFilterItems.MakeDifference(handlesInFilter);
 						if (removeFilterItems.Count) this.removed_f(removeFilterItems);
 						if (removeFilterItems.Count || newFilterItems.Count) {if (!p.s_txt) p.list = this.list; if (ui.w < 1 || !window.IsVisible) this.upd = 2; else timer.lib_update();}
-                        handlesInFilter.Dispose(); newFilterItems.Dispose(); origFilter.Dispose(); removeFilterItems.Dispose();
                     }
-                    if (p.s_txt) { // search: check if not done
-                        var newSearchItems = fb.CreateHandleList(), origSearch = p.list.Clone();
+					if (p.s_txt) { // search: check if not done
+						var newSearchItems = fb.CreateHandleList(), origSearch = p.list.Clone();
 						// addns
                         try {newSearchItems = fb.GetQueryItems(handle_list, p.s_txt);} catch (e) {}
 						origSearch.Sort();
@@ -1223,13 +1225,24 @@ function library_manager() {
                         handlesInSearch.Dispose(); newSearchItems.Dispose(); origSearch.Dispose(); removeSearchItems.Dispose();
 					}
 					break;
-				case 2: this.removed(handle_list); if (ui.w < 1 || !window.IsVisible) this.upd = 2; else timer.lib_update(); break;
-			} if (handle_list) handle_list.Dispose();
+				case 2:
+					this.removed(handle_list);
+					if (ui.w < 1 || !window.IsVisible)
+						this.upd = 2;
+					else
+						timer.lib_update();
+					break;
+			}
 		}
 	}
 
 	this.get_library = function() {
-		this.empty = ""; if (full_list) full_list.Dispose(); if (this.list) this.list.Dispose(); if (p.list) p.list.Dispose(); this.time.Reset(); this.none = ""; this.list = fb.GetLibraryItems(); full_list = this.list.Clone();
+		this.empty = "";
+		p.list = null;
+		this.time.Reset();
+		this.none = "";
+		this.list = fb.GetLibraryItems();
+		full_list = this.list.Clone();
 		if (!this.list.Count || !fb.IsLibraryEnabled()) {library_tree.tree = []; library_tree.line_l = 0; sbar.set_rows(0); this.empty = "Nothing to show\n\nConfigure Media Library first\n\nFile>Preferences>Media library"; p.tree_paint(); return;}
 		if (p.filter_by > 0 && libraryProps.searchMode > 1) try {this.list = fb.GetQueryItems(this.list, p.filt[p.filter_by].type)} catch (e) {};
 		if (!this.list.Count) {library_tree.tree = []; library_tree.line_l = 0; sbar.set_rows(0); this.none = "Nothing found"; p.tree_paint(); return;} this.rootNames("", 0);
@@ -1238,7 +1251,7 @@ function library_manager() {
 	this.rootNames = function(li, search) {
 		var i = 0, total; switch (search) {case 0: p.sort(this.list); li = p.list = this.list; node = []; var arr = node; break; case 1: node_s = []; var arr = node_s; break;}
 		total = li.Count; var tree_type = p.view_by != p.folder_view ? 0 : 1;
-        switch (tree_type) {case 0: var tfo = fb.TitleFormat(p.view), items = tfo.EvalWithMetadbs(li).toArray(); for (i = 0; i < total; i++) arr[i] = items[i].split("|"); tfo.Dispose(); break; case 1: var items = li.GetLibraryRelativePaths().toArray(); for (i = 0; i < total; i++) arr[i] = items[i].split("\\"); break;}
+        switch (tree_type) {case 0: var tfo = fb.TitleFormat(p.view), items = tfo.EvalWithMetadbs(li); for (i = 0; i < total; i++) arr[i] = items[i].split("|"); break; case 1: var items = li.GetLibraryRelativePaths(); for (i = 0; i < total; i++) arr[i] = items[i].split("\\"); break;}
 	}
 
 	this.prefixes = function(n) {
@@ -1314,10 +1327,10 @@ function library_manager() {
 	this.binaryInsert = function(folder, insert, li, n) {
 		switch (true) {
             case !folder:
-				var tfo = fb.TitleFormat(p.view), item_a = tfo.EvalWithMetadbs(insert).toArray(); tfo.Dispose();
-				for (var j = 0; j < insert.Count; j++) {var i = binaryInsert(insert.Item(j)); n.splice(i, 0, item_a[j].split("|")); li.Insert(i, insert.Item(j));} break;
-            case folder: var item_a = insert.GetLibraryRelativePaths().toArray(); for (var j = 0; j < insert.Count; j++) {
-				var i = binaryInsert(insert.Item(j)); if (i != -1) {n.splice(i, 0, item_a[j].split("\\")); li.Insert(i, insert.Item(j));}} break;
+				var tfo = fb.TitleFormat(p.view), item_a = tfo.EvalWithMetadbs(insert);
+				for (var j = 0; j < insert.Count; j++) {var i = binaryInsert(insert[j]); n.splice(i, 0, item_a[j].split("|")); li.Insert(i, insert[j]);} break;
+            case folder: var item_a = insert.GetLibraryRelativePaths(); for (var j = 0; j < insert.Count; j++) {
+				var i = binaryInsert(insert[j]); if (i != -1) {n.splice(i, 0, item_a[j].split("\\")); li.Insert(i, insert[j]);}} break;
 		}
 	}
 
@@ -1335,7 +1348,7 @@ function library_manager() {
 					this.binaryInsert(p.view_by == p.folder_view, newSearchItems, p.list, node_s);
 					this.node = node_s.slice(); newSearchItems.Dispose();
 					if (!p.list.Count) {pop.tree = []; pop.line_l = 0; sbar.set_rows(0); this.none = "Nothing found"; p.tree_paint();}
-				} else p.list = this.list; lis.Dispose();
+				} else p.list = this.list;
 				break;
 			default:
 				full_list.InsertRange(full_list.Count, handle_list); full_list_need_sort = true;
@@ -1346,8 +1359,8 @@ function library_manager() {
 				}
 				else {if (full_list_need_sort) p.sort(full_list); this.list = full_list.Clone(); full_list_need_sort = false;} p.sort(handle_list);
 				switch (tree_type) {
-					case 0: var tfo = fb.TitleFormat(p.view), item_a = tfo.EvalWithMetadbs(handle_list).toArray(); for (var j = 0; j < handle_list.Count; j++) {var i = this.list.Find(handle_list.Item(j)); if (i != -1) node.splice(i, 0, item_a[j].split("|"));} tfo.Dispose(); break;
-					case 1: var item_a = handle_list.GetLibraryRelativePaths().toArray(); for (var j = 0; j < handle_list.Count; j++) {var i = this.list.Find(handle_list.Item(j)); if (i != -1) node.splice(i, 0, item_a[j].split("\\"));} break;
+					case 0: var tfo = fb.TitleFormat(p.view), item_a = tfo.EvalWithMetadbs(handle_list); for (var j = 0; j < handle_list.Count; j++) {var i = this.list.Find(handle_list[j]); if (i != -1) node.splice(i, 0, item_a[j].split("|"));} break;
+					case 1: var item_a = handle_list.GetLibraryRelativePaths(); for (var j = 0; j < handle_list.Count; j++) {var i = this.list.Find(handle_list[j]); if (i != -1) node.splice(i, 0, item_a[j].split("\\"));} break;
 				}
 				if (this.list.Count) this.empty = "";
 				if (p.s_txt) {
@@ -1355,11 +1368,16 @@ function library_manager() {
 					try {newSearchItems = fb.GetQueryItems(handle_list, p.s_txt);} catch(e) {}
 					p.list.InsertRange(p.list.Count, newSearchItems); p.sort(p.list); p.sort(newSearchItems);
 					switch (tree_type) {
-						case 0: var tfo = fb.TitleFormat(p.view), item_a = tfo.EvalWithMetadbs(newSearchItems).toArray(); for (var j = 0; j < newSearchItems.Count; j++) {var i = p.list.Find(newSearchItems.Item(j)); if (i != -1) node_s.splice(i, 0, item_a[j].split("|"));} tfo.Dispose(); break;
-						case 1: var item_a = newSearchItems.GetLibraryRelativePaths().toArray(); for (var j = 0; j < newSearchItems.Count; j++) {var i = p.list.Find(newSearchItems.Item(j)); if (i != -1) node_s.splice(i, 0, item_a[j].split("\\"));} break;
+						case 0: var tfo = fb.TitleFormat(p.view), item_a = tfo.EvalWithMetadbs(newSearchItems); for (var j = 0; j < newSearchItems.Count; j++) {var i = p.list.Find(newSearchItems[j]); if (i != -1) node_s.splice(i, 0, item_a[j].split("|"));} break;
+						case 1: var item_a = newSearchItems.GetLibraryRelativePaths();
+						for (var j = 0; j < newSearchItems.Count; j++) {
+							var i = p.list.Find(newSearchItems[j]); if (i != -1) node_s.splice(i, 0, item_a[j].split("\\"));
+						} break;
 					}
-					this.node = node_s.slice(); newSearchItems.Dispose();
-					if (!p.list.Count) {pop.tree = []; pop.line_l = 0; sbar.set_rows(0); this.none = "Nothing found"; p.tree_paint();}
+					this.node = node_s.slice();
+					if (!p.list.Count) {
+						pop.tree = []; pop.line_l = 0; sbar.set_rows(0); this.none = "Nothing found"; p.tree_paint();
+					}
 				} else p.list = this.list;
 				break;
 		}
@@ -1373,13 +1391,13 @@ function library_manager() {
 				var tree_type = p.view_by != p.folder_view ? 0 : 1;
 				switch (tree_type) {
 						case 0:
-							var tfo = fb.TitleFormat(p.view), item_a = tfo.EvalWithMetadbs(handle_list).toArray(); tfo.Dispose();
-							for (var j = 0; j < handle_list.Count; j++) {var i = this.list.Find(handle_list.Item(j)); if (i != -1) node.splice(i, 0, item_a[j].split("|"));}
+							var tfo = fb.TitleFormat(p.view), item_a = tfo.EvalWithMetadbs(handle_list);
+							for (var j = 0; j < handle_list.Count; j++) {var i = this.list.Find(handle_list[j]); if (i != -1) node.splice(i, 0, item_a[j].split("|"));}
 							if (!this.list.Count) this.none = "Nothing found";
 							break;
 						case 1:
-							var item_a = handle_list.GetLibraryRelativePaths().toArray();
-							for (var j = 0; j < handle_list.Count; j++) {var i = this.list.Find(handle_list.Item(j)); if (i != -1) node.splice(i, 0, item_a[j].split("\\"));}
+							var item_a = handle_list.GetLibraryRelativePaths();
+							for (var j = 0; j < handle_list.Count; j++) {var i = this.list.Find(handle_list[j]); if (i != -1) node.splice(i, 0, item_a[j].split("\\"));}
 							if (!this.list.Count) this.none = "Nothing found";
 							break;
 				}
@@ -1394,23 +1412,23 @@ function library_manager() {
 				var tree_type = p.view_by != p.folder_view ? 0 : 1;
 				switch (tree_type) {
 					case 0:
-						var tfo = fb.TitleFormat(p.view), item_a = tfo.EvalWithMetadbs(handle_list).toArray(); tfo.Dispose();
-						for (var j = 0; j < handle_list.Count; j++) {var i = p.list.Find(handle_list.Item(j)); if (i != -1) node_s.splice(i, 0, item_a[j].split("|"));}
+						var tfo = fb.TitleFormat(p.view), item_a = tfo.EvalWithMetadbs(handle_list);
+						for (var j = 0; j < handle_list.Count; j++) {var i = p.list.Find(handle_list[j]); if (i != -1) node_s.splice(i, 0, item_a[j].split("|"));}
 						break;
 					case 1:
-						var item_a = handle_list.GetLibraryRelativePaths().toArray();
-						for (var j = 0; j < handle_list.Count; j++) {var i = p.list.Find(handle_list.Item(j)); if (i != -1) node_s.splice(i, 0, item_a[j].split("\\"));}
+						var item_a = handle_list.GetLibraryRelativePaths();
+						for (var j = 0; j < handle_list.Count; j++) {var i = p.list.Find(handle_list[j]); if (i != -1) node_s.splice(i, 0, item_a[j].split("\\"));}
 						break;
 				}
         }
     }
 
 	this.removed = function(handle_list) {
-		var j = handle_list.Count; while (j--) {var i = this.list.Find(handle_list.Item(j)); if (i != -1) {this.list.RemoveById(i); node.splice(i, 1);}}
-		if (p.filter_by > 0 && libraryProps.searchMode > 1) {j = handle_list.Count; if (full_list_need_sort) p.sort(full_list); full_list_need_sort = false; while (j--) {i = full_list.Find(handle_list.Item(j)); if (i != -1) full_list.RemoveById(i);}}
+		var j = handle_list.Count; while (j--) {var i = this.list.Find(handle_list[j]); if (i != -1) {this.list.RemoveById(i); node.splice(i, 1);}}
+		if (p.filter_by > 0 && libraryProps.searchMode > 1) {j = handle_list.Count; if (full_list_need_sort) p.sort(full_list); full_list_need_sort = false; while (j--) {i = full_list.Find(handle_list[j]); if (i != -1) full_list.RemoveById(i);}}
 		else full_list = this.list.Clone();
 		if (p.s_txt) {
-			j = handle_list.Count; while (j--) {i = p.list.Find(handle_list.Item(j)); if (i != -1) {p.list.RemoveById(i); node_s.splice(i, 1);}}
+			j = handle_list.Count; while (j--) {i = p.list.Find(handle_list[j]); if (i != -1) {p.list.RemoveById(i); node_s.splice(i, 1);}}
 			this.node = node_s.slice();
 			if (!p.list.Count) {library_tree.tree = []; library_tree.line_l = 0; sbar.set_rows(0); this.none = "Nothing found"; p.tree_paint();}
 		}
@@ -1471,7 +1489,6 @@ function LibraryTree() {
 		ui.node_win = 0;
 	}
 	im.ReleaseGraphics(g);
-	im.Dispose();
 	this.line_l = 0; this.sel_items = []; this.subCounts =  {"standard": {}, "filter": {}, "search": {}}; this.tree = [];
 	if (!window.GetProperty("SYSTEM.Playlist Checked", false))
 		fb.ShowPopupMessage("Default playlist: Library View.\n\nChange in panel properties if required.", "Library Tree");
@@ -1526,7 +1543,7 @@ function LibraryTree() {
 		for (var i = 0; i < this.tree.length; i++) this.tree[i].sel = false;
 	}
 	this.clear_child = function(br) {br.child = []; this.buildTree(lib_manager.root, 0, true, true);}
-	this.deactivate_tooltip = function() {tt_c = 0; tt.Text = ""; tt.TrackActivate = false; tt.Deactivate(); p.tree_paint();}
+	this.deActivate_tooltip = function() {tt_c = 0; tt.Text = ""; tt.TrackActivate = false; tt.Deactivate(); p.tree_paint();}
 	this.expandNodes = function (obj, isRoot) {
 		this.branch(obj, isRoot, true, true);
 		if (obj.child)
@@ -1536,25 +1553,24 @@ function LibraryTree() {
 	}
     this.gen_pl = !libraryProps.sendToCurrent;
     this.get_sel_items = function () {p.tree_paint(); var i = 0; this.sel_items = []; for (i = 0; i < this.tree.length; i++) if (this.tree[i].sel) this.sel_items = this.sel_items.concat(this.sel_items, this.tree[i].item); this.sel_items = uniq(this.sel_items);}
-	this.getHandles = function(n) {if (n) this.get_sel_items(); var handle_list = fb.CreateHandleList(); try {for (var i = 0; i < this.sel_items.length; i++) handle_list.Add(p.list.Item(this.sel_items[i]));} catch (e) {} return handle_list;}
+	this.getHandles = function(n) {if (n) this.get_sel_items(); var handle_list = fb.CreateHandleList(); try {for (var i = 0; i < this.sel_items.length; i++) handle_list.Add(p.list[this.sel_items[i]]);} catch (e) {} return handle_list;}
 	this.leave = function(){if (men.r_up || tt.Text) return; m_br = -1; row_o = 0; m_i = -1; ix_o = 0; p.tree_paint();}
 	this.mbtn_up = function(x, y) {this.add(x, y, mbtn_pl);}
-	this.on_char = function(code) {if (p.s_search || code != v.copy) return; var handle_list = this.getHandles(true); fb.CopyHandleListToClipboard(handle_list); handle_list.Dispose();}
+	this.on_char = function(code) {if (p.s_search || code != v.copy) return; var handle_list = this.getHandles(true); fb.CopyHandleListToClipboard(handle_list); }
 	this.on_focus = function(p_is_focused) {is_focused = p_is_focused; if (p_is_focused && handles && handles.Count) selection_holder.SetSelection(handles);}
 	this.row = function(y) {return Math.round((y - p.s_h - ui.row_h * 0.5) / ui.row_h);}
 	this.setGetPos = function(pos) {m_i = get_pos = pos;}
 
 	this.create_tooltip = function() {
 		if (!libraryProps.tooltips) return;
-		if (tt) tt.Dispose();
-		tt = window.CreateTooltip(ui.font.Name, ui.font.Size, ui.font.Style);
+		tt = g_tooltip;
 		tt_y = ui.row_h - libraryProps.rowVertPadding;
 		tt_y = p.s_h - Math.floor((ui.row_h - tt_y) / 2)
 		tt.SetDelayTime(0, 500);
 		tt.Text = "";
 	}
 
-	this.activate_tooltip = function(ix, y) {
+	this.Activate_tooltip = function(ix, y) {
 		if (tt_id == ix || Math.round(ui.pad * this.tree[ix].tr + ui.margin) + ui.icon_w + (!libraryProps.tooltips || !libraryProps.fullLine ? this.tree[ix].w : this.tree[ix].tt_w) <= sbar.tree_w - ui.sel) return;
 		if (tt_c == 2) {
 			tt_id = ix;
@@ -1822,7 +1838,7 @@ function LibraryTree() {
 	}
 
 	this.tracking = function(list, type) {
-		if (type) {handles = fb.CreateHandleList(); try {for (var i = 0; i < list.length; i++) handles.Add(p.list.Item(list[i]));} catch (e) {}}
+		if (type) {handles = fb.CreateHandleList(); try {for (var i = 0; i < list.length; i++) handles.Add(p.list[list[i]]);} catch (e) {}}
 		else handles = list.Clone();
 		if (libraryProps.playlistCustomSort) handles.OrderByFormat(tf_customSort, 1);
 		selection_holder.SetSelection(handles);
@@ -1838,7 +1854,7 @@ function LibraryTree() {
 		if (type) {
 			var items = fb.CreateHandleList();
 			for (i = 0; i < list.length; i++)
-				items.Add(p.list.Item(list[i]));
+				items.Add(p.list[list[i]]);
 		} else var items = list.Clone();
 		if (p.multi_process && !libraryProps.playlistCustomSort) items.OrderByFormat(p.mv_sort, 1);
 		if (libraryProps.playlistCustomSort) items.OrderByFormat(tf_customSort, 1);
@@ -1846,7 +1862,7 @@ function LibraryTree() {
 		selection_holder.SetSelection(handles);
 		if (fb.IsPlaying && !add && fb.GetNowPlaying()) {
 			for (i = 0; i < items.Count; i++)
-				if (fb.GetNowPlaying().Compare(items.Item(i))) {
+				if (fb.GetNowPlaying().Compare(items[i])) {
 					np_item = i;
 					break;
 				}
@@ -1866,9 +1882,15 @@ function LibraryTree() {
 			if (np_item != -1 && pid != -1) {
 				plman.ClearPlaylistSelection(pln); plman.SetPlaylistSelectionSingle(pln, pid, true); plman.RemovePlaylistSelection(pln, true);
 				var it = items.Clone(); items.RemoveRange(np_item, items.Count); it.RemoveRange(0, np_item + 1);
-				if (plman.PlaylistItemCount(pln) < 5000) plman.UndoBackup(pln); plman.InsertPlaylistItems(pln, 0, items); plman.InsertPlaylistItems(pln, plman.PlaylistItemCount(pln), it); it.Dispose();
+				if (plman.PlaylistItemCount(pln) < 5000)
+					plman.UndoBackup(pln);
+				plman.InsertPlaylistItems(pln, 0, items);
+				plman.InsertPlaylistItems(pln, plman.PlaylistItemCount(pln), it);
 			} else {
-				if (plman.PlaylistItemCount(pln) < 5000) plman.UndoBackup(pln); plman.ClearPlaylist(pln); plman.InsertPlaylistItems(pln, 0, items);
+				if (plman.PlaylistItemCount(pln) < 5000)
+					plman.UndoBackup(pln);
+				plman.ClearPlaylist(pln);
+				plman.InsertPlaylistItems(pln, 0, items);
 			}
 		} else if (!add) {
 			if (plman.PlaylistItemCount(pln) < 5000) plman.UndoBackup(pln); plman.ClearPlaylist(pln); plman.InsertPlaylistItems(pln, 0, items);
@@ -1882,7 +1904,6 @@ function LibraryTree() {
 			var c = (plman.PlaybackOrder === 3 || plman.PlaybackOrder === 4) ? Math.ceil(plman.PlaylistItemCount(pln) * Math.random() - 1) : 0;
 			plman.ExecutePlaylistDefaultAction(pln, c);
 		}
-		items.Dispose();
 	}
 
 	// this function seems setup to collapse and scroll to the selected item, but it doesn't take an x,y so it always
@@ -2040,7 +2061,7 @@ function LibraryTree() {
                     draw_node(gr, item.child.length < 1 ? m_br != i ? 0 : 2 : m_br != i ? 1 : 3, item_x, item_y + p.node_y);
 				}
 				else {
-					// y2 = Math.round(p.s_h - sbar.delta) + Math.ceil(ui.row_h * (i + 0.5)) - ui.l_wf; // TODO: Do we need this line?
+					// y2 = Math.round(p.s_h - sbar.delta) + Math.ceil(ui.row_h * (i + 0.5)) - ui.l_widthf; // TODO: Do we need this line?
 					gr.FillSolidRect(item_x + ui.l_s2, y2, ui.l_s3, nodeLineWidth, ui.linecol);
 				}
 				item_x += ui.icon_w;
@@ -2172,9 +2193,8 @@ function LibraryTree() {
 		if (Math.sqrt((Math.pow(last_pressed_coord.x - x, 2) + Math.pow(last_pressed_coord.y - y, 2))) > 7) {
 			last_pressed_coord = {x: undefined, y: undefined}
 			var handle_list = this.getHandles();
-			var effect = fb.DoDragDrop(handle_list, handle_list.Count ? 0|1 : 0);
+			fb.DoDragDrop(window.ID, handle_list, handle_list.Count ? 0|1 : 0);
 			lbtn_dn = false;
-			handle_list.Dispose();
 		}
 	}
 
@@ -2243,11 +2263,11 @@ function LibraryTree() {
 		if (ix !== -1) {
 			m_i = ix;
 			if (libraryProps.tooltips)
-				this.activate_tooltip(ix, y);
+				this.Activate_tooltip(ix, y);
 		}
 		if (m_i == ix_o && m_br == row_o) return;
 		tt_id = -1;
-		if (libraryProps.tooltips && tt.Text) this.deactivate_tooltip();
+		if (libraryProps.tooltips && tt.Text) this.deActivate_tooltip();
 		if (!sbar.draw_timer) p.tree_paint();
 		ix_o = m_i;
 		row_o = m_br;
@@ -2348,7 +2368,7 @@ function searchLibrary() {
 		shift_x = 0,
 		txt_w = 0
 		cursor_width = scaleForDisplay(1);
-	var calc_text = function () {var im = gdi.CreateImage(1, 1), g = im.GetGraphics(); txt_w = g.CalcTextWidth(p.s_txt.substr(offset), ui.font); im.ReleaseGraphics(g); im.Dispose();}
+	var calc_text = function () {var im = gdi.CreateImage(1, 1), g = im.GetGraphics(); txt_w = g.CalcTextWidth(p.s_txt.substr(offset), ui.font); im.ReleaseGraphics(g); }
 	var drawcursor = function (gr) {
 		if (p.s_search && p.s_cursor && s == f && cx >= offset) {
 			var x1 = p.s_x + get_cursor_x(cx);
@@ -2365,13 +2385,13 @@ function searchLibrary() {
         }
 		gr.DrawLine(Math.min(p.s_x + get_cursor_x(s), clamp), cursor_y, Math.min(p.s_x + get_cursor_x(f), clamp), cursor_y, ui.row_h - 3, selcol);
 	}
-	var get_cursor_pos = function (x) {var im = gdi.CreateImage(1, 1), g = im.GetGraphics(), nx = x - p.s_x, pos = 0; for (i = offset; i < p.s_txt.length; i++) {pos += g.CalcTextWidth(p.s_txt.substr(i,1), ui.font); if (pos >= nx + 3) break;} im.ReleaseGraphics(g); im.Dispose(); return i;}
+	var get_cursor_pos = function (x) {var im = gdi.CreateImage(1, 1), g = im.GetGraphics(), nx = x - p.s_x, pos = 0; for (i = offset; i < p.s_txt.length; i++) {pos += g.CalcTextWidth(p.s_txt.substr(i,1), ui.font); if (pos >= nx + 3) break;} im.ReleaseGraphics(g); return i;}
 	var get_cursor_x = function (pos) {
 		var im = gdi.CreateImage(1, 1),
 		g = im.GetGraphics(),
 		x = 0;
 		if (pos >= offset) x = g.CalcTextWidth(p.s_txt.substr(offset, pos - offset), ui.font);
-		im.ReleaseGraphics(g); im.Dispose();
+		im.ReleaseGraphics(g);
 		return x;
 	}
 	var get_offset = function (gr) {var t = gr.CalcTextWidth(p.s_txt.substr(offset, cx - offset), ui.font); var j = 0; while (t >= p.s_w2 && j < 500) {j++; offset++; t = gr.CalcTextWidth(p.s_txt.substr(offset, cx - offset), ui.font);}}
@@ -2442,7 +2462,7 @@ function searchLibrary() {
 		p.s_cursor = false;
 		p.pos = -1;
 		switch (code) {
-			case v.enter: if (p.s_txt.length < 3) break; var items = fb.CreateHandleList(); try {items = fb.GetQueryItems(lib_manager.list, p.s_txt)} catch (e) {} library_tree.load(items, false, false, false, library_tree.gen_pl, false); items.Dispose(); break;
+			case v.enter: if (p.s_txt.length < 3) break; var items = fb.CreateHandleList(); try {items = fb.GetQueryItems(lib_manager.list, p.s_txt)} catch (e) {} library_tree.load(items, false, false, false, library_tree.gen_pl, false); break;
 			case v.redo: lg.push(p.s_txt); if (lg.length > 30) lg.shift(); if (log.length > 0) {p.s_txt = log.pop() + ""; cx++} break;
 			case v.undo: log.push(p.s_txt); if (log.length > 30) lg.shift(); if (lg.length > 0) p.s_txt = lg.pop() + ""; break;
 			case v.selAll:
@@ -2555,7 +2575,7 @@ function searchLibrary() {
 			f = Math.min(Math.max(f, 0), p.s_txt.length);
 			cx = Math.min(Math.max(cx, 0), p.s_txt.length);
 			if (ui.fill) gr.FillSolidRect(ui.x, ui.y + 1, ui.w, ui.row_h - 4, 0x60000000);
-			if (ui.pen == 1) gr.DrawLine(ui.x + ui.margin, ui.y + p.s_sp, ui.x + p.s_w1, ui.y + p.s_sp, ui.l_w, ui.s_linecol);
+			if (ui.pen == 1) gr.DrawLine(ui.x + ui.margin, ui.y + p.s_sp, ui.x + p.s_w1, ui.y + p.s_sp, ui.l_width, ui.s_linecol);
 			if (ui.pen == 2) gr.DrawRoundRect(ui.x, ui.y + 2, ui.w - 1, ui.row_h - 4, 4, 4, 1, ui.pen_c);
 			if (p.s_txt) {
 				f = (f < p.s_txt.length) ? f : p.s_txt.length;
@@ -2571,12 +2591,14 @@ function searchLibrary() {
 			}
 			drawcursor(gr);
 			if (libraryProps.searchMode > 1) {
-				var l_x = p.filter_x1 - 8 - ui.l_w,
+				var l_x = p.filter_x1 - 8 - ui.l_width,
 					l_y = p.s_y;
-				gr.gdiDrawText(p.filt[p.filter_by].name, p.filter_font, ui.txt_box, p.filter_x1, ui.y, p.f_w[p.filter_by], p.s_sp, p.cc);
-				gr.FillSolidRect(l_x, l_y, ui.l_w, p.s_sp, ui.s_linecol);
+				gr.GdiDrawText(p.filt[p.filter_by].name, p.filter_font, ui.txt_box, p.filter_x1, ui.y, p.f_w[p.filter_by], p.s_sp, p.cc);
+				gr.FillSolidRect(l_x, l_y, ui.l_width, p.s_sp, ui.s_linecol);
 			}
-		} catch (e) {}
+		} catch (e) {
+            console.log('<Error: Library could not be properly drawn>');
+		}
 	}
 }
 // if (libraryProps.searchMode) var sL = new searchLibrary();
@@ -2694,7 +2716,7 @@ function button_manager() {
 	arrow_symb = 0;
 	var b_x,
 		b3 = ["scrollUp", "scrollDn"],
-		but_tt = window.CreateTooltip("Segoe UI", 15 * ui.scale * libraryProps.btnTooltipZoom / 100, 0),
+		but_tt = g_tooltip,
 		bx, by, bh, byDn, byUp, fw, hot_o, i, qx, qy, qh, s_img = [],
 		scr = [],
 		scrollBut_x, scrollDn_y, scrollUp_y;
@@ -2702,17 +2724,22 @@ function button_manager() {
 	this.b = null;
 	this.Dn = false;
 	var browser = function(c) {if (!but.run(c)) fb.ShowPopupMessage("Unable to launch your default browser.", "Library Tree");}
-	var tooltip = function(n) {if (but_tt.text == n) return; but_tt.text = n; but_tt.activate();}
+	var tooltip = function(n) {if (but_tt.text == n) return; but_tt.text = n; but_tt.Activate();}
 	this.lbtn_dn = function (x, y) {
 		this.move(x, y);
 		if (!this.b) return false;
 		this.Dn = this.b;
-		if (libraryProps.showScrollbar)
-			for (j = 0; j < b3.length; j++)
+		if (libraryProps.showScrollbar) {
+			for (j = 0; j < b3.length; j++) {
 				if (this.b == b3[j]) {
-					if (this.btns[this.b].trace(x, y)) this.btns[this.b].down = true;
+					if (this.btns[this.b].trace(x, y)) {
+						this.btns[this.b].down = true;
+					}
 					this.btns[this.b].changestate("down");
-				} this.btns[this.b].lbtn_dn(x, y);
+				}
+			}
+		}
+		this.btns[this.b].lbtn_dn(x, y);
 		return true;
 	}
 	this.lbtn_up = function (x, y) {
@@ -2949,7 +2976,6 @@ function menu_object() {
 			}
 			// if (p.pn_h_auto && p.pn_h == p.pn_h_min && library_tree.tree[0]) library_tree.clear_child(library_tree.tree[0]);
 		}
-		menu.Dispose();
 	}
 
 	this.search = function(Menu, StartIndex, s, f, paste) {
@@ -2972,7 +2998,7 @@ function menu_object() {
 				case 2: sL.on_char(v.cut); break;
 				case 3: sL.on_char(v.paste, true); break;
 			}
-		} menu.Dispose();
+		}
 	}
 
 	this.rbtn_up = function(x, y) {
@@ -3028,8 +3054,10 @@ function menu_object() {
 			OptionsMenu.AppendTo(menu, MF_STRING, "Options");
 			// Index = this.ThemeTypeMenu(ThemeMenu, Index); ThemeMenu.AppendTo(OptionsMenu, MF_STRING, "Theme"); OptionsMenu.AppendMenuSeparator();
 			Index = this.ConfigTypeMenu(OptionsMenu, Index);
-			menu.AppendMenuSeparator(); var items = library_tree.getHandles();
-			Context.InitContext(items); Context.BuildMenu(menu, 5000);
+			menu.AppendMenuSeparator();
+			var items = library_tree.getHandles();
+			Context.InitContext(items);
+			Context.BuildMenu(menu, 5000);
 		} else {
 			Index = this.OptionsTypeMenu(menu, Index);
 			// Index = this.ThemeTypeMenu(ThemeMenu, Index);
@@ -3088,8 +3116,8 @@ function menu_object() {
 			}
 		}
 		if (idx >= 5000 && idx <= 5800) {show_context && Context.ExecuteByID(idx - 5000);}
-		if (items) items.Dispose(); this.r_up = false;
-		Context.Dispose(); FilterMenu.Dispose(); menu.Dispose(); OptionsMenu.Dispose(); PlaylistMenu.Dispose(); ThemeMenu.Dispose();
+		this.r_up = false;
+		// Context.Dispose(); FilterMenu.Dispose(); menu.Dispose(); OptionsMenu.Dispose(); PlaylistMenu.Dispose(); ThemeMenu.Dispose();
 	}
 }
 // var men = new menu_object();
@@ -3099,7 +3127,7 @@ function timers() {
 	for (var i = 0; i < timer_arr.length; i++) {this[timer_arr[i]] = false; this[timer_arr[i] + "i"] = i;}
 	this.reset = function(timer, n) {if (timer) window.ClearTimeout(timer); this[timer_arr[n]] = false;}
 	this.lib = function() {window.SetTimeout(function() {if ((ui.w < 1 || !window.IsVisible) && libraryProps.rememberTree) lib_manager.init = true; lib_manager.get_library(); lib_manager.rootNodes(libraryProps.rememberTree ? 1 : 0, lib_manager.process);}, 5);}
-	this.tooltip = function() {this.reset(this.tt, this.tti); this.tt = window.SetTimeout(function() {library_tree.deactivate_tooltip(); timer.tt = false;}, 5000);}
+	this.tooltip = function() {this.reset(this.tt, this.tti); this.tt = window.SetTimeout(function() {library_tree.deActivate_tooltip(); timer.tt = false;}, 5000);}
 	this.lib_update = function() {this.reset(this.update, this.updatei); this.update = window.SetTimeout(function() {lib_manager.time.Reset(); library_tree.subCounts =  {"standard": {}, "search": {}, "filter": {}}; lib_manager.rootNodes(2, lib_manager.process); timer.update = false;}, 500);}
 }
 // var timer = new timers();

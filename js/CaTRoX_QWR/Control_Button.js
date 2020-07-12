@@ -175,6 +175,7 @@ Button.prototype.onClick = function () {
 			break;
 		case 'Reload':
 			art_cache.clear();
+			g_tooltip.Deactivate();
 			window.Reload();
 			break;
 		case 'Console':
@@ -263,7 +264,7 @@ Button.prototype.onClick = function () {
 				if (displayLyrics) {
 					refresh_lyrics();
 				}
-				window.RepaintRect(albumart_size.x - 1, albumart_size.y - 1, albumart_scaled.width + 2, albumart_scaled.height + 2);
+				window.RepaintRect(albumart_size.x - 1, albumart_size.y - 1, albumart_scaled.Width + 2, albumart_scaled.Height + 2);
 			}
 			break;
 		case 'ShowLibrary':
@@ -346,7 +347,6 @@ function onPlaylistsMenu(x, y) {
 	for (var i = 0; i != playlistCount; i++) {
 		if (id == (playlistId + i)) plman.ActivePlaylist = i; // playlist switch
 	}
-	lists.Dispose();
 	menu_down = false;
 	return true;
 }

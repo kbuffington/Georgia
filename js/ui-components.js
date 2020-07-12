@@ -26,7 +26,7 @@ function PauseButton() {
 	}
 
 	this.repaint = function() {
-		window.repaintRect(this.left - 1, this.top - 1, geo.pause_size + 2, geo.pause_size + 2);
+		window.RepaintRect(this.left - 1, this.top - 1, geo.pause_size + 2, geo.pause_size + 2);
 	}
 
 	this.trace = function(x, y) {

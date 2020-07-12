@@ -13,13 +13,11 @@ _.mixin({
         }
         var tfo = fb.TitleFormat(t);
         var str = tfo.EvalWithMetadb(metadb);
-        tfo.Dispose();
         return str;
     },
     tfe:                  function (t, force) {
         var tfo = fb.TitleFormat(t);
         var str = tfo.Eval(force);
-        tfo.Dispose();
         return str;
     },
 });

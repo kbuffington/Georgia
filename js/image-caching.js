@@ -20,7 +20,7 @@ function ArtCache(maxCacheSize) {
                 w = Math.min(w / scale_factor);
             }
             art_cache[path] = img.Resize(w, h);
-            img.Dispose();
+            img = null;
             var pathIdx = art_cache_indexes.indexOf(path);
             if (pathIdx !== -1) {
                 // remove from middle of cache and put on end

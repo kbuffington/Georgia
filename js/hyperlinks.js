@@ -56,7 +56,7 @@ function Hyperlink(text, font, type, x_offset, y_offset, container_w) {
 
 	this.setFont = function(font) {
 		this.font = font;
-		this.hoverFont = gdi.font(font.Name, font.Size, font.Style | g_font_style.underline);
+		this.hoverFont = gdi.Font(font.Name, font.Size, font.Style | g_font_style.underline);
 		link_dimensions = this.updateDimensions();
 	}
 

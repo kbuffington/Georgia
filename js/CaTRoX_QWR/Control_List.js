@@ -54,7 +54,7 @@ List = function (x, y, w, h, content) {
 
     /** @const {number}*/
     this.row_h = scaleForDisplay(g_properties.row_h);   // also see playlist.reinitialize
-    
+
     /** @type {number} */
     this.background_color = g_theme.colors.pss_back;
     /** @type {number} */
@@ -137,7 +137,7 @@ List.prototype.on_paint = function (gr) {
     }
     else {
         var text_format = g_string_format.align_center | g_string_format.trim_ellipsis_char | g_string_format.no_wrap;
-        gr.DrawString('No rows to display', gdi.font('Segoe Ui Semibold', 24), RGB(70, 70, 70), this.x, this.y, this.w, this.h, text_format);
+        gr.DrawString('No rows to display', gdi.Font('Segoe Ui Semibold', 24), RGB(70, 70, 70), this.x, this.y, this.w, this.h, text_format);
     }
 
     if (this.is_scrollbar_available) {

@@ -34,8 +34,8 @@ var g_hta_window = {
         while (!wnd && new Date().getTime() < now + 1000) {
             for (var i = windows.Count; --i >= 0;) {
                 try {
-                    if (windows.Item(i).id === hta_wnd_id) {
-                        wnd = windows.Item(i).parent.parentWindow;
+                    if (windows[i].id === hta_wnd_id) {
+                        wnd = windows[i].parent.parentWindow;
                     }
                 }
                 catch (e) {}

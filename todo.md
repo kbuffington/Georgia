@@ -17,3 +17,4 @@
 * ~If too many label/genre tags ensure hyperlinks do not overlap in playlist~ (implemented in 1.1.9)
 * Add option to draw labels directly on background
 * ~Handle issues with hyperlink searching with extra information (i.e. "[Deluxe Edition]")~ (implemented in 1.1.9)
+* Better handling of FLAC codec information in metadata panel. Should be similar to what shows in playlist.

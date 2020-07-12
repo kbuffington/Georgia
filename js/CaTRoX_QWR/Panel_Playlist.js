@@ -12,7 +12,7 @@ var trace_initialize_list_performance = false;
 g_script_list.push('Panel_Playlist.js');
 
 // Should be used only for default panel properties initialization
-var g_is_mini_panel = _.includes(window.name.toLowerCase(), 'mini');
+var g_is_mini_panel = _.includes(window.Name.toLowerCase(), 'mini');
 
 // Niceties:
 // TODO: grouping presets manager: other EsPlaylist grouping features - sorting, playlist association
@@ -1038,7 +1038,6 @@ function Playlist(x, y) {
         menu_down = true;
         cmm.execute(x, y);
         menu_down = false;
-        cmm.dispose();
 
         this.repaint();
         return true;
@@ -1808,7 +1807,7 @@ function Playlist(x, y) {
      * @return {Array<Row>}
      */
     function initialize_rows(playlist_items) {
-        var playlist_items_array = playlist_items.Convert().toArray();
+        var playlist_items_array = playlist_items.Convert();
 
         var rows = [];
         for (var i = 0, playlist_size = playlist_items_array.length; i < playlist_size; ++i) {
@@ -3538,8 +3537,7 @@ DiscHeader.prototype.constructor = Header;
  */
 DiscHeader.prepare_initialization_data = function (rows_to_process, rows_metadb) {
     var tfo = fb.TitleFormat('$ifgreater(%totaldiscs%,1,[Disc %discnumber% $if('+ tf.disc_subtitle+', \u2014 ,) ],)['+ tf.disc_subtitle +']');
-    var disc_data = tfo.EvalWithMetadbs(rows_metadb).toArray();
-    tfo.Dispose();
+    var disc_data = tfo.EvalWithMetadbs(rows_metadb);
 
     return _.zip(rows_to_process, disc_data);
 };
@@ -3746,8 +3744,7 @@ function Header(parent, x, y, w, h, idx) {
             was_playing = this.is_playing();
             cache_header = false;
             if (header_image) {
-                header_image.Dispose();
-                header_image = undefined;
+                header_image = null;
             }
         }
         if (!cache_header || !header_image) {
@@ -4061,8 +4058,7 @@ function Header(parent, x, y, w, h, idx) {
             h = bottom - this.y;
         }
         gr.DrawImage(cache_header ? header_image : clipImg, this.x, y, this.w, h, 0, srcY, this.w, h);
-        if (!cache_header) clipImg.Dispose();
-
+        clipImg = null;
     };
 
     /**
@@ -4175,7 +4171,6 @@ function Header(parent, x, y, w, h, idx) {
 
         clipImg.ReleaseGraphics(grClip);
         gr.DrawImage(clipImg, this.x, this.y, this.w, this.h, 0, 0, this.w, this.h, 0, 255);
-        clipImg.Dispose();
     };
 
     /**
@@ -4312,7 +4307,6 @@ function Header(parent, x, y, w, h, idx) {
 
         if (needs_redraw) {
             if (header_image) {
-                header_image.Dispose();
                 header_image = null;
             }
             this.repaint();
@@ -4400,8 +4394,7 @@ Header.prepare_initialization_data = function (rows_to_process, rows_metadb) {
     }
 
     var tfo = fb.TitleFormat(query ? query : ''); // workaround a bug, because of which '' is sometimes treated as null :\
-    var rows_data = tfo.EvalWithMetadbs(rows_metadb).toArray();
-    tfo.Dispose();
+    var rows_data = tfo.EvalWithMetadbs(rows_metadb);
 
     var prepared_disc_data = g_properties.show_disc_header ? DiscHeader.prepare_initialization_data(rows_to_process, rows_metadb) : [];
 
@@ -4982,7 +4975,7 @@ function SelectionHandler(cnt_arg, cur_playlist_idx_arg) {
         var cur_playlist_selection = plman.GetPlaylistSelectedItems(cur_playlist_idx);
         var cur_selected_indexes = selected_indexes;
 
-        var effect = fb.DoDragDrop(cur_playlist_selection, g_drop_effect.copy | g_drop_effect.move | g_drop_effect.link);
+        var effect = fb.DoDragDrop(window.ID, cur_playlist_selection, g_drop_effect.copy | g_drop_effect.move | g_drop_effect.link);
 
         function can_handle_move_drop() {
             // We can handle the 'move drop' properly only when playlist is still in the same state
@@ -4998,7 +4991,7 @@ function SelectionHandler(cnt_arg, cur_playlist_idx_arg) {
             var items_to_remove = [];
             var playlist_items = plman.GetPlaylistItems(cur_playlist_idx);
             _.forEach(cur_selected_indexes, function (idx) {
-                var cur_item = playlist_items.Item(idx);
+                var cur_item = playlist_items[idx];
                 if (_.startsWith(cur_item.RawPath, 'file://') && !fso.FileExists(cur_item.Path)) {
                     items_to_remove.push(idx);
                 }
@@ -5610,7 +5603,7 @@ function QueueHandler(rows_arg, cur_playlist_idx_arg) {
             reset_queued_status();
         }
 
-        var queue_contents = plman.GetPlaybackQueueContents().toArray();
+        var queue_contents = plman.GetPlaybackQueueContents();
         if (!queue_contents.length) {
             return;
         }
@@ -5751,11 +5744,9 @@ function PlaylistManager(x, y, w, h) {
             || (this.panel_state === state.normal && !this.hover_alpha)
             || (this.panel_state === state.hovered && this.hover_alpha === 255)) {
             if (image_normal) {
-                image_normal.Dispose();
                 image_normal = null;
             }
             if (image_hovered) {
-                image_hovered.Dispose();
                 image_hovered = null;
             }
 
@@ -5858,8 +5849,6 @@ function PlaylistManager(x, y, w, h) {
             plman.ActivePlaylist = playlist_idx;
         }
 
-        cpm.Dispose();
-
         this.repaint();
     };
 
@@ -5896,7 +5885,6 @@ function PlaylistManager(x, y, w, h) {
         menu_down = true;
         cmm.execute(x, y);
         menu_down = false;
-        cmm.dispose();
 
         return true;
     };

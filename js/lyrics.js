@@ -1,11 +1,11 @@
 // Lyrics Variables
-var len_seconds = fb.Titleformat("%length_seconds%");
+var len_seconds = fb.TitleFormat("%length_seconds%");
 var elap_seconds = fb.TitleFormat("%playback_time_seconds%");
 
 var g_timer_abs;
 
 // TODO: Improve this variable names
-var g_tab = Array();
+var g_tab = [];
 var g_scroll = 0;
 var g_lyrics_path;
 var g_lyrics_filename;
@@ -46,10 +46,6 @@ function drawLyrics(gr, tab, posy) {
 	gr.SetTextRenderingHint(TextRenderingHint.AntiAliasGridFit);
 	var g_txt_align = StringFormat(1, 1);
 
-	if (dividerImg && dividerImg.width < (albumart_size.w - 10) && posy - divider_spacing - dividerImg.height >= albumart_size.y + pref.lyrics_h_padding) {
-		gr.FillRoundRect(albumart_size.x + Math.floor(albumart_size.w * .2) - 1, posy - divider_spacing - divider_height + 1, Math.floor(albumart_size.w * 0.6), divider_height, divider_height / 2, divider_height / 2, col.darkAccent);
-		gr.FillRoundRect(albumart_size.x + Math.floor(albumart_size.w * .2), posy - divider_spacing - divider_height, Math.floor(albumart_size.w * 0.6), divider_height, divider_height / 2, divider_height / 2, col.info_bg);
-	}
 	for (i = 0; i < tab.length; i++) {
 		if (posy >= albumart_size.y + pref.lyrics_h_padding && posy < albumart_size.h - pref.lyrics_h_padding) {
 			if (i == focus && g_lyrics_status == 1) {
@@ -71,11 +67,6 @@ function drawLyrics(gr, tab, posy) {
 		posy = Math.floor(posy + pref.lyrics_line_height + ((tab[i].total_lines - 1) * pref.lyrics_line_height));
 	}
 	posy += divider_spacing;
-	if (dividerImg && dividerImg.width < (albumart_size.w - 10) && posy < albumart_size.h - pref.lyrics_h_padding) {
-		// gr.DrawImage(dividerImg, albumart_size.x+(albumart_size.w-dividerImg.width)/2, posy, dividerImg.width, dividerImg.height, 0,0,dividerImg.width,dividerImg.height);
-		gr.FillRoundRect(albumart_size.x + Math.floor(albumart_size.w * .2) - 1, posy + 1, Math.floor(albumart_size.w * 0.6), divider_height, divider_height / 2, divider_height / 2, col.darkAccent);
-		gr.FillRoundRect(albumart_size.x + Math.floor(albumart_size.w * .2), posy, Math.floor(albumart_size.w * 0.6), divider_height, divider_height / 2, divider_height / 2, col.info_bg);
-	}
 
 	if (timings.showDebugTiming)
 		drawLyricsTime.Print();
@@ -89,10 +80,10 @@ function timerTick(id) {
 		var t2 = len_seconds.Eval() * 100;
 		var p1, p2;
 
-		if (t1 > t2 - 200) {
+		if (t1 > t2 - 200 && g_playtimer) {
 			// stop scrolling in final 2 seconds to make sure we clear interval
 			console.log('clearing g_playtimer because t1 > t2-200 - t1 = ' + t1 + ', t2 = ' + t2);
-			g_playtimer && window.clearInterval(g_playtimer);
+			window.ClearInterval(g_playtimer);
 			g_playtimer = null;
 		}
 
@@ -134,8 +125,8 @@ function refresh_lyrics() {
 		if (g_lyrics_status > 0) {
 			var k = g_tab[focus].ante_lines * pref.lyrics_line_height;
 			lyrPos = midpoint - k;
-			g_playtimer && window.clearInterval(g_playtimer);
-			g_playtimer = window.setInterval(function() { timerTick(); }, PLAYTIMER_VALUE);
+			g_playtimer && window.ClearInterval(g_playtimer);
+			g_playtimer = window.SetInterval(function() { timerTick(); }, PLAYTIMER_VALUE);
 			g_timer_abs = 4;
 		} else {
 			delta = (g_tab[g_tab.length-1].ante_lines + g_tab[g_tab.length-1].total_lines);
@@ -155,7 +146,7 @@ function updateLyricsPositionOnScreen() {
 		refresh_lyrics();
 		console.log("updatePosition: lyrPos = " + lyrPos + ' - Could set timerTick() - g_lyrics_status = ' + g_lyrics_status);
 		if (g_lyrics_status > 0) {
-			g_playtimer && window.clearInterval(g_playtimer);
+			g_playtimer && window.ClearInterval(g_playtimer);
 			g_playtimer = window.SetInterval(function(){ timerTick(); },PLAYTIMER_VALUE);
 			g_timer_abs = 4;
 		}
@@ -330,7 +321,7 @@ function calc_lines(ctab) {
 		tmp_img = gdi.CreateImage(albumart_size.w-(pref.lyrics_h_padding*2), 100);
 		gp = tmp_img.GetGraphics();
 		for (i=0; i<ctab.length; i++) {
-			// calc sentence #lines to display / window.width
+			// calc sentence #lines to display / window.Width
 			strInfo = gp.MeasureString(ctab[i].text, ft.lyrics, 0, 0, albumart_size.w-(pref.lyrics_h_padding*2), albumart_size.h);
 			lineh = strInfo.Height;
 			if (strInfo.Width > linew) {
@@ -354,7 +345,7 @@ function calc_lines(ctab) {
 }
 
 function sort_tab(tab2sort) {
-	var tab = Array();
+	var tab = [];
 	var i, j;
 	var tmp = new sentence;
 	var smallest = 0;
@@ -395,7 +386,6 @@ function ts_analyzer(str) {
 	var fin = -1;
 	var sep1 = -1;
 	var sep2 = -1;
-	var suite=0;
 	for(i=0; i<str.length; i++) {
 		ch = str.substring(i, i+1);
 		switch(state) {
@@ -539,16 +529,16 @@ function check_file(path, filename) {
 function get_lyrics() {
 	console.log("in get_lyrics()");
 	timings.showLyricsTiming && (get_lyrics_time = fb.CreateProfiler("get_lyrics"));
-	var i, count, delta, tag;
-	var tpath = Array();
-	var tfilename= Array();
+	var i, delta, tag;
+	var tpath = [];
+	var tfilename= [];
 	var bool_tag = false;
 	var bool_file = false;
 
 	for (i=0;i<tf["lyr_path"].length;i++)
-		tpath.push(fb.Titleformat(tf["lyr_path"][i]).Eval());
+		tpath.push(fb.TitleFormat(tf["lyr_path"][i]).Eval());
 	for (i=0;i<tf["lyr_filename"].length;i++)
-		tfilename.push(fb.Titleformat(tf["lyr_filename"][i]).Eval());
+		tfilename.push(fb.TitleFormat(tf["lyr_filename"][i]).Eval());
 
 	// reset lyrics tab
 	g_lyrics_status = 0;
@@ -557,7 +547,7 @@ function get_lyrics() {
 	lyrPos = midpoint;
 	focus = 0;
 	// check TAGs
-	tag = fb.Titleformat(tf["lyrics"]).Eval();
+	tag = fb.TitleFormat(tf["lyrics"]).Eval();
 	if(tag.length>0) {
 		bool_tag = true;
 		if (tag.substring(0,1)=="[") g_lyrics_status = 1; else g_lyrics_status = 2;
@@ -574,18 +564,18 @@ function get_lyrics() {
 		}
 	}
 	// if lyrics found
-	if(bool_tag || bool_file) {
+	if (bool_tag || bool_file) {
 		if(bool_tag) {
 			g_tab = parse_tag(tag, "[");
 		} else {
 			g_tab = load_file(g_lyrics_path, g_lyrics_filename);
 		}
-	}  else {
+	} else {
 		g_tab = load_track_info();
 		delta = (g_tab[g_tab.length-1].ante_lines + g_tab[g_tab.length-1].total_lines);
 		lyrPos = (albumart_size.h / 2) - (delta * pref.lyrics_line_height / 2);
 	}
-	if(g_lyrics_status==2) {
+	if (g_lyrics_status==2) {
 		for(i=0;i<g_tab.length-1;i++) {
 			g_tab[i].timer = i * Math.floor(len_seconds.Eval() * 100 / g_tab.length);
 		}
@@ -593,4 +583,3 @@ function get_lyrics() {
 	timings.showLyricsTiming && get_lyrics_time.Print();
 }
 // EOF
-
