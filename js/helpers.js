@@ -381,7 +381,7 @@ function Menu(title) {
 		this.menu.AppendMenuSeparator();
 	}
 
-	this.addItem = function(label, enabled, callback, disabled) {
+	this.addItem = function(label, enabled, callback, disabled = false) {
 		this.addItemWithVariable(label, enabled, undefined, callback, disabled);
 	}
 
@@ -556,7 +556,7 @@ _.tt_handler.tt_timer = new function () {
 				tooltip_timer = setTimeout(() => {
 					_.tt(text);
 					tooltip_timer = null;
-				}, 500);
+				}, 300);
 			}
 		}
 	};

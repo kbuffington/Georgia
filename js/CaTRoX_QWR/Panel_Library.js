@@ -418,7 +418,7 @@ function userinterface() {
 				this.j_font = gdi.Font(this.font.Name, this.font.Size * 1.5, 1);
 				this.calc_text();
 				p.on_size();
-				jS.on_size();
+				quickSearch.on_size();
 				library_tree.create_tooltip();
 				if (libraryProps.searchMode || libraryProps.showScrollbar)
 					but.refresh(true);
@@ -2225,7 +2225,7 @@ function LibraryTree() {
 				playlistIndex = plman.ActivePlaylist;
 			plman.ActivePlaylist = playlistIndex;
 			var itemIndex = 0;
-			if (plman.PlaybackOrder === g_playback_order.random || plman.PlaybackOrder === g_playback_order.shuffle_tracks) {
+			if (plman.PlaybackOrder === PlaybackOrder.Random || plman.PlaybackOrder === PlaybackOrder.ShuffleTracks) {
 				itemIndex = Math.ceil(plman.PlaylistItemCount(playlistIndex) * Math.random() - 1);
 			}
 			library_tree.load(library_tree.sel_items, true, false, true, false, false); // replace current playlist
@@ -2591,7 +2591,7 @@ function searchLibrary() {
 }
 // if (libraryProps.searchMode) var sL = new searchLibrary();
 
-var j_Search = function() {
+function QuickSearch() {
 	// this is the quick-type search
 	var j_x = 5, j_h = 30, j_y = 5, jSearch = "", jump_search = true, rs1 = 5, rs2 = 4;
 	this.on_size = function() {
@@ -2670,7 +2670,7 @@ function LibraryPanel() {
 		library_tree.draw(gr);
 		if (libraryProps.showScrollbar) sbar.draw(gr);
 		if (libraryProps.searchMode || libraryProps.showScrollbar) but.draw(gr);
-		jS.draw(gr);
+		quickSearch.draw(gr);
 	}
 
 	this.on_size = function (x, y, width, height) {
@@ -2689,7 +2689,7 @@ function LibraryPanel() {
 		p.on_size();
 		library_tree.create_tooltip();
 		if (libraryProps.searchMode || libraryProps.showScrollbar) but.refresh(true);
-		jS.on_size();
+		quickSearch.on_size();
     }
 
     this.x;
@@ -3124,7 +3124,7 @@ function timers() {
 function LibraryCallbacks() {
 	this.on_char = function(code) {
 		library_tree.on_char(code);
-		jS.on_char(code);
+		quickSearch.on_char(code);
 		if (!libraryProps.searchMode) return;
 		sL.on_char(code);
 	}
@@ -3185,7 +3185,7 @@ function LibraryCallbacks() {
 // var library = new LibraryCallbacks();
 
 var libraryInitialized = false;
-var ui, sbar, p, v, lib_manager, library_tree, sL, jS, libraryPanel, but, men, timer, library;
+var ui, sbar, p, v, lib_manager, library_tree, sL, quickSearch, libraryPanel, but, men, timer, library;
 function initLibraryPanel() {
 	if (!libraryInitialized) {
 		ui = new userinterface();
@@ -3197,7 +3197,7 @@ function initLibraryPanel() {
 		if (libraryProps.searchMode) {
 			sL = new searchLibrary();
 		}
-		jS = new j_Search();
+		quickSearch = new QuickSearch();
 		libraryPanel = new LibraryPanel();
 		but = new button_manager();
 		men = new menu_object();
@@ -3209,11 +3209,24 @@ function initLibraryPanel() {
 	}
 }
 
-// if (!window.GetProperty("SYSTEM.Software Notice Checked", false))
-// 	fb.ShowPopupMessage("THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHORS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.", "Library Tree");
+function freeLibraryPanel() {
+	ui = null;
+	sbar = null;
+	p = null;
+	v = null;
+	lib_manager = null;
+	library_tree = null;
+	sL = null;
+	quickSearch = null;
+	libraryPanel = null;
+	but = null;
+	men = null;
+	timer = null;
+	library = null;
+	libraryInitialized = false;
+}
+
 window.SetProperty("SYSTEM.Software Notice Checked", true);
-// window.SetProperty(" Hot Key: Add to Playlist: 1-10", null);
-// window.SetProperty(" Hot Key: Insert in Playlist: 1-10", null);
 window.SetProperty(" Node: Item Counts 0-Hide 1-Tracks 2-Sub-Items", null);
 window.SetProperty(" Node: Show All Music", null);
 window.SetProperty(" Playlist: Play On Send From Menu", null);
