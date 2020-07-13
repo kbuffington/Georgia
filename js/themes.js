@@ -6,7 +6,7 @@ themeList.push = function (theme) {
 	return Array.prototype.push.apply(theme);
 }
 
-themeList.push(redTheme = {
+const redTheme = {
 	name: 'salmon/brightred',
 	colors: {
 		primary: rgb(235, 70, 80),
@@ -16,9 +16,10 @@ themeList.push(redTheme = {
 		playedLine: rgba(255, 255, 255, 75),
 	},
 	hint: [rgb(235, 70, 80), rgb(240,230,220)]
-});
+};
+themeList.push(redTheme);
 
-themeList.push(blueTheme = {
+const blueTheme = {
 	name: 'blue',
 	colors: {
 		primary: rgb(40, 57, 99),
@@ -28,7 +29,8 @@ themeList.push(blueTheme = {
 		playedLine: rgba(255, 255, 255, 75),
 	},
 	hint: [rgb(40, 57, 99), rgb(220,230,240)]
-});
+};
+themeList.push(blueTheme);
 
 themeList.push({
 	name: 'lighterblue',
@@ -115,7 +117,7 @@ function setTheme(theme) {
 }
 
 function registerTheme(theme) {
-	for (i=0; i < theme.hint.length; i++) {
+	for (let i = 0; i < theme.hint.length; i++) {
 		var themeObj = { colors: theme.colors, hint: theme.hint[i], name: theme.name };
 		themeArray.push(themeObj);
 	}
@@ -128,7 +130,7 @@ function findClosestTheme(color) {
 	var closest;
 	var closestDistance = 999;
 
-	for (i=0; i < themeArray.length; i++) {
+	for (let i = 0; i < themeArray.length; i++) {
 		var themeRed = getRed(themeArray[i].hint);
 		var themeGreen = getGreen(themeArray[i].hint);
 		var themeBlue = getBlue(themeArray[i].hint);
@@ -160,7 +162,7 @@ function getThemeColorsJson(image, maxColorsToPull) {
 		});
 
 		if (pref.show_theme_log) console.log('idx      color        bright  freq   weight');
-		maxWeight = 0;
+		let maxWeight = 0;
 		selectedColor = colorsWeighted[0].col;  // choose first color in case no color selected below
 		colorsWeighted.forEach(function (c, i) {
 			var col = c.col;
@@ -183,7 +185,7 @@ function getThemeColorsJson(image, maxColorsToPull) {
 
 		if (selectedColor.brightness < 37) {
 			if (pref.show_theme_log) console.log(selectedColor.getRGB(true), 'brightness:', selectedColor.brightness, 'too dark -- searching for highlight color');
-			brightest = selectedColor;
+			let brightest = selectedColor;
 			maxWeight = 0;
 			colorsWeighted.forEach(function (c, i) {
 				if (c.col.brightness > selectedColor.brightness &&
@@ -279,12 +281,12 @@ function tintColor(color, percent) {
 
 function darkenColorVal(color, percent) {
 	var shift = Math.max(color * percent / 100, percent / 2);
-	val = Math.round(color - shift);
+	const val = Math.round(color - shift);
 	return Math.max(val, 0);
 }
 
 function lightenColorVal(color, percent) {
-	val = Math.round(color + ((255-color) * (percent / 100)));
+	const val = Math.round(color + ((255-color) * (percent / 100)));
 	return Math.min(val, 255);
 }
 

@@ -99,7 +99,7 @@ const WindowState = {
 	Maximized: 2
 }
 
-function Button(x, y, w, h, id, img, tip) {
+function Button(x, y, w, h, id, img, tip = undefined) {
 
 	this.x = x;
 	this.y = y;

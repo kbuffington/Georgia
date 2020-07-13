@@ -56,6 +56,8 @@ function getBlue(color) {
 function RGB(r, g, b) { return (0xff000000 | (r << 16) | (g << 8) | (b)); }
 function RGBA(r, g, b, a) { return ((a << 24) | (r << 16) | (g << 8) | (b)); }
 function RGBtoRGBA (rgb, a) { return a << 24 | (rgb & 0x00FFFFFF); }
+var rgb = RGB;
+var rgba = RGBA;
 
 function colToRgb(c, showPrefix) {
 	if (typeof showPrefix === 'undefined') showPrefix = true;
@@ -76,16 +78,14 @@ function calcBrightness(c) {
 	var b = getBlue(c);
 	return Math.round(Math.sqrt( 0.299*r*r + 0.587*g*g + 0.114*b*b ));
 }
-var rgb = RGB;
-var rgba = RGBA;
 
-function ImageSize(x, y, w, h) {
-	return {
-		x: x,
-		y: y,
-		w: w,
-		h: h,
-	};
+class ImageSize {
+	constructor(x, y, w, h) {
+		this.x = x;
+		this.y = y;
+		this.w = w;
+		this.h = h;
+	}
 }
 
 function testFont(fontName) {
@@ -99,7 +99,7 @@ function testFont(fontName) {
 function calculateGridMaxTextWidth(gr, gridArray, font) {
 	var maxWidth = 0;
 	gridArray && gridArray.forEach(function (el) {
-		width = Math.ceil(gr.MeasureString(el.label, font, 0, 0, ww, wh).Width) + 1;
+		const width = Math.ceil(gr.MeasureString(el.label, font, 0, 0, ww, wh).Width) + 1;
 		if (width > maxWidth) {
 			maxWidth = width;
 		}
@@ -131,14 +131,14 @@ function chooseFontForWidth(gr, availableWidth, text, fontList, maxLines) {
 function drawMultipleLines(gr, availableWidth, left, top, color, text1, fontList1, text2, fontList2, maxLines) {
 	maxLines = (typeof maxLines !== 'undefined') ? maxLines : 2;
 	var textArray;
-	var continuation;
 	var lineHeight;
-	height = 0;
+	let continuation;
+
 	for (var fontIndex = 0; fontIndex < fontList1.length && fontIndex < fontList2.length; fontIndex++) {
 		textArray = [];
 		lineHeight = Math.max(gr.CalcTextHeight(text1, fontList1[fontIndex]),
 							  gr.CalcTextHeight(text2, fontList2[fontIndex]))
-		var continuation = false;	// does font change on same line
+		continuation = false;	// does font change on same line
 		var lineText = gr.EstimateLineWrap(text1, fontList1[fontIndex], availableWidth);
 		for (var i = 0; i < lineText.length; i += 2) {
 			textArray.push({ text: lineText[i], x_offset: 0, font: fontList1[fontIndex] });
@@ -146,8 +146,8 @@ function drawMultipleLines(gr, availableWidth, left, top, color, text1, fontList
 		if (textArray.length <= maxLines) {
 			var lastLineWidth = lineText[lineText.length - 1];
 			var secondaryText = gr.EstimateLineWrap(text2, fontList2[fontIndex], availableWidth - lastLineWidth - 5);
-			firstSecondaryLine = secondaryText[0];
-			textRemainder = text2.substr(firstSecondaryLine.length).trim();
+			let firstSecondaryLine = secondaryText[0];
+			let textRemainder = text2.substr(firstSecondaryLine.length).trim();
 			if (firstSecondaryLine.trim().length) {
 				textArray.push({ text: firstSecondaryLine, x_offset: lastLineWidth + 5, font: fontList2[fontIndex] });
 				continuation = true;	// font changes on same line
@@ -234,7 +234,7 @@ function calcAgeDateString(date) {
 		} catch (e) {
 			console.log(e);
 			console.log('date:', date);
-			fail();
+			fail();	// function does not exist,  we want it to error
 			str = '';
 		}
 	}
@@ -293,7 +293,7 @@ function toFixed(number, precision) {
 function printColorObj(obj) {
 	console.log('\tname: \'\',\n\tcolors: {');
 	for(var propName in obj) {
-		propValue = obj[propName]
+		const propValue = obj[propName]
 
 		console.log('\t\t' + propName + ': ' + colToRgb(propValue, true) + ',\t\t// #' + toPaddedHexString(0xffffff & propValue, 6));
 	}
@@ -340,8 +340,8 @@ function makeHttpRequest(type, url, successCB) {
 
 // from: https://github.com/substack/semver-compare/issues/1#issuecomment-594765531
 function isNewerVersion (oldVer, newVer) {
-	a = newVer.split('-');
-	b = oldVer.split('-');
+	const a = newVer.split('-');
+	const b = oldVer.split('-');
 	var pa = a[0].split('.');
 	var pb = b[0].split('.');
 	for (var i = 0; i < 3; i++) {
@@ -390,7 +390,7 @@ function Menu(title) {
 	  * before calling any user specified callback. If the property you wish to toggle is options.repeat, then propertiesObj
 	  * is options, and the propertyName must be "repeat" as a string.
 	  **/
-	this.addToggleItem = function(label, propertiesObj, propertyName, callback, disabled) {
+	this.addToggleItem = function(label, propertiesObj, propertyName, callback = () => {}, disabled = false) {
 		this.addItem(label, propertiesObj[propertyName], () => {
 			propertiesObj[propertyName] = !propertiesObj[propertyName];
 			if (callback) {
@@ -481,10 +481,10 @@ function scaleForDisplay(number) {
 	return is_4k ? number * 2 : number;
 }
 
+let DPI = 96;
 try {
-	var DPI = WshShell.RegRead('HKCU\\Control Panel\\Desktop\\WindowMetrics\\AppliedDPI');
+	DPI = WshShell.RegRead('HKCU\\Control Panel\\Desktop\\WindowMetrics\\AppliedDPI');
 } catch (e) {
-	var DPI = 96;
 }
 
 _.mixin({
@@ -532,7 +532,7 @@ _.mixin({
 		this.stop = function () {
 			tt_timer.force_stop();
 		};
-		this.id = Math.ceil(Math.random().toFixed(8) * 1000);
+		this.id = Math.ceil(Math.random() * 10000);
 
 		var tt_timer = _.tt_handler.tt_timer;
 	},

@@ -145,7 +145,7 @@ var Color = (function() {
         },
 		get isCloseToGreyscale() {
 			var threshold = 6;
-            avg = Math.round((this._red + this._green + this._blue) / 3);
+            const avg = Math.round((this._red + this._green + this._blue) / 3);
             if (this.isGreyscale ||
                 (Math.abs(this._red - avg) < threshold &&
                  Math.abs(this._green - avg) < threshold &&
@@ -593,14 +593,15 @@ var Color = (function() {
 		return this._hex;
 	};
 	/**
-	* Returns a CSS-formatted RGB string [e.g., rgb(255, 153, 0)] from the Color's component values
-	* @function
-	* @returns String
-	* @example
-	* var color = new Color();
-	* element.style.backgroundColor = color.getRGB();
-	*/
-	Color.prototype.getRGB = function(showPrefix, threeDigitColors) {
+	 * Returns a CSS-formatted RGB string [e.g., rgb(255, 153, 0)] from the Color's component values
+	 * @param {?boolean} showPrefix should the return string start with "rgb"
+	 * @param {?boolean} threeDigitColors should color values be left padded with zeroes? e.g. "004"
+	 * @returns {String}
+	 * @example
+	 * var color = new Color();
+	 * element.style.backgroundColor = color.getRGB();
+	 */
+	Color.prototype.getRGB = function(showPrefix = true, threeDigitColors = false) {
 		var components = [];
 		var prefix = '';
 		if (typeof showPrefix === 'undefined' || showPrefix === true) {
@@ -797,13 +798,13 @@ var Color = (function() {
 	* color.subscribe('arbitraryEvent', handler);
 	* color.broadcast('arbitraryEvent', ['A', 'B']);
 	*/
-	Color.prototype.broadcast = function(type, params) {
+	Color.prototype.broadcast = function(type, params = null) {
 		if(!this._isSubscribed(type)) {
 			return;
 		}
 		var stack = this._listeners[type];
 		var l = stack.length;
-		for(var i = 0; i < l; i++) {
+		for(let i = 0; i < l; i++) {
 			stack[i].apply(this, params);
 		}
 	};
@@ -831,7 +832,3 @@ var Color = (function() {
 	return Color;
 
 })();
-
-
-
-

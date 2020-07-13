@@ -533,8 +533,8 @@ function assert(predicate, exception_type, args) {
 
 //</editor-fold>
 
+/** @type {IUIHacks} */
 var UIHacks = null;
-    /** @type {IUIHacks} */
 // UIHacks = new ActiveXObject('UIHacks');
 
 var qwr_utils = {

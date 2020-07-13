@@ -15,14 +15,14 @@ var ft = {}; // fonts
 var col = {}; // colors
 var geo = {}; // sizes
 
-var is_4k = false;
+let is_4k = false;
 
-var fontThin = 'HelveticaNeueLT Pro 35 Th';
-var fontLight = 'HelveticaNeueLT Pro 45 Lt';
-var fontRegular = 'HelveticaNeueLT Pro 55 Roman';
-var fontBold = 'HelveticaNeueLT Pro 65 Md';
-var fontLightAlternate = 'NeueHaasGroteskDisp Pro XLt';
-var fontGuiFx = 'Guifx v2 Transports';
+const fontThin = 'HelveticaNeueLT Pro 35 Th';
+const fontLight = 'HelveticaNeueLT Pro 45 Lt';
+const fontRegular = 'HelveticaNeueLT Pro 55 Roman';
+const fontBold = 'HelveticaNeueLT Pro 65 Md';
+const fontLightAlternate = 'NeueHaasGroteskDisp Pro XLt';
+const fontGuiFx = 'Guifx v2 Transports';
 
 var fontList = [fontThin, fontLight, fontRegular, fontBold, fontLightAlternate, fontGuiFx];
 
@@ -111,7 +111,7 @@ function initColors() {
 		col.progress_fill = RGB(235, 59, 70);
 		col.progress_bar = RGB(125, 125, 125);
 		col.now_playing = RGB(0, 0, 0); // tracknumber, title, and time
-		col.aa_shadow = RGBA(000, 000, 000, 64);
+		col.aa_shadow = RGBA(0, 0, 0, 64);
 	} else {
 		col.bg = RGB(50, 54, 57);
 		col.menu_bg = RGB(23, 23, 23);
@@ -121,11 +121,11 @@ function initColors() {
 		col.aa_shadow = RGBA(128, 128, 128, 54);
 	}
 
-	col.rating = RGB(255, 170, 032);
-	col.mood = RGB(000, 128, 255);
-	col.hotness = RGB(192, 192, 000);
+	col.rating = RGB(255, 170, 32);
+	col.mood = RGB(0, 128, 255);
+	col.hotness = RGB(192, 192, 0);
 
-	col.playcount = RGB(000, 153, 153);
+	col.playcount = RGB(0, 153, 153);
 	col.dark_grey = RGB(128, 128, 128);
 
 	col.tl_added = RGB(15, 51, 65);
@@ -134,7 +134,7 @@ function initColors() {
 	col.tl_play = RGB(255, 255, 255); // each individual play
 
 	// ALBUM ART DISPLAY PROPERTIES
-	col.aa_border = RGBA(060, 060, 060, 128);
+	col.aa_border = RGBA(60, 60, 60, 128);
 }
 initColors();
 
@@ -207,11 +207,12 @@ var timings = {
 // Lyrics Constants
 var DEFAULT_OFFSET = 29;
 var SCROLL_STEP = 1; // do not modify this value
-var PLAYTIMER_VALUE = 01; // do not modify this value
+var PLAYTIMER_VALUE = 1; // do not modify this value
 
 
 // PLAYLIST JUNK
 var btns = [];
+let btnImg = undefined;
 // =================================================== //
 
 var thisPanelName = "Playlist"; //Don't change!! needed in Scrollbar.txt.
@@ -223,9 +224,9 @@ var thisPanelName = "Playlist"; //Don't change!! needed in Scrollbar.txt.
 // VARIABLES
 // Artwork
 var albumart = null; // albumart image
-var albumart_size = new ImageSize(0, 0, 0, 0); // position (big image)
+let albumart_size = new ImageSize(0, 0, 0, 0); // position (big image)
 var cdart = null; // cdart image
-var cdart_size = new ImageSize(0, 0, 0, 0); // cdart position (offset from albumart_size)
+let cdart_size = new ImageSize(0, 0, 0, 0); // cdart position (offset from albumart_size)
 var albumart_scaled = null; // pre-scaled album art to speed up drawing considerably
 var recordLabels = []; // array of record label images
 var recordLabelsInverted = []; // array of inverted record label images
@@ -275,10 +276,11 @@ var aa_list = [];
 var albumArtIndex = 0; // index of currently displayed album art if more than 1
 var bandLogoHQ = false;
 var t_interval; // milliseconds between screen updates
-var lastLeftEdge = 0; // the left edge of the record labels. Saved so we don't have to recalculate every on every on_paint unless size has changed
-var displayPlaylist = false;
-var displayLibrary = false;
-var displayLyrics = false;
+let lastLeftEdge = 0; // the left edge of the record labels. Saved so we don't have to recalculate every on every on_paint unless size has changed
+let lastLabelHeight = 0;
+let displayPlaylist = false;
+let displayLibrary = false;
+let displayLyrics = false;
 var showLibraryButton = true;
 
 var tl_firstPlayedRatio = 0;
@@ -294,37 +296,9 @@ var g_tooltip;
 var tt = new _.tt_handler;
 
 let g_playtimer = null;
-let g_initLibraryTimer = null;
 
 // MENU STUFF
 var menu_down = false;
-
-// Flags, used with GdiDrawText()
-// For more information, see: http://msdn.microsoft.com/en-us/library/dd162498(VS.85).aspx
-DT_TOP = 0x00000000;
-DT_LEFT = 0x00000000;
-DT_CENTER = 0x00000001;
-DT_RIGHT = 0x00000002;
-DT_VCENTER = 0x00000004;
-DT_BOTTOM = 0x00000008;
-DT_WORDBREAK = 0x00000010;
-DT_SINGLELINE = 0x00000020;
-DT_EXPANDTABS = 0x00000040;
-DT_TABSTOP = 0x00000080;
-DT_NOCLIP = 0x00000100;
-DT_EXTERNALLEADING = 0x00000200;
-DT_CALCRECT = 0x00000400; // [1.2.1] Handles well
-DT_NOPREFIX = 0x00000800; // NOTE: Please use this flag, or a '&' character will become an underline '_'
-DT_INTERNAL = 0x00001000;
-DT_EDITCONTROL = 0x00002000;
-DT_PATH_ELLIPSIS = 0x00004000;
-DT_END_ELLIPSIS = 0x00008000;
-DT_MODIFYSTRING = 0x00010000; // do not use
-DT_RTLREADING = 0x00020000;
-DT_WORD_ELLIPSIS = 0x00040000;
-DT_NOFULLWIDTHCHARBREAK = 0x00080000;
-DT_HIDEPREFIX = 0x00100000;
-DT_PREFIXONLY = 0x00200000;
 
 ///////// OBJECTS
 
@@ -382,7 +356,7 @@ function draw_ui(gr) {
 			gr.SetTextRenderingHint(TextRenderingHint.AntiAliasGridFit);
 		}
 		if (str.year) {
-			height = gr.MeasureString(str.year, ft.year, 0, 0, 0, 0).Height;
+			const height = gr.MeasureString(str.year, ft.year, 0, 0, 0, 0).Height;
 			gr.DrawString(str.year, ft.year, col.artist, ww - textLeft * 2 - infoWidth, geo.top_bg_h - trackInfoHeight - height - 20, infoWidth, height, StringFormat(2));
 		}
 	}
@@ -398,7 +372,10 @@ function draw_ui(gr) {
 			// gr.DrawRect(-geo.aa_shadow, albumart_size.y - geo.aa_shadow, shadow_image.Width, shadow_image.Height, 1, RGBA(0,0,255,125));	// viewing border line
 		}
 		if (albumart && albumart_scaled) {
-			if (timings.showExtraDrawTiming) drawArt = fb.CreateProfiler('on_paint -> artwork');
+			let drawArt = null;
+			if (timings.showExtraDrawTiming) {
+				drawArt = fb.CreateProfiler('on_paint -> artwork');
+			}
 			if (!pref.cdart_ontop || displayLyrics) {
 				if (rotatedCD && !displayPlaylist && !displayLibrary && pref.display_cdart &&
 						cdart_size.y > albumart_size.y && cdart_size.h < albumart_size.h) {
@@ -435,13 +412,13 @@ function draw_ui(gr) {
 	if (str.artist) {
 		var availableWidth = displayPlaylist || displayLibrary ? Math.min(ww / 2 - 20, btns.playlist.x - textLeft) : btns.playlist.x - textLeft;
 		var artistFont = chooseFontForWidth(gr, availableWidth, str.artist, [ft.artist_lrg, ft.artist_med, ft.artist_sml]);
-		height = gr.CalcTextHeight(str.artist, artistFont);
+		const height = gr.CalcTextHeight(str.artist, artistFont);
 		var artistY = albumart_size.y - height - scaleForDisplay(8);
 		gr.DrawString(str.artist, artistFont, col.artist, textLeft, artistY, availableWidth, height, StringFormat(0, 0, 4));
-		width = gr.MeasureString(str.artist, artistFont, 0, 0, 0, 0).Width;
+		const width = gr.MeasureString(str.artist, artistFont, 0, 0, 0, 0).Width;
 		if (pref.show_flags && flagImgs.length && width + flagImgs[0].Width * flagImgs.length < availableWidth) {
 			var flagsLeft = textLeft + width + scaleForDisplay(15);
-			for (i = 0; i < flagImgs.length; i++) {
+			for (let i = 0; i < flagImgs.length; i++) {
 				gr.DrawImage(flagImgs[i], flagsLeft, Math.round(artistY + 1 + height / 2 - flagImgs[i].Height / 2),
 					flagImgs[i].Width, flagImgs[i].Height, 0, 0, flagImgs[i].Width, flagImgs[i].Height)
 				flagsLeft += flagImgs[i].Width + scaleForDisplay(5);
@@ -451,12 +428,14 @@ function draw_ui(gr) {
 
 	// text info grid
 	if (((!displayPlaylist && !displayLibrary) || (!albumart && noArtwork)) && fb.IsPlaying) {
+		let gridSpace = 0;
 		if (!albumart && cdart) {
 			gridSpace = Math.round(cdart_size.x - geo.aa_shadow - textLeft);
 		} else {
 			gridSpace = Math.round(albumart_size.x - geo.aa_shadow - textLeft);
 		}
-		text_width = gridSpace;
+		const text_width = gridSpace;
+		let drawTextGrid = null;
 
 		if (timings.showExtraDrawTiming) drawTextGrid = fb.CreateProfiler('on_paint -> textGrid');
 
@@ -494,10 +473,10 @@ function draw_ui(gr) {
 						txtRec = gr.MeasureString(str.title, ft.title, 0, 0, text_width - trackNumWidth, wh);
 					}
 				}
-				var tracknumHeight = gr.MeasureString(str.tracknum, ft.tracknum, 0, 0, 0, 0).Height;
-				var heightAdjustment = Math.ceil((tracknumHeight - gr.MeasureString(str.title, ft.title, 0, 0, 0, 0).Height) / 2);
-				var numLines = Math.min(2, txtRec.Lines);
-				height = gr.CalcTextHeight(str.title, ft.title) * numLines + 3;
+				const tracknumHeight = gr.MeasureString(str.tracknum, ft.tracknum, 0, 0, 0, 0).Height;
+				const heightAdjustment = Math.ceil((tracknumHeight - gr.MeasureString(str.title, ft.title, 0, 0, 0, 0).Height) / 2);
+				const  numLines = Math.min(2, txtRec.Lines);
+				const height = gr.CalcTextHeight(str.title, ft.title) * numLines + 3;
 
 				trackNumWidth = Math.ceil(trackNumWidth);
 				gr.DrawString(str.tracknum, ft.tracknum, col.info_text, textLeft, top - heightAdjustment, trackNumWidth, height);
@@ -523,7 +502,8 @@ function draw_ui(gr) {
 			top += geo.timeline_h + scaleForDisplay(12);
 
 			if (str.album) {
-				var font_array = [ft.album_lrg, ft.album_med, ft.album_sml];
+				let height = 0;
+				let font_array = [ft.album_lrg, ft.album_med, ft.album_sml];
 				if (str.album.indexOf('Á') !== -1) {
 					// some fonts don't work correctly with this character
 					font_array = [ft.album_lrg_alt, ft.album_med_alt, ft.album_sml_alt];
@@ -549,7 +529,8 @@ function draw_ui(gr) {
 			// Tag grid
 			var font_array = [ft.grd_key_lrg, ft.grd_key_med, ft.grd_key_sml];
 			var key_font_array = [ft.grd_val_lrg, ft.grd_val_med, ft.grd_val_sml];
-			str.grid.forEach(function(el) {
+			let grid_key_ft = ft.grd_key_lrg;
+			str.grid.forEach((el) => {
 				if (font_array.length > 1) {	// only check if there's more than one entry in font_array
 					grid_key_ft = chooseFontForWidth(gr, text_width / 3, el, font_array);
 					while (grid_key_ft !== font_array[0]) {	// if font returned was first item in the array, then everything fits, otherwise pare down array
@@ -558,15 +539,15 @@ function draw_ui(gr) {
 					}
 				}
 			});
-			grid_val_ft = key_font_array.shift();
-			col1_width = calculateGridMaxTextWidth(gr, str.grid, grid_key_ft);
+			const grid_val_ft = key_font_array.shift();
+			const col1_width = calculateGridMaxTextWidth(gr, str.grid, grid_key_ft);
 
 			var column_margin = scaleForDisplay(10);
 			var col2_width = text_width - column_margin - col1_width;
 			var col2_left = textLeft + col1_width + column_margin;
 
             gr.SetTextRenderingHint(TextRenderingHint.AntiAlias);
-			for (k = 0, i = 0; k < str.grid.length; k++) {
+			for (let k = 0, i = 0; k < str.grid.length; k++) {
 				var key = str.grid[k].label;
 				var value = str.grid[k].val;
 				var showLastFmImage = false;
@@ -596,7 +577,7 @@ function draw_ui(gr) {
 					txtRec = gr.MeasureString(value, grid_val_ft, 0, 0, col2_width, wh);
 					if (top + txtRec.Height < albumart_size.y + albumart_size.h) {
 						var border_w = scaleForDisplay(0.5);
-						cell_height = txtRec.Height + 5;
+						const cell_height = txtRec.Height + 5;
 						if (dropShadow) {
 							gr.DrawString(value, grid_val_ft, col.extraDarkAccent, col2_left + border_w, top + border_w, col2_width, cell_height, StringFormat(0, 0, 4));
 							gr.DrawString(value, grid_val_ft, col.extraDarkAccent, col2_left - border_w, top + border_w, col2_width, cell_height, StringFormat(0, 0, 4));
@@ -628,21 +609,22 @@ function draw_ui(gr) {
 	} /* if (!displayPlaylist && !displayLibrary) */
 
 	if ((fb.IsPlaying && !displayPlaylist && !displayLibrary) || (!albumart && !cdart && noArtwork)) {
+		let drawBandLogos = null;
         // BAND LOGO drawing code
-        var brightBackground = (new Color(col.info_bg).brightness) > 190;
+        const brightBackground = (new Color(col.info_bg).brightness) > 190;
 		timings.showExtraDrawTiming && (drawBandLogos = fb.CreateProfiler('on_paint -> band logos'));
-        availableSpace = albumart_size.y + albumart_size.h - top;
+        const availableSpace = albumart_size.y + albumart_size.h - top;
         var logo = brightBackground ? (invertedBandLogo ? invertedBandLogo : bandLogo) : bandLogo;
 		if (logo && availableSpace > 75) {
 			// max width we'll draw is 1/2 the full size because the HQ images are just so big
-			logoWidth = Math.min(bandLogoHQ ? (is_4k ? logo.Width : logo.Width / 2) : logo.Width * 1.5, albumart_size.x - ww * 0.05);
-			heightScale = logoWidth / logo.Width; // width is fixed to logoWidth, so scale height accordingly
+			let logoWidth = Math.min(bandLogoHQ ? (is_4k ? logo.Width : logo.Width / 2) : logo.Width * 1.5, albumart_size.x - ww * 0.05);
+			let heightScale = logoWidth / logo.Width; // width is fixed to logoWidth, so scale height accordingly
 			if (logo.Height * heightScale > availableSpace) {
 				// TODO: could probably do this calc just once, but the logic is complicated
 				heightScale = availableSpace / logo.Height;
 				logoWidth = logo.Width * heightScale;
 			}
-			logoTop = Math.round(albumart_size.y + albumart_size.h - (heightScale * logo.Height)) - 4;
+			let logoTop = Math.round(albumart_size.y + albumart_size.h - (heightScale * logo.Height)) - 4;
 			if (!bandLogoHQ || is_4k) {
 				logoTop -= 20;
 			}
@@ -655,15 +637,22 @@ function draw_ui(gr) {
 		// RECORD LABEL drawing code
 		// this section should draw in 3ms or less always
 		if (recordLabels.length > 0) {
-            var labels = brightBackground ? (recordLabelsInverted.length ? recordLabelsInverted : recordLabels) : recordLabels;
+            const labels = brightBackground ? (recordLabelsInverted.length ? recordLabelsInverted : recordLabels) : recordLabels;
 			var rightSideGap = 20, // how close last label is to right edge
 				labelSpacing = 0,
 				leftEdgeGap = (art_off_center ? 20 : 40) * (is_4k ? 1.8 : 1), // space between art and label
 				maxLabelWidth = scaleForDisplay(200);
-			leftEdgeWidth = is_4k ? 45 : 30; // how far label background extends on left
+			let leftEdgeWidth = is_4k ? 45 : 30; // how far label background extends on left
+			let drawLabelTime = null;
+			let totalLabelWidth = 0;
+			let labelAreaWidth = 0;
+			let leftEdge = 0;
+			let topEdge = 0;
+			let labelWidth;
+			let labelHeight;
 			if (timings.showExtraDrawTiming) drawLabelTime = fb.CreateProfiler('on_paint -> record labels');
-			totalLabelWidth = 0;
-			for (i = 0; i < labels.length; i++) {
+
+			for (let i = 0; i < labels.length; i++) {
 				if (labels[i].Width > maxLabelWidth) {
 					totalLabelWidth += maxLabelWidth;
 				} else {
@@ -688,7 +677,7 @@ function draw_ui(gr) {
 						var radius = cdCenter.y - cdart_size.y;
 
 						while (true) {
-							allLabelsWidth = Math.max(Math.min(Math.round((ww - leftEdge - rightSideGap) / labels.length), maxLabelWidth), 50);
+							const allLabelsWidth = Math.max(Math.min(Math.round((ww - leftEdge - rightSideGap) / labels.length), maxLabelWidth), 50);
 							//console.log("leftEdge = " + leftEdge + ", ww-leftEdge-10 = " + (ww-leftEdge-10) + ", allLabelsWidth=" + allLabelsWidth);
 							var maxWidth = is_4k && labels[0].Width < 200 ? labels[0].Width * 2 : labels[0].Width;
 							labelWidth = (allLabelsWidth > maxWidth) ? maxWidth : allLabelsWidth;
@@ -711,9 +700,11 @@ function draw_ui(gr) {
 				}
 				labelAreaWidth = ww - leftEdge - rightSideGap;
 				lastLeftEdge = leftEdge;
+				lastLabelHeight = labelHeight;
 			} else {
 				// already calculated
 				leftEdge = lastLeftEdge;
+				labelHeight = lastLabelHeight;
 				labelAreaWidth = ww - leftEdge - rightSideGap;
 			}
 			if (labelAreaWidth >= scaleForDisplay(50)) {
@@ -721,10 +712,10 @@ function draw_ui(gr) {
 					labelSpacing = Math.min(12, Math.max(3, Math.round((labelAreaWidth / (labels.length - 1)) * 0.048))); // spacing should be proportional, and between 3 and 12 pixels
 				}
 				// console.log('labelAreaWidth = ' + labelAreaWidth + ", labelSpacing = " + labelSpacing);
-				allLabelsWidth = Math.max(Math.min(Math.round((labelAreaWidth - (labelSpacing * (labels.length - 1))) / labels.length), maxLabelWidth), 50); // allLabelsWidth must be between 50 and 200 pixels wide
+				const allLabelsWidth = Math.max(Math.min(Math.round((labelAreaWidth - (labelSpacing * (labels.length - 1))) / labels.length), maxLabelWidth), 50); // allLabelsWidth must be between 50 and 200 pixels wide
 				var labelX = leftEdge;
 				topEdge = albumart_size.y + albumart_size.h - labelHeight - 20;
-				var origLabelHeight = labelHeight;
+				const origLabelHeight = labelHeight;
 
 				if (!pref.darkMode) {
 					if (!labelShadowImg) {
@@ -737,7 +728,7 @@ function draw_ui(gr) {
                 gr.FillSolidRect(labelX - leftEdgeWidth, topEdge - 20, ww - labelX + leftEdgeWidth, labelHeight + 40, col.info_bg);
                 gr.DrawRect(labelX - leftEdgeWidth, topEdge - 20, ww - labelX + leftEdgeWidth, labelHeight + 40 - 1, 1, col.accent);
 				gr.SetSmoothingMode(SmoothingMode.AntiAliasGridFit);
-				for (i = 0; i < labels.length; i++) {
+				for (let i = 0; i < labels.length; i++) {
 					// allLabelsWidth can never be greater than 200, so if a label image is 161 pixels wide, never draw it wider than 161
 					var maxWidth = is_4k && labels[i].Width < 200 ? labels[i].Width * 2 : labels[i].Width;
 					labelWidth = (allLabelsWidth > maxWidth) ? maxWidth : allLabelsWidth;
@@ -758,14 +749,13 @@ function draw_ui(gr) {
 	var pbLeft = Math.round(0.025 * ww);
 
 	// Title & artist
-	//if (timings.showExtraDrawTiming) drawLowerBar = fb.CreateProfiler("on_paint -> lowerBar");
+	let timeAreaWidth = 0;
 	if (ww > 600) {
-		if (str.disc != '')
-			width = gr.CalcTextWidth(str.disc + '   ' + str.time + '   ' + str.length, ft.lower_bar);
-		else
-			width = gr.CalcTextWidth(' ' + str.time + '   ' + str.length, ft.lower_bar);
-	} else {
-		width = 0;
+		if (str.disc != '') {
+			timeAreaWidth = gr.CalcTextWidth(str.disc + '   ' + str.time + '   ' + str.length, ft.lower_bar);
+		} else {
+			timeAreaWidth = gr.CalcTextWidth(' ' + str.time + '   ' + str.length, ft.lower_bar);
+		}
 	}
 
 	// Playlist/Library
@@ -790,6 +780,7 @@ function draw_ui(gr) {
 	}
 
 	// MENUBAR
+	let drawMenuBar = null;
 	timings.showExtraDrawTiming && (drawMenuBar = fb.CreateProfiler('on_paint -> menu bar'));
 	for (var i in btns) {
 		var x = btns[i].x,
@@ -816,7 +807,7 @@ function draw_ui(gr) {
 	var titleMeasurements = gr.MeasureString(str.title_lower, ft_lower, 0, 0, 0, 0);
 	var titleWidth = titleMeasurements.Width;
 	var origArtistWidth = gr.MeasureString(str.original_artist, ft_lower_orig_artist, 0, 0, 0, 0).Width;
-	if (width + trackNumWidth + titleWidth + origArtistWidth > 0.95 * ww) {
+	if (timeAreaWidth + trackNumWidth + titleWidth + origArtistWidth > 0.95 * ww) {
 		// we don't have room for all the text so use a smaller font and recalc size
 		ft_lower_bold = ft.lower_bar_sml_bold;
 		ft_lower = ft.lower_bar_sml;
@@ -824,24 +815,24 @@ function draw_ui(gr) {
 		titleMeasurements = gr.MeasureString(str.title_lower, ft_lower, 0, 0, 0, 0);
 		trackNumWidth = Math.ceil(gr.MeasureString(str.tracknum, ft.lower_bar_sml_bold, 0, 0, 0, 0).Width);
 		if (str.disc !== '') {
-			width = gr.CalcTextWidth(str.disc + '   ' + str.time + '   ' + str.length, ft_lower);
+			timeAreaWidth = gr.CalcTextWidth(str.disc + '   ' + str.time + '   ' + str.length, ft_lower);
 		} else {
-			width = gr.CalcTextWidth(' ' + str.time + '   ' + str.length, ft_lower);
+			timeAreaWidth = gr.CalcTextWidth(' ' + str.time + '   ' + str.length, ft_lower);
 		}
     }
     var heightAdjustment = is_4k ? 1 : 0;
-    gr.DrawString(str.tracknum, ft_lower_bold, col.now_playing, pbLeft, lowerBarTop + heightAdjustment, 0.95 * ww - width, titleMeasurements.Height, StringFormat(0, 0, 4, 0x00001000));
-	width += trackNumWidth;
-	gr.DrawString(str.title_lower, ft_lower, col.now_playing, pbLeft + trackNumWidth, lowerBarTop, 0.95 * ww - width, titleMeasurements.Height, StringFormat(0, 0, 4, 0x00001000));
-	width += Math.ceil(titleMeasurements.Width);
-	if (str.original_artist && width < 0.95 * ww) {
+    gr.DrawString(str.tracknum, ft_lower_bold, col.now_playing, pbLeft, lowerBarTop + heightAdjustment, 0.95 * ww - timeAreaWidth, titleMeasurements.Height, StringFormat(0, 0, 4, 0x00001000));
+	let bottomTextWidth = timeAreaWidth + trackNumWidth;
+	gr.DrawString(str.title_lower, ft_lower, col.now_playing, pbLeft + trackNumWidth, lowerBarTop, 0.95 * ww - bottomTextWidth, titleMeasurements.Height, StringFormat(0, 0, 4, 0x00001000));
+	bottomTextWidth += Math.ceil(titleMeasurements.Width);
+	if (str.original_artist && bottomTextWidth < 0.95 * ww) {
 		var h_spacing = 0;
 		var v_spacing = 0;
 		if (useNeue) {
 			h_spacing = scaleForDisplay(4);
 			v_spacing = scaleForDisplay(1);
 		}
-		gr.DrawString(str.original_artist, ft_lower_orig_artist, col.now_playing, pbLeft + trackNumWidth + titleMeasurements.Width + h_spacing, lowerBarTop + v_spacing, 0.95 * ww - width, titleMeasurements.Height, StringFormat(0, 0, 4, 0x00001000));
+		gr.DrawString(str.original_artist, ft_lower_orig_artist, col.now_playing, pbLeft + trackNumWidth + titleMeasurements.Width + h_spacing, lowerBarTop + v_spacing, 0.95 * ww - bottomTextWidth, titleMeasurements.Height, StringFormat(0, 0, 4, 0x00001000));
 	}
 
 	// Progress bar/Seekbar
@@ -860,7 +851,7 @@ function draw_ui(gr) {
         gr.SetSmoothingMode(SmoothingMode.AntiAliasGridFit);
 		if (ww > 600) {
 			gr.DrawString(str.length, ft_lower, col.now_playing, 0.725 * ww, lowerBarTop, 0.25 * ww, titleMeasurements.Height, StringFormat(2, 0));
-			width = gr.CalcTextWidth('  ' + str.length, ft_lower);
+			let width = gr.CalcTextWidth('  ' + str.length, ft_lower);
 			gr.DrawString(str.time, ft_lower_bold, col.now_playing, 0.725 * ww, lowerBarTop + heightAdjustment, 0.25 * ww - width, titleMeasurements.Height, StringFormat(2, 0));
 			width += gr.CalcTextWidth('  ' + str.time, ft_lower_bold);
 			gr.DrawString(str.disc, ft_lower, col.now_playing, 0.725 * ww, lowerBarTop, 0.25 * ww - width, titleMeasurements.Height, StringFormat(2, 0));
@@ -913,20 +904,22 @@ function draw_ui(gr) {
 }
 
 function drawCdArt(gr) {
-	if (timings.showExtraDrawTiming) drawCD = fb.CreateProfiler('cdart');
+	let drawCdProfiler = null;
+	if (timings.showExtraDrawTiming) drawCdProfiler = fb.CreateProfiler('cdart');
 	gr.DrawImage(rotatedCD, cdart_size.x, cdart_size.y, cdart_size.w, cdart_size.h, 0, 0, rotatedCD.Width, rotatedCD.Height, 0);
-	if (timings.showExtraDrawTiming) drawCD.Print();
+	if (timings.showExtraDrawTiming) drawCdProfiler.Print();
 }
 
 function on_paint(gr) {
-	if (timings.showDrawTiming) drawStuff = fb.CreateProfiler("on_paint");
+	let onPaintProfiler = null;
+	if (timings.showDrawTiming) onPaintProfiler = fb.CreateProfiler("on_paint");
 	draw_ui(gr);
 	if (pref.show_volume_button) {
 		volume_btn.on_paint(gr);
 	}
 
 	if (timings.showDrawTiming) {
-		drawStuff.Print();
+		onPaintProfiler.Print();
 	}
 }
 
@@ -938,7 +931,7 @@ function onRatingMenu(x, y) {
 	var rating = fb.TitleFormat("$if2(%rating%,0)").Eval();
 
 	var menu = new Menu();
-	menu.addRadioItems(['No rating', '1 Star', '2 Stars', '3 Stars', '4 Stars', '5 Stars'], parseInt(rating), [0,1,2,3,4,5], function (rating) {
+	menu.addRadioItems(['No rating', '1 Star', '2 Stars', '3 Stars', '4 Stars', '5 Stars'], parseInt(rating), [0,1,2,3,4,5], (rating) => {
 		if (rating === 0) {
 			fb.RunContextCommand("Playback Statistics/Rating/<not set>");
 		} else {
@@ -1045,7 +1038,7 @@ function onOptionsMenu(x, y) {
 	transportMenu.addToggleItem('Show reload button', pref, 'show_reload_button', () => { window.Reload(); }, !pref.show_transport);
 	transportMenu.appendTo(menu);
 
-	transportSizeMenu = new Menu('Transport Button Size');
+	const transportSizeMenu = new Menu('Transport Button Size');
 	transportSizeMenu.addRadioItems(['-2', '28px', '32px (default)', '36px', '40px', '44px', '+2'], pref.transport_buttons_size, [-1,28,32,36,40,44,999], (size) => {
 		if (size === -1) {
 			pref.transport_buttons_size -= 2;
@@ -1085,7 +1078,7 @@ function onOptionsMenu(x, y) {
 
 	menu.addSeparator();
 
-	playlistMenu = new Menu('Playlist Settings');
+	const playlistMenu = new Menu('Playlist Settings');
 	var playlistCallback = function () {
 		playlist.on_size(ww, wh);
 		window.Repaint();
@@ -1134,7 +1127,7 @@ function onOptionsMenu(x, y) {
 
 	menu.addSeparator();
 
-	libraryMenu = new Menu('Library Settings');
+	const libraryMenu = new Menu('Library Settings');
 	libraryMenu.addToggleItem('Remember library state', libraryProps, 'rememberTree');
 	libraryMenu.addToggleItem('Full line clickable', libraryProps, 'fullLine');
 	libraryMenu.addToggleItem('Show tooltips', libraryProps, 'tooltips', () => { setLibrarySize(); });
@@ -1164,7 +1157,7 @@ function onOptionsMenu(x, y) {
 
 	menu.addSeparator();
 
-	debugMenu = new Menu('Debug Settings');
+	const debugMenu = new Menu('Debug Settings');
 	debugMenu.addToggleItem('Enable debug output', pref, 'show_debug_log');
 	debugMenu.addItem('Enable theme debug output', pref.show_theme_log, () => {
 		pref.show_theme_log = !pref.show_theme_log;
@@ -1228,14 +1221,14 @@ function on_init() {
 
 	if (pref.start_Playlist) {
 		displayPlaylist = false;
-		setTimeout(function () {
+		setTimeout(() => {
 			if (btns && btns.playlist) {
 				btns.playlist.onClick();	// displays playlist
 			}
 		}, 30);
 	}
 
-	setTimeout(function () {
+	setTimeout(() => {
 		// defer initing of library panel until everything else has loaded
 		if (!libraryInitialized) {
 			initLibraryPanel();
@@ -1245,10 +1238,9 @@ function on_init() {
 
 // window size changed
 function on_size() {
-	console.log("in on_size()");
 	ww = window.Width;
 	wh = window.Height;
-	console.log('width: ' + ww + ', height: ' + wh);
+	console.log(`in on_size() => width: ${ww}, height: ${wh}`);
 
 	if (ww <= 0 || wh <= 0) return;
 
@@ -1276,7 +1268,7 @@ function on_size() {
 	createButtonObjects(ww, wh);
 
 	// we aren't creating these buttons anymore, but we still use these values for now. TODO: replace these
-	settingsY = btns[30].y;
+	const settingsY = btns[30].y;
 
 	if (albumart)
 		midpoint = Math.ceil(albumart_size.y + pref.lyrics_line_height + albumart_size.h / 2);
@@ -1315,9 +1307,9 @@ function setLibrarySize() {
 
 // new track
 function on_playback_new_track(metadb) {
+	let newTrackProfiler = null;
 	console.log('in on_playback_new_track()');
-	if (timings.showDebugTiming) newTrackTime = fb.CreateProfiler('on_playback_new_track');
-	start_timer = 0;
+	if (timings.showDebugTiming) newTrackProfiler = fb.CreateProfiler('on_playback_new_track');
 	lastLeftEdge = 0;
 	newTrackFetchingArtwork = true;
 	themeColorSet = false;
@@ -1355,13 +1347,13 @@ function on_playback_new_track(metadb) {
     while (recordLabelsInverted.length) {
         disposeImg(recordLabelsInverted.pop());
     }
-	for (i = 0; i < tf.labels.length; i++) {
-		for (j = 0; j < $('$meta_num(' + tf.labels[i] + ')'); j++) {
+	for (let i = 0; i < tf.labels.length; i++) {
+		for (let j = 0; j < parseInt($('$meta_num(' + tf.labels[i] + ')')); j++) {
 			labelStrings.push($('$meta(' + tf.labels[i] + ',' + j + ')'));
 		}
 	}
 	labelStrings = [... new Set(labelStrings)];
-	for (i = 0; i < labelStrings.length; i++) {
+	for (let i = 0; i < labelStrings.length; i++) {
 		var addLabel = LoadLabelImage(labelStrings[i]);
 		if (addLabel != null) {
             recordLabels.push(addLabel);
@@ -1386,7 +1378,7 @@ function on_playback_new_track(metadb) {
 	}
 
 	/* code to retrieve band logo */
-	bandStr = replaceFileChars($('[%artist%]'));
+	const bandStr = replaceFileChars($('[%artist%]'));
     bandLogo = disposeImg(bandLogo);
     invertedBandLogo = disposeImg(invertedBandLogo);
 	if (bandStr) {
@@ -1429,7 +1421,7 @@ function on_playback_new_track(metadb) {
 	if (displayLyrics) { // no need to try retrieving them if we aren't going to display them now
 		updateLyricsPositionOnScreen();
 	}
-	if (timings.showDebugTiming) newTrackTime.Print();
+	if (timings.showDebugTiming) newTrackProfiler.Print();
 }
 
 // tag content changed
@@ -1439,7 +1431,7 @@ function on_metadb_changed(handle_list, fromhook) {
 		var nowPlayingUpdated = !handle_list; // if we don't have a handle_list we called this manually from on_playback_new_track
 		var metadb = fb.GetNowPlaying();
 		if (metadb && handle_list) {
-			for (i = 0; i < handle_list.Count; i++) {
+			for (let i = 0; i < handle_list.Count; i++) {
 				if (metadb.RawPath === handle_list[i].RawPath) {
 					nowPlayingUpdated = true;
 					break;
@@ -1452,6 +1444,7 @@ function on_metadb_changed(handle_list, fromhook) {
 			var title = $(tf.title);
 			var artist = $(tf.artist);
 			var original_artist = $(tf.original_artist);
+			let tracknum = '';
 			if (pref.use_vinyl_nums)
 				tracknum = $(tf.vinyl_track);
 			else
@@ -1489,14 +1482,14 @@ function on_metadb_changed(handle_list, fromhook) {
 
 			str.disc = fb.TitleFormat(tf.disc).Eval();
 
-			h = Math.floor(fb.PlaybackLength / 3600);
-			m = Math.floor(fb.PlaybackLength % 3600 / 60);
-			s = Math.floor(fb.PlaybackLength % 60);
+			const h = Math.floor(fb.PlaybackLength / 3600);
+			const m = Math.floor(fb.PlaybackLength % 3600 / 60);
+			const s = Math.floor(fb.PlaybackLength % 60);
 			str.length = (h > 0 ? h + ":" + (m < 10 ? "0" : '') + m : m) + ":" + (s < 10 ? "0" : '') + s;
 
 			str.grid = [];
-			for (k = 0; k < tf.grid.length; k++) {
-				val = $(tf.grid[k].val);
+			for (let k = 0; k < tf.grid.length; k++) {
+				let val = $(tf.grid[k].val);
 				if (val) {
 					if (tf.grid[k].age) {
 						val = $('$date(' + val + ')'); // never show time
@@ -1523,10 +1516,10 @@ function on_metadb_changed(handle_list, fromhook) {
 			if (str.timeline) {	// TODO: figure out why this is null for foo_input_spotify
 				str.timeline.setColors(col.tl_added, col.tl_played, col.tl_unplayed);
 			}
-			lastPlayed = $(tf.last_played);
+			const lastPlayed = $(tf.last_played);
 			calcDateRatios($date(currentLastPlayed) !== $date(lastPlayed), currentLastPlayed); // last_played has probably changed and we want to update the date bar
 			if (lastPlayed.length) {
-				today = dateToYMD(new Date());
+				const today = dateToYMD(new Date());
 				if (!currentLastPlayed.length || $date(lastPlayed) !== today) {
 					currentLastPlayed = lastPlayed;
 				}
@@ -2101,7 +2094,8 @@ function createShadowRect(width, height) {
 
 // HELPER FUNCTIONS
 function createDropShadow() {
-	if (timings.showDebugTiming) shadow = fb.CreateProfiler("createDropShadow");
+	let shadowProfiler = null;
+	if (timings.showDebugTiming) shadowProfiler = fb.CreateProfiler("createDropShadow");
 	if ((albumart && albumart_size.w > 0) || (cdart && pref.display_cdart && cdart_size.w > 0)) {
 		disposeImg(shadow_image);
 		if (cdart && !displayPlaylist && !displayLibrary && pref.display_cdart)
@@ -2109,7 +2103,7 @@ function createDropShadow() {
 		else
 			shadow_image = gdi.CreateImage(albumart_size.x + albumart_size.w + 2 * geo.aa_shadow, albumart_size.h + 2 * geo.aa_shadow);
 		if (shadow_image) {
-			shimg = shadow_image.GetGraphics();
+			const shimg = shadow_image.GetGraphics();
 			if (albumart) {
 				shimg.FillRoundRect(geo.aa_shadow, geo.aa_shadow, albumart_size.x + albumart_size.w, albumart_size.h,
 					0.5 * geo.aa_shadow, 0.5 * geo.aa_shadow, col.aa_shadow);
@@ -2127,7 +2121,7 @@ function createDropShadow() {
 		}
 	}
 
-	if (timings.showDebugTiming) shadow.Print();
+	if (timings.showDebugTiming) shadowProfiler.Print();
 }
 
 function SetProgressBarRefresh() {
@@ -2180,34 +2174,32 @@ function calcDateRatios(dontUpdateLastPlayed, currentLastPlayed) {
 	playedTimesRatios = [];
 	var added = toTime($('$if2(%added_enhanced%,%added%)'));
     var first_played = toTime($('$if2(%first_played_enhanced%,%first_played%)'));
-    var last_played = $('$if2(%last_played_enhanced%,%last_played%)');
+    let last_played = toTime($('$if2(%last_played_enhanced%,%last_played%)'));
 	var today = dateToYMD(newDate);
 	if (dontUpdateLastPlayed && $date(last_played) === today) {
 		last_played = toTime(currentLastPlayed);
-	} else {
-		last_played = toTime(last_played);
-    }
+	}
 
 	var lfmPlayedTimes = [];
 	var playedTimes = [];
 	if (componentEnhancedPlaycount) {
-		var playedTimes = $('[%played_times_js%]', fb.GetNowPlaying());
-		var lastfm = $('[%lastfm_played_times_js%]', fb.GetNowPlaying());
+		const playedTimesJson = $('[%played_times_js%]', fb.GetNowPlaying());
+		const  lastfmJson = $('[%lastfm_played_times_js%]', fb.GetNowPlaying());
 		var log = true;
-		if (playedTimes == playedTimesJsonLast && lastfm == lfmPlayedTimesJsonLast) {
+		if (playedTimesJson == playedTimesJsonLast && lastfmJson == lfmPlayedTimesJsonLast) {
 			log = false;    // cut down on spam
 		}
-		lfmPlayedTimesJsonLast = lastfm;
-		playedTimesJsonLast = playedTimes;
-		lfmPlayedTimes = parseJson(lastfm, 'lastfm: ', log);
-		playedTimes = parseJson(playedTimes, 'foobar: ', log);
+		lfmPlayedTimesJsonLast = lastfmJson;
+		playedTimesJsonLast = playedTimesJson;
+		lfmPlayedTimes = parseJson(lastfmJson, 'lastfm: ', log);
+		playedTimes = parseJson(playedTimesJson, 'foobar: ', log);
 	} else {
 		playedTimes.push(first_played);
 		playedTimes.push(last_played);
 	}
 
 	if (added && first_played) {
-		age = calcAge(added);
+		const age = calcAge(added);
 
 		tl_firstPlayedRatio = calcAgeRatio(first_played, age);
         tl_lastPlayedRatio = calcAgeRatio(last_played, age);
@@ -2217,7 +2209,7 @@ function calcDateRatios(dontUpdateLastPlayed, currentLastPlayed) {
 		}
 
 		if (playedTimes.length) {
-			for (i = 0; i < playedTimes.length; i++) {
+			for (let i = 0; i < playedTimes.length; i++) {
 				var ratio = calcAgeRatio(playedTimes[i], age);
 				playedTimesRatios.push(ratio);
             }
@@ -2229,7 +2221,7 @@ function calcDateRatios(dontUpdateLastPlayed, currentLastPlayed) {
 		var j = 0;
 		var tempPlayedTimesRatios = playedTimesRatios.slice();
 		tempPlayedTimesRatios.push(1.0001); // pick up every last.fm time after last_played fb knows about
-		for (i = 0; i < tempPlayedTimesRatios.length; i++) {
+		for (let i = 0; i < tempPlayedTimesRatios.length; i++) {
 			while (j < lfmPlayedTimes.length &&
 				(ratio = calcAgeRatio(lfmPlayedTimes[j], age)) < tempPlayedTimesRatios[i]) {
 				playedTimesRatios.push(ratio);
@@ -2311,8 +2303,8 @@ function CreateRotatedCDImage() {
 	if (pref.display_cdart) { // drawing cdArt rotated is slow, so first draw it rotated into the rotatedCD image, and then draw rotatedCD image unrotated in on_paint
         if (cdart && cdart_size.w > 0) { // cdart must be square so just use cdart_size.w (width)
 			rotatedCD = gdi.CreateImage(cdart_size.w, cdart_size.w);
-			rotCDimg = rotatedCD.GetGraphics();
-			trackNum = parseInt(fb.TitleFormat('$num($if(' + tf.vinyl_tracknum + ',$sub($mul(' + tf.vinyl_tracknum + ',2),1),$if2(%tracknumber%,1)),1)').Eval()) - 1;
+			const rotCDimg = rotatedCD.GetGraphics();
+			let trackNum = parseInt(fb.TitleFormat('$num($if(' + tf.vinyl_tracknum + ',$sub($mul(' + tf.vinyl_tracknum + ',2),1),$if2(%tracknumber%,1)),1)').Eval()) - 1;
 			if (!pref.rotate_cdart || trackNum != trackNum) trackNum = 0; // avoid NaN issues when changing tracks rapidly
 			rotCDimg.DrawImage(cdart, 0, 0, cdart_size.w, cdart_size.h, 0, 0, cdart.Width, cdart.Height, trackNum * pref.rotation_amt, 255);
 			rotatedCD.ReleaseGraphics(rotCDimg);
@@ -2330,6 +2322,7 @@ function ResizeArtwork(resetCDPosition) {
 	var lowerSpace = calcLowerSpace();
 	if (albumart && albumart.Width && albumart.Height) {
 		// Size for big albumart
+		let xCenter = 0;
 		var album_scale = Math.min(((displayPlaylist || displayLibrary) ? 0.47 * ww : 0.75 * ww) / albumart.Width,
 								   (wh - geo.top_art_spacing - lowerSpace - scaleForDisplay(16)) / albumart.Height);
 		if (displayPlaylist || displayLibrary) {
@@ -2390,6 +2383,7 @@ function ResizeArtwork(resetCDPosition) {
 		} else {
 			// no album art so we need to calc size of disc
 			var album_scale = Math.min(((displayPlaylist || displayLibrary) ? 0.47 * ww : 0.75 * ww) / cdart.Width, (wh - geo.top_art_spacing - lowerSpace - scaleForDisplay(16)) / cdart.Height);
+			let xCenter = 0;
 			if (displayPlaylist || displayLibrary) {
 				xCenter = 0.25 * ww;
 			} else if (ww / wh < 1.40) { // when using a roughly 4:3 display the album art crowds, so move it slightly off center
@@ -2435,8 +2429,8 @@ function LoadCountryFlags() {
 	while (flagImgs.length) {
 		disposeImg(flagImgs.pop());
 	}
-	for (i = 0; i < $('$meta_num(' + tf.artist_country + ')'); i++) {
-		path = $(pref.flags_base) + (is_4k ? '64\\' : '32\\') + $('$meta(' + tf.artist_country + ',' + i + ')').replace(/ /g, '-') + '.png';
+	for (let i = 0; i < parseInt($('$meta_num(' + tf.artist_country + ')')); i++) {
+		const path = $(pref.flags_base) + (is_4k ? '64\\' : '32\\') + $('$meta(' + tf.artist_country + ',' + i + ')').replace(/ /g, '-') + '.png';
 		var fImg = gdi.Image(path);
 		fImg && flagImgs.push(fImg);
 	}
@@ -2455,21 +2449,21 @@ function replaceFileChars(s) {
 }
 
 function LoadLabelImage(publisherString) {
-	recordLabel = null;
-	d = new Date();
-	labelStr = replaceFileChars(publisherString);
+	let recordLabel = null;
+	const d = new Date();
+	let labelStr = replaceFileChars(publisherString);
 	if (labelStr) {
 		/* First check for record label folder */
-		lastSrchYear = d.getFullYear();
-		dir = pref.label_base; // also used below
+		const lastSrchYear = d.getFullYear();
+		let dir = pref.label_base; // also used below
 		if (IsFolder(dir + labelStr) ||
 			IsFolder(dir + (labelStr = labelStr.replace(/ Records$/, '')
                     .replace(/ Recordings$/, '')
                     .replace(/ Music$/, '')
                     .replace(/\.$/, '')))) {
-			year = parseInt($('$year(%date%)'));
+			let year = parseInt($('$year(%date%)'));
 			for (; year <= lastSrchYear; year++) {
-				yearFolder = dir + labelStr + '\\' + year;
+				const yearFolder = dir + labelStr + '\\' + year;
 				if (IsFolder(yearFolder)) {
 					console.log('Found folder for ' + labelStr + ' for year ' + year + '.');
 					dir += labelStr + '\\' + year + '\\';
@@ -2482,7 +2476,7 @@ function LoadLabelImage(publisherString) {
 		}
 		/* actually load the label from either the directory we found above, or the base record label folder */
 		labelStr = replaceFileChars(publisherString); // we need to start over with the original string when searching for the file, just to be safe
-		label = dir + labelStr + '.png';
+		let label = dir + labelStr + '.png';
 		if (IsFile(label)) {
 			recordLabel = gdi.Image(label);
 			console.log('Found Record label:', label, !recordLabel ? '<COULD NOT LOAD>' : '');
@@ -2503,7 +2497,8 @@ function LoadLabelImage(publisherString) {
 }
 
 function fetchNewArtwork(metadb) {
-	if (timings.showDebugTiming) artworkTime = fb.CreateProfiler('fetchNewArtwork');
+	let fetchArtworkProfiler = null;
+	if (timings.showDebugTiming) fetchArtworkProfiler = fb.CreateProfiler('fetchNewArtwork');
 	console.log('Fetching new art'); // can remove this soon
 	aa_list = [];
 	var disc_art_exists = true;
@@ -2545,7 +2540,7 @@ function fetchNewArtwork(metadb) {
 			cdart = disposeCDImg(cdart);
 		}
 	}
-	if (timings.showDebugTiming) artworkTime.Print();
+	if (timings.showDebugTiming) fetchArtworkProfiler.Print();
 
 	if (isStreaming) {
 		cdart = disposeCDImg(cdart);
@@ -2553,11 +2548,11 @@ function fetchNewArtwork(metadb) {
 		getThemeColors(albumart);
 		ResizeArtwork(true);
 	} else {
-		for (k = 0; k < tf.glob_paths.length; k++) {
+		for (let k = 0; k < tf.glob_paths.length; k++) {
 			aa_list = aa_list.concat(utils.Glob($(tf.glob_paths[k])));
 		}
-		pattern = new RegExp('(cd|vinyl|' + pref.artwork_cdart_filename + ')([0-9]*|[a-h])\.png', 'i');
-		imageTest = /jpg|png$/i;
+		const pattern = new RegExp('(cd|vinyl|' + pref.artwork_cdart_filename + ')([0-9]*|[a-h])\.png', 'i');
+		const imageTest = /jpg|png$/i;
 		// remove duplicates and cd/vinyl art and make sure all files are jpg or pngs
 		aa_list = [... new Set(aa_list)].filter(path => !pattern.test(path) && imageTest.test(path));
 
@@ -2581,7 +2576,7 @@ function fetchNewArtwork(metadb) {
 			RepaintWindow();
 		}
 	}
-	if (timings.showDebugTiming) artworkTime.Print();
+	if (timings.showDebugTiming) fetchArtworkProfiler.Print();
 }
 
 
@@ -2602,13 +2597,13 @@ function createButtonObjects(ww, wh) {
 	var buttonSize = scaleForDisplay(pref.transport_buttons_size);
 	//---> Transport buttons
 	if (pref.show_transport) {
-		var count = 4 + (pref.show_random_button ? 1 : 0) + (pref.show_volume_button ? 1 : 0) + (pref.show_reload_button ? 1 : 0);
+		let count = 4 + (pref.show_random_button ? 1 : 0) + (pref.show_volume_button ? 1 : 0) + (pref.show_reload_button ? 1 : 0);
 
-		var y = pref.show_transport_below ? wh - geo.lower_bar_h - scaleForDisplay(10) - buttonSize : scaleForDisplay(10);
-		var w = buttonSize;
-		var h = w;
-		var p = scaleForDisplay(5); // space between buttons
-		var x = (ww - w * count - p * (count - 1)) / 2;
+		const y = pref.show_transport_below ? wh - geo.lower_bar_h - scaleForDisplay(10) - buttonSize : scaleForDisplay(10);
+		const w = buttonSize;
+		const h = w;
+		const p = scaleForDisplay(5); // space between buttons
+		const x = (ww - w * count - p * (count - 1)) / 2;
 
 		count = 0;
 
@@ -2647,69 +2642,69 @@ function createButtonObjects(ww, wh) {
 	// }
 	//---> Menu buttons
 
-	var img = btnImg.File;
-	var x = 5;
-	var y = 5;
-	var h = img[0].Height;
-	var w = img[0].Width;
+	let img = btnImg.File;
+	let x = 5;
+	let y = 5;
+	let h = img[0].Height;
+	let w = img[0].Width;
 	//var p = 0;
 
 	btns[20] = new Button(x, y, w, h, 'File', img);
-	var img = btnImg.Edit;
-	var x = x + w;
-	var w = img[0].Width;
+	img = btnImg.Edit;
+	x = x + w;
+	w = img[0].Width;
 	btns[21] = new Button(x, y, w, h, 'Edit', img);
-	var img = btnImg.View;
-	var x = x + w;
-	var w = img[0].Width;
+	img = btnImg.View;
+	x = x + w;
+	w = img[0].Width;
 	btns[22] = new Button(x, y, w, h, 'View', img);
-	var img = btnImg.Playback;
-	var x = x + w;
-	var w = img[0].Width;
+	img = btnImg.Playback;
+	x = x + w;
+	w = img[0].Width;
 	btns[23] = new Button(x, y, w, h, 'Playback', img);
-	var img = btnImg.Library;
-	var x = x + w;
-	var w = img[0].Width;
+	img = btnImg.Library;
+	x = x + w;
+	w = img[0].Width;
 	btns[24] = new Button(x, y, w, h, 'Library', img);
-	var img = btnImg.Help;
-	var x = x + w;
-	var w = img[0].Width;
+	img = btnImg.Help;
+	x = x + w;
+	w = img[0].Width;
 	btns[25] = new Button(x, y, w, h, 'Help', img);
-	var img = btnImg.Playlists;
-	var x = x + w;
-	var w = img[0].Width;
+	img = btnImg.Playlists;
+	x = x + w;
+	w = img[0].Width;
 	btns[26] = new Button(x, y, w, h, 'Playlists', img);
-	var img = btnImg.Options;
-	var x = x + w;
-	var w = img[0].Width;
+	img = btnImg.Options;
+	x = x + w;
+	w = img[0].Width;
 	btns[27] = new Button(x, y, w, h, 'Options', img);
 
-	var img = btnImg.Settings;
-	var x = ww - settingsImg.Width * 2;
-	var y = 15;
-	var h = img[0].Height;
-	var w = img[0].Width;
+	img = btnImg.Settings;
+	x = ww - settingsImg.Width * 2;
+	y = 15;
+	h = img[0].Height;
+	w = img[0].Width;
 	btns[30] = new Button(x, y, w, h, 'Settings', img, 'Foobar Settings');
-	var img = btnImg.Properties;
-	var w = img[0].Width;
+	img = btnImg.Properties;
+	w = img[0].Width;
 	x -= (w + 10);
 	btns[31] = new Button(x, y, w, h, 'Properties', img, 'Properties');
-	var img = btnImg.Rating;
-	var w = img[0].Width;
+	img = btnImg.Rating;
+	w = img[0].Width;
 	x -= (w + 10);
 	btns[32] = new Button(x, y, w, h, 'Rating', img, 'Rate Song');
-	var img = btnImg.Lyrics;
-	var w = img[0].Width;
+	img = btnImg.Lyrics;
+	w = img[0].Width;
 	x -= (w + 10);
 	btns[33] = new Button(x, y, w, h, 'Lyrics', img, 'Display Lyrics');
 	if (showLibraryButton) {
-		var img = btnImg.ShowLibrary;
-		var w = img[0].Width;
+		img = btnImg.ShowLibrary;
+		w = img[0].Width;
 		x -= (w + 10);
 		btns.library = new Button(x, y, w, h, 'ShowLibrary', img, 'Show Library');
 	}
-	var img = btnImg.Playlist;
-	var w = img[0].Width;
+	img = btnImg.Playlist;
+	w = img[0].Width;
 	x -= (w + 10);
 	btns.playlist = new Button(x, y, w, h, 'Playlist', img, 'Show Playlist');
 	/* if a new image button is added to the left of playlist we need to update the ResizeArtwork code */
@@ -2718,7 +2713,8 @@ function createButtonObjects(ww, wh) {
 // =================================================== //
 
 function createButtonImages() {
-	if (timings.showExtraDrawTiming) createButtonTime = fb.CreateProfiler('createButtonImages');
+	let createButtonProfiler = null;
+	if (timings.showExtraDrawTiming) createButtonProfiler = fb.CreateProfiler('createButtonImages');
 	var transportCircleSize = Math.round(pref.transport_buttons_size * 0.93333);
 
 	try {
@@ -2894,18 +2890,18 @@ function createButtonImages() {
 	for (var i in btns) {
 
 		if (btns[i].type === 'menu') {
-			var img = gdi.CreateImage(100, 100);
-			g = img.GetGraphics();
+			const img = gdi.CreateImage(100, 100);
+			const g = img.GetGraphics();
 
-			var measurements = g.MeasureString(btns[i].ico, btns[i].font, 0, 0, 0, 0);
+			const measurements = g.MeasureString(btns[i].ico, btns[i].font, 0, 0, 0, 0);
 			btns[i].w = Math.ceil(measurements.Width + 20);
 			img.ReleaseGraphics(g);
 			btns[i].h = Math.ceil(measurements.Height + 5);
 		}
 
-		var w = btns[i].w
-			h = btns[i].h,
-			lw = scaleForDisplay(2);
+		let w = btns[i].w;
+		let	h = btns[i].h;
+		let	lw = scaleForDisplay(2);
 
 		if (is_4k && btns[i].type === 'transport') {
 			w *= 2;
@@ -2919,10 +2915,10 @@ function createButtonImages() {
 		}
 
 		var stateImages = []; //0=normal, 1=hover, 2=down;
-		for (var s = 0; s <= 2; s++) {
+		for (let s = 0; s <= 2; s++) {
 
 			var img = gdi.CreateImage(w, h);
-			g = img.GetGraphics();
+			const g = img.GetGraphics();
 			g.SetSmoothingMode(SmoothingMode.AntiAlias);
 			if (btns[i].type !== 'transport') {
 				g.SetTextRenderingHint(TextRenderingHint.AntiAliasGridFit); // positions playback icons weirdly
@@ -2979,5 +2975,5 @@ function createButtonImages() {
 		btnImg[i] = stateImages;
 
 	}
-	if (timings.showExtraDrawTiming) createButtonTime.Print();
+	if (timings.showExtraDrawTiming) createButtonProfiler.Print();
 }
