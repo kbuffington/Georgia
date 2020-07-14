@@ -38,9 +38,10 @@ var useNeue = false;
 var fontsCreated = null;
 
 function createFonts() {
-	g_tooltip = window.CreateTooltip('Segoe UI', scaleForDisplay(15));
+	g_tooltip = window.Tooltip;
+	g_tooltip.Text = '';	// just in case
+	g_tooltip.SetFont('Segoe UI', scaleForDisplay(15))
 	g_tooltip.SetMaxWidth(scaleForDisplay(300));
-	g_tooltip.text = '';	// just in case
 
 	function font(name, size, style) {
 		var font;
@@ -256,8 +257,8 @@ var playCountVerifiedByLastFm = false; // show Last.fm image when we %lastfm_pla
 var art_off_center = false; // if true, album art has been shifted 40 pixels to the right
 var loadFromCache = true; // always load art from cache unless this is set
 
-var str = new Object();
-var state = new Object(); // panel state
+var str = {};
+var state = {}; // panel state
 
 // TIMERS
 var progressTimer; // 40ms repaint of progress bar
@@ -265,8 +266,8 @@ var globTimer; // Timer for rotating globs
 var hideCursor; // Timer for hiding cursor
 
 // STATUS VARIABLES
-var ww = 0,
-	wh = 0; // size of panel
+let ww = 0;
+let wh = 0; // size of panel
 var progressLength = 0; // fixing jumpiness in progressBar
 var progressMoved = false; // playback position changed, so reset progressLength
 var last_pb; // saves last playback order
@@ -760,7 +761,8 @@ function draw_ui(gr) {
 
 	// Playlist/Library
 	if (displayPlaylist) {
-		timings.showExtraDrawTiming && (drawPlaylist = fb.CreateProfiler('on_paint -> playlist'));
+		let drawPlaylistProfiler = null;
+		timings.showExtraDrawTiming && (drawPlaylistProfiler = fb.CreateProfiler('on_paint -> playlist'));
 		if (!pref.darkMode) {
 			if (!playlist_shadow) {
 				playlist_shadow = createShadowRect(playlist.w + 2 * geo.aa_shadow, playlist.h); // extend shadow past edge
@@ -771,7 +773,7 @@ function draw_ui(gr) {
 			gr.DrawRect(playlist.x - 1, playlist.y - 1, playlist.w + 2, playlist.h + 2, 1, rgb(64,64,64));
 		}
 		playlist.on_paint(gr);
-		timings.showExtraDrawTiming && drawPlaylist.Print();
+		timings.showExtraDrawTiming && drawPlaylistProfiler.Print();
 	} else if (displayLibrary) {
 		libraryPanel.on_paint(gr);
 		if (pref.darkMode) {
@@ -931,13 +933,14 @@ function onRatingMenu(x, y) {
 	var rating = fb.TitleFormat("$if2(%rating%,0)").Eval();
 
 	var menu = new Menu();
-	menu.addRadioItems(['No rating', '1 Star', '2 Stars', '3 Stars', '4 Stars', '5 Stars'], parseInt(rating), [0,1,2,3,4,5], (rating) => {
-		if (rating === 0) {
-			fb.RunContextCommand("Playback Statistics/Rating/<not set>");
-		} else {
-			fb.RunContextCommand("Playback Statistics/Rating/" + rating);
-		}
-	});
+	menu.addRadioItems(['No rating', '1 Star', '2 Stars', '3 Stars', '4 Stars', '5 Stars'], parseInt(rating), [0,1,2,3,4,5],
+		(rating) => {
+			if (rating === 0) {
+				fb.RunContextCommand("Playback Statistics/Rating/<not set>");
+			} else {
+				fb.RunContextCommand("Playback Statistics/Rating/" + rating);
+			}
+		});
 
 	var idx = menu.trackPopupMenu(x, y);
 	menu.doCallback(idx);

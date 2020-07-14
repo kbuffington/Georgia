@@ -26,7 +26,7 @@ class Hyperlink {
 	 * @param {number} xOffset x-offset of the hyperlink. Negative values will be subtracted from the containerWidth to right justify.
 	 * @param {number} yOffset y-offset of the hyperlink.
 	 * @param {number} containerWidth The width of the container the hyperlink will be in. Used for right justification purposes.
-	 * @param {boolean} inPlaylist If the hyperlink is drawing in a scrolling container like a playlist, then it is drawn differently
+	 * @param {boolean} [inPlaylist=false] If the hyperlink is drawing in a scrolling container like a playlist, then it is drawn differently
 	 */
 	constructor (text, font, type, xOffset, yOffset, containerWidth, inPlaylist = false) {
 		this.text = text;

@@ -80,7 +80,7 @@ pref.artwork_cdart_filename = pref.artwork_cdart_filename.trim().length ? pref.a
 // lyrics color definitions
 var g_txt_normalcolour = eval(pref.lyrics_normal_color);
 var g_txt_highlightcolour = eval(pref.lyrics_focus_color);
-var g_txt_shadowcolor = RGBA(000, 000, 000, 255);
+var g_txt_shadowcolor = RGBA(0, 0, 0, 255);
 
 //Tag Properties
 tf.add_properties({
@@ -152,11 +152,12 @@ tf.grid = [
 	{ label: 'Year',         val: '$puts(d,'+tf.year+')$if($strcmp($year($get(d)),$get(d)),$get(d),)' },            // tf.year is used if the date is YYYY
 	{ label: 'Release Date', val: '$puts(d,'+tf.date+')$if($strcmp($year($get(d)),$get(d)),,$get(d))', age: true }, // tf.date is used if the date is YYYY-MM-DD
 	{ label: 'Edition',      val: tf.edition },
-	{ label: 'Label',        val: '[$replace(%label%,\', \',\' • \')]' },
+	{ label: 'Label',        val: '[$replace(%label%,\', \',\' \u2022 \')]' },
 	{ label: 'Catalog #',    val: '[%catalognumber%]' },
 	{ label: 'Track',        val: '$if(%tracknumber%,$num(%tracknumber%,1)$if(%totaltracks%,/$num(%totaltracks%,1))$ifgreater(%totaldiscs%,1,   CD %discnumber%/$num(%totaldiscs%,1),)' },
-	{ label: 'Genre',        val: '[$replace(%genre%,\', \',\' • \')]' },
-	{ label: 'Style',        val: '[$replace(%style%,\', \',\' • \')]' },
+	// { label: 'Genre',        val: '[$replace(%genre%,\', \',\' • \')]' },
+	{ label: 'Genre',        val: '[$replace(%genre%,\', \',\' \u2022 \')]' },
+	{ label: 'Style',        val: '[$replace(%style%,\', \',\' \u2022 \')]' },
 	{ label: 'Release',      val: '[%release%]' },
 	{ label: 'Codec',   	 val: "[$if($not($strstr(%codec%,'MP3')),$replace($if2(%codec_profile%,%codec%),ATSC A/52,Dolby Digital)[ $replace($replace($replace($info(channel_mode), + LFE,),' front, ','/'),' rear surround channels',$if($strstr($info(channel_mode),' + LFE'),.1,.0))])]" },
 	{ label: 'Added',        val: '[' + tf.added + ']', age: true },

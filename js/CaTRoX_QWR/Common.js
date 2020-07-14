@@ -521,7 +521,7 @@ ArgumentError.prototype = Object.create(Error.prototype);
 /**
  * @param {boolean} predicate
  * @param {T} exception_type
- * @param {...} args
+ * @param {...*} args
  * @throws {T}
  * @template T
  */
@@ -598,7 +598,7 @@ var qwr_utils = {
     has_modded_jscript:   _.once(function () {
         var ret = _.attempt(function () {
             // Methods from modded JScript
-            wsh_utils.GetWndByHandle(666);
+            qwr_utils.GetWndByHandle(666);
             fb.IsMainMenuCommandChecked('View/Always on Top');
         });
 
@@ -689,7 +689,7 @@ var qwr_utils = {
 
         // fb2k main window class
         // Can't use UIHacks.MainWindowID, since it might be uninitialized during fb2k start-up
-        var ret_wnd = wsh_utils.GetWndByHandle(window.id);
+        var ret_wnd = qwr_utils.GetWndByHandle(window.id);
         while (ret_wnd && ret_wnd.GetAncestor(1) && ret_wnd.className !== '{E7076D1C-A7BF-4f39-B771-BCBE88F2A2A8}') {// We might have multiple instances of fb2k, thus getting the parent one instead of global search
             ret_wnd = ret_wnd.GetAncestor(1);
         }
@@ -708,7 +708,7 @@ var qwr_utils = {
             throw LogicError('Can\'t use extensions with vanilla JScript')
         }
 
-        var ret_wnd = wsh_utils.GetWndByHandle(window.id);
+        var ret_wnd = qwr_utils.GetWndByHandle(window.id);
         while (ret_wnd && ret_wnd.GetAncestor(1) && ret_wnd.GetAncestor(1).id !== qwr_utils.get_fb2k_window().id) {
             ret_wnd = ret_wnd.GetAncestor(1);
         }
@@ -824,7 +824,7 @@ function PanelProperty(name, default_value) {
 var PanelProperties = (function () {
     function PanelProperties() {
         /**
-         * @param {Object<string, Array<string, *>>} properties Each item in array is an object of the following type { string, [string, any] }
+         * @param {Object<string, [string, *]>} properties Each item in array is an object of the following type { string, [string, any] }
          */
         this.add_properties = function (properties) {
             _.forEach(properties, function (item, i) {

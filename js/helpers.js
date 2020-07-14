@@ -359,7 +359,7 @@ function isNewerVersion (oldVer, newVer) {
 }
 
 var menuStartIndex = 100;	// can be anything except 0
-function Menu(title) {
+function Menu(title = '') {
 	Menu.itemIndex++;
 	Menu.callbacks;
 	Menu.variables;
