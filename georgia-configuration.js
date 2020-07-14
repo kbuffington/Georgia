@@ -8,8 +8,6 @@ include(fb.ProfilePath + '\\georgia\\js\\CaTRoX_QWR\\Common.js');
 include(fb.ProfilePath + '\\georgia\\js\\CaTRoX_QWR\\Utility_LinkedList.js');
 include(fb.ProfilePath + '\\georgia\\js\\globals.js');
 include(fb.ProfilePath + '\\georgia\\js\\CaTRoX_QWR\\Control_ContextMenu.js');
-include(fb.ProfilePath + '\\georgia\\js\\CaTRoX_QWR\\Control_HtaMsgBox.js');
-include(fb.ProfilePath + '\\georgia\\js\\CaTRoX_QWR\\Control_HtaGroupPresetsMngr.js');
 include(fb.ProfilePath + '\\georgia\\js\\CaTRoX_QWR\\Control_Scrollbar.js');
 include(fb.ProfilePath + '\\georgia\\js\\CaTRoX_QWR\\Control_List.js');
 include(fb.ProfilePath + '\\georgia\\js\\CaTRoX_QWR\\Panel_Playlist.js');

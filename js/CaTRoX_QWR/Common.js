@@ -290,6 +290,7 @@ const g_callbacks = {
 
 // TODO: why do these still exist?
 const g_theme = {};
+g_theme.script_folder = 'georgia\\';
 g_theme.colors = {};
 g_theme.colors.pss_back = RGB(25, 25, 25);
 g_theme.colors.panel_back = RGB(30, 30, 30);
@@ -665,6 +666,18 @@ var qwr_utils = {
         var saved_x;
         var saved_y;
         var saved_m;
+    },
+    /**
+     * @param{string} path
+     * @return{string}
+     */
+    prepare_html_file: function(path) {
+        var html_code = utils.ReadTextFile( path );
+
+        const new_css = ( qwr_utils.get_windows_version() === '6.1' ) ? 'styles7.css' : 'styles10.css';
+        const css_path = `${fb.FoobarPath}${g_theme.script_folder}html\\${new_css}`;
+
+        return html_code.replace(/href="styles10.css"/i, `href="${css_path}"`);
     },
     KeyModifiersSuppress: function () {
         this.is_supressed = function (key) {

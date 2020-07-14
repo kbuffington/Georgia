@@ -6128,23 +6128,21 @@ function GroupingHandler() {
             on_execute_callback_fn();
         };
 
-        var parsed_query = cur_group.name === 'user_defined' ? [cur_group.group_query, cur_group.title_query] : ['', '[%album artist%]'];
-        g_hta_window.msg_box_multiple(-10000, -10000, ['Grouping Query', 'Title Query'], 'Foobar2000: Group by', [parsed_query[0], parsed_query[1]], on_ok_fn);
+        var parsed_query = cur_group.name === 'user_defined'
+            ? [cur_group.group_query, cur_group.title_query]
+            : ['', '[%album artist%]'];
 
-        var fb_handle = g_has_modded_jscript ? qwr_utils.get_fb2k_window() : undefined;
-        if (fb_handle) {
-            g_hta_window.manager.center(fb_handle.Left, fb_handle.Top, fb_handle.Width, fb_handle.Height);
-        }
-        else {
-            g_hta_window.manager.center();
-        }
+        var htmlCode = qwr_utils.prepare_html_file(`${fb.ProfilePath}${g_theme.script_folder}js\\CaTRoX_QWR\\html\\MsgBox.html`);
+        utils.ShowHtmlDialog(window.ID, htmlCode, { width: 650, height: 425, data: ['Foobar2000: Group by', ['Grouping Query', 'Title Query'], parsed_query, on_ok_fn] });
     }
 
     /**
      * @param {function} on_execute_callback_fn
      */
     function manage_groupings(on_execute_callback_fn) {
-        var on_ok_fn = function (ret_val) {
+        var on_ok_fn = function (ret_val_json) {
+            ret_val = JSON.parse(ret_val_json);
+
             settings.group_presets = ret_val[0];
             settings.default_group_name = ret_val[2];
             initalize_name_to_preset_map();
@@ -6160,15 +6158,8 @@ function GroupingHandler() {
             on_execute_callback_fn();
         };
 
-        g_hta_window.group_presets_mngr(-10000, -10000, settings.group_presets, cur_group.name, settings.default_group_name, on_ok_fn);
-
-        var fb_handle = g_has_modded_jscript ? qwr_utils.get_fb2k_window() : undefined;
-        if (fb_handle) {
-            g_hta_window.manager.center(fb_handle.Left, fb_handle.Top, fb_handle.Width, fb_handle.Height);
-        }
-        else {
-            g_hta_window.manager.center();
-        }
+        var htmlCode = qwr_utils.prepare_html_file(`${fb.ProfilePath}${g_theme.script_folder}js\\CaTRoX_QWR\\html\\GroupPresetsMngr.html`);
+        utils.ShowHtmlDialog(window.ID, htmlCode, { width: 650, height: 425, data: [JSON.stringify([settings.group_presets, cur_group.name, settings.default_group_name]), on_ok_fn] });
     }
 
     function initialize_playlists() {
