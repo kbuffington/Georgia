@@ -247,7 +247,7 @@ function _alpha_timer(items_arg, hover_predicate_arg) {
 }
 
 
-g_callbacks = {
+const g_callbacks = {
     /**
      * @param {string} event_name
      * @param {...*} var_args
@@ -751,8 +751,8 @@ var qwr_utils = {
  */
 function KeyActionHandler() {
     /**
-     * @param{string} key
-     * @param{function} action_callback
+     * @param {string|number} key
+     * @param {function} action_callback
      */
     this.register_key_action = function (key, action_callback) {
         if (!action_callback) {

@@ -327,6 +327,7 @@ function leftPad(val, size, ch) {
 }
 
 function makeHttpRequest(type, url, successCB) {
+	/** @type {*} */
 	var xmlhttp = new ActiveXObject('Microsoft.XMLHTTP');
 	xmlhttp.open(type, url, true);
 	xmlhttp.setRequestHeader('User-Agent', 'foo_jscript_panel_georgia');
