@@ -164,6 +164,26 @@ var mouse_move_suppress = new qwr_utils.MouseMoveSuppress();
 var key_down_suppress = new qwr_utils.KeyModifiersSuppress();
 
 
+function on_drag_enter(action, x, y, mask) {
+    trace_call && console.log(qwr_utils.function_name());
+    playlist.on_drag_enter(action, x, y, mask);
+}
+
+function on_drag_leave() {
+    trace_call && console.log(qwr_utils.function_name());
+    playlist.on_drag_leave();
+}
+
+function on_drag_drop(action, x, y, mask) {
+    trace_call && console.log(qwr_utils.function_name());
+    playlist.on_drag_drop(action, x, y, mask);
+}
+
+function on_drag_over(action, x, y, mask) {
+    trace_call && console.log(qwr_utils.function_name());
+    playlist.on_drag_over(action, x, y, mask);
+}
+
 /**
  * Playlist + PlaylistManager
  *
