@@ -1538,7 +1538,7 @@ function Playlist(x, y) {
 
         // Initialize rows
 
-        trace_initialize_list_performance && profiler_part.reset();
+        trace_initialize_list_performance && profiler_part.Reset();
 
         var rows_metadb = plman.GetPlaylistItems(cur_playlist_idx);
         this.cnt.rows = initialize_rows(plman.GetPlaylistItems(cur_playlist_idx));
@@ -1561,7 +1561,7 @@ function Playlist(x, y) {
 
         // Initialize headers
 
-        trace_initialize_list_performance && profiler_part.reset();
+        trace_initialize_list_performance && profiler_part.Reset();
 
         Header.grouping_handler.set_active_playlist(plman.GetPlaylistName(cur_playlist_idx));
         this.cnt.sub_items = create_headers(this.cnt.rows, rows_metadb);
