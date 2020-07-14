@@ -1978,7 +1978,7 @@ function FbMetadbHandle() {
      * let handle = fb.GetFocusItem();
      * console.log(handle.Path); // D:\SomeSong.flac
      */
-    this.Path = undefined; // (string) (read)
+    this.Path; // (string) (read)
 
     /**
      * @type {string}
@@ -1987,13 +1987,13 @@ function FbMetadbHandle() {
      * @example
      * console.log(handle.RawPath); // file://D:\SomeSong.flac
      */
-    this.RawPath = undefined; // (string) (read)
+    this.RawPath; // (string) (read)
 
     /**
      * @type {number}
      * @readonly
      */
-    this.SubSong = undefined; // (uint) (read)
+    this.SubSong; // (uint) (read)
 
     /**
      * -1 if size is unavailable.
@@ -2001,13 +2001,13 @@ function FbMetadbHandle() {
      * @type {number}
      * @readonly
      */
-    this.FileSize = undefined; // (LONGLONG) (read)
+    this.FileSize; // (LONGLONG) (read)
 
     /**
      * @type {float}
      * @readonly
      */
-    this.Length = undefined; // (double) (read)
+    this.Length; // (double) (read)
 
     /**
      * See {@link https://github.com/TheQwertiest/foo_spider_monkey_panel/wiki/Playback-stats}
@@ -2092,7 +2092,7 @@ function FbFileInfo() {
      *     console.log(file_info.MetaCount); // 11
      * }
      */
-    this.MetaCount = undefined; // (read)
+    this.MetaCount; // (read)
 
     /**
      * @type {number}
@@ -2101,7 +2101,7 @@ function FbFileInfo() {
      * @example
      * console.log(file_info.InfoCount); // 9
      */
-    this.InfoCount = undefined; // (read)
+    this.InfoCount; // (read)
 
     /**
      * @param {string} name
@@ -2459,7 +2459,7 @@ function FbPlaylistRecycler() {
      * @type {number}
      * @readonly
      */
-    this.Count = undefined; // (uint) (read)
+    this.Count; // (uint) (read)
 
     /**
      * @param {number} index
@@ -2504,7 +2504,7 @@ function FbPlayingItemLocation() {
      * @type {boolean}
      * @readonly
      */
-    this.IsValid = undefined; // (boolean) (read)
+    this.IsValid; // (boolean) (read)
 
     /**
      * -1 if item is not in a playlist
@@ -2512,7 +2512,7 @@ function FbPlayingItemLocation() {
      * @type {number}
      * @readonly
      */
-    this.PlaylistIndex = undefined; // (int) (read)
+    this.PlaylistIndex; // (int) (read)
 
     /**
      * -1 if item is not in a playlist
@@ -2520,7 +2520,7 @@ function FbPlayingItemLocation() {
      * @type {number}
      * @readonly
      */
-    this.PlaylistItemIndex = undefined; // (int) (read)
+    this.PlaylistItemIndex; // (int) (read)
 }
 
 /**
@@ -2533,7 +2533,7 @@ function FbPlaybackQueueItem() {
      * @type {FbMetadbHandle}
      * @readonly
      */
-    this.Handle = undefined; // (FbMetadbHandle) (read)
+    this.Handle; // (FbMetadbHandle) (read)
 
     /**
      * -1 if item is not in a playlist
@@ -2541,7 +2541,7 @@ function FbPlaybackQueueItem() {
      * @type {number}
      * @readonly
      */
-    this.PlaylistIndex = undefined; // (int) (read)
+    this.PlaylistIndex; // (int) (read)
 
     /**
      * -1 if item is not in a playlist
@@ -2549,7 +2549,7 @@ function FbPlaybackQueueItem() {
      * @type {number}
      * @readonly
      */
-    this.PlaylistItemIndex = undefined; // (int) (read)
+    this.PlaylistItemIndex; // (int) (read)
 }
 
 /**
@@ -2568,7 +2568,7 @@ function FbProfiler(name) {
      * @type {number}
      * @readonly
      */
-    this.Time = undefined; // (uint) // milliseconds
+    this.Time; // (uint) (read) // milliseconds
 
     /** @method */
     this.Reset = function () { }; // (void)
@@ -2693,7 +2693,7 @@ function FbTooltip() {
     this.SetDelayTime = function (type, time) { }; // (void)
 
     /**
-     * @param {string}
+     * @param {string} font_name
      * @param {number=} [font_size_px=12]
      * @param {number=} [font_style=0] See Flags.js > FontStyle
      */
@@ -2792,13 +2792,13 @@ function GdiBitmap(arg) {
      * @type {number}
      * @readonly
      */
-    this.Height = undefined;// (uint) (read)
+    this.Height;// (uint) (read)
 
     /**
      * @type {number}
      * @readonly
      */
-    this.Width = undefined;// (uint) (read)
+    this.Width;// (uint) (read)
 
     /**
      * @param {number} alpha Valid values 0-255.
@@ -2925,16 +2925,10 @@ function GdiBitmap(arg) {
 }
 
 /**
- * Constructor may fail if font is not present.<br>
- *
  * Performance note: try caching and reusing `GdiFont` objects,
  * since the maximum amount of such objects is hard-limited by Windows.
  * `GdiFont` creation will fail after reaching this limit.
  *
- * @constructor
- * @param {string} name
- * @param {number} size_px See Helper.js > Point2Pixel function for conversions
- * @param {number=} [style=0] See Flags.js > FontStyle
  */
 function GdiFont() {
     /**
@@ -2944,7 +2938,7 @@ function GdiFont() {
      * @example
      * console.log(my_font.Height); // 15
      */
-    this.Height = undefined;//    (uint)(read)
+    this.Height; // (uint)(read)
 
     /**
      * @type {string}
@@ -2953,7 +2947,7 @@ function GdiFont() {
      * @example
      * console.log(my_font.Name); // Segoe UI
      */
-    this.Name = undefined;//    (string)(read)
+    this.Name; // (string)(read)
 
     /**
      * @type {float}
@@ -2962,7 +2956,7 @@ function GdiFont() {
      * @example
      * console.log(my_font.Size); // 12
      */
-    this.Size = undefined;//    (float)(read)
+    this.Size; // (float)(read)
 
     /**
      * See Flags.js > FontStyle for value interpretation.
@@ -2973,7 +2967,7 @@ function GdiFont() {
      * @example
      * console.log(my_font.Style);
      */
-    this.Style = undefined;//    (uint)(read)
+    this.Style; // (uint)(read)
 }
 
 /**
@@ -3254,37 +3248,37 @@ function GdiGraphics() {
          * @type {number}
          * @readonly
          */
-        this.Chars = undefined; // (uint) (read)
+        this.Chars; // (uint) (read)
 
         /**
          * @type {float}
          * @readonly
          */
-        this.Height = undefined; // (float) (read)
+        this.Height; // (float) (read)
 
         /**
          * @type {number}
          * @readonly
          */
-        this.Lines = undefined; // (uint) (read)
+        this.Lines; // (uint) (read)
 
         /**
          * @type {float}
          * @readonly
          */
-        this.X = undefined; // (float) (read)
+        this.X; // (float) (read)
 
         /**
          * @type {float}
          * @readonly
          */
-        this.Y = undefined; // (float) (read)
+        this.Y; // (float) (read)
 
         /**
          * @type {float}
          * @readonly
          */
-        this.Width = undefined; // (float) (read)
+        this.Width; // (float) (read)
     }
 
     /**
@@ -3313,13 +3307,13 @@ function GdiRawBitmap() {
      * @type {number}
      * @readonly
      */
-    this.Width = undefined; // (uint) (read)
+    this.Width; // (uint) (read)
 
     /**
      * @type {number}
      * @readonly
      */
-    this.Height = undefined; // (uint) (read)
+    this.Height; // (uint) (read)
 }
 
 /**
