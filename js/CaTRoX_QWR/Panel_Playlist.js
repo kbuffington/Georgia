@@ -76,6 +76,7 @@ var g_drop_effect = {
 
 var playlistFontsCreated = false;
 var playlist_geo = {};
+let g_pl_fonts = {};
 
 function createPlaylistFonts() {
     var playlistSize = pref.font_size_playlist;
@@ -1467,13 +1468,13 @@ function Playlist(x, y) {
                 else if (selection_handler.selected_items_count() >= 1) {
                     var rows = this.cnt.rows;
                     if (modifiers.ctrl) {
-                        indexes = selection_handler.get_selected_items();
+                        const indexes = selection_handler.get_selected_items();
                         indexes.forEach(function (idx) {
                             queue_handler.add_row(rows[idx]);
                         });
                     }
                     else if (modifiers.shift) {
-                        indexes = selection_handler.get_selected_items();
+                        const indexes = selection_handler.get_selected_items();
                         indexes.forEach(function (idx) {
                             queue_handler.remove_row(rows[idx]);
                         });
@@ -1635,8 +1636,7 @@ function Playlist(x, y) {
     //private:
 
     /**
-     * @param {IFbMetadbHandleList} playlist_items
-     * @param {number} playlist_size
+     * @param {FbMetadbHandleList} playlist_items
      * @return {Array<Row>}
      */
     function initialize_rows(playlist_items) {
@@ -1655,7 +1655,7 @@ function Playlist(x, y) {
 
     /**
      * @param {Array<Row>} rows
-     * @param {IFbMetadbHandleList} rows_metadb
+     * @param {FbMetadbHandleList} rows_metadb
      * @return {Array<Header>}
      */
     function create_headers(rows, rows_metadb) {
@@ -1713,7 +1713,7 @@ function Playlist(x, y) {
         var has_selected_item = selection_handler.has_selected_items();
         var is_playlist_locked = plman.IsPlaylistLocked(cur_playlist_idx);
         // Check only for data presence, since parsing it's contents might take a while
-        var has_data_in_clipboard = fb.CheckClipboardContents(window.ID);
+        var has_data_in_clipboard = fb.CheckClipboardContents();
 
         if (has_selected_item || has_data_in_clipboard) {
             if (!parent_menu.is_empty()) {
@@ -2097,7 +2097,7 @@ function Playlist(x, y) {
 
     /**
      * @param {Context.Menu} parent_menu
-     * @param {IFbMetadbHandle} metadb
+     * @param {FbMetadbHandle} metadb
      */
     function append_weblinks_menu_to(parent_menu, metadb) {
         var web = new Context.Menu('Weblinks');
@@ -3365,7 +3365,7 @@ DiscHeader.prototype.constructor = Header;
 
 /**
  * @param {Array<Row>} rows_to_process
- * @param {IFbMetadbHandleList} rows_metadb
+ * @param {FbMetadbHandleList} rows_metadb
  * @return {Array<Array>} Has the following format Array<[row,row_data]>
  */
 DiscHeader.prepare_initialization_data = function (rows_to_process, rows_metadb) {
@@ -3566,7 +3566,7 @@ function Header(parent, x, y, w, h, idx) {
     };
 
     /**
-     * @param {IGdiGraphics} gr
+     * @param {GdiGraphics} gr
      */
     this.draw_normal_header = function (gr, top, bottom) {
         if (!hyperlinks_initialized) {
@@ -3668,7 +3668,6 @@ function Header(parent, x, y, w, h, idx) {
                     else if (!this.is_art_loaded()) {
                         grClip.DrawString('LOADING', g_pl_fonts.cover, line_color, art_box_x, art_box_y, art_box_size, art_box_size, g_string_format.align_center);
                         cache_header = false;   // don't cache until artwork is loaded
-                        alreadyDrawn = true;
                     }
                     else {// null
                         grClip.DrawString('NO COVER', g_pl_fonts.cover, RGB(100, 100, 100), art_box_x, art_box_y, art_box_size, art_box_size, g_string_format.align_center);
@@ -3807,6 +3806,7 @@ function Header(parent, x, y, w, h, idx) {
                         grClip.DrawString(genre_text, g_pl_fonts.info, info_color, genreX, info_y, info_w, info_h, info_text_format);
                     } else {
                         var i = 0;
+                        let genre_hyperlink = undefined;
                         while (hyperlinks['genre' + i]) {
                             if (i > 0) {
                                 grClip.DrawString(' \u2022 ', g_pl_fonts.info, info_color, genre_hyperlink.x + genre_hyperlink.getWidth(), info_y, scaleForDisplay(20), info_h);
@@ -3895,7 +3895,7 @@ function Header(parent, x, y, w, h, idx) {
     };
 
     /**
-     * @param {IGdiGraphics} gr
+     * @param {GdiGraphics} gr
      */
     this.draw_compact_header = function (gr) {
         var artist_color = g_pl_colors.artist_normal;
@@ -4007,7 +4007,7 @@ function Header(parent, x, y, w, h, idx) {
     };
 
     /**
-     * @param {IGdiBitmap} image
+     * @param {GdiBitmap} image
      */
     this.assign_art = function (image) {
         if (!image || !g_properties.show_album_art) {
@@ -4049,7 +4049,7 @@ function Header(parent, x, y, w, h, idx) {
         var date_font = g_pl_fonts.date;
         var artist_font = g_pl_fonts.artist_normal;
 
-        date_query = '$year(' + tf.year + ')'; // Mordred: my date query
+        const date_query = '$year(' + tf.year + ')'; // Mordred: my date query
 
         var date_text = _.tf(date_query, metadb);
         if (date_text) {
@@ -4090,7 +4090,7 @@ function Header(parent, x, y, w, h, idx) {
         var label_string = _.tf('$if2(%label%,[%publisher%])', metadb).replace(', Inc.', '= Inc.');
         var labels = label_string.split(', ');
         var label_left = -right_edge * 2;
-        label_y = Math.round(2 * this.h / 3);
+        let label_y = Math.round(2 * this.h / 3);
         for (var i = labels.length - 1; i >= 0; --i) {
             if (i != labels.length - 1) {
                 label_left -= (bulletWidth + spaceWidth * 2);   // spacing between labels
@@ -4197,10 +4197,10 @@ function Header(parent, x, y, w, h, idx) {
      */
     var art_max_size = that.h - scaleForDisplay(16);
 
-    /** @type {IFbMetadbHandle} */
+    /** @type {FbMetadbHandle} */
     var metadb;
     /**
-     * @type {?IGdiBitmap}
+     * @type {?GdiBitmap}
      */
     var art = undefined; // undefined > Not Loaded; null > Loaded & Not Found; !_.isNil > Loaded & Found
     var grouping_handler = Header.grouping_handler;
@@ -4217,7 +4217,7 @@ Header.prototype.constructor = Header;
 
 /**
  * @param {Array<Row>} rows_to_process
- * @param {IFbMetadbHandleList} rows_metadb
+ * @param {FbMetadbHandleList} rows_metadb
  * @return {Array} Has the following format [Array<[row,row_data]>, disc_header_prepared_data]
  */
 Header.prepare_initialization_data = function (rows_to_process, rows_metadb) {
@@ -4266,7 +4266,7 @@ Header.create_headers = function (parent, x, y, w, h, prepared_rows) {
  * @param {number} y
  * @param {number} w
  * @param {number} h
- * @param {IFbMetadbHandle} metadb
+ * @param {FbMetadbHandle} metadb
  * @param {number} idx
  * @param {number} cur_playlist_idx_arg
  * @constructor
@@ -4304,7 +4304,6 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
             title_font = g_pl_fonts.title_selected;
             count_color = g_pl_colors.count_selected;
 
-            row_color_focus = g_pl_colors.row_focus_selected;
             title_artist_color = g_pl_colors.title_normal;
         }
 
@@ -4536,7 +4535,7 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
     this.idx = idx;
     /**
      * @const
-     * @type {IFbMetadbHandle}
+     * @type {FbMetadbHandle}
      */
     this.metadb = metadb;
 
@@ -4605,12 +4604,12 @@ Row.prototype.constructor = Row;
  * @param {number} y
  * @param {number} max_w
  * @param {number} h
- * @param {IFbMetadbHandle} metadb
+ * @param {FbMetadbHandle} metadb
  * @constructor
  */
 function Rating(x, y, max_w, h, metadb) {
     /**
-     * @param {IGdiGraphics} gr
+     * @param {GdiGraphics} gr
      * @param {number} color
      */
     this.draw = function (gr, color) {
@@ -4699,7 +4698,7 @@ function Rating(x, y, max_w, h, metadb) {
 
     /**
      * @const
-     * @type {IFbMetadbHandle}
+     * @type {FbMetadbHandle}
      */
     this.metadb = metadb;
 
@@ -4896,8 +4895,8 @@ function SelectionHandler(cnt_arg, cur_playlist_idx_arg) {
             // Can't move selected item on itself
             var is_item_above_selected = hover_row.idx !== 0 && rows[hover_row.idx - 1].is_selected();
             var is_item_below_selected = hover_row.idx !== (rows.length - 1) && rows[hover_row.idx + 1].is_selected();
-            is_drop_top_selected &= !hover_row.is_selected() && !is_item_above_selected;
-            is_drop_bottom_selected &= !hover_row.is_selected() && !is_item_below_selected;
+            is_drop_top_selected = is_drop_top_selected && !hover_row.is_selected() && !is_item_above_selected;
+            is_drop_bottom_selected = is_drop_bottom_selected && !hover_row.is_selected() && !is_item_below_selected;
         }
 
         var cur_hover_item = hover_row;
@@ -4975,7 +4974,7 @@ function SelectionHandler(cnt_arg, cur_playlist_idx_arg) {
     };
 
     /**
-     * @param {IDropTargetAction} action
+     * @param {DropTargetAction} action
      */
     this.external_drop = function (action) {
         plman.ClearPlaylistSelection(cur_playlist_idx);
@@ -5030,7 +5029,7 @@ function SelectionHandler(cnt_arg, cur_playlist_idx_arg) {
     };
 
     this.paste = function () {
-        if (!fb.CheckClipboardContents(window.ID)) {
+        if (!fb.CheckClipboardContents()) {
             return;
         }
 
@@ -5375,7 +5374,7 @@ function CollapseHandler(cnt_arg) {
     };
 
     /**
-     * @param {function()} on_collapse_change_callback_arg
+     * @param {function} on_collapse_change_callback_arg
      */
     this.set_callback = function (on_collapse_change_callback_arg) {
         on_collapse_change_callback = on_collapse_change_callback_arg;
@@ -5421,7 +5420,7 @@ function CollapseHandler(cnt_arg) {
 
     /** @type {Array<BaseHeader>} */
     var headers = cnt_arg.sub_items;
-    /** @type {?function()} */
+    /** @type {?function} */
     var on_collapse_change_callback = undefined;
 }
 
@@ -5640,7 +5639,7 @@ function PlaylistManager(x, y, w, h) {
             return;
         }
         else {
-            change_state(state.hover);
+            change_state(state.hovered);
             if (!was_pressed) {
                 return;
             }
@@ -5701,7 +5700,7 @@ function PlaylistManager(x, y, w, h) {
             return true;
         }
         else {
-            change_state(state.hover);
+            change_state(state.hovered);
             if (!was_pressed) {
                 return true;
             }
@@ -5777,7 +5776,7 @@ function PlaylistManager(x, y, w, h) {
     };
 
     /**
-     * @param {IGdiGraphics} gr
+     * @param {GdiGraphics} gr
      * @param {number} x
      * @param {number} y
      * @param {number} w
@@ -5885,9 +5884,9 @@ function PlaylistManager(x, y, w, h) {
         return item.panel_state === state.hovered;
     });
 
-    /** @type {?IGdiBitmap} */
+    /** @type {?GdiBitmap} */
     var image_normal = null;
-    /** @type {?IGdiBitmap} */
+    /** @type {?GdiBitmap} */
     var image_hovered = null;
 
     var cur_playlist_idx = undefined;
@@ -6037,7 +6036,7 @@ function GroupingHandler() {
 
     /**
      * @param {Context.Menu} parent_menu
-     * @param {function()} on_execute_callback_fn
+     * @param {function} on_execute_callback_fn
      */
     this.append_menu_to = function (parent_menu, on_execute_callback_fn) {
         var group = new Context.Menu('Grouping');
@@ -6113,7 +6112,7 @@ function GroupingHandler() {
     };
 
     /**
-     * @param {function()} on_execute_callback_fn
+     * @param {function} on_execute_callback_fn
      */
     function request_user_query(on_execute_callback_fn) {
         var on_ok_fn = function (ret_val) {
@@ -6142,7 +6141,7 @@ function GroupingHandler() {
     }
 
     /**
-     * @param {function()} on_execute_callback_fn
+     * @param {function} on_execute_callback_fn
      */
     function manage_groupings(on_execute_callback_fn) {
         var on_ok_fn = function (ret_val) {
@@ -6352,9 +6351,9 @@ Header.grouping_handler = new GroupingHandler();
  */
 function ArtImageCache(max_cache_size_arg) {
     /**
-     * @param {IFbMetadbHandle} metadb
-     * @param {IGdiBitmap} img
-     * @param {LinkedList.Iterator<IFbMetadbHandle>} queue_iterator
+     * @param {FbMetadbHandle} metadb
+     * @param {GdiBitmap} img
+     * @param {LinkedList.Iterator<FbMetadbHandle>} queue_iterator
      * @constructor
      */
     function CacheItem(metadb, img, queue_iterator) {
@@ -6364,8 +6363,8 @@ function ArtImageCache(max_cache_size_arg) {
     }
 
     /**
-     * @param {IFbMetadbHandle} metadb
-     * @return {?IGdiBitmap}
+     * @param {FbMetadbHandle} metadb
+     * @return {?GdiBitmap}
      */
     this.get_image_for_meta = function (metadb) {
         var cache_item = cache[metadb.Path];
@@ -6380,8 +6379,8 @@ function ArtImageCache(max_cache_size_arg) {
     };
 
     /**
-     * @param {IGdiBitmap} img
-     * @param {IFbMetadbHandle} metadb
+     * @param {GdiBitmap} img
+     * @param {FbMetadbHandle} metadb
      */
     this.add_image_for_meta = function (img, metadb) {
         var cache_item = cache[metadb.Path];
@@ -6418,7 +6417,7 @@ function ArtImageCache(max_cache_size_arg) {
      * @type {number}
      */
     var max_cache_size = max_cache_size_arg;
-    /** @type {LinkedList<IFbMetadbHandle>} */
+    /** @type {LinkedList<FbMetadbHandle>} */
     var queue = new LinkedList();
     /** @type {Object<string,CacheItem>} */
     var cache = {};

@@ -606,7 +606,7 @@ var qwr_utils = {
     }),
     /**
      * @param{string} site
-     * @param{IFbMetadbHandle} metadb
+     * @param{FbMetadbHandle} metadb
      */
     link:                 function (site, metadb) {
         if (!metadb) {
@@ -789,8 +789,8 @@ function KeyActionHandler() {
 }
 
 /**
- * @param{string} name
- * @param{*} default_value
+ * @param {string} name
+ * @param {*} default_value
  * @constructor
  */
 function PanelProperty(name, default_value) {
@@ -820,6 +820,7 @@ function PanelProperty(name, default_value) {
 
 /**
  * @hideconstructor
+ *
  */
 var PanelProperties = (function () {
     function PanelProperties() {
@@ -885,6 +886,7 @@ var PanelProperties = (function () {
     };
 })();
 
+/** @type {*} */
 var g_properties = PanelProperties.get_instance();
 
 var g_script_list = ['Common.js'];

@@ -20,6 +20,7 @@ function GetPropertyPrefix(system) {
 	return prefix;
 }
 
+/** @type {*} */
 var libraryProps = PanelProperties.get_instance(); // library Preferences
 var prefix = GetPropertyPrefix(false);
 var systemPrefix = GetPropertyPrefix(true);

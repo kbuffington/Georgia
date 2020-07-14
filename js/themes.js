@@ -170,15 +170,15 @@ function getThemeColorsJson(image, maxColorsToPull) {
 			c.weight = c.freq * midBrightness * 10; // multiply by 10 so numbers are easier to compare
 
 			if (c.freq >= minFrequency && !col.isCloseToGreyscale && col.brightness < maxBrightness) {
-				if (pref.show_theme_log) console.log(leftPad(i, 2), col.getRGB(true,true), leftPad(col.brightness, 4), ' ', leftPad(parseFloat(c.freq*100).toFixed(2),5) + '%', leftPad(parseFloat(c.weight).toFixed(2), 7));
+				if (pref.show_theme_log) console.log(leftPad(i, 2), col.getRGB(true,true), leftPad(col.brightness, 4), ' ', leftPad((c.freq*100).toFixed(2),5) + '%', leftPad(c.weight.toFixed(2), 7));
 				if (c.weight > maxWeight) {
 					maxWeight = c.weight;
 					selectedColor = col;
 				}
 			} else if (col.isCloseToGreyscale) {
-				if (pref.show_theme_log) console.log(' -', col.getRGB(true,true), leftPad(col.brightness, 4), ' ', leftPad(parseFloat(c.freq*100).toFixed(2),5) + '%', '   grey');
+				if (pref.show_theme_log) console.log(' -', col.getRGB(true,true), leftPad(col.brightness, 4), ' ', leftPad((c.freq*100).toFixed(2),5) + '%', '   grey');
 			} else {
-				if (pref.show_theme_log) console.log(' -', col.getRGB(true,true), leftPad(col.brightness, 4), ' ', leftPad(parseFloat(c.freq*100).toFixed(2),5) + '%',
+				if (pref.show_theme_log) console.log(' -', col.getRGB(true,true), leftPad(col.brightness, 4), ' ', leftPad((c.freq*100).toFixed(2),5) + '%',
 					(c.freq < minFrequency) ? '   freq' : ' bright');
 			}
 		});

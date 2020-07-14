@@ -1,5 +1,8 @@
+/** @type {*} */
 var globals = PanelProperties.get_instance();
+/** @type {*} */
 var pref = PanelProperties.get_instance(); // preferences
+/** @type {*} */
 var tf = PanelProperties.get_instance(); // titleformating strings
 
 const currentVersion = '1.1.9';
