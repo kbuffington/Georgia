@@ -510,10 +510,7 @@ _.mixin({
 		return 50 * Math.log(0.99 * volume + 0.01) / Math.LN10;
 	},
 	tt:                   function (text, force) {
-		if (!text) {
-			g_tooltip.Text = '';
-			g_tooltip.Deactivate();
-		} else if (g_tooltip.Text !== _.toString(text) || force) {
+		if (g_tooltip.Text !== _.toString(text) || force) {
 			g_tooltip.Text = text;
 			g_tooltip.Activate();
 		}
@@ -551,10 +548,12 @@ _.tt_handler.tt_timer = new function () {
 			_.tt(text, old_caller !== tt_caller );
 		}
 		else {
-			this.force_stop(); /// < There can be only one tooltip present at all times, so we can kill the timer w/o any worries
+			if (tooltip_timer) {
+				this.force_stop(); /// < There can be only one tooltip present at all times, so we can kill the timer w/o any worries
+			}
 
 			if (!tooltip_timer) {
-				tooltip_timer = setTimeout(() => {
+				tooltip_timer = setTimeout(function() {
 					_.tt(text);
 					tooltip_timer = null;
 				}, 300);
@@ -573,6 +572,7 @@ _.tt_handler.tt_timer = new function () {
 		if (tooltip_timer) {
 			clearTimeout(tooltip_timer);
 			tooltip_timer = null;
+			tt_caller = null;
 		}
 	};
 };
