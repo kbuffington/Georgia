@@ -181,14 +181,14 @@ function userinterface() {
 		var im = gdi.CreateImage(21, 50),
 			j = im.GetGraphics();
 		try {
-			this.theme.SetPartAndStateId(6, 1);
+			this.theme.SetPartAndStateID(6, 1);
 			this.theme.DrawThemeBackground(j, 0, 0, 21, 50);
 			for (var i = 0; i < 3; i++) {
-				this.theme.SetPartAndStateId(3, i + 1);
+				this.theme.SetPartAndStateID(3, i + 1);
 				this.theme.DrawThemeBackground(j, 0, 0, 21, 50);
 			}
 			for (i = 0; i < 3; i++) {
-				this.theme.SetPartAndStateId(1, i + 1);
+				this.theme.SetPartAndStateID(1, i + 1);
 				this.theme.DrawThemeBackground(j, 0, 0, 21, 21);
 			}
 		} catch(e) {
@@ -256,33 +256,6 @@ function userinterface() {
 		iconcol_c = ""; iconcol_h = ""; this.backcol = ""; this.countscol = ""; this.iconcol_c = ""; this.iconcol_h = "";
 		this.linecol = ""; this.s_linecol = 0; this.searchcol = ""; tcol = ""; tcol_h = ""; this.textcol = ""; this.textcol_h = ""; this.textselcol = ""; this.txt_box = "";
 	}
-	var set_custom_col = function (c, t) {
-		if (!custom_col) return "";
-		try {
-			var cc = "",
-				col = [];
-			col = c.split("-");
-			if (col.length != 3 && col.length != 4) return "";
-			switch (t) {
-				case 0:
-					cc = RGB(col[0], col[1], col[2]);
-					break;
-				case 1:
-					switch (col.length) {
-						case 3:
-							cc = RGB(col[0], col[1], col[2]);
-							break;
-						case 4:
-							cc = RGBA(col[0], col[1], col[2], col[3]);
-							break;
-					}
-					break;
-			}
-			return cc;
-		} catch (e) {
-			return ""
-		};
-	}
 
 	this.icon_col = function() {
 		if (iconcol_c === "") {this.iconcol_c = this.node_style ? [RGB(252, 252, 252), RGB(223, 223, 223)] : this.textcol;} else if (this.node_style) {if (A(iconcol_c) != 255) {this.iconcol_c = RGBAtoRGB(iconcol_c, this.backcol);} else this.iconcol_c = iconcol_c; this.iconcol_c = get_grad(this.iconcol_c, 15, -14);}
@@ -304,21 +277,21 @@ function userinterface() {
 	}
 
 	this.get_colors = function() {
-		this.backcol = g_theme.colors.pss_back; //set_custom_col(window.GetProperty("_Custom.Colour Background", ""), 1);
+		this.backcol = g_theme.colors.pss_back;
 		// this.backcol_h = set_custom_col(window.GetProperty("_Custom.Colour Background Highlight", ""), 1);
 		// this.backcolsel = set_custom_col(window.GetProperty("_Custom.Colour Background Selected", ""), 1);
-		this.countscol; // = set_custom_col(window.GetProperty("_Custom.Colour Item Counts", ""), 1);
-		this.linecol = g_pl_colors.title_selected & 0x80ffffff; //set_custom_col(window.GetProperty("_Custom.Colour Node Lines", ""), 1);
-		this.txt_box; // = set_custom_col(window.GetProperty("_Custom.Colour Search Name", ""), 0);
-		this.s_linecol = g_pl_colors.title_selected & 0x80ffffff; //set_custom_col(window.GetProperty("_Custom.Colour Search Line", ""), 1);
-		this.searchcol; // = set_custom_col(window.GetProperty("_Custom.Colour Search Text", ""), 0);
-		this.textcol = g_pl_colors.artist_normal; //set_custom_col(window.GetProperty("_Custom.Colour Text", ""), 0);
-		this.textcol_h; // = set_custom_col(window.GetProperty("_Custom.Colour Text Highlight", ""), 0);
-		this.textselcol = rgb(255,255,255); //set_custom_col(window.GetProperty("_Custom.Colour Text Selected", ""), 0);
-		this.iconcol_c = ''; //set_custom_col(window.GetProperty("_Custom.Colour Node Collapse", ""), 1);
+		this.countscol;
+		this.linecol = g_pl_colors.title_selected & 0x80ffffff;
+		this.txt_box;
+		this.s_linecol = g_pl_colors.title_selected & 0x80ffffff;
+		this.searchcol;
+		this.textcol = g_pl_colors.artist_normal;
+		this.textcol_h;
+		this.textselcol = rgb(255,255,255);
+		this.iconcol_c = '';
 		iconcol_c = this.iconcol_c;
 		// this.iconcol_e = set_custom_col(window.GetProperty("_Custom.Colour Node Expand", ""), 1); iconcol_e = this.iconcol_e;
-		this.iconcol_h = ''; //set_custom_col(window.GetProperty("_Custom.Colour Node Highlight", ""), 1);
+		this.iconcol_h = '';
 		iconcol_h = this.iconcol_h;
 		// this.backcoltrans = set_custom_col(window.GetProperty("_Custom.Colour Transparent Fill", ""), 1);
 		this.blur = false; //this.blur_dark || this.blur_light;
@@ -590,7 +563,7 @@ function userinterface() {
 		return utils.GetAlbumArtAsync(window.ID, handle, 0);
 		if (fb.IsPlaying)
 			return;
-		image = stub(1);
+		const image = stub(1);
 		if (!image) {
 			blurImg = false;
 			return;
@@ -696,9 +669,9 @@ function scrollbar() {
 				}
 				break;
 			case 2:
-				ui.theme.SetPartAndStateId(6, 1);
+				ui.theme.SetPartAndStateID(6, 1);
 				ui.theme.DrawThemeBackground(gr, this.x, this.y, this.w, this.h);
-				ui.theme.SetPartAndStateId(3, !this.hover && !this.b_is_dragging ? 1 : this.hover && !this.b_is_dragging ? 2 : 3);
+				ui.theme.SetPartAndStateID(3, !this.hover && !this.b_is_dragging ? 1 : this.hover && !this.b_is_dragging ? 2 : 3);
 				ui.theme.DrawThemeBackground(gr, this.x, this.y + this.bar_y, this.w, this.bar_ht);
 				break;
 		}} catch (e) {}}
@@ -1028,10 +1001,10 @@ function panel_operations() {
 }
 if ('DlgCode' in window) { window.DlgCode = 4; }
 
-SHIFT = 0;
-CTRL = 1;
-ALT = 2;
-CTRL_ALT = 3;
+const SHIFT = 0;
+const CTRL = 1;
+const ALT = 2;
+const CTRL_ALT = 3;
 
 function v_keys() {
 	this.selAll = 1;
@@ -1195,9 +1168,11 @@ function library_manager() {
 						var removeSearchItems = handle_list.Clone();
 						removeSearchItems.Sort();
 						removeSearchItems.MakeIntersection(origSearch);
-						try {handlesInSearch = fb.GetQueryItems(removeSearchItems, p.s_txt);} catch (e) {}
-						handlesInSearch.Sort();
-						removeSearchItems.MakeDifference(handlesInSearch);
+						try {
+							const handlesInSearch = fb.GetQueryItems(removeSearchItems, p.s_txt);
+							handlesInSearch.Sort();
+							removeSearchItems.MakeDifference(handlesInSearch);
+						} catch (e) {}
 						if (removeSearchItems.Count) this.removed_s(removeSearchItems);
 						if (newSearchItems.Count || removeSearchItems.Count) {
 							this.node = node_s.slice();
@@ -1211,7 +1186,7 @@ function library_manager() {
 							}
 							if (ui.w < 1 || !window.IsVisible) this.upd = 2; else timer.lib_update();
 						}
-                        handlesInSearch.Dispose(); newSearchItems.Dispose(); origSearch.Dispose(); removeSearchItems.Dispose();
+                        // handlesInSearch.Dispose(); newSearchItems.Dispose(); origSearch.Dispose(); removeSearchItems.Dispose();
 					}
 					break;
 				case 2:
@@ -1335,8 +1310,11 @@ function library_manager() {
 					var newSearchItems = fb.CreateHandleList();
 					try {newSearchItems = fb.GetQueryItems(handle_list, p.s_txt);} catch(e) {}
 					this.binaryInsert(p.view_by == p.folder_view, newSearchItems, p.list, node_s);
-					this.node = node_s.slice(); newSearchItems.Dispose();
-					if (!p.list.Count) {pop.tree = []; pop.line_l = 0; sbar.set_rows(0); this.none = "Nothing found"; p.tree_paint();}
+					this.node = node_s.slice();
+					if (!p.list.Count) {
+						// pop.tree = []; pop.line_l = 0;
+						sbar.set_rows(0); this.none = "Nothing found"; p.tree_paint();
+					}
 				} else p.list = this.list;
 				break;
 			default:
@@ -1344,7 +1322,8 @@ function library_manager() {
 				if (p.filter_by > 0 && p.s_show > 1) {
 					var newFilterItems = fb.CreateHandleList();
 					try {newFilterItems = fb.GetQueryItems(handle_list, p.filt[p.filter_by].type);} catch (e) {}
-					this.list.InsertRange(this.list.Count, newFilterItems); p.sort(this.list); newFilterItems.Dispose();
+					this.list.InsertRange(this.list.Count, newFilterItems);
+					p.sort(this.list);
 				}
 				else {if (full_list_need_sort) p.sort(full_list); this.list = full_list.Clone(); full_list_need_sort = false;} p.sort(handle_list);
 				switch (tree_type) {
@@ -1365,7 +1344,8 @@ function library_manager() {
 					}
 					this.node = node_s.slice();
 					if (!p.list.Count) {
-						pop.tree = []; pop.line_l = 0; sbar.set_rows(0); this.none = "Nothing found"; p.tree_paint();
+						// pop.tree = []; pop.line_l = 0;
+						sbar.set_rows(0); this.none = "Nothing found"; p.tree_paint();
 					}
 				} else p.list = this.list;
 				break;
@@ -1378,14 +1358,16 @@ function library_manager() {
             default:
                 this.list.InsertRange(this.list.Count, handle_list); p.sort(this.list); p.sort(handle_list);
 				var tree_type = p.view_by != p.folder_view ? 0 : 1;
+				let item_a;
 				switch (tree_type) {
 						case 0:
-							var tfo = fb.TitleFormat(p.view), item_a = tfo.EvalWithMetadbs(handle_list);
+							var tfo = fb.TitleFormat(p.view);
+							item_a = tfo.EvalWithMetadbs(handle_list);
 							for (var j = 0; j < handle_list.Count; j++) {var i = this.list.Find(handle_list[j]); if (i != -1) node.splice(i, 0, item_a[j].split("|"));}
 							if (!this.list.Count) this.none = "Nothing found";
 							break;
 						case 1:
-							var item_a = handle_list.GetLibraryRelativePaths();
+							item_a = handle_list.GetLibraryRelativePaths();
 							for (var j = 0; j < handle_list.Count; j++) {var i = this.list.Find(handle_list[j]); if (i != -1) node.splice(i, 0, item_a[j].split("\\"));}
 							if (!this.list.Count) this.none = "Nothing found";
 							break;
@@ -1471,8 +1453,8 @@ function LibraryTree() {
 	var im = gdi.CreateImage(ui.node_sz, ui.node_sz),
 		g = im.GetGraphics();
 	if (ui.node_win) try {
-		symb.SetPartAndStateId(2, 1);
-		symb.SetPartAndStateId(2, 2);
+		symb.SetPartAndStateID(2, 1);
+		symb.SetPartAndStateID(2, 2);
 		symb.DrawThemeBackground(g, 0, 0, ui.node_sz, ui.node_sz);
 	} catch (e) {
 		ui.node_win = 0;
@@ -1484,7 +1466,7 @@ function LibraryTree() {
 	window.SetProperty("SYSTEM.Playlist Checked", true);
 	var arr_contains = function(arr, item) {for (var i = 0; i < arr.length; i++) if (arr[i] == item) return true; return false;}
 	var arr_index = function(arr, item) {var n = -1; for (var i = 0; i < arr.length; i++) if (arr[i] == item) {n = i; break;} return n;}
-	var check_node = function(gr) {if (sbar.draw_timer || !ui.node_win) return; try {symb.SetPartAndStateId(2, 1); symb.SetPartAndStateId(2, 2); symb.DrawThemeBackground(gr, -ui.node_sz, -ui.node_sz, ui.node_sz, ui.node_sz);} catch (e) {ui.node_win = 0;}}
+	var check_node = function(gr) {if (sbar.draw_timer || !ui.node_win) return; try {symb.SetPartAndStateID(2, 1); symb.SetPartAndStateID(2, 2); symb.DrawThemeBackground(gr, -ui.node_sz, -ui.node_sz, ui.node_sz, ui.node_sz);} catch (e) {ui.node_win = 0;}}
 	var draw_node = function (gr, j, x, y) {
 		switch (ui.node_win) {
 			case 0:
@@ -1495,7 +1477,7 @@ function LibraryTree() {
 				break;
 			case 1:
 				if (j > 1) j -= 2;
-				symb.SetPartAndStateId(2, !j ? 1 : 2);
+				symb.SetPartAndStateID(2, !j ? 1 : 2);
 				symb.DrawThemeBackground(gr, x, y, ui.node_sz, ui.node_sz);
 				break;
 		}
@@ -1753,7 +1735,12 @@ function LibraryTree() {
 								if (base) n = lib_manager.node[pos][l];
 								if (get) {if (l < lib_manager.node[pos].length - 1) n = lib_manager.node[pos][l]; else n = "#get_track#";}
 								if (n == "#get_track#") n = lib_manager.node[pos][l]; nU = n.toUpperCase();
-								if (n_o != nU) {n_o = nU; n = n.replace(/#!##!#/g, "?"); srt = n; n = n.replace(/#@#.*?#@#/g,""); b.push({name:n, srt:srt});}
+								if (n_o != nU) {
+									n_o = nU;
+									n = n.replace(/#!##!#/g, "?");
+									const srt = n;
+									n = n.replace(/#@#.*?#@#/g,"");
+									b.push({name:n, srt:srt});}
 							} catch (e) {}
 						}
 						break;
@@ -1764,20 +1751,26 @@ function LibraryTree() {
 								if (base) n = lib_manager.node[pos][l];
 								if (get) {if (l < lib_manager.node[pos].length - 1) n = lib_manager.node[pos][l]; else n = "#get_track#";}
 								if (n == "#get_track#") n = lib_manager.node[pos][l]; nU = n.toUpperCase();
-								if (n_o != nU) {n_o = nU; n = n.replace(/~#!##!#|#!##!#/g, "?"); n = lib_manager.prefixes(n); srt = n; n = n.replace(/#@#.*?#@#/g,""); b.push({name:n, srt:srt});}
+								if (n_o != nU) {
+									n_o = nU;
+									n = n.replace(/~#!##!#|#!##!#/g, "?");
+									n = lib_manager.prefixes(n);
+									const srt = n;
+									n = n.replace(/#@#.*?#@#/g,"");
+									b.push({name:n, srt:srt});}
 							} catch (e) {}
 						}
 						break;
 				}
 				var h = -1, j = 0, multi = [], multi_cond = [], multi_obj = [], multi_rem = [],nm_arr = []; br_l = b.length; n = ""; n_o = "#condense#"; nU = "";
-				for (i = 0; i < br_l; i++) {
+				for (let i = 0; i < br_l; i++) {
 					if (b[i].name.indexOf("@@") != -1) {
 						multi = getAllCombinations(b[i].srt);
 						multi_rem.push(i);
 						for (var m = 0; m < multi.length; m++) multi_obj.push({name:multi[m].join("").replace(/#@#.*?#@#/g,""), srt:multi[m].join("")});
 					}
 				}
-				i = multi_rem.length; while (i--) b.splice(multi_rem[i], 1); br_l = b.length; multi_obj.sort(sort);
+				let i = multi_rem.length; while (i--) b.splice(multi_rem[i], 1); br_l = b.length; multi_obj.sort(sort);
 				i = 0; while (i < multi_obj.length) {n = multi_obj[i].name; nU = n.toUpperCase(); if (n_o != nU) {n_o = nU; multi_cond[j] = {name:n, srt:multi_obj[i].srt}; j++} i++}
 				for (i = 0; i < br_l; i++) {b[i].name = b[i].name.replace(/#!#/g, ""); nm_arr.push(b[i].name);}
 				for (i = 0; i < br_l; i++) {b[i].name = b[i].name.replace(/#!#/g, ""); nm_arr.push(b[i].name); if (b[i].srt) b[i].srt = b[i].srt.replace(/#!#/g, "");}
@@ -1838,13 +1831,14 @@ function LibraryTree() {
 			np_item = -1,
 			pid = -1,
 			pln = plman.FindOrCreatePlaylist(libraryProps.libPlaylistName, false);
+		let items;
 		if (!def_pl) pln = plman.ActivePlaylist;
 		else plman.ActivePlaylist = pln;
 		if (type) {
-			var items = fb.CreateHandleList();
+			items = fb.CreateHandleList();
 			for (i = 0; i < list.length; i++)
 				items.Add(p.list[list[i]]);
-		} else var items = list.Clone();
+		} else items = list.Clone();
 		if (p.multi_process && !libraryProps.playlistCustomSort) items.OrderByFormat(p.mv_sort, 1);
 		if (libraryProps.playlistCustomSort) items.OrderByFormat(tf_customSort, 1);
 		handles = items.Clone();
@@ -1918,8 +1912,8 @@ function LibraryTree() {
 				this.tree[h].child = [];
 		}
 		this.buildTree(lib_manager.root, 0);
-		scr_pos = false;
-		for (j = 0; j < this.tree.length; j++)
+		let scr_pos = false;
+		for (let j = 0; j < this.tree.length; j++)
 			if (this.tree[j].name.toUpperCase() == nm) {
 				sbar.check_scroll(j * ui.row_h);
 				scr_pos = true;
@@ -1936,7 +1930,19 @@ function LibraryTree() {
 		var h = 0, m = 0; this.tree[ie].sel = true;
 		if (libraryProps.autoCollapse) {
 			var j = 0, par = 0, parent = [];
-			for (h = 0; h < this.tree.length; h++) if (this.tree[h].sel) {j = this.tree[h].tr; if (libraryProps.rootNode) j -= 1; if (this.tree[h].tr != 0) {par = this.tree[h].par, pr_pr = []; for (m = 1; m < j + 1; m++) {if (m == 1) pr_pr[m] = par; else pr_pr[m] = this.tree[pr_pr[m - 1]].par; parent.push(pr_pr[m]);}}}
+			for (h = 0; h < this.tree.length; h++) if (this.tree[h].sel) {
+				j = this.tree[h].tr;
+				if (libraryProps.rootNode) j -= 1;
+				if (this.tree[h].tr != 0) {
+					par = this.tree[h].par;
+					let pr_pr = [];
+					for (let m = 1; m < j + 1; m++) {
+						if (m == 1) pr_pr[m] = par;
+						else pr_pr[m] = this.tree[pr_pr[m - 1]].par;
+						parent.push(pr_pr[m]);
+					}
+				}
+			}
 			for (h = 0; h < this.tree.length; h++) if (!arr_contains(parent, h) && !this.tree[h].sel && (!libraryProps.rootNode || this.tree[h].tr)) this.tree[h].child = [] ; this.buildTree(lib_manager.root, 0);
 		}
 		var start_l = this.tree.length,
@@ -2355,7 +2361,7 @@ function searchLibrary() {
 		s = 0,
 		shift = false,
 		shift_x = 0,
-		txt_w = 0
+		txt_w = 0,
 		cursor_width = scaleForDisplay(1);
 	var calc_text = function () {var im = gdi.CreateImage(1, 1), g = im.GetGraphics(); txt_w = g.CalcTextWidth(p.s_txt.substr(offset), ui.font); im.ReleaseGraphics(g); }
 	var drawcursor = function (gr) {
@@ -2719,7 +2725,7 @@ function button_manager() {
 		if (!this.b) return false;
 		this.Dn = this.b;
 		if (libraryProps.showScrollbar) {
-			for (j = 0; j < b3.length; j++) {
+			for (let j = 0; j < b3.length; j++) {
 				if (this.b == b3[j]) {
 					if (this.btns[this.b].trace(x, y)) {
 						this.btns[this.b].down = true;
@@ -2734,10 +2740,10 @@ function button_manager() {
 	this.lbtn_up = function (x, y) {
 		this.Dn = false;
 		if (libraryProps.showScrollbar)
-			for (j = 0; j < b3.length; j++) this.btns[b3[j]].down = false;
+			for (let j = 0; j < b3.length; j++) this.btns[b3[j]].down = false;
 		if (!this.b) return false;
 		if (libraryProps.showScrollbar)
-			for (j = 0; j < b3.length; j++)
+			for (let j = 0; j < b3.length; j++)
 				if (this.b == b3[j]) this.btns[this.b].changestate(this.btns[this.b].trace(x, y) ? "hover" : "normal");
 		this.move(x, y);
 		if (!this.b) return false;
@@ -2800,14 +2806,14 @@ function button_manager() {
 	}
 	this.move = function(x, y) {
 		if (sbar.timer_but) {if ((this.btns["scrollUp"].down || this.btns["scrollDn"].down) && !this.btns["scrollUp"].trace(x, y) && !this.btns["scrollDn"].trace(x, y)) {this.btns["scrollUp"].changestate("normal"); this.btns["scrollDn"].changestate("normal"); clearTimeout(sbar.timer_but); sbar.timer_but = false; sbar.count = -1;}}
-		else for (j = 0; j < b3.length; j++) if (this.b == b3[j] && this.btns[this.b].down) {this.btns[this.b].changestate("down"); this.btns[this.b].l_dn();}
+		else for (let j = 0; j < b3.length; j++) if (this.b == b3[j] && this.btns[this.b].down) {this.btns[this.b].changestate("down"); this.btns[this.b].l_dn();}
 		var b = null, hand = false;
 		for (i in this.btns) {
 			if ((libraryProps.searchMode == 1 || libraryProps.searchMode > 1 && !p.s_txt) && i == "s_img" && (!this.Dn || this.Dn == "s_img") && this.btns[i].trace(x, y)) {b = i; hand = true;}
 			if (libraryProps.searchMode == 1 && i == "cross1" && (!this.Dn || this.Dn == "cross1") && this.btns[i].trace(x, y)) {b = i; hand = true;}
 			if (libraryProps.searchMode > 1 && p.s_txt && i == "cross2" && (!this.Dn || this.Dn == "cross2") && this.btns[i].trace(x, y)) {b = i; hand = true;}
 			if (libraryProps.searchMode > 1 && i == "filter" && (!this.Dn || this.Dn == "filter") && this.btns[i].trace(x, y)) {b = i; hand = true;}
-			if (libraryProps.showScrollbar && sbar.scrollable_lines > 0) for (j = 0; j < b3.length; j++) if (i == b3[j] && (!this.Dn || this.Dn == b3[j]) && this.btns[i].trace(x, y)) b = i;
+			if (libraryProps.showScrollbar && sbar.scrollable_lines > 0) for (let j = 0; j < b3.length; j++) if (i == b3[j] && (!this.Dn || this.Dn == b3[j]) && this.btns[i].trace(x, y)) b = i;
 		}
 		window.SetCursor(this.Dn && this.Dn != this.b ? 32512 : hand ? 32649 : y < p.s_h && libraryProps.searchMode && x > qx + qh ? 32513 : 32512);
 		if (this.b == b) return this.b;
@@ -2824,7 +2830,7 @@ function button_manager() {
 				case 3: gr.SetInterpolationMode(2); if (this.img) gr.DrawImage(this.img, this.x, this.y, this.w, this.h, 0, 0, this.img.Width, this.img.Height); gr.SetInterpolationMode(0); break;
 				case 4: gr.DrawLine(Math.round(this.x + bh * 0.67), Math.round(this.y + bh * 0.67), Math.round(this.x + bh * 0.27), Math.round(this.y + bh * 0.27), Math.round(bh / 10), RGBA(136, 136, 136, this.img)); gr.DrawLine(Math.round(this.x + bh * 0.67), Math.round(this.y + bh * 0.27), Math.round(this.x + bh * 0.27), Math.round(this.y + bh * 0.67), Math.round(bh / 10), RGBA(136, 136, 136, this.img)); break;
 				case 5: gr.SetTextRenderingHint(5); gr.DrawString(txt, ft, this.img, this.x, this.y - 1, this.w, this.h, StringFormat(2, 1)); break;
-				case 6: ui.theme.SetPartAndStateId(1, this.img); ui.theme.DrawThemeBackground(gr, this.x, this.y, this.w, this.h); break;
+				case 6: ui.theme.SetPartAndStateID(1, this.img); ui.theme.DrawThemeBackground(gr, this.x, this.y, this.w, this.h); break;
 				default: if (this.img) gr.DrawImage(this.img, this.x + ft, txt, stat, stat, 0, 0, this.img.Width, this.img.Height, type == 1 ? 0 : 180); break;
 			}
 		}
@@ -2867,7 +2873,7 @@ function button_manager() {
 			}
 		}
 		if (libraryProps.searchMode)  {
-			this.btns.s_img = new btn(qx, qy, qh, qh, 3, "", "", "", {normal: s_img[0], hover: s_img[1]}, false, "", function() {browser("\"" + fb.FoobarPath + "doc\\Query Syntax Help.html");}, "", "Open Query Syntax Help");
+			this.btns.s_img = new btn(qx, qy, qh, qh, 3, "", "", "", {normal: s_img[0], hover: s_img[1]}, false, "", function() {browser("\"" + fb.FoobarPath + "doc\\Query Syntax Help.html");}, "Open Query Syntax Help");
 			this.btns.cross1 = new btn(bx, by, bh, bh, 4, "", "", "", {normal: "85", hover: "192"}, false, "", function() {sL.clear();}, "Clear Search Text");
 			this.btns.cross2 = new btn(qx - bh * 0.2, by, bh, bh, 4, "", "", "", {normal: "85", hover: "192"}, false, "", function() {sL.clear();}, "Clear Search Text");
 			this.btns.filter = new btn(p.filter_x1 - 12, ui.y, fw, p.s_sp, 5, p.filter_but_ft, "▼", "", {normal: ui.txt_box & 0x99ffffff, hover: ui.txt_box & 0xe4ffffff}, false, "", function() {men.button(p.filter_x1, p.s_h); but.refresh(true)}, "Filter");
@@ -3060,7 +3066,6 @@ function menu_object() {
 			i = MenuMap[idx].value;
 			switch (MenuMap[idx].type) {
 				case "Playlist":
-					console.log('playlist menu item:', i);
 					switch (i) {
 						case 1: // Send to Current Playlist
 							library_tree.load(library_tree.sel_items, true, false, true, false, false);
