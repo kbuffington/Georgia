@@ -109,16 +109,16 @@ function createPlaylistFonts() {
 
         dummy_text: font('Segoe Ui', playlistSize + 1)
     };
+    playlistFontsCreated = true;
 }
 
 function rescalePlaylist() {
-    var font_size = is_4k.toString();
-    if (playlistFontsCreated && playlistFontsCreated == font_size) {
+    if (playlistFontsCreated && playlistFontsCreated === is_4k) {
         return;	// don't redo fonts
     }
     createPlaylistFonts();
     playlist_geo.row_h = scaleForDisplay(g_properties.row_h);
-    playlist_geo.scrollbar_w = scaleForDisplay(g_properties.scrollbar_w);
+    playlist_geo.scrollbar_w = g_properties.scrollbar_w;    // don't scaleForDisplay
     playlist_geo.scrollbar_right_pad = scaleForDisplay(g_properties.scrollbar_right_pad);
     playlist_geo.scrollbar_top_pad = scaleForDisplay(g_properties.scrollbar_top_pad);
     playlist_geo.scrollbar_bottom_pad = scaleForDisplay(g_properties.scrollbar_bottom_pad);
