@@ -1,6 +1,6 @@
 window.DefinePanel('Georgia', {author: 'Mordred', version: '2.0.0', features: {drag_n_drop: true} });
 
-include(fb.ProfilePath + '\\georgia\\js\\CaTRoX_QWR\\js_marc2003\\js\\lodash.min.js');
+include(fb.ProfilePath + '\\georgia\\js\\CaTRoX_QWR\\lodash.min.js');
 include(fb.ProfilePath + '\\georgia\\js\\helpers.js');
 include(fb.ProfilePath + '\\georgia\\js\\hyperlinks.js');
 include(fb.ProfilePath + '\\georgia\\js\\timeline.js');
