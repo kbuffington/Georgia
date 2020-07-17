@@ -330,13 +330,13 @@ function makeHttpRequest(type, url, successCB) {
 	/** @type {*} */
 	var xmlhttp = new ActiveXObject('Microsoft.XMLHTTP');
 	xmlhttp.open(type, url, true);
-	xmlhttp.setRequestHeader('User-Agent', 'foo_jscript_panel_georgia');
+	xmlhttp.setRequestHeader('User-Agent', 'foo_spider_monkey_georgia');
 	xmlhttp.send();
-	xmlhttp.onreadystatechange = _.bind(function () {
+	xmlhttp.onreadystatechange = () => {
 		if (xmlhttp.readyState == 4) {
 			successCB(xmlhttp.responseText);
 		}
-	}, this);
+	};
 }
 
 // from: https://github.com/substack/semver-compare/issues/1#issuecomment-594765531

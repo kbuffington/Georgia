@@ -127,9 +127,9 @@ List.prototype.on_paint = function (gr) {
     gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
 
     if (this.items_to_draw.length) {
-        _.forEachRight(this.items_to_draw, _.bind(function (item, i) {
+        _.forEachRight(this.items_to_draw, (item) => {
             item.draw(gr);
-        }, this));
+        });
 
         // Hide items that shouldn't be visible
         gr.FillSolidRect(this.x, this.y, this.w, this.list_y - this.y, this.background_color);

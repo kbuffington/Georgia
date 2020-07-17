@@ -208,8 +208,8 @@ function _alpha_timer(items_arg, hover_predicate_arg) {
         var hover_out_step = 15;
 
         if (!alpha_timer_internal) {
-            alpha_timer_internal = setInterval(_.bind(function () {
-                _.forEach(items, function (item) {
+            alpha_timer_internal = setInterval(() => {
+                items.forEach((item) => {
                     var saved_alpha = item.hover_alpha;
                     if (hover_predicate(item)) {
                         item.hover_alpha = Math.min(255, item.hover_alpha += hover_in_step);
@@ -223,14 +223,14 @@ function _alpha_timer(items_arg, hover_predicate_arg) {
                     }
                 });
 
-                var alpha_in_progress = _.some(items, function (item) {
+                var alpha_in_progress = items.some(item => {
                     return item.hover_alpha > 0 && item.hover_alpha < 255;
                 });
 
                 if (!alpha_in_progress) {
                     this.stop();
                 }
-            }, this), 25);
+            }, 25);
         }
     };
 
@@ -841,10 +841,10 @@ var PanelProperties = (function () {
          * @param {Object<string, [string, *]>} properties Each item in array is an object of the following type { string, [string, any] }
          */
         this.add_properties = function (properties) {
-            _.forEach(properties, function (item, i) {
-                validate_property_item(item, i);
-                add_property_item(item, i);
-            });
+            Object.keys(properties).forEach(key => {
+                validate_property_item(properties[key], key);
+                add_property_item(properties[key], key);
+            })
         };
 
         function validate_property_item(item, item_id) {
