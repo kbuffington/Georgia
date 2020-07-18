@@ -1,9 +1,11 @@
 function IsFile(filename) {
-	return "IsFile" in utils ? utils.IsFile(filename) : utils.FileTest(filename, "e");
+	return utils.FileTest(filename, 'e');
+	// return "IsFile" in utils ? utils.IsFile(filename) : utils.FileTest(filename, "e");
 }
 
 function IsFolder(folder) {
-	return "IsFolder" in utils ? utils.IsFolder(folder) : utils.FileTest(folder, "d");
+	return utils.FileTest(folder, 'd');
+	// return "IsFolder" in utils ? utils.IsFolder(folder) : utils.FileTest(folder, "d");
 }
 
 function $(field, metadb) {

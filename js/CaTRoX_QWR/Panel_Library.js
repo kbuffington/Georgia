@@ -50,8 +50,6 @@ libraryProps.add_properties({
 	baseFontSize: [systemPrefix + 'Font Size', 18],
 });
 
-String.prototype.strip = function() {return this.replace(/[\.,\!\?\:;'\u2019"\-_\u2010\s+]/g, "").toLowerCase();}
-
 function userinterface() {
 	try {
 		var dpi = WshShell.RegRead("HKCU\\Control Panel\\Desktop\\WindowMetrics\\AppliedDPI");
@@ -320,9 +318,6 @@ function userinterface() {
 		this.textcol_h = tcol_h;
 		this.backcol_h = 0x1E30AFED;
 		// if (s_linecol == 1 && window.IsTransparent && !this.dui) s_linecol = 0;
-		var blend = get_blend(this.backcol == 0 ? 0xff000000 : this.backcol, this.textcol, 0.75);
-		var ln_col = [0, RGBA(136, 136, 136, 85), blend, this.textcol];
-		if (this.linecol === "") this.linecol = ln_col[linecol];
 		// if (this.searchcol === "") this.searchcol = s_col < 3 ? this.textcol : this.textcol_h;
 		// if (!this.dui && this.textselcol === "") this.textselcol = window.GetColourCUI(1); // : this.textcol;
 		// if (this.textselcol === "") this.textselcol = get_textselcol(this.backcolsel, false); // : this.textcol;
@@ -2350,7 +2345,6 @@ function LibraryTree() {
 function searchLibrary() {
 	// p.s_x and p.s_y are already adjusted for start position
 	var cx = 0,
-		doc = new ActiveXObject('htmlfile'),
 		f = 0,
 		expand_limit = 350, //Math.min(Math.max(window.GetProperty("ADV.Limit Search Results Auto Expand: 10-1000", 350), 10), 1000),
 		i = 0,
@@ -2894,7 +2888,7 @@ function menu_object() {
 		xp = false;
 	this.NewMenuItem = function(index, type, value) {MenuMap[index] = [{type: ""},{value: 0}]; MenuMap[index].type = type; MenuMap[index].value = value;}; this.r_up = false;
 	var box = function(n) {return n != null ? 'Unescape("' + encodeURIComponent(n + "") + '")' : "Empty";}
-	var InputBox = function(prompt, title, msg) {var vb = new ActiveXObject("ScriptControl"); vb.Language = "VBScript"; var tmp = vb.eval('InputBox(' + [box(prompt), box(title), box(msg)].join(",") + ')'); if (typeof tmp == "undefined") return; if (tmp.length == 254) fb.ShowPopupMessage("Your entry is too long and will be truncated.\n\nEntries are limited to 254 characters.", "Library Tree"); return tmp.trim();}
+	var InputBox = function(prompt, title, msg) { vb.Language = "VBScript"; var tmp = vb.eval('InputBox(' + [box(prompt), box(title), box(msg)].join(",") + ')'); if (typeof tmp == "undefined") return; if (tmp.length == 254) fb.ShowPopupMessage("Your entry is too long and will be truncated.\n\nEntries are limited to 254 characters.", "Library Tree"); return tmp.trim();}
 	var proceed = function(length) {var ns = InputBox("Create m-TAGS in selected music folders\n\nProceed?\n\nm-TAGS creator settings apply", "Create m-TAGS in Selected Folders", "Create " + length + " m-TAGS" + (length ? "" : ": NO FOLDERS SELECTED")); if (!ns) return false; return true;}
 	this.ConfigTypeMenu = function (Menu, StartIndex) {
 		var Index = StartIndex,

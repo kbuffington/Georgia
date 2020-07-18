@@ -14,10 +14,14 @@ const g_component_utils = utils.CheckComponent('foo_utils');
 const componentEnhancedPlaycount = utils.CheckComponent('foo_enhanced_playcount');
 
 // these used to be initialized in js_marc2003/js/helpers.js
+/** @type {*} */
 const doc = new ActiveXObject('htmlfile');
 const app = new ActiveXObject('Shell.Application');
+/** @type {*} */
 const WshShell = new ActiveXObject('WScript.Shell');
+/** @type {*} */
 const fso = new ActiveXObject('Scripting.FileSystemObject');
+/** @type {*} */
 const vb = new ActiveXObject('ScriptControl');
 
 globals.add_properties({

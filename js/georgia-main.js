@@ -212,11 +212,9 @@ var PLAYTIMER_VALUE = 1; // do not modify this value
 
 
 // PLAYLIST JUNK
-var btns = [];
+var btns = {};
 let btnImg = undefined;
 // =================================================== //
-
-var thisPanelName = "Playlist"; //Don't change!! needed in Scrollbar.txt.
 
 // END OF CONFIGURATION /////////////////////////////////
 

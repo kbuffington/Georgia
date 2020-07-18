@@ -12,7 +12,7 @@ function Timeline (height) {
     var lastPlayedPercent = 0.66;
     var playedTimesPercents = [];
     var playedTimes = [];
-    
+
     // recalc'd in setSize
     var lineWidth = is_4k ? 3 : 2;
     var extraLeftSpace = scaleForDisplay(3); // add a little space to the left so songs that were played a long time ago show more in the "added" stage
@@ -58,13 +58,13 @@ function Timeline (height) {
 
             gr.FillSolidRect(0, this.y, drawWidth + extraLeftSpace + lineWidth, this.h, this.addedCol);
             if (firstPlayedPercent >= 0 && lastPlayedPercent >= 0) {
-                x1 = Math.floor(drawWidth * firstPlayedPercent) + extraLeftSpace;
-                x2 = Math.floor(drawWidth * lastPlayedPercent) + extraLeftSpace;
+                const x1 = Math.floor(drawWidth * firstPlayedPercent) + extraLeftSpace;
+                const x2 = Math.floor(drawWidth * lastPlayedPercent) + extraLeftSpace;
                 gr.FillSolidRect(x1, this.y, drawWidth - x1 + extraLeftSpace, this.h, this.playedCol);
                 gr.FillSolidRect(x2, this.y, drawWidth - x2 + extraLeftSpace + lineWidth, this.h, this.unplayedCol);
             }
-            for (i = 0; i < playedTimesPercents.length; i++) {
-                x = Math.floor(drawWidth * playedTimesPercents[i]) + extraLeftSpace;
+            for (let i = 0; i < playedTimesPercents.length; i++) {
+                const x = Math.floor(drawWidth * playedTimesPercents[i]) + extraLeftSpace;
                 if (!isNaN(x)) {
                     gr.DrawLine(x, this.y, x, this.y + this.h, lineWidth, this.playCol);
                 } else {
@@ -85,9 +85,9 @@ function Timeline (height) {
 
     this.on_mouse_move = function (x, y, m) {
         if (pref.show_timeline_tooltips) {
-            var tooltip = ''
-            var percent = toFixed((x + this.x - extraLeftSpace) / drawWidth, 3);
-    
+            let tooltip = '';
+            let percent = toFixed((x + this.x - extraLeftSpace) / drawWidth, 3);
+
             // TODO: is this really slow with hundreds of plays?
             for (var i = 0; i < playedTimesPercents.length; i++) {
                 if (percent >= playedTimesPercents[i] - leeway && percent < playedTimesPercents[i] + leeway) {
@@ -119,6 +119,6 @@ function Timeline (height) {
 
     this.clearTooltip = function() {
         tooltipText = '';
-        tt.stop();    
+        tt.stop();
     }
 }
