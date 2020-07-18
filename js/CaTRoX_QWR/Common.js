@@ -70,6 +70,21 @@ const PlaybackOrder = {
     ShuffleFolders:     6
 }
 
+
+/** @enum{number} */
+const FileMode = {
+    Read: 1,
+    Write: 2,
+    Append: 3
+}
+
+/** @enum{number} */
+const FileType = {
+    SystemDefault: -2,
+    Unicode: -1,
+    Ascii: 0
+}
+
 function trimArray(array, count, fromHead ){
         /// Length deduction is much faster then _.drop or slice, since it does not create a new array
         if (fromHead) {
@@ -697,7 +712,7 @@ var qwr_utils = {
      */
     get_fb2k_window:      _.once(function () {
         if (!qwr_utils.has_modded_jscript()) {
-            throw LogicError('Can\'t use extensions with vanilla JScript')
+            throw new LogicError('Can\'t use extensions with vanilla JScript')
         }
 
         // fb2k main window class
@@ -708,7 +723,7 @@ var qwr_utils = {
         }
 
         if (!ret_wnd || ret_wnd.className !== '{E7076D1C-A7BF-4f39-B771-BCBE88F2A2A8}') {
-            throw LogicError('Failed to get top theme window')
+            throw new LogicError('Failed to get top theme window')
         }
 
         return ret_wnd;
@@ -718,7 +733,7 @@ var qwr_utils = {
      */
     get_top_theme_window: _.once(function () {
         if (!qwr_utils.has_modded_jscript()) {
-            throw LogicError('Can\'t use extensions with vanilla JScript')
+            throw new LogicError('Can\'t use extensions with vanilla JScript')
         }
 
         var ret_wnd = qwr_utils.GetWndByHandle(window.id);
@@ -727,7 +742,7 @@ var qwr_utils = {
         }
 
         if (!ret_wnd || ret_wnd.GetAncestor(1).id !== qwr_utils.get_fb2k_window().id) {
-            throw LogicError('Failed to get top theme window')
+            throw new LogicError('Failed to get top theme window')
         }
 
         return ret_wnd;
@@ -769,11 +784,11 @@ function KeyActionHandler() {
      */
     this.register_key_action = function (key, action_callback) {
         if (!action_callback) {
-            throw ArgumentError('action_callback', action_callback);
+            throw new ArgumentError('action_callback', action_callback);
         }
 
-        if (!_.isNil(actions[key])) {
-            throw ArgumentError('key', key.toString(), 'This key is already used');
+        if (actions[key]) {
+            throw new ArgumentError('key', key.toString(), 'This key is already used');
         }
 
         actions[key] = action_callback;
@@ -852,13 +867,13 @@ var PanelProperties = (function () {
                 throw TypeError('property', typeof item, '{ string, [string, any] }', 'Usage: add_properties({\n  property_id: [property_name, property_default_value]\n})');
             }
             if (item_id === 'add_properties') {
-                throw ArgumentError('property_id', item_id, 'This id is reserved');
+                throw new ArgumentError('property_id', item_id, 'This id is reserved');
             }
-            if (!_.isNil(that[item_id]) || !_.isNil(that[item_id + '_internal'])) {
-                throw ArgumentError('property_id', item_id, 'This id is already occupied');
+            if (that[item_id] || that[item_id + '_internal']) {
+                throw new ArgumentError('property_id', item_id, 'This id is already occupied');
             }
-            if (!_.isNil(name_list[item[0]])) {
-                throw ArgumentError('property_name', item[0], 'This name is already occupied');
+            if (name_list[item[0]]) {
+                throw new ArgumentError('property_name', item[0], 'This name is already occupied');
             }
         }
 

@@ -2367,7 +2367,7 @@ function Playlist(x, y) {
                 break;
             }
             default: {
-                throw ArgumentError('visibility_state', to_item_state.visibility);
+                throw new ArgumentError('visibility_state', to_item_state.visibility);
             }
         }
 
@@ -2481,7 +2481,7 @@ function Playlist(x, y) {
         }
 
         if (!iterate_level(g_properties.show_header ? that.cnt.sub_items : that.cnt.rows, target_item)) {
-            throw LogicError('Could not find item in drawn item list');
+            throw new LogicError('Could not find item in drawn item list');
         }
 
         return cur_row;
@@ -2543,7 +2543,7 @@ function Playlist(x, y) {
                     cur_marked_item.is_drop_boundary_reached = true;
                 }
                 else {
-                    throw ArgumentError('drag_scroll_command', key);
+                    throw new ArgumentError('drag_scroll_command', key);
                 }
 
                 if (that.scrollbar.is_scrolled_down || that.scrollbar.is_scrolled_up) {
@@ -3119,7 +3119,7 @@ BaseHeader.prototype.constructor = BaseHeader;
  * @abstract
  */
 BaseHeader.prototype.initialize_items = function (items) {
-    throw LogicError("initialize_contents not implemented");
+    throw new LogicError("initialize_contents not implemented");
 };
 
 /**
@@ -3128,7 +3128,7 @@ BaseHeader.prototype.initialize_items = function (items) {
  */
 BaseHeader.prototype.draw = function (gr) {
     // Need this useless method to suppress warning =(
-    throw LogicError("draw not implemented");
+    throw new LogicError("draw not implemented");
 };
 
 /** @override */

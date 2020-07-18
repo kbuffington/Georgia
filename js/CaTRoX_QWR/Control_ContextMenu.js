@@ -450,7 +450,7 @@ _.mixin(qwr_utils, {
             edit.append_item(
                 filename,
                 edit_fn.bind(null, script_path),
-                {is_grayed_out: !_.isFile(script_path)}
+                {is_grayed_out: IsFile(script_path)}
             );
         });
 

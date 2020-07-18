@@ -234,10 +234,7 @@ function calcAgeDateString(date) {
 		try {
 			str = dateDiff($date(date));
 		} catch (e) {
-			console.log(e);
-			console.log('date:', date);
-			fail();	// function does not exist,  we want it to error
-			str = '';
+			throw new ArgumentError('date', date, 'in calcAgeDateString()');
 		}
 	}
 
@@ -491,15 +488,9 @@ try {
 }
 
 _.mixin({
-	isFile:               function (file) {
-		return _.isString(file) ? fso.FileExists(file) : false;
-	},
-	isFolder:             function (folder) {
-		return _.isString(folder) ? fso.FolderExists(folder) : false;
-	},
 	runCmd:               function (command, wait, show) {
 		try {
-			WshShell.Run(command, show ? 1 : 0, !_.isNil(wait) ? wait : false);
+			WshShell.Run(command, show ? 1 : 0, wait ? wait : false);
 			return true;
 		} catch (e) {
 			return false;
@@ -512,7 +503,7 @@ _.mixin({
 		return 50 * Math.log(0.99 * volume + 0.01) / Math.LN10;
 	},
 	tt:                   function (text, force) {
-		if (g_tooltip.Text !== _.toString(text) || force) {
+		if (g_tooltip.Text !== text.toString() || force) {
 			g_tooltip.Text = text;
 			g_tooltip.Activate();
 		}
