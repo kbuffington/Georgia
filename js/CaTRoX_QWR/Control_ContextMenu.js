@@ -159,9 +159,9 @@ Context.Menu = function (text_arg, optional_args) {
      * @protected
      */
     this.initialize_menu = function (parent_menu) {
-        this.menu_items.forEach(_.bind(function (item) {
+        this.menu_items.forEach(item => {
             item.initialize_menu(this);
-        }, this));
+        });
 
         this.cm.AppendTo(parent_menu.cm, is_grayed_out ? MF_GRAYED : MF_STRING, this.text);
     };
@@ -380,16 +380,16 @@ Context.MainMenu = function() {
     this.execute = function (x, y) {
         // Initialize menu
         var cur_idx = 1;
-        this.menu_items.forEach(function(item){
+        this.menu_items.forEach(item => {
             if (!item.initialize_menu_idx) {
                 return;
             }
             cur_idx = item.initialize_menu_idx(cur_idx);
         });
 
-        this.menu_items.forEach(_.bind(function(item){
+        this.menu_items.forEach(item => {
             item.initialize_menu(this);
-        },this));
+        });
 
         // Execute menu
         var idx = this.cm.TrackPopupMenu(x, y);

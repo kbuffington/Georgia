@@ -66,9 +66,9 @@ List = function (x, y, w, h, content) {
      * @private
      * @function
      */
-    this.throttled_repaint = _.throttle(_.bind(function () {
+    this.throttled_repaint = _.throttle(() => {
         window.RepaintRect(this.x, this.y, this.w, this.h);
-    }, this), 1000 / 60);
+    }, 1000 / 60);
 
     /** @protected {number} */
     this.list_x = this.x + g_properties.list_left_pad;
@@ -328,10 +328,10 @@ List.prototype.repaint = function () {
 List.prototype.append_scrollbar_visibility_context_menu_to = function(parent_menu) {
     parent_menu.append_item(
         'Show scrollbar',
-        _.bind(function () {
+        () => {
             g_properties.show_scrollbar = !g_properties.show_scrollbar;
             this.on_scrollbar_visibility_change(g_properties.show_scrollbar);
-        }, this),
+        },
         {is_checked: g_properties.show_scrollbar}
     );
 };
@@ -498,9 +498,9 @@ List.Item = function (x, y, w, h) {
      * @private
      * @function
      */
-    this.throttled_repaint = _.throttle(_.bind(function () {
+    this.throttled_repaint = _.throttle(() => {
         window.RepaintRect(this.x, this.y, this.w, this.h);
-    }, this), 1000 / 60);
+    }, 1000 / 60);
 
     this.x = x;
     this.y = y;
@@ -617,9 +617,9 @@ List.RowContent.prototype.generate_items_to_draw = function (wy, wh, row_shift, 
 };
 
 List.Content.prototype.update_items_w_size = function(w) {
-    this.rows.forEach(_.bind(function (item) {
+    this.rows.forEach(item => {
         item.set_w(w);
-    }, this));
+    });
 };
 
 List.Content.prototype.calculate_total_h_in_rows = function() {

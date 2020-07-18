@@ -307,7 +307,7 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
         if (_.isNil(timer_shift)) {
             var shift_amount = shift;
             timer_shift_count = 0;
-            timer_shift = setInterval(_.bind(function () {
+            timer_shift = setInterval(() => {
                 if (this.thumb_y <= this.btn_h || this.thumb_y + this.thumb_h >= this.h - this.btn_h) {
                     this.stop_shift_timer();
                     return;
@@ -328,7 +328,7 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
                 else {
                     timer_shift_count++;
                 }
-            }, this), 40);
+            }, 40);
         }
     };
 
@@ -393,9 +393,9 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
     };
 
     // private:
-    var throttled_scroll_to = _.throttle(_.bind(function () {
+    var throttled_scroll_to = _.throttle(() => {
         this.scroll_to((throttled_scroll_y - this.btn_h) / this.drag_distance_per_row);
-    }, this), 1000 / 60);
+    }, 1000 / 60);
 
     function create_scrollbar_images() {
         if (scrollbar_images.length > 0) {
@@ -576,7 +576,7 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
             var downOutStep = 50;
 
             if (!alpha_timer_internal) {
-                alpha_timer_internal = setInterval(_.bind(function () {
+                alpha_timer_internal = setInterval(() => {
                     _.forEach(that.sb_parts, function (item, i) {
                         switch (item.state) {
                             case 'normal':
@@ -624,7 +624,7 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
                     if (!alpha_in_progress) {
                         this.stop();
                     }
-                }, this), 25);
+                }, 25);
             }
         };
 
