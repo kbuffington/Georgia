@@ -428,54 +428,44 @@ const g_album_art_id = {
 
 //</editor-fold>
 
-//<editor-fold desc="Exception types">
-
 /**
  * @param {string} msg
  * @constructor
  * @extends {Error}
  * @return {ThemeError}
  */
-function ThemeError(msg) {
-    if (!(this instanceof ThemeError)) {
-        return new ThemeError(msg);
+class ThemeError extends Error {
+    constructor(msg) {
+        super(msg);
+
+        this.name = 'ThemeError';
+
+        var err_msg = '\n';
+        err_msg += msg;
+        err_msg += '\n';
+
+        this.message = err_msg;
     }
-
-    Error.call(this, '');
-
-    this.name = 'ThemeError';
-
-    var err_msg = '\n';
-    err_msg += msg;
-    err_msg += '\n';
-
-    this.message = err_msg;
 }
-
-ThemeError.prototype = Object.create(Error.prototype);
 
 /**
  * @param {string} msg
  * @constructor
  * @extends {Error}
  */
-function LogicError(msg) {
-    if (!(this instanceof LogicError)) {
-        return new LogicError(msg);
+class LogicError extends Error {
+    constructor (msg) {
+        super(msg)
+
+        this.name = 'LogicError';
+
+        var err_msg = '\n';
+        err_msg += msg;
+        err_msg += '\n';
+
+        this.message = err_msg;
     }
-
-    Error.call(this, '');
-
-    this.name = 'LogicError';
-
-    var err_msg = '\n';
-    err_msg += msg;
-    err_msg += '\n';
-
-    this.message = err_msg;
 }
-
-LogicError.prototype = Object.create(Error.prototype);
 
 /**
  * @param {string} arg_name
@@ -485,26 +475,22 @@ LogicError.prototype = Object.create(Error.prototype);
  * @constructor
  * @extends {Error}
  */
-function TypeError(arg_name, arg_type, valid_type, additional_msg) {
-    if (!(this instanceof TypeError)) {
-        return new TypeError(arg_name, arg_type, valid_type, additional_msg);
+class TypeError extends Error {
+    constructor (arg_name, arg_type, valid_type, additional_msg) {
+        super('');
+
+        this.name = 'TypeError';
+
+        var err_msg = '\n';
+        err_msg += '\'' + arg_name + '\' is not a ' + valid_type + ', it\'s a ' + arg_type;
+        if (additional_msg) {
+            err_msg += '\n' + additional_msg;
+        }
+        err_msg += '\n';
+
+        this.message = err_msg;
     }
-
-    Error.call(this, '');
-
-    this.name = 'TypeError';
-
-    var err_msg = '\n';
-    err_msg += '\'' + arg_name + '\' is not a ' + valid_type + ', it\'s a ' + arg_type;
-    if (additional_msg) {
-        err_msg += '\n' + additional_msg;
-    }
-    err_msg += '\n';
-
-    this.message = err_msg;
 }
-
-TypeError.prototype = Object.create(Error.prototype);
 
 /**
  * @param {string} arg_name
@@ -513,26 +499,22 @@ TypeError.prototype = Object.create(Error.prototype);
  * @constructor
  * @extends {Error}
  */
-function ArgumentError(arg_name, arg_value, additional_msg) {
-    if (!(this instanceof ArgumentError)) {
-        return new ArgumentError(arg_name, arg_value, additional_msg);
+class ArgumentError extends Error {
+    constructor (arg_name, arg_value, additional_msg) {
+        super('');
+
+        this.name = 'ArgumentError';
+
+        var err_msg = '\n';
+        err_msg += '\'' + arg_name + '\' has invalid value: ' + arg_value.toString();
+        if (additional_msg) {
+            err_msg += '\n' + additional_msg;
+        }
+        err_msg += '\n';
+
+        this.message = err_msg;
     }
-
-    Error.call(this, '');
-
-    this.name = 'ArgumentError';
-
-    var err_msg = '\n';
-    err_msg += '\'' + arg_name + '\' has invalid value: ' + arg_value.toString();
-    if (additional_msg) {
-        err_msg += '\n' + additional_msg;
-    }
-    err_msg += '\n';
-
-    this.message = err_msg;
 }
-
-ArgumentError.prototype = Object.create(Error.prototype);
 
 /**
  * @param {boolean} predicate
@@ -547,7 +529,6 @@ function assert(predicate, exception_type, args) {
     }
 }
 
-//</editor-fold>
 
 /** @type {IUIHacks} */
 var UIHacks = null;
@@ -605,7 +586,7 @@ var qwr_utils = {
 
         if (failCounter) {
             msg += '\n\nPlease install missing ' + (failCounter > 1 ? 'fonts' : 'font') + ' and restart foobar!';
-            throw ThemeError(msg);
+            throw new ThemeError(msg);
         }
     },
     /**
@@ -864,7 +845,7 @@ var PanelProperties = (function () {
 
         function validate_property_item(item, item_id) {
             if (!_.isArray(item) || item.length !== 2 || !_.isString(item[0])) {
-                throw TypeError('property', typeof item, '{ string, [string, any] }', 'Usage: add_properties({\n  property_id: [property_name, property_default_value]\n})');
+                throw new TypeError('property', typeof item, '{ string, [string, any] }', 'Usage: add_properties({\n  property_id: [property_name, property_default_value]\n})');
             }
             if (item_id === 'add_properties') {
                 throw new ArgumentError('property_id', item_id, 'This id is reserved');
