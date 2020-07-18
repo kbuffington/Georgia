@@ -53,10 +53,10 @@ Context.BaseObject = function (text_arg) {
 };
 
 /**
- * @param{string} text_arg
- * @param{object=} [optional_args={}]
- * @param{boolean=} [optional_args.is_grayed_out=false]
- * @param{boolean=} [optional_args.is_checked=false]
+ * @param {string} text_arg
+ * @param {object} [optional_args={}]
+ * @param {boolean=} [optional_args.is_grayed_out=false]
+ * @param {boolean=} [optional_args.is_checked=false]
  * @constructor
  * @extends {Context.BaseObject}
  */
@@ -77,12 +77,12 @@ Context.Menu = function (text_arg, optional_args) {
     };
 
     /**
-     * @param{string} text_arg
-     * @param{function} callback_fn_arg
-     * @param{object=} [optional_args={}]
-     * @param{boolean=} [optional_args.is_grayed_out=false]
-     * @param{boolean=} [optional_args.is_checked=false]
-     * @param{boolean=} [optional_args.is_radio_checked=false]
+     * @param {string} text_arg
+     * @param {function} callback_fn_arg
+     * @param {object} [optional_args={}]
+     * @param {boolean=} [optional_args.is_grayed_out=false]
+     * @param {boolean=} [optional_args.is_checked=false]
+     * @param {boolean=} [optional_args.is_radio_checked=false]
      */
     this.append_item = function (text_arg, callback_fn_arg, optional_args) {
         this.append(new Context.Item(text_arg, callback_fn_arg, optional_args));
@@ -197,12 +197,12 @@ Context.Menu.prototype = Object.create(Context.BaseObject.prototype);
 Context.Menu.prototype.constructor = Context.Menu;
 
 /**
- * @param{string} text_arg
- * @param{function} callback_fn_arg
- * @param{object=} [optional_args={}]
- * @param{boolean=} [optional_args.is_grayed_out=false]
- * @param{boolean=} [optional_args.is_checked=false]
- * @param{boolean=} [optional_args.is_radio_checked=false]
+ * @param {string} text_arg
+ * @param {function} callback_fn_arg
+ * @param {object} [optional_args={}]
+ * @param {boolean=} [optional_args.is_grayed_out=false]
+ * @param {boolean=} [optional_args.is_checked=false]
+ * @param {boolean=} [optional_args.is_radio_checked=false]
  * @constructor
  * @extends {Context.BaseObject}
  */

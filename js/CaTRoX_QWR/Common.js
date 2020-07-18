@@ -776,12 +776,12 @@ function KeyActionHandler() {
     };
 
     /**
-     * @param{string} key
-     * @param{object=} [key_modifiers={}] passed to key action callback
-     * @param{boolean=} [key_modifiers.ctrl=false]
-     * @param{boolean=} [key_modifiers.alt=false]
-     * @param{boolean=} [key_modifiers.shift=false]
-     * @return{boolean} true, if key is registered, false - otherwise
+     * @param {string} key
+     * @param {object} [key_modifiers={}] passed to key action callback
+     * @param {boolean=} [key_modifiers.ctrl=false]
+     * @param {boolean=} [key_modifiers.alt=false]
+     * @param {boolean=} [key_modifiers.shift=false]
+     * @return {boolean} true, if key is registered, false - otherwise
      */
     this.invoke_key_action = function (key, key_modifiers) {
         var key_action = actions[key];

@@ -368,6 +368,10 @@ function Menu(title = '') {
 	this.systemMenu = false;
 	this.menuManager = null;
 
+	/**
+	 * Creates default foobar menu corresponding to `name`.
+	 * @param {string} name
+	 */
 	this.initFoobarMenu = function(name) {
 		if (name) {
 			this.systemMenu = true;
@@ -377,19 +381,34 @@ function Menu(title = '') {
 		}
 	}
 
+	/**
+	 * Adds a separator to the menu.
+	 */
 	this.addSeparator = function() {
 		this.menu.AppendMenuSeparator();
 	}
 
-	this.addItem = function(label, enabled, callback, disabled = false) {
-		this.addItemWithVariable(label, enabled, undefined, callback, disabled);
+	/**
+	 *
+	 * @param {string} label
+	 * @param {boolean} checked Should the menu item be checked
+	 * @param {Function} callback
+	 * @param {boolean=} [disabled=false]
+	 */
+	this.addItem = function(label, checked, callback, disabled = false) {
+		this.addItemWithVariable(label, checked, undefined, callback, disabled);
 	}
 
-
-	/** similar to addItem, but takes an object and property name which will automatically be set when the callback is called,
-	  * before calling any user specified callback. If the property you wish to toggle is options.repeat, then propertiesObj
-	  * is options, and the propertyName must be "repeat" as a string.
-	  **/
+	/**
+	 * Similar to addItem, but takes an object and property name which will automatically be set when the callback is called,
+	 * before calling any user specified callback. If the property you wish to toggle is options.repeat, then propertiesObj
+	 * is options, and the propertyName must be "repeat" as a string.
+	 * @param {string} label
+	 * @param {object} propertiesObj An object which contains propertyName
+	 * @param {string} propertyName The name of the property to toggle on/off
+	 * @param {?Function} callback
+	 * @param {?boolean=} [disabled=false]
+	 */
 	this.addToggleItem = function(label, propertiesObj, propertyName, callback = () => {}, disabled = false) {
 		this.addItem(label, propertiesObj[propertyName], () => {
 			propertiesObj[propertyName] = !propertiesObj[propertyName];
@@ -399,15 +418,21 @@ function Menu(title = '') {
 		}, disabled);
 	}
 
-	// creates a set of radio items and checks the value specified
-	this.addRadioItems = function(labels, radioValue, variables, callback) {
+	/**
+	 * Creates a set of radio items and checks the value specified
+	 * @param {string[]} labels Array of strings which corresponds to each radio item
+	 * @param {*} selectedValue Value of the radio item to be checked
+	 * @param {*[]} variables Array of values which correspond to each radio entry. `selectedValue` will be checked against these values.
+	 * @param {Function} callback
+	 */
+	this.addRadioItems = function(labels, selectedValue, variables, callback) {
 		var startIndex = Menu.itemIndex;
 		var selectedIndex;
 		for (var i = 0; i < labels.length; i++) {
 			this.menu.AppendMenuItem(MF_STRING, Menu.itemIndex, labels[i]);
 			Menu.callbacks[Menu.itemIndex] = callback;
 			Menu.variables[Menu.itemIndex] = variables[i];
-			if (radioValue === variables[i]) {
+			if (selectedValue === variables[i]) {
 				selectedIndex = Menu.itemIndex;
 			}
 			Menu.itemIndex++;
@@ -417,15 +442,30 @@ function Menu(title = '') {
 		}
 	}
 
-	this.createRadioSubMenu = function(subMenuName, labels, radioValue, variables, callback) {
+	/**
+	 * Creates a submenu consisting of radio items
+	 * @param {string} subMenuName
+	 * @param {string[]} labels Array of strings which corresponds to each radio item
+	 * @param {*} selectedValue Value of the radio item to be checked
+	 * @param {*[]} variables Array of values which correspond to each radio entry. `selectedValue` will be checked against these values.
+	 * @param {Function} callback
+	 */
+	this.createRadioSubMenu = function(subMenuName, labels, selectedValue, variables, callback) {
 		var subMenu = new Menu(subMenuName);
-		subMenu.addRadioItems(labels, radioValue, variables, callback);
+		subMenu.addRadioItems(labels, selectedValue, variables, callback);
 		subMenu.appendTo(this);
 	}
 
-	this.addItemWithVariable = function(label, enabled, variable, callback, disabled) {
-		this.menu.AppendMenuItem(MF_STRING | disabled ? MF_DISABLED : 0, Menu.itemIndex, label);
-		this.menu.CheckMenuItem(Menu.itemIndex, enabled);
+	/**
+	 * @param {string} label
+	 * @param {boolean} checked Should the menu item be checked
+	 * @param {*} variable Variable which will be passed to callback when item is clicked
+	 * @param {Function} callback
+	 * @param {boolean} disabled
+	 */
+	this.addItemWithVariable = function(label, checked, variable, callback, disabled) {
+		this.menu.AppendMenuItem(MF_STRING | (disabled ? MF_DISABLED : 0), Menu.itemIndex, label);
+		this.menu.CheckMenuItem(Menu.itemIndex, checked);
 		Menu.callbacks[Menu.itemIndex] = callback;
 		if (typeof variable !== 'undefined') {
 			Menu.variables[Menu.itemIndex] = variable;
@@ -433,11 +473,18 @@ function Menu(title = '') {
 		Menu.itemIndex++;
 	}
 
+	/**
+	 * Appends menu to a parent menu
+	 * @param {Menu} parentMenu
+	 */
 	this.appendTo = function(parentMenu) {
 		this.menu.AppendTo(parentMenu.menu, MF_STRING, this.title);
 	}
 
-	// handles callback and automatically Disposes menu
+	/**
+	 * handles callback and automatically Disposes menu
+	 * @param {number} idx Value of the menu item's callback to call. Comes from menu.trackPopupMenu(x, y).
+	 */
 	this.doCallback = function(idx) {
 		if (idx > menuStartIndex && Menu.callbacks[idx]) {
 			Menu.callbacks[idx](Menu.variables[idx]);
@@ -451,6 +498,9 @@ function Menu(title = '') {
 		Menu.itemIndex = menuStartIndex;
 	}
 
+	/**
+	 * @return {number} index of the menu item clicked on
+	 */
 	this.trackPopupMenu = function (x, y) {
 		return this.menu.TrackPopupMenu(x, y);
 	}

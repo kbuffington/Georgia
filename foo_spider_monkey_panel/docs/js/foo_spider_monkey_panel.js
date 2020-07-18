@@ -10,7 +10,7 @@
  * - Has better error reporting.
  *
  * @param {string} path Absolute or relative path to JavaScript file.
- * @param {object=} [options=undefined]
+ * @param {object} [options=undefined]
  * @param {boolean=} [options.always_evaluate=false] If true, evaluates the script even if it was included before.
  */
 function include(path, options) { }
@@ -364,7 +364,7 @@ let fb = {
      * @param {number} window_id see {@link window.ID}
      * @param {FbMetadbHandleList} handle_list
      * @param {number} effect Allowed effects.
-     * @param {object=} [options=undefined] Customization options for the data displayed in the drag window.
+     * @param {object} [options=undefined] Customization options for the data displayed in the drag window.
      * @param {boolean=} [options.show_text=true] If true, will add track count text.
      * @param {boolean=} [options.use_album_art=true] If true, will use album art of the focused item from dragged tracks (if available)
      * @param {boolean=} [options.use_theming=true] If true, will use Windows drag window style. Album art and custom image are resized to fit when Windows style is active.
