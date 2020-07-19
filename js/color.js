@@ -47,7 +47,7 @@ var Color = (function() {
 	/**
 	* Color instance - get, update and output a Color between structures.
 	* @constructor
-	* @param {mixed} value Accepts any valid CSS color value e.g., #FF9900, rgb(255, 153, 0), rgba(100%, 40%, 0%, 0.8);
+	* @param {*} value Accepts any valid CSS color value e.g., #FF9900, rgb(255, 153, 0), rgba(100%, 40%, 0%, 0.8);
 	* a hash with properties mapped to the Color instance e.g., red, green, saturation, brightness;
 	* another Color instance; a numeric color value; a named CSS color
 	* @class Instances of the Color class serve as abstract reprentations of the color itself, and don't need to be
@@ -134,6 +134,10 @@ var Color = (function() {
 		get brightness() {
 			return Math.round(Math.sqrt( 0.299*this.r*this.r + 0.587*this.g*this.g + 0.114*this.b*this.b ));
 		},
+		/**
+		 * If all 3 RGB values are identical, returns true
+		 * @returns boolean
+		 */
 		get isGreyscale() {
 			return this._red === this._green && this._red === this._blue;
 		},
@@ -142,7 +146,18 @@ var Color = (function() {
         },
         get rawVal() {
             return this._decimal;
-        },
+		},
+		/**
+		 * Checks if a color value is almost greyscale. Finds the average of the RGB values, and then compares
+		 * each color to see if it is more than +/- 6 away from the average. If not, returns true;
+		 * @returns boolean
+		 * @example
+		 * var color = new Color(100,102,104);
+		 * color.isCloseToGreyscale() => true
+		 *
+		 * var color2 = new Color(100,100,120);
+		 * color.isCloseToGreyscale() => false
+		 */
 		get isCloseToGreyscale() {
 			var threshold = 6;
             const avg = Math.round((this._red + this._green + this._blue) / 3);
@@ -150,20 +165,51 @@ var Color = (function() {
                 (Math.abs(this._red - avg) < threshold &&
                  Math.abs(this._green - avg) < threshold &&
                  Math.abs(this._blue - avg) < threshold))
-				// (this._red === this._blue && Math.abs(this._red - this._green) <= 16) ||
-				// (this._red === this._green && Math.abs(this._red - this._blue) <= 16) ||
-				// (this._green === this._blue && Math.abs(this._green - this._red) <= 16))
 				return true;
 			else
 				return false;
-		}
+		},
+
+		/**
+		* Set the hue component value of the color, updates all other components, and dispatches Event.UPDATED
+		* @param {number} value 0 - 360 hue component value to set
+		* @returns Number
+		* @example
+		* var color = new Color();
+		* color.hue = 280;
+		*/
+		set hue(value) {
+			this._handle('_hue', value, Events.HSL_UPDATED);
+		},
+		/**
+		* Set the saturation component value of the color, updates all other components, and dispatches Event.UPDATED
+		* @param {number} value 0 - 100 saturation component value to set
+		* @returns Number
+		* @example
+		* var color = new Color();
+		* color.saturation = 280;
+		*/
+		set saturation(value) {
+			this._handle('_saturation', value, Events.HSL_UPDATED);
+		},
+		/**
+		* Set the lightness component value of the color, updates all other components, and dispatches Event.UPDATED
+		* @param {number} value 0 - 100 lightness component value to set
+		* @returns Number
+		* @example
+		* var color = new Color();
+		* color.lightness = 80;
+		*/
+		set lightness(value) {
+			this._handle('_lightness', value, Events.HSL_UPDATED);
+		},
 	};
 
 
 	/**
 	* Convert mixed variable to Color component properties, and adopt those properties.
 	* @function
-	* @param {mixed} value Accepts any valid CSS color value e.g., #FF9900, rgb(255, 153, 0), rgba(100%, 40%, 0%, 0.8);
+	* @param {*} value Accepts any valid CSS color value e.g., #FF9900, rgb(255, 153, 0), rgba(100%, 40%, 0%, 0.8);
 	* a hash with properties mapped to the Color instance e.g., red, green, saturation, brightness;
 	* another Color instance; a numeric color value; a named CSS color
 	* @returns this
@@ -221,9 +267,9 @@ var Color = (function() {
 								return this;
 							case isHSL.test(value):
 								var parts = value.match(matchHSL);
-								this.hue(parseInt(parts[1]));
-								this.saturation(parseInt(parts[2]));
-								this.lightness(parseInt(parts[3]));
+								this.hue = parseInt(parts[1]);
+								this.saturation = parseInt(parts[2]);
+								this.lightness = parseInt(parts[3]);
 								var alpha = parseFloat(parts[5]);
 								if (isNaN(alpha)) alpha = 1;
 								this.alpha(alpha);
@@ -260,7 +306,7 @@ var Color = (function() {
 	* Set a color component value
 	* @function
 	* @param {string|object|number} key Name of the color component to defined, or a hash of key:value pairs, or a single numeric value
-	* @param {string|number} value - Value of the color component to be set
+	* @param {?string|number} value - Value of the color component to be set
 	* @returns this
 	* @example
 	* var color = new Color();
@@ -268,7 +314,7 @@ var Color = (function() {
 	* color.set({ red: 255, green: 100 });
 	* color.set(123456);
 	*/
-	Color.prototype.set = function(key, value) {
+	Color.prototype.set = function(key, value = undefined) {
 		if(arguments.length == 1) {
 			if(typeof key == 'object') {
 				for(var p in key) {
@@ -432,19 +478,19 @@ var Color = (function() {
 	};
 
 	Color.prototype._broadcastUpdate = function() {
-		this.broadcast(Event.UPDATED);
+		this.broadcast(Events.UPDATED);
 	};
 
 	/**
 	* Set the decimal value of the color, updates all other components, and dispatches Event.UPDATED
 	* @function
-	* @param {number} value 0 (black) to 16777215 (white) - the decimal value to set
+	* @param {?number} value 0 (black) to 16777215 (white) - the decimal value to set
 	* @returns Number
 	* @example
 	* var color = new Color();
 	* color.decimal(123456);
 	*/
-	Color.prototype.decimal = function(value) {
+	Color.prototype.decimal = function(value = undefined) {
 		return this._handle('_decimal', value, Events.INT_UPDATED);
 	};
 
@@ -501,45 +547,6 @@ var Color = (function() {
 	};
 
 	/**
-	* Set the hue component value of the color, updates all other components, and dispatches Event.UPDATED
-	* @function
-	* @param {number} value 0 - 360 hue component value to set
-	* @returns Number
-	* @example
-	* var color = new Color();
-	* color.hue(280);
-	*/
-	Color.prototype.hue = function(value) {
-		return this._handle('_hue', value, Events.HSL_UPDATED);
-	};
-
-	/**
-	* Set the saturation component value of the color, updates all other components, and dispatches Event.UPDATED
-	* @function
-	* @param {number} value 0 - 100 saturation component value to set
-	* @returns Number
-	* @example
-	* var color = new Color();
-	* color.saturation(280);
-	*/
-	Color.prototype.saturation = function(value) {
-		return this._handle('_saturation', value, Events.HSL_UPDATED);
-	};
-
-	/**
-	* Set the lightness component value of the color, updates all other components, and dispatches Event.UPDATED
-	* @function
-	* @param {number} value 0 - 100 lightness component value to set
-	* @returns Number
-	* @example
-	* var color = new Color();
-	* color.lightness(80);
-	*/
-	Color.prototype.lightness = function(value) {
-		return this._handle('_lightness', value, Events.HSL_UPDATED);
-	};
-
-	/**
 	* Set the brightness component value of the color, updates all other components, and dispatches Event.UPDATED
 	* @function
 	* @param {number} value 0 - 100 brightness component value to set
@@ -555,13 +562,13 @@ var Color = (function() {
 	/**
 	* Set the opacity value of the color, updates all other components, and dispatches Event.UPDATED
 	* @function
-	* @param {number} value 0 - 1 opacity component value to set
+	* @param {?number} value 0 - 1 opacity component value to set
 	* @returns Number
 	* @example
 	* var color = new Color();
 	* color.alpha(0.5);
 	*/
-	Color.prototype.alpha = function(value) {
+	Color.prototype.alpha = function(value = undefined) {
 		return this._handle('_alpha', value);
 	};
 
@@ -823,11 +830,12 @@ var Color = (function() {
 
 	Color.Events = Events;
 
-	if (typeof define === 'function') {
-		define('Color', [], function() {
-			return Color;
-		});
-	};
+	// used for require.js
+	// if (typeof define === 'function') {
+	// 	define('Color', [], function() {
+	// 		return Color;
+	// 	});
+	// };
 
 	return Color;
 
