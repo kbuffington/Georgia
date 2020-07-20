@@ -70,7 +70,7 @@ Context.Menu = function (text_arg, optional_args) {
      */
     this.append = function (item) {
         if (!_.isInstanceOf(item, Context.BaseObject)) {
-            throw new TypeError('context_item', typeof item, 'instanceof Context.BaseObject');
+            throw new InvalidTypeError('context_item', typeof item, 'instanceof Context.BaseObject');
         }
 
         this.menu_items.push(item);

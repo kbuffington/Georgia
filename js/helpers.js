@@ -24,6 +24,14 @@ function $(field, metadb) {
 }
 
 /**
+ * Use the debugLog function instead of console.log to easily hide messages that I don't want cluttering the console constantly
+ * @type {function(...*):void} var_args
+ */
+const debugLog = (var_args) => {
+	if (pref.show_debug_log) console.log(var_args);
+}
+
+/**
  * Accepts 1-4 parameters, corresponding to h_align, v_align, trimming, flags
  * @param {number} [h_align] - 0: Near, 1: Center, 2: Far
  * @param {number} [v_align] - 0: Near, 1: Center, 2: Far

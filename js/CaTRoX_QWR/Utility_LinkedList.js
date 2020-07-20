@@ -9,9 +9,9 @@
  */
 function LinkedList() {
     /**
-     * @param{T} value
-     * @param{?Node} prev
-     * @param{?Node} next
+     * @param {T} value
+     * @param {?Node} prev
+     * @param {?Node} next
      * @constructor
      * @struct
      * @template T
@@ -29,14 +29,14 @@ function LinkedList() {
     };
 
     /**
-     * @param{T} value
+     * @param {T} value
      */
     this.push_back = function (value) {
         add_node(new Node(value, back, null));
     };
 
     /**
-     * @param{T} value
+     * @param {T} value
      */
     this.push_front = function (value) {
         add_node(new Node(value, null, front));
@@ -55,7 +55,7 @@ function LinkedList() {
      */
     this.remove = function (iterator) {
         if (!_.isInstanceOf(iterator, LinkedList.Iterator)) {
-            throw new TypeError(iterator, typeof iterator, 'Iterator');
+            throw new InvalidTypeError(iterator, typeof iterator, 'Iterator');
         }
 
         if (iterator.parent !== this) {
@@ -169,11 +169,11 @@ function LinkedList() {
 
 /**
  * @param {LinkedList} parent
-* @param {Node} node
-* @constructor
-* @template T
-*/
-LinkedList.Iterator = function (parent,node) {
+ * @param {Node} node
+ * @constructor
+ * @template T
+ */
+LinkedList.Iterator = function (parent, node) {
     this.increment = function () {
         if (this.cur_node === parent.end_node) {
             throw new LogicError('Iterator is out of bounds');

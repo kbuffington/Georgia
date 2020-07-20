@@ -1,9 +1,9 @@
 /** @type {*} */
-var globals = PanelProperties.get_instance();
+var globals = new PanelProperties();
 /** @type {*} */
-var pref = PanelProperties.get_instance(); // preferences
+var pref = new PanelProperties(); // preferences
 /** @type {*} */
-var tf = PanelProperties.get_instance(); // titleformating strings
+var tf = new PanelProperties(); // titleformating strings
 
 const currentVersion = '1.1.9';
 let updateAvailable = false;

@@ -13,7 +13,7 @@ function buttonEventHandler(x, y, m) {
 	// var CtrlKeyPressed = utils.IsKeyPressed(VK_CONTROL);
 	// var ShiftKeyPressed = utils.IsKeyPressed(VK_SHIFT);
 
-	var c = caller();
+	var c = qwr_utils.caller();
 
 	var thisButton = null;
 
@@ -174,31 +174,16 @@ Button.prototype.onClick = function () {
 			volume_btn.showVolumeBar(true);
 			break;
 		case 'Reload':
-			// art_cache.clear();
-			// Header.art_cache.clear();
-			// g_tooltip.Deactivate();
-			// playlist = null;
-			// freeLibraryPanel();
-			// clearTimeout(g_initLibraryTimer);
-
 			window.Reload();
 			break;
 		case 'Console':
 			fb.RunMainMenuCommand("View/Console");
 			break;
-		case 'OpenExplorer':
-			if (!safeMode) {
-				try {
-					WshShell.Run("explorer.exe /e,::{20D04FE0-3AEA-1069-A2D8-08002B30309D}");
-				} catch (e) {
-					console.log(e);
-				};
-			}
-			break;
 		case 'Minimize':
 			fb.RunMainMenuCommand("View/Hide");
 			break;
 		case 'Maximize':
+			const maximizeToFullScreen = false;	// TODO to clear the error. Test this stuff eventually
 			try {
 				if (maximizeToFullScreen ? !utils.IsKeyPressed(VK_CONTROL) : utils.IsKeyPressed(VK_CONTROL)) {
 					UIHacks.FullScreen = !UIHacks.FullScreen;
@@ -369,13 +354,6 @@ function refreshPlayButton() {
 	btns[2].img = (fb.IsPlaying ? (fb.IsPaused ? btnImg.Play : btnImg.Pause) : btnImg.Play);
 	btns[2].repaint();
 
-}
-// =================================================== //
-
-function caller() {
-	var caller = /^function\s+([^(]+)/.exec(arguments.callee.caller.caller);
-	if (caller) return caller[1];
-	else return 0;
 }
 
 // =================================================== //

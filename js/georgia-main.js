@@ -546,7 +546,7 @@ function draw_ui(gr) {
 			var col2_left = textLeft + col1_width + column_margin;
 
             gr.SetTextRenderingHint(TextRenderingHint.AntiAlias);
-			for (let k = 0, i = 0; k < str.grid.length; k++) {
+			for (let k = 0; k < str.grid.length; k++) {
 				var key = str.grid[k].label;
 				var value = str.grid[k].val;
 				var showLastFmImage = false;
@@ -940,7 +940,7 @@ function onRatingMenu(x, y) {
 			}
 		});
 
-	var idx = menu.trackPopupMenu(x, y);
+	const idx = menu.trackPopupMenu(x, y);
 	menu.doCallback(idx);
 
 	menu_down = false;
@@ -1491,6 +1491,7 @@ function on_metadb_changed(handle_list, fromhook) {
 			str.grid = [];
 			for (let k = 0; k < tf.grid.length; k++) {
 				let val = $(tf.grid[k].val);
+				if (tf.grid[k].label && val) {
 				if (val) {
 					if (tf.grid[k].age) {
 						val = $('$date(' + val + ')'); // never show time
@@ -1505,6 +1506,7 @@ function on_metadb_changed(handle_list, fromhook) {
 						val: val,
 					});
 				}
+			}
 			}
 
 			var lastfm_count = $('%lastfm_play_count%');
@@ -2281,11 +2283,6 @@ function glob_image(index, loadFromCache) {
 		CreateRotatedCDImage();
 	}
 	displayLyrics && updateLyricsPositionOnScreen();
-}
-
-/* I use the debugLog function instead of console.log so that I can easily hide messages that I don't want cluttering the console constantly */
-function debugLog(str) {
-	if (pref.show_debug_log) console.log(str);
 }
 
 function disposeImg(oldImage) {
