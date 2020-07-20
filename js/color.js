@@ -724,7 +724,7 @@ var Color = (function() {
 			case 6:  // Color.HSLA
 				return this.getHSLA();
 			case 7:  // Color.INT
-				return this._decimal;
+				return this._decimal.toString();
 		};
 		return this.getHex();
 	};
