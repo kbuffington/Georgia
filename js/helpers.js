@@ -1,3 +1,7 @@
+// @ts-ignore-line
+const lodash = _.noConflict();
+var _ = lodash;	// fixes type errors
+
 function IsFile(filename) {
 	return utils.FileTest(filename, 'e');
 	// return "IsFile" in utils ? utils.IsFile(filename) : utils.FileTest(filename, "e");
