@@ -23,14 +23,16 @@ var lyricsWidth = 0; // minimum width needed to display the lyrics to speed up d
 
 // Lyrics Objects
 
-sentence = function () {
-	this.timer = 0;
-	this.text = '';
-	this.total_lines = 0;
-	this.ante_lines = 0;
-	this.ToString = function ToString() {
-		var str = "timer= " + this.timer + " text: " + this.text + " total_lines= " + this.total_lines + " ante_lines= " + this.ante_lines;
-		return str;
+class sentence {
+	constructor() {
+		this.timer = 0;
+		this.text = '';
+		this.total_lines = 0;
+		this.ante_lines = 0;
+		this.ToString = function ToString() {
+			var str = "timer= " + this.timer + " text: " + this.text + " total_lines= " + this.total_lines + " ante_lines= " + this.ante_lines;
+			return str;
+		}
 	}
 }
 
@@ -38,11 +40,11 @@ sentence = function () {
 
 function drawLyrics(gr, tab, posy) {
 	var i, text_color;
-	divider_spacing = scaleForDisplay(40);
-	divider_height = scaleForDisplay(10);
+	const divider_spacing = scaleForDisplay(40);
+	let drawLyricsProfiler = null;
 
 	if (timings.showDebugTiming)
-		drawLyricsTime = fb.CreateProfiler("drawLyrics");
+		drawLyricsProfiler = fb.CreateProfiler("drawLyrics");
 	gr.SetTextRenderingHint(TextRenderingHint.AntiAliasGridFit);
 	var g_txt_align = StringFormat(1, 1);
 
@@ -57,7 +59,7 @@ function drawLyrics(gr, tab, posy) {
 					text_color = g_txt_normalcolour;
 				}
 			}
-			lineHeight = tab[i].total_lines * pref.lyrics_line_height;
+			const lineHeight = tab[i].total_lines * pref.lyrics_line_height;
 			// maybe redo this to use albumart_size.x+(albumart_size.w-lyricsWidth)/2  and  lyricsWidth
 			pref.lyrics_glow && gr.DrawString(tab[i].text, ft.lyrics, g_txt_shadowcolor, albumart_size.x + (albumart_size.w - lyricsWidth) / 2 - 1, posy, lyricsWidth, lineHeight, g_txt_align);
 			pref.lyrics_glow && gr.DrawString(tab[i].text, ft.lyrics, g_txt_shadowcolor, albumart_size.x + (albumart_size.w - lyricsWidth) / 2, posy - 1, lyricsWidth, lineHeight, g_txt_align);
@@ -69,15 +71,16 @@ function drawLyrics(gr, tab, posy) {
 	posy += divider_spacing;
 
 	if (timings.showDebugTiming)
-		drawLyricsTime.Print();
+		drawLyricsProfiler.Print();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 function timerTick(id) {
 	if (displayLyrics) {
-		var t1 = elap_seconds.Eval() * 100 + hundredth;
-		var t2 = len_seconds.Eval() * 100;
+		var t1 = parseInt(elap_seconds.Eval()) * 100 + hundredth;
+		var t2 = parseInt(len_seconds.Eval()) * 100;
+		// console.log(elap_seconds.Eval(), t1, t2);
 		var p1, p2;
 
 		if (t1 > t2 - 200 && g_playtimer) {
@@ -115,7 +118,9 @@ function timerTick(id) {
 
 function refresh_lyrics() {
 	if (fb.IsPlaying || fb.IsPaused) {
-		if (timings.showLyricsTiming) refresh_lyrics_time = fb.CreateProfiler("refresh_lyrics");
+		let refreshLyricsProfiler = null;
+
+		if (timings.showLyricsTiming) refreshLyricsProfiler = fb.CreateProfiler("refresh_lyrics");
 		console.log("in refresh_lyrics() - g_lyrics_status = " + g_lyrics_status);
 		g_scroll = 0;
 		g_is_scrolling = false;
@@ -129,10 +134,10 @@ function refresh_lyrics() {
 			g_playtimer = setInterval(() => { timerTick(); }, PLAYTIMER_VALUE);
 			g_timer_abs = 4;
 		} else {
-			delta = (g_tab[g_tab.length-1].ante_lines + g_tab[g_tab.length-1].total_lines);
+			const delta = (g_tab[g_tab.length-1].ante_lines + g_tab[g_tab.length-1].total_lines);
 			lyrPos = Math.round((albumart_size.h / 2) - (delta * pref.lyrics_line_height / 2));
 		}
-		if (timings.showLyricsTiming) refresh_lyrics_time.Print();
+		if (timings.showLyricsTiming) refreshLyricsProfiler.Print();
 	}
 }
 
@@ -158,7 +163,9 @@ function grab_timer(t_tab) {
 	var i, k, f_sentence, b, c, delta, repeat_text;
 	var tab = [];
 	var str = String();
-	if (timings.showLyricsTiming) grab_timer_time = fb.CreateProfiler("grab_timer");
+	let grabTimerProfiler;
+
+	if (timings.showLyricsTiming) grabTimerProfiler = fb.CreateProfiler("grab_timer");
 	console.log("in grab_timer()");
 	for (i=0; i<t_tab.length; i++) {
 		t_tab[i] = t_tab[i].replace(/\u2019/g,"'").replace(/\uFF07/g,"'"); // replace apostrophes
@@ -215,7 +222,7 @@ function grab_timer(t_tab) {
 		//f_sentence.text = "---";
 		tab.push(f_sentence);
 	}
-	if (timings.showLyricsTiming) grab_timer_time.Print();
+	if (timings.showLyricsTiming) grabTimerProfiler.Print();
 	return calc_lines(sort_tab(tab));
 }
 
@@ -284,19 +291,19 @@ function load_track_info() {
 }
 
 function change_focus() {
-	var i, j, t1;
-	t1 = elap_seconds.Eval()*100+hundredth;
-	if(g_lyrics_status>0) {
+	var i, t1;
+	t1 = parseInt(elap_seconds.Eval()) * 100 + hundredth;
+	if (g_lyrics_status > 0) {
 		// search line index just after actual timer
-		for(i=focus;i<g_tab.length;i++) {
-			if(g_tab[i].timer>t1) break;
+		for(i=focus; i < g_tab.length; i++) {
+			if (g_tab[i].timer>t1) break;
 		}
 		focus_next=i;
-		focus = (i>0)?i-1:0;
-		// now i check if there are more than one line with the same timer as focus one & if found, i take it as new focus 'cause it's the first (not a blank line)
-		if(focus>0) {
-			for(i=0;i<focus;i++) {
-				if(g_tab[i].timer==g_tab[focus].timer) {
+		focus = (i>0) ? i-1 : 0;
+		// now I check if there are more than one line with the same timer as focus one & if found, i take it as new focus 'cause it's the first (not a blank line)
+		if(focus > 0) {
+			for(i=0; i<focus; i++) {
+				if(g_tab[i].timer == g_tab[focus].timer) {
 					focus = i;
 					break;
 				}
@@ -306,8 +313,10 @@ function change_focus() {
 }
 
 function calc_lines(ctab) {
+	let calcLinesProfiler = null;
 	console.log("in calc_lines");
-	if (timings.showLyricsTiming) calc_lines_time = fb.CreateProfiler("calc_lines");
+
+	if (timings.showLyricsTiming) calcLinesProfiler = fb.CreateProfiler("calc_lines");
 	if (displayLyrics) {
 		var i, j;
 		var tmp_img;
@@ -322,7 +331,7 @@ function calc_lines(ctab) {
 		gp = tmp_img.GetGraphics();
 		for (i=0; i<ctab.length; i++) {
 			// calc sentence #lines to display / window.Width
-			strInfo = gp.MeasureString(ctab[i].text, ft.lyrics, 0, 0, albumart_size.w-(pref.lyrics_h_padding*2), albumart_size.h);
+			const strInfo = gp.MeasureString(ctab[i].text, ft.lyrics, 0, 0, albumart_size.w-(pref.lyrics_h_padding*2), albumart_size.h);
 			lineh = strInfo.Height;
 			if (strInfo.Width > linew) {
 				linew = strInfo.Width;
@@ -340,7 +349,7 @@ function calc_lines(ctab) {
 		//console.log("albumart_size.w=" + albumart_size.w + " linew = " + linew);
 		tmp_img.ReleaseGraphics(gp);
 	}
-	if (timings.showLyricsTiming) calc_lines_time.Print();
+	if (timings.showLyricsTiming) calcLinesProfiler.Print();
 	return ctab;
 }
 
@@ -379,18 +388,19 @@ function remove_enhanced_tags(str) {
 }
 
 function ts_analyzer(str) {
-	var i, j, ch,  ts_len;
+	var ch, ts_len;
 	var str2 = "";
 	var state=0;
 	var deb = -1;
 	var fin = -1;
 	var sep1 = -1;
 	var sep2 = -1;
-	for(i=0; i<str.length; i++) {
+
+	for(let i = 0; i < str.length; i++) {
 		ch = str.substring(i, i+1);
 		switch(state) {
 			case 0:
-				if(ch=="[" && IsNumeric(str.substring(i+1, i+2))) {
+				if (ch=="[" && IsNumeric(str.substring(i+1, i+2))) {
 					state=1;
 					deb=i;
 					fin=-1;
@@ -465,9 +475,8 @@ function ts_analyzer(str) {
 						str2 = str2 + str.substring(deb,deb+9) + "]";
 						break;
 				}
-				j += 10;
+				// j += 10;
 				if(str.substring(fin+1,fin+2)=="[") {
-					suite = 1;
 					i = fin;
 					deb = -1;
 					fin = -1;
@@ -475,7 +484,6 @@ function ts_analyzer(str) {
 					sep2 = -1;
 					state = 0;
 				} else {
-					suite = -1;
 					i = str.length - 1;
 					str2 = str2 + str.substring(fin+1, str.length);
 				}
@@ -487,7 +495,7 @@ function ts_analyzer(str) {
 
 function IsNumeric(str) {
 	var ValidChars = "0123456789.";
-	for (i = 0; i < str.length; i++) {
+	for (let i = 0; i < str.length; i++) {
 		if (ValidChars.indexOf(str.charAt(i)) == -1) {
 			return false;
 		}
@@ -498,7 +506,7 @@ function IsNumeric(str) {
 function IsTimestamped(str) {
 	var ValidChars = "[0123456789:.]";
 	var count = 0;
-	for (i = 0; i < (str.length>10?10:str.length); i++) {
+	for (let i = 0; i < (str.length>10 ? 10 : str.length); i++) {
 		if (ValidChars.indexOf(str.charAt(i)) >=0) {
 			count++;
 		}
@@ -511,7 +519,9 @@ function IsTimestamped(str) {
 }
 
 function check_file(path, filename) {
-	if (timings.showLyricsTiming) load_file_time = fb.CreateProfiler("check_file");
+	let loadFileProfiler = null;
+
+	if (timings.showLyricsTiming) loadFileProfiler = fb.CreateProfiler("check_file");
 	var found = true;
 	g_lyrics_path = path;
 	if (IsFile(path+filename+".lrc")) {
@@ -522,13 +532,15 @@ function check_file(path, filename) {
 		g_lyrics_path = null;
 		found = false;
 	}
-	if (timings.showLyricsTiming) load_file_time.Print();
+	if (timings.showLyricsTiming) loadFileProfiler.Print();
  	return found;
 }
 
 function get_lyrics() {
+	let getLyricsProfiler = null;
+
 	console.log("in get_lyrics()");
-	timings.showLyricsTiming && (get_lyrics_time = fb.CreateProfiler("get_lyrics"));
+	timings.showLyricsTiming && (getLyricsProfiler = fb.CreateProfiler("get_lyrics"));
 	var i, delta, tag;
 	var tpath = [];
 	var tfilename= [];
@@ -548,14 +560,14 @@ function get_lyrics() {
 	focus = 0;
 	// check TAGs
 	tag = fb.TitleFormat(tf["lyrics"]).Eval();
-	if(tag.length>0) {
+	if (tag.length > 0) {
 		bool_tag = true;
-		if (tag.substring(0,1)=="[") g_lyrics_status = 1; else g_lyrics_status = 2;
+		g_lyrics_status = tag[0]=="[" ? 1 : 2;
 	} else {
 		// check files
 		i = 0;
 		while(!bool_file && i<tpath.length) {
-			j = 0;
+			let j = 0;
 			while(!bool_file && j<tfilename.length) {
 				bool_file = check_file(tpath[i], tfilename[j]);
 				j++;
@@ -576,10 +588,10 @@ function get_lyrics() {
 		lyrPos = (albumart_size.h / 2) - (delta * pref.lyrics_line_height / 2);
 	}
 	if (g_lyrics_status==2) {
-		for(i=0;i<g_tab.length-1;i++) {
-			g_tab[i].timer = i * Math.floor(len_seconds.Eval() * 100 / g_tab.length);
+		for(let i=0; i < g_tab.length-1; i++) {
+			g_tab[i].timer = i * Math.floor(parseInt(len_seconds.Eval()) * 100 / g_tab.length);
 		}
 	}
-	timings.showLyricsTiming && get_lyrics_time.Print();
+	timings.showLyricsTiming && getLyricsProfiler.Print();
 }
 // EOF
