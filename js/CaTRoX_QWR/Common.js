@@ -506,7 +506,7 @@ class ArgumentError extends Error {
 		this.name = 'ArgumentError';
 
 		var err_msg = '\n';
-		err_msg += `'${arg_name}' has invalid value:${arg_value.toString()}`;
+		err_msg += `'${arg_name}' has invalid value: ${arg_value.toString()}`;
 		if (additional_msg) {
 			err_msg += '\n' + additional_msg;
 		}
@@ -518,7 +518,7 @@ class ArgumentError extends Error {
 
 /**
  * @param {boolean} predicate
- * @param {T} exception_type
+ * @param {Function} exception_type
  * @param {...*} args
  * @throws {T}
  * @template T
@@ -559,14 +559,14 @@ var qwr_utils = {
 	 * @return {string}
 	 */
 	caller:               function () {
-		var caller = /^function\s+([^(]+)/.exec(/** @type{string} */ arguments.callee.caller.caller);
+		var caller = /^function\s+([^(]+)/.exec(/** @type{string} */ arguments.callee.caller.caller.toString());
 		return caller ? caller[1] : '';
 	},
 	/**
 	 * @return {string}
 	 */
 	function_name:        function () {
-		var caller = /^function\s+([^(]+)/.exec(/** @type{string} */ arguments.callee.caller);
+		var caller = /^function\s+([^(]+)/.exec(/** @type{string} */ arguments.callee.caller.toString());
 		return caller ? caller[1] : '';
 	},
 	/**
