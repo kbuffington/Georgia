@@ -2172,7 +2172,7 @@ function FbMetadbHandleList(arg) {
      * plman.GetPlaylistItems(plman.ActivePlaylist);
      * console.log(handle_list.Count);
      */
-    this.Count = undefined; // (uint) (read)
+    this.Count; // (uint) (read)
 
     /**
      * @param {FbMetadbHandle} handle

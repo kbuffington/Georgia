@@ -238,7 +238,7 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
             return;
         }
 
-        this.parts_lbtn_down(p_x, p_y);
+        this.parts_lbtn_down();
 
         var y = p_y - this.y;
 
@@ -531,7 +531,7 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
 
     this.draw_timer = false;
 
-    this.sb_parts = [];
+    this.sb_parts = {};
 
     // Btns
     this.btn_h = 0;
@@ -559,7 +559,7 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
     // private:
     var that = this;
 
-    var scrollbar_images = [];
+    var scrollbar_images = {};
 
     var cur_part_key = null;
 
