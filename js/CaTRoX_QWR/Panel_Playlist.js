@@ -4360,6 +4360,7 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
         //---> RATING
         if (g_properties.show_rating) {
             rating.x = this.x + this.w - rating.w - right_pad;
+            rating.y = this.y;
             rating.draw(gr, title_color);
 
             right_pad += rating.w + rating_right_pad + rating_left_pad;

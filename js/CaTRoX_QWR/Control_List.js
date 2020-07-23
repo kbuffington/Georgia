@@ -290,7 +290,6 @@ List.prototype.on_mouse_rbtn_up = function (x, y, m) {
     menu_down = true;
     cmm.execute(x, y);
     menu_down = false;
-    cmm.dispose();
 
     this.repaint();
 
@@ -491,7 +490,7 @@ List.prototype.calculate_shift_params = function () {
  * @param {number} y
  * @param {number} w
  * @param {number} h
- * @cons    tructor
+ * @constructor
  */
 List.Item = function (x, y, w, h) {
     /**
@@ -508,7 +507,7 @@ List.Item = function (x, y, w, h) {
     this.h = h;
 };
 /**
- * @param {IGdiGraphics} gr
+ * @param {GdiGraphics} gr
  * @abstract
  */
 List.Item.prototype.draw = function (gr) {
@@ -608,7 +607,7 @@ List.RowContent.prototype.generate_items_to_draw = function (wy, wh, row_shift, 
         items_to_draw.push(this.rows[i]);
         cur_y += row_h;
 
-        if (cur_y >= wh) {
+        if (cur_y >= wy + wh) {
             break;
         }
     }
@@ -616,12 +615,12 @@ List.RowContent.prototype.generate_items_to_draw = function (wy, wh, row_shift, 
     return items_to_draw;
 };
 
-List.Content.prototype.update_items_w_size = function(w) {
+List.RowContent.prototype.update_items_w_size = function(w) {
     this.rows.forEach(item => {
         item.set_w(w);
     });
 };
 
-List.Content.prototype.calculate_total_h_in_rows = function() {
+List.RowContent.prototype.calculate_total_h_in_rows = function() {
     return this.rows.length;
 };
