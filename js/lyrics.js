@@ -1,6 +1,6 @@
 // Lyrics Variables
-var len_seconds = fb.TitleFormat("%length_seconds%");
-var elap_seconds = fb.TitleFormat("%playback_time_seconds%");
+var len_seconds = fb.TitleFormat('%length_seconds%');
+var elap_seconds = fb.TitleFormat('%playback_time_seconds%');
 
 var g_timer_abs;
 
@@ -36,6 +36,263 @@ class sentence {
 	}
 }
 
+/**
+ * @typedef {Object} LineObj
+ * @property {string} lyric the text of the line
+ * @property {string} timeStamp the timestamp string
+ * @property {float} time the timestamp as a float value in seconds
+ * @property {number} timeMs the timestamp as an integer in milliseconds
+ * @property {boolean} focus does the line have focus
+ */
+
+class Line {
+	constructor(lyricJson) {
+		this.time = 0;
+		this.timeStamp = '';
+		this.lyric = '';
+		this.focus = false;
+		Object.assign(this, lyricJson);
+		this.timeMs = Math.round(this.time * 1000);
+		this.lines = 0;
+		this.width = 0;
+		this.height = 0;
+		this.y = 0;
+	}
+
+	/**
+	 * @param {GdiGraphics} gr
+	 * @param {number} w Width
+	 * @param {number} h Height
+	 * @param {number} minHeight minimum height of a line (used for blank lines)
+	 * @param {number} yPosition yVal of the line in the list of lyrics
+	 */
+	calcSize(gr, w, h, minHeight, yPosition) {
+		const strInfo = gr.MeasureString(this.lyric, ft.lyrics, 0, 0, w, h);
+		this.lines = strInfo.Lines;
+		this.width = strInfo.Width;
+		this.height = Math.max(minHeight, strInfo.Height);
+		this.y = yPosition;
+		// console.log(this.height, this.y);
+	}
+
+	/**
+	 * @param {GdiGraphics} gr
+	 * @param {number} yOffset
+	 */
+	draw(gr, x, width, yOffset) {
+		const color = this.focus ? g_txt_highlightcolour : g_txt_normalcolour;
+		const center = StringFormat(1, 1);
+
+		// pref.lyrics_glow && gr.DrawString(tab[i].text, ft.lyrics, g_txt_shadowcolor, albumart_size.x + (albumart_size.w - lyricsWidth) / 2 - 1, posy, lyricsWidth, lineHeight, g_txt_align);
+		// pref.lyrics_glow && gr.DrawString(tab[i].text, ft.lyrics, g_txt_shadowcolor, albumart_size.x + (albumart_size.w - lyricsWidth) / 2, posy - 1, lyricsWidth, lineHeight, g_txt_align);
+		// pref.lyrics_text_shadow && gr.DrawString(tab[i].text, ft.lyrics, g_txt_shadowcolor, albumart_size.x + (albumart_size.w - lyricsWidth) / 2 + 2, posy + 2, lyricsWidth, lineHeight, g_txt_align);
+		// gr.DrawString(tab[i].text, ft.lyrics, text_color, albumart_size.x + (albumart_size.w - lyricsWidth) / 2, posy, lyricsWidth, lineHeight, g_txt_align);
+
+		gr.DrawString(this.lyric, ft.lyrics, color, x, this.y + yOffset, width, this.height + 1, center);
+	}
+}
+
+/** @enum {number} */
+const LyricsType = {
+	None:       0,
+	Synced:     1,
+	Unsynced:   2
+}
+
+const timeStampRegex = /^(\s*\[\d{1,2}:\d\d(]|\.\d{1,3}]))+/;
+const singleTimestampRegex = /^\s*(\[\d{1,2}:\d\d(]|\.\d{1,3}]))/;
+
+/** @type {Lyrics} */
+let gLyrics;
+
+class Lyrics {
+	/**
+	 * @param {FbMetadbHandle} metadb
+	 * @param {?*} lyrics
+	 */
+	constructor(metadb, lyrics = undefined) {
+		this.songLength = parseInt(len_seconds.Eval());
+		/** @type {Line[]} */
+		this.lines = [];
+		this.metadb = metadb;
+		this.lyricsType = LyricsType.None;
+		this.fileName = '';
+		this.activeLine = -1;	// index into this.lines
+		this.scrolling = false;
+		this.x = 0;
+		this.y = 0;
+		this.w = 0;
+		this.h = 0;
+		this.lineSpacing = scaleForDisplay(10);
+		this.lineHeight = 0;
+		this.getLyrics();
+		if (fb.IsPlaying) {
+			this.seek();
+		}
+	}
+
+	on_size(x, y, w, h) {
+		this.x = x + pref.lyrics_h_padding;
+		this.y = y;
+		this.w = w - pref.lyrics_h_padding * 2;
+		this.h = h;
+		this.lineSpacing = scaleForDisplay(10);
+		if (this.lines.length && this.w > 10 && this.h > 100) {
+			const tmpImg = gdi.CreateImage(this.w, Math.round(this.h / 5));
+			const gr = tmpImg.GetGraphics();
+			const minHeight = gr.MeasureString('I', ft.lyrics, 0, 0, this.w, this.h).Height;
+			for (let i = 0, yPos = 0; i < this.lines.length; i++) {
+				this.lines[i].calcSize(gr, this.w, this.h, minHeight, yPos);
+				yPos += this.lines[i].height + this.lineSpacing;
+			}
+			// this.lines.forEach(l => l.calcSize(gr, this.w, this.h, minHeight));
+			tmpImg.ReleaseGraphics(gr);
+		}
+	}
+
+	getLyrics() {
+		const tpath = [];
+		const tfilename = [];
+		let foundLyrics = false;
+
+		for (let i=0; i < tf.lyr_path.length; i++) {
+			tpath.push(fb.TitleFormat(tf.lyr_path[i]).Eval());
+		}
+		for (let i=0; i < tf.lyr_filename.length; i++) {
+			tfilename.push(fb.TitleFormat(tf.lyr_filename[i]).Eval());
+		}
+
+		let i = 0;
+		while(!foundLyrics && i < tpath.length) {
+			let j = 0;
+			while(!foundLyrics && j < tfilename.length) {
+				foundLyrics = this.checkFile(tpath[i], tfilename[j]);
+				j++;
+			}
+			i++;
+		}
+		let rawLyrics = [];
+		if (foundLyrics) {
+			console.log('Found Lyrics:', this.fileName);
+			rawLyrics = utils.ReadTextFile(this.fileName).split('\n');
+		}
+		if (rawLyrics) {
+			this.processLyrics(rawLyrics);
+		}
+		// console.log(this.lines);
+	}
+
+	/**
+	 * Sets the focus line. Should be called when playback starts, or whenever seeking in the file
+	 */
+	seek() {
+		const time = Math.round(fb.PlaybackTime * 1000);
+		if (this.lyricsType === LyricsType.Synced) {
+			this.lines.forEach(l => l.focus = false);
+			const index = this.lines.findIndex(l => l.timeMs >= time);
+			this.activeLine = index === -1 ? this.lines.length - 1 : index;
+			if (this.activeLine >= 0) {
+				this.lines[this.activeLine].focus = true;
+			}
+		}
+
+	}
+
+	/**
+	 * @param {string} path
+	 * @param {string} filename
+	 */
+	checkFile(path, filename) {
+		var found = true;
+		if (IsFile(path + filename + '.lrc')) {
+			this.fileName = path + filename + '.lrc';
+		} else if (IsFile(path + filename + '.txt')) {
+			this.fileName = path + filename + '.txt';
+		} else {
+			found = false;
+		}
+		return found;
+	}
+
+	/**
+	 * @param {String[]} rawLyrics
+	 */
+	processLyrics(rawLyrics) {
+		let tsCount = 0;
+
+		rawLyrics.forEach(line => {
+			if (timeStampRegex.test(line)) {
+				tsCount++;
+			}
+		})
+		if (tsCount > rawLyrics.length * .3) {
+			this.lyricsType = LyricsType.Synced;
+		}
+		let lyrics = [{ timeStamp: '00:00.00', time: 0, lyric: '' }];
+		if (this.lyricsType === LyricsType.Synced) {
+			rawLyrics.forEach(line => {
+				const r = timeStampRegex.exec(line);
+				if (r && r[0]) {
+					// line has at least one timestamp
+					let timestampStr = r[0];
+					const lyric = line.substr(timestampStr.length).trim().replace(/\u2019/g,"'").replace(/\uFF07/g,"'"); // replace apostrophes
+
+					let ts;
+					while (timestampStr.length && (ts = singleTimestampRegex.exec(timestampStr))) {
+						timestampStr = timestampStr.substr(ts[0].length);
+						const timeComponents = ts[0].trim().replace('[','').replace(']','').split(':');
+						const time = (parseInt(timeComponents[0]) * 60) + parseFloat(timeComponents[1]);
+						lyrics.push({ timeStamp: ts[0], time, lyric });
+					}
+				}
+			});
+			this.lines = lyrics.sort((a, b) => a.time - b.time).map(lyric => new Line(lyric));
+		} else { // LyricsType.Unsynced
+		}
+	}
+
+	timerTick() {
+		/** @type {float} */
+		const time = Math.round(fb.PlaybackTime * 1000);
+		if (this.lyricsType === LyricsType.Synced) {
+			if (this.scrolling) {
+
+			} else if ((this.lines.length > this.activeLine + 1) && (time > this.lines[this.activeLine + 1].timeMs)) {
+				// advance active Line
+				// this.scrolling = true;
+				if (this.activeLine !== -1) {
+					this.lines[this.activeLine].focus = false;
+				}
+				this.lines[++this.activeLine].focus = true;
+
+			} else {
+
+			}
+		} else { // LyricsType.Unsynced
+
+		}
+	}
+
+	/**
+	 * @param {GdiGraphics} gr
+	 */
+	drawLyrics(gr) {
+		if (this.activeLine >= 0) {
+			const halfHeight = Math.floor(this.h / 2);
+			const activeY = this.lines[this.activeLine].y - this.lines[this.activeLine].height;
+
+			const viewportTop = activeY - halfHeight
+			this.lines.forEach(l => {
+
+				if (l.y > viewportTop && l.y + l.height < this.h + viewportTop) {
+					l.draw(gr, this.x, this.w, this.y - viewportTop);
+				}
+			});
+			// console.log(activeY, halfHeight, viewportTop);
+		}
+	}
+}
+
 // Lyrics Functions
 
 function drawLyrics(gr, tab, posy) {
@@ -45,30 +302,32 @@ function drawLyrics(gr, tab, posy) {
 
 	if (timings.showDebugTiming)
 		drawLyricsProfiler = fb.CreateProfiler("drawLyrics");
-	gr.SetTextRenderingHint(TextRenderingHint.AntiAliasGridFit);
-	var g_txt_align = StringFormat(1, 1);
+	// gr.SetTextRenderingHint(TextRenderingHint.AntiAliasGridFit);
+	// var g_txt_align = StringFormat(1, 1);
 
-	for (i = 0; i < tab.length; i++) {
-		if (posy >= albumart_size.y + pref.lyrics_h_padding && posy < albumart_size.h - pref.lyrics_h_padding) {
-			if (i == focus && g_lyrics_status == 1) {
-				text_color = g_txt_highlightcolour;
-			} else {
-				if (g_lyrics_status == 0) {
-					text_color = g_txt_highlightcolour;
-				} else {
-					text_color = g_txt_normalcolour;
-				}
-			}
-			const lineHeight = tab[i].total_lines * pref.lyrics_line_height;
-			// maybe redo this to use albumart_size.x+(albumart_size.w-lyricsWidth)/2  and  lyricsWidth
-			pref.lyrics_glow && gr.DrawString(tab[i].text, ft.lyrics, g_txt_shadowcolor, albumart_size.x + (albumart_size.w - lyricsWidth) / 2 - 1, posy, lyricsWidth, lineHeight, g_txt_align);
-			pref.lyrics_glow && gr.DrawString(tab[i].text, ft.lyrics, g_txt_shadowcolor, albumart_size.x + (albumart_size.w - lyricsWidth) / 2, posy - 1, lyricsWidth, lineHeight, g_txt_align);
-			pref.lyrics_text_shadow && gr.DrawString(tab[i].text, ft.lyrics, g_txt_shadowcolor, albumart_size.x + (albumart_size.w - lyricsWidth) / 2 + 2, posy + 2, lyricsWidth, lineHeight, g_txt_align);
-			gr.DrawString(tab[i].text, ft.lyrics, text_color, albumart_size.x + (albumart_size.w - lyricsWidth) / 2, posy, lyricsWidth, lineHeight, g_txt_align);
-		}
-		posy = Math.floor(posy + pref.lyrics_line_height + ((tab[i].total_lines - 1) * pref.lyrics_line_height));
-	}
-	posy += divider_spacing;
+	// for (i = 0; i < tab.length; i++) {
+	// 	if (posy >= albumart_size.y + pref.lyrics_h_padding && posy < albumart_size.h - pref.lyrics_h_padding) {
+	// 		if (i == focus && g_lyrics_status == 1) {
+	// 			text_color = g_txt_highlightcolour;
+	// 		} else {
+	// 			if (g_lyrics_status == 0) {
+	// 				text_color = g_txt_highlightcolour;
+	// 			} else {
+	// 				text_color = g_txt_normalcolour;
+	// 			}
+	// 		}
+	// 		const lineHeight = tab[i].total_lines * pref.lyrics_line_height;
+	// 		// maybe redo this to use albumart_size.x+(albumart_size.w-lyricsWidth)/2  and  lyricsWidth
+	// 		pref.lyrics_glow && gr.DrawString(tab[i].text, ft.lyrics, g_txt_shadowcolor, albumart_size.x + (albumart_size.w - lyricsWidth) / 2 - 1, posy, lyricsWidth, lineHeight, g_txt_align);
+	// 		pref.lyrics_glow && gr.DrawString(tab[i].text, ft.lyrics, g_txt_shadowcolor, albumart_size.x + (albumart_size.w - lyricsWidth) / 2, posy - 1, lyricsWidth, lineHeight, g_txt_align);
+	// 		pref.lyrics_text_shadow && gr.DrawString(tab[i].text, ft.lyrics, g_txt_shadowcolor, albumart_size.x + (albumart_size.w - lyricsWidth) / 2 + 2, posy + 2, lyricsWidth, lineHeight, g_txt_align);
+	// 		gr.DrawString(tab[i].text, ft.lyrics, text_color, albumart_size.x + (albumart_size.w - lyricsWidth) / 2, posy, lyricsWidth, lineHeight, g_txt_align);
+	// 	}
+	// 	posy = Math.floor(posy + pref.lyrics_line_height + ((tab[i].total_lines - 1) * pref.lyrics_line_height));
+	// }
+	// posy += divider_spacing;
+
+	gLyrics.drawLyrics(gr);
 
 	if (timings.showDebugTiming)
 		drawLyricsProfiler.Print();
@@ -76,8 +335,10 @@ function drawLyrics(gr, tab, posy) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-function timerTick(id) {
+function timerTick() {
 	if (displayLyrics) {
+		gLyrics.timerTick();
+
 		var t1 = parseInt(elap_seconds.Eval()) * 100 + hundredth;
 		var t2 = parseInt(len_seconds.Eval()) * 100;
 		// console.log(elap_seconds.Eval(), t1, t2);
@@ -118,6 +379,9 @@ function timerTick(id) {
 
 function refresh_lyrics() {
 	if (fb.IsPlaying || fb.IsPaused) {
+		gLyrics = new Lyrics(fb.GetNowPlaying());
+		gLyrics.on_size(albumart_size.x, albumart_size.y, albumart_size.w, albumart_size.h);
+
 		let refreshLyricsProfiler = null;
 
 		if (timings.showLyricsTiming) refreshLyricsProfiler = fb.CreateProfiler("refresh_lyrics");
@@ -160,9 +424,9 @@ function updateLyricsPositionOnScreen() {
 
 function grab_timer(t_tab) {
 	var tminutes, tseconds, thundredth;
-	var i, k, f_sentence, b, c, delta, repeat_text;
+	var i, f_sentence, b, c, delta, repeat_text;
 	var tab = [];
-	var str = String();
+	// var str = String();
 	let grabTimerProfiler;
 
 	if (timings.showLyricsTiming) grabTimerProfiler = fb.CreateProfiler("grab_timer");
@@ -495,12 +759,13 @@ function ts_analyzer(str) {
 
 function IsNumeric(str) {
 	var ValidChars = "0123456789.";
-	for (let i = 0; i < str.length; i++) {
-		if (ValidChars.indexOf(str.charAt(i)) == -1) {
-			return false;
-		}
-	}
-	return true;
+	return ValidChars.includes(str);
+	// for (let i = 0; i < str.length; i++) {
+	// 	if (ValidChars.indexOf(str.charAt(i)) == -1) {
+	// 		return false;
+	// 	}
+	// }
+	// return true;
 }
 
 function IsTimestamped(str) {
@@ -519,20 +784,16 @@ function IsTimestamped(str) {
 }
 
 function check_file(path, filename) {
-	let loadFileProfiler = null;
-
-	if (timings.showLyricsTiming) loadFileProfiler = fb.CreateProfiler("check_file");
 	var found = true;
 	g_lyrics_path = path;
-	if (IsFile(path+filename+".lrc")) {
-		g_lyrics_filename = filename+".lrc";
-	} else if (IsFile(path+filename+".txt")) {
-		g_lyrics_filename = filename+".txt";
+	if (IsFile(path + filename + '.lrc')) {
+		g_lyrics_filename = filename + '.lrc';
+	} else if (IsFile(path + filename + '.txt')) {
+		g_lyrics_filename = filename + '.txt';
 	} else {
 		g_lyrics_path = null;
 		found = false;
 	}
-	if (timings.showLyricsTiming) loadFileProfiler.Print();
  	return found;
 }
 
@@ -547,10 +808,10 @@ function get_lyrics() {
 	var bool_tag = false;
 	var bool_file = false;
 
-	for (i=0;i<tf["lyr_path"].length;i++)
-		tpath.push(fb.TitleFormat(tf["lyr_path"][i]).Eval());
-	for (i=0;i<tf["lyr_filename"].length;i++)
-		tfilename.push(fb.TitleFormat(tf["lyr_filename"][i]).Eval());
+	for (i=0;i<tf.lyr_path.length;i++)
+		tpath.push(fb.TitleFormat(tf.lyr_path[i]).Eval());
+	for (i=0;i<tf.lyr_filename.length;i++)
+		tfilename.push(fb.TitleFormat(tf.lyr_filename[i]).Eval());
 
 	// reset lyrics tab
 	g_lyrics_status = 0;
