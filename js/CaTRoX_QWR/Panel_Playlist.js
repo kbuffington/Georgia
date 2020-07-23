@@ -537,25 +537,85 @@ function PlaylistPanel(x, y) {
 }
 
 /**
- * @param {number} x
- * @param {number} y
- * @constructor
- * @extend {List}
+ * @enum {number}
  */
-function Playlist(x, y) {
-    List.call(this, x, y, 0, 0, new PlaylistContent());
+var visibility_state = {
+    none:           0,
+    partial_top:    1,
+    partial_bottom: 2,
+    full:           3
+};
 
-    // public:
+class Playlist extends List {
+    /**
+     * @param {number} x
+     * @param {number} y
+     */
+    constructor(x, y) {
+        super(x, y, 0, 0, new PlaylistContent());
 
+        // Constants
+        /** @type {number} */
+        this.header_h_in_rows = this.calcHeaderRows();
+
+        // Window state
+        this.was_on_size_called = false;
+
+        this.is_in_focus = false;
+
+        // Playback state
+        /** @type {number} */
+        this.cur_playlist_idx = undefined;
+        /** @type {?Row} */
+        this.playing_item = undefined;
+        /** @type {?Row} */
+        this.focused_item = undefined;
+
+        // Mouse and key state
+        this.mouse_on_item = false;
+        this.key_down = false;
+        this.drag_event_invoked = false;
+
+        // Item events
+        /** @type {?Row|?BaseHeader|?ListItem} */
+        this.last_hover_item = undefined;
+        /** @type  {{x: ?number, y: ?number}} */
+        this.last_pressed_coord = {
+            x: undefined,
+            y: undefined
+        };
+
+        // Timers
+        this.drag_scroll_in_progress = false;
+        this.drag_scroll_timeout_timer = 0;
+        this.drag_scroll_repeat_timer = 0;
+
+        // Scrollbar props
+        /** @type {Array<number>} float */
+        this.scroll_pos_list = [];
+
+        // Objects
+        /** @type {?SelectionHandler} */
+        this.selection_handler = undefined;
+        /** @type {?QueueHandler} */
+        this.queue_handler = undefined;
+        /** @type {?CollapseHandler} */
+        this.collapse_handler = undefined;
+        /**
+         * @const
+         * @type {ContentNavigationHelper}
+         */
+        this.cnt_helper = this.cnt.helper;
+    }
     //<editor-fold desc="Callback Implementation">
-    this.on_paint = function (gr) {
+    on_paint(gr) {
         gr.FillSolidRect(this.x, this.y, this.w, this.h, g_pl_colors.background);
         gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
 
         if (this.items_to_draw.length) {
             // Mordred - Passing top, bottom for clipping purposes
             var that = this;
-            _.forEachRight(this.items_to_draw, function (item) {
+            _.forEachRight(this.items_to_draw, (item) => {
                 item.draw(gr, that.y, that.y + that.h);
             }, that);
 
@@ -568,7 +628,7 @@ function Playlist(x, y) {
                 text = 'Drag some tracks here';
             }
             else {
-                text = 'Playlist: ' + plman.GetPlaylistName(cur_playlist_idx) + '\n<--- Empty --->';
+                text = 'Playlist: ' + plman.GetPlaylistName(this.cur_playlist_idx) + '\n<--- Empty --->';
             }
 
             gr.DrawString(text, gdi.Font('Segoe Ui', 16), RGB(80, 80, 80), this.x, this.y, this.w, this.h, g_string_format.align_center);
@@ -590,19 +650,19 @@ function Playlist(x, y) {
     };
 
     // Playlist.on_size
-    this.on_size = function (w, h, x, y) {
+    on_size(w, h, x, y) {
         List.prototype.on_size.apply(this, [w, h, x, y]);
         // TODO: Mordred - can we avoid this? this.reinitialize causing probs
         this.x = x;
         this.y = y;
         this.h = h;
         this.w = w;
-        was_on_size_called = true;
+        this.was_on_size_called = true;
 
         this.reinitialize();
-    };
+    }
 
-    this.on_mouse_move = function (x, y, m) {
+    on_mouse_move(x, y, m) {
         if (List.prototype.on_mouse_move.apply(this, [x, y, m])) {
             return true;
         }
@@ -618,24 +678,23 @@ function Playlist(x, y) {
             return true;
         }
 
-        if (!selection_handler.is_dragging() && last_hover_item) {
-            var drag_diff = Math.sqrt((Math.pow(last_pressed_coord.x - x, 2) + Math.pow(last_pressed_coord.y - y, 2)));
+        if (!this.selection_handler.is_dragging() && this.last_hover_item) {
+            var drag_diff = Math.sqrt((Math.pow(this.last_pressed_coord.x - x, 2) + Math.pow(this.last_pressed_coord.y - y, 2)));
             if (drag_diff >= 7) {
-                last_pressed_coord = {
+                this.last_pressed_coord = {
                     x: undefined,
                     y: undefined
                 };
-                last_hover_item =
-                    /** @type {?BaseHeader|?Row} */ this.get_item_under_mouse(x, y);
+                this.last_hover_item = this.get_item_under_mouse(x, y);
 
-                selection_handler.perform_internal_drag_n_drop();
+                this.selection_handler.perform_internal_drag_n_drop();
             }
         }
 
         return true;
     };
 
-    this.on_mouse_lbtn_down = function (x, y, m) {
+    on_mouse_lbtn_down(x, y, m) {
         if (List.prototype.on_mouse_lbtn_down.apply(this, [x, y, m])) {
             return true;
         }
@@ -643,10 +702,11 @@ function Playlist(x, y) {
         var ctrl_pressed = utils.IsKeyPressed(VK_CONTROL);
         var shift_pressed = utils.IsKeyPressed(VK_SHIFT);
 
-        var item = this.trace_list(x, y) ? this.get_item_under_mouse(x, y) : undefined;
-        last_hover_item = item;
-        last_pressed_coord.x = x;
-        last_pressed_coord.y = y;
+        /** @type {BaseHeader} */
+        const item = this.trace_list(x, y) ? this.get_item_under_mouse(x, y) : undefined;
+        this.last_hover_item = item;
+        this.last_pressed_coord.x = x;
+        this.last_pressed_coord.y = y;
 
         if (item) {
             if ((!pref.hyperlinks_ctrl || ctrl_pressed) && _.isInstanceOf(item, Header)) {
@@ -655,29 +715,29 @@ function Playlist(x, y) {
                 }
             }
             if (ctrl_pressed && shift_pressed && _.isInstanceOf(item, BaseHeader)) {
-                collapse_handler.toggle_collapse(item);
+                this.collapse_handler.toggle_collapse(item);
                 this.mouse_down = false;
             }
             else if (shift_pressed
                 || (_.isInstanceOf(item, Row) && !item.is_selected()
                     || _.isInstanceOf(item, BaseHeader) && !item.is_completely_selected())) {
-                selection_handler.update_selection(item, ctrl_pressed, shift_pressed);
+                this.selection_handler.update_selection(item, ctrl_pressed, shift_pressed);
             }
             else {
                 // indicates the need to update selection on on_mouse_lbtn_up
-                mouse_on_item = true;
+                this.mouse_on_item = true;
             }
         }
         else {
-            selection_handler.clear_selection();
+            this.selection_handler.clear_selection();
         }
 
         this.repaint();
 
         return true;
-    };
+    }
 
-    this.on_mouse_lbtn_dblclk = function (x, y, m) {
+    on_mouse_lbtn_dblclk(x, y, m) {
         if (List.prototype.on_mouse_lbtn_dblclk.apply(this, [x, y, m])) {
             return true;
         }
@@ -688,7 +748,7 @@ function Playlist(x, y) {
         }
 
         if (_.isInstanceOf(item, BaseHeader)) {
-            item.on_mouse_lbtn_dblclk(x, y, m, collapse_handler);
+            item.on_mouse_lbtn_dblclk(x, y, m, this.collapse_handler);
             this.repaint();
         }
         else {
@@ -697,21 +757,21 @@ function Playlist(x, y) {
                 item.repaint();
             }
             else {
-                plman.ExecutePlaylistDefaultAction(cur_playlist_idx, item.idx);
+                plman.ExecutePlaylistDefaultAction(this.cur_playlist_idx, item.idx);
             }
         }
 
         return true;
-    };
+    }
 
-    this.on_mouse_lbtn_up = function (x, y, m) {
+    on_mouse_lbtn_up(x, y, m) {
         var was_double_clicked = this.mouse_double_clicked;
 
         if (List.prototype.on_mouse_lbtn_up.apply(this, [x, y, m])) {
             return true;
         }
 
-        last_pressed_coord = {
+        this.last_pressed_coord = {
             x: undefined,
             y: undefined
         };
@@ -720,25 +780,25 @@ function Playlist(x, y) {
             return true;
         }
 
-        last_hover_item = undefined;
+        this.last_hover_item = undefined;
 
         // drag is handled in on_drag_drop
-        if (!selection_handler.is_dragging() && mouse_on_item) {
+        if (!this.selection_handler.is_dragging() && this.mouse_on_item) {
             var ctrl_pressed = utils.IsKeyPressed(VK_CONTROL);
             var shift_pressed = utils.IsKeyPressed(VK_SHIFT);
             var item = this.get_item_under_mouse(x, y);
             if (item) {
-                selection_handler.update_selection(/** @type {Row|BaseHeader} */ item, ctrl_pressed, shift_pressed);
+                this.selection_handler.update_selection(/** @type {Row|BaseHeader} */ item, ctrl_pressed, shift_pressed);
             }
         }
 
-        mouse_on_item = false;
+        this.mouse_on_item = false;
         this.repaint();
 
         return true;
-    };
+    }
 
-    this.on_mouse_rbtn_down = function (x, y, m) {
+    on_mouse_rbtn_down(x, y, m) {
         if (!this.cnt.rows.length) {
             return;
         }
@@ -749,84 +809,84 @@ function Playlist(x, y) {
 
         var item = this.trace_list(x, y) ? this.get_item_under_mouse(x, y) : undefined;
         if (!item) {
-            selection_handler.clear_selection();
+            this.selection_handler.clear_selection();
 
         }
         else if (_.isInstanceOf(item, Row) && !item.is_selected()
             || _.isInstanceOf(item, BaseHeader) && !item.is_completely_selected()) {
-            selection_handler.update_selection(item);
+            this.selection_handler.update_selection(item);
         }
 
         this.repaint();
-    };
+    }
 
-    this.on_mouse_rbtn_up = function (x, y, m) {
+    on_mouse_rbtn_up(x, y, m) {
         if (List.prototype.on_mouse_rbtn_up.apply(this, [x, y, m])) {
             return true;
         }
 
         var metadb = utils.IsKeyPressed(VK_CONTROL) ? (fb.IsPlaying ? fb.GetNowPlaying() : fb.GetFocusItem()) : fb.GetFocusItem();
 
-        var has_selected_item = selection_handler.has_selected_items();
+        var has_selected_item = this.selection_handler.has_selected_items();
         var is_cur_playlist_empty = !this.cnt.rows.length;
 
-        var cmm = new Context.MainMenu();
+        var cmm = new ContextMainMenu();
 
         if (fb.IsPlaying) {
             cmm.append_item(
                 'Show now playing',
-                function () {
-                    show_now_playing();
+                () => {
+                    this.show_now_playing();
                 });
         }
 
         if (!is_cur_playlist_empty) {
             cmm.append_item(
                 'Refresh playlist \tF5',
-                _.bind(function () {
+                () => {
                     Header.art_cache.clear();
                     this.initialize_list();
-                    scroll_to_focused();
-                }, this));
+                    this.scroll_to_focused();
+                });
 
-            if (queue_handler && queue_handler.has_items()) {
+            if (this.queue_handler && this.queue_handler.has_items()) {
                 cmm.append_item(
                     'Flush playback queue \tCtrl+Shift+Q',
-                    function () {
-                        queue_handler.flush();
+                    () => {
+                        this.queue_handler.flush();
                     });
             }
         }
 
-        append_edit_menu_to(cmm);
+        this.append_edit_menu_to(cmm);
 
         if (!is_cur_playlist_empty) {
             if (!cmm.is_empty()) {
                 cmm.append_separator();
             }
 
-            if (collapse_handler) {
-                append_collapse_menu_to(cmm);
+            if (this.collapse_handler) {
+                this.append_collapse_menu_to(cmm);
             }
 
-            append_appearance_menu_to(cmm);
+            this.append_appearance_menu_to(cmm);
 
             if (g_properties.show_header) {
-                Header.grouping_handler.append_menu_to(cmm, _.bind(function () {
+                Header.grouping_handler.append_menu_to(cmm, () => {
                     this.initialize_list();
-                    scroll_to_focused_or_now_playing();
+                    this.scroll_to_focused_or_now_playing();
                     this.repaint();
-                }, this));
+                });
             }
 
-            append_sort_menu_to(cmm);
+            this.append_sort_menu_to(cmm);
 
             if (pref.show_weblinks) {
-                append_weblinks_menu_to(cmm, metadb);
+                this.append_weblinks_menu_to(cmm, metadb);
             }
 
             if (has_selected_item) {
-                append_send_items_menu_to(cmm);
+                this.append_send_items_menu_to(cmm);
             }
         }
         else {
@@ -836,12 +896,12 @@ function Playlist(x, y) {
                 cmm.append_separator();
             }
 
-            var appear = new Context.Menu('Appearance');
+            var appear = new ContextMenu('Appearance');
             cmm.append(appear);
 
             appear.append_item(
                 'Show playlist info',
-                function () {
+                () => {
                     g_properties.show_playlist_info = !g_properties.show_playlist_info;
                 },
                 {is_checked: g_properties.show_playlist_info}
@@ -858,7 +918,7 @@ function Playlist(x, y) {
                 cmm.append_separator();
             }
 
-            var ccmm = new Context.FoobarMenu(plman.GetPlaylistSelectedItems(cur_playlist_idx));
+            var ccmm = new ContextFoobarMenu(plman.GetPlaylistSelectedItems(this.cur_playlist_idx));
             cmm.append(ccmm);
         }
 
@@ -875,17 +935,17 @@ function Playlist(x, y) {
 
         this.repaint();
         return true;
-    };
+    }
 
-    this.on_mouse_leave = function() {
-        if (selection_handler.is_internal_drag_n_drop_active()
-            && selection_handler.is_dragging()
-            && !drag_event_invoked) {
+    on_mouse_leave() {
+        if (this.selection_handler.is_internal_drag_n_drop_active()
+            && this.selection_handler.is_dragging()
+            && !this.drag_event_invoked) {
             // Workaround for the following issues:
             // #1 if you move too fast out of the panel, then drag_enter is not invoked (thus we need to clear mouse state here).
             // #2 on_mouse_leave sometimes generated during internal drag_over (so we need to ignore it).
-            selection_handler.disable_drag();
-            drag_event_invoked = false
+            this.selection_handler.disable_drag();
+            this.drag_event_invoked = false
             this.mouse_in = false;
             this.mouse_down = false;
             this.repaint();
@@ -893,21 +953,21 @@ function Playlist(x, y) {
         List.prototype.on_mouse_leave.apply(this);
     }
 
-    this.on_drag_enter = function (action, x, y, mask) {
+    on_drag_enter(action, x, y, mask) {
         this.mouse_in = true;
         this.mouse_down = true;
-        drag_event_invoked = true;
+        this.drag_event_invoked = true;
 
-        if (!selection_handler.is_dragging()) {
-            if (selection_handler.is_internal_drag_n_drop_active()) {
-                selection_handler.enable_drag();
+        if (!this.selection_handler.is_dragging()) {
+            if (this.selection_handler.is_internal_drag_n_drop_active()) {
+                this.selection_handler.enable_drag();
             }
             else {
-                selection_handler.enable_external_drag();
+                this.selection_handler.enable_external_drag();
             }
         }
 
-        if (!this.trace_list(x, y) || !selection_handler.can_drop()) {
+        if (!this.trace_list(x, y) || !this.selection_handler.can_drop()) {
             action.Effect = g_drop_effect.none;
         }
         else {
@@ -915,133 +975,133 @@ function Playlist(x, y) {
                 || (action.Effect & g_drop_effect.copy)
                 || (action.Effect & g_drop_effect.link);
         }
-    };
+    }
 
-    this.on_drag_leave = function () {
-        if (selection_handler.is_dragging()) {
-            stop_drag_scroll();
-            selection_handler.disable_drag();
+    on_drag_leave() {
+        if (this.selection_handler.is_dragging()) {
+            this.stop_drag_scroll();
+            this.selection_handler.disable_drag();
         }
 
-        drag_event_invoked = false;
+        this.drag_event_invoked = false;
         this.mouse_in = false;
         this.mouse_down = false;
 
         this.repaint();
-    };
+    }
 
-    this.on_drag_over = function (action, x, y, mask) {
-        if (!selection_handler.can_drop()) {
+    on_drag_over(action, x, y, mask) {
+        if (!this.selection_handler.can_drop()) {
             action.Effect = g_drop_effect.none;
             return;
         }
 
-        var drop_info = get_drop_row_info(x, y);
+        var drop_info = this.get_drop_row_info(x, y);
         var row = drop_info.row;
 
-        if (drag_scroll_in_progress) {
+        if (this.drag_scroll_in_progress) {
             if (!row || (y >= (this.list_y + this.row_h * 2) && y <= (this.list_y + this.list_h - this.row_h * 2))) {
-                stop_drag_scroll();
+                this.stop_drag_scroll();
             }
         }
         else if (row) {
-            if (collapse_handler) {
-                collapse_handler.expand(row.parent);
-                if (collapse_handler.changed) {
+            if (this.collapse_handler) {
+                this.collapse_handler.expand(row.parent);
+                if (this.collapse_handler.changed) {
                     this.repaint();
                 }
             }
 
-            selection_handler.drag(row, drop_info.is_above);
+            this.selection_handler.drag(row, drop_info.is_above);
 
             if (this.is_scrollbar_available) {
                 if (y < (this.list_y + this.row_h * 2) && !this.scrollbar.is_scrolled_up) {
-                    selection_handler.drag(null, false); // To clear last hover row
-                    start_drag_scroll('up');
+                    this.selection_handler.drag(null, false); // To clear last hover row
+                    this.start_drag_scroll('up');
                 }
                 if (y > (this.list_y + this.list_h - this.row_h * 2) && !this.scrollbar.is_scrolled_down) {
-                    selection_handler.drag(null, false); // To clear last hover row
-                    start_drag_scroll('down');
+                    this.selection_handler.drag(null, false); // To clear last hover row
+                    this.start_drag_scroll('down');
                 }
             }
         }
 
-        last_hover_item =
+        this.last_hover_item =
             /** @type {?BaseHeader|?Row} */ this.get_item_under_mouse(x, y);
 
         if (!this.trace_list(x, y)) {
             action.Effect = g_drop_effect.none;
         }
         else {
-            action.Effect = filter_effect_by_modifiers(action.Effect);
+            action.Effect = this.filter_effect_by_modifiers(action.Effect);
         }
-    };
+    }
 
-    this.on_drag_drop = function (action, x, y, m) {
+    on_drag_drop(action, x, y, m) {
         this.mouse_down = false; ///< because on_drag_drop suppresses on_mouse_lbtn_up call
-        stop_drag_scroll();
+        this.stop_drag_scroll();
 
-        if (!selection_handler.is_dragging() || !this.trace_list(x, y) || !selection_handler.can_drop()) {
-            selection_handler.disable_drag();
+        if (!this.selection_handler.is_dragging() || !this.trace_list(x, y) || !this.selection_handler.can_drop()) {
+            this.selection_handler.disable_drag();
             action.Effect = g_drop_effect.none;
             return;
         }
 
         var ctrl_pressed = utils.IsKeyPressed(VK_CONTROL);
 
-        if (selection_handler.is_internal_drag_n_drop_active()) {
+        if (this.selection_handler.is_internal_drag_n_drop_active()) {
             var copy_drop = ctrl_pressed && ((action.Effect & 1) || (action.Effect & 4));
-            selection_handler.drop(copy_drop);
+            this.selection_handler.drop(!!copy_drop);
 
             // Suppress native drop, since we've handled it ourselves
             action.Effect = g_drop_effect.none;
         }
         else {
-            action.Effect = filter_effect_by_modifiers(action.Effect);
+            action.Effect = this.filter_effect_by_modifiers(action.Effect);
             if (g_drop_effect.none !== action.Effect) {
-                selection_handler.external_drop(action);
+                this.selection_handler.external_drop(action);
             }
             else {
-                selection_handler.disable_drag();
+                this.selection_handler.disable_drag();
             }
         }
-    };
+    }
 
-    this.on_key_down = function (vkey) {
-        key_down = true;
-    };
+    on_key_down(vkey) {
+        this.key_down = true;
+    }
 
-    this.on_key_up = function (vkey) {
-        key_down = false;
-    };
+    on_key_up(vkey) {
+        this.key_down = false;
+    }
 
-    this.on_item_focus_change = function (playlist_idx, from_idx, to_idx) {
-        if (playlist_idx !== cur_playlist_idx || focused_item && focused_item.idx === to_idx) {
+    on_item_focus_change(playlist_idx, from_idx, to_idx) {
+        if (playlist_idx !== this.cur_playlist_idx || this.focused_item && this.focused_item.idx === to_idx) {
             return;
         }
 
-        if (focused_item) {
-            focused_item.is_focused = false;
+        if (this.focused_item) {
+            this.focused_item.is_focused = false;
         }
 
         if (to_idx === -1) {
-            focused_item = undefined;
+            this.focused_item = undefined;
         }
         else if (this.cnt.rows.length) {
             to_idx = Math.min(to_idx, this.cnt.rows.length - 1);
-            focused_item = this.cnt.rows[to_idx];
-            focused_item.is_focused = true;
+            this.focused_item = this.cnt.rows[to_idx];
+            this.focused_item.is_focused = true;
         }
 
-        if (focused_item) {
+        if (this.focused_item) {
             var from_row = from_idx === -1 ? null : this.cnt.rows[from_idx];
-            scroll_to_row(from_row, focused_item);
+            this.scroll_to_row(from_row, this.focused_item);
         }
 
         this.repaint();
-    };
+    }
 
-    this.on_playlists_changed = function () {
+    on_playlists_changed() {
         if ((plman.ActivePlaylist > plman.PlaylistCount || plman.ActivePlaylist === -1) && plman.PlaylistCount > 0) {
             plman.ActivePlaylist = plman.PlaylistCount - 1;
         }
@@ -1049,21 +1109,21 @@ function Playlist(x, y) {
         Header.grouping_handler.on_playlists_changed();
         Header.grouping_handler.set_active_playlist(plman.GetPlaylistName(plman.ActivePlaylist));
 
-        if (plman.ActivePlaylist !== cur_playlist_idx) {
+        if (plman.ActivePlaylist !== this.cur_playlist_idx) {
             this.initialize_and_repaint_list();
         }
-    };
+    }
 
-    this.on_playlist_switch = function () {
-        if (cur_playlist_idx !== plman.ActivePlaylist) {
-            g_properties.scroll_pos = _.isNil(scroll_pos_list[plman.ActivePlaylist]) ? 0 : scroll_pos_list[plman.ActivePlaylist];
+    on_playlist_switch() {
+        if (this.cur_playlist_idx !== plman.ActivePlaylist) {
+            g_properties.scroll_pos = _.isNil(this.scroll_pos_list[plman.ActivePlaylist]) ? 0 : this.scroll_pos_list[plman.ActivePlaylist];
         }
 
         this.initialize_and_repaint_list();
-    };
+    }
 
-    this.on_playlist_item_ensure_visible = function (playlist_idx, playlistItemIndex) {
-        if (playlist_idx !== cur_playlist_idx) {
+    on_playlist_item_ensure_visible(playlist_idx, playlistItemIndex) {
+        if (playlist_idx !== this.cur_playlist_idx) {
             return;
         }
 
@@ -1072,40 +1132,40 @@ function Playlist(x, y) {
             return;
         }
 
-        scroll_to_row(null, row);
-    };
+        this.scroll_to_row(null, row);
+    }
 
-    this.on_playlist_items_added = function (playlist_idx) {
-        if (playlist_idx !== cur_playlist_idx) {
+    on_playlist_items_added(playlist_idx) {
+        if (playlist_idx !== this.cur_playlist_idx) {
             return;
         }
 
         this.initialize_and_repaint_list();
-    };
+    }
 
-    this.on_playlist_items_reordered = function (playlist_idx) {
-        if (playlist_idx !== cur_playlist_idx) {
+    on_playlist_items_reordered(playlist_idx) {
+        if (playlist_idx !== this.cur_playlist_idx) {
             return;
         }
 
         this.initialize_and_repaint_list(true);
-    };
+    }
 
-    this.on_playlist_items_removed = function (playlist_idx) {
-        if (playlist_idx !== cur_playlist_idx) {
+    on_playlist_items_removed(playlist_idx) {
+        if (playlist_idx !== this.cur_playlist_idx) {
             return;
         }
 
         this.initialize_and_repaint_list();
-    };
+    }
 
-    this.on_playlist_items_selection_change = function () {
-        if (!this.mouse_in && !key_down) {
-            selection_handler.initialize_selection();
+    on_playlist_items_selection_change() {
+        if (!this.mouse_in && !this.key_down) {
+            this.selection_handler.initialize_selection();
         }
-    };
+    }
 
-    this.on_playback_dynamic_info_track = function (handles, fromhook) {
+    on_playback_dynamic_info_track() {
         this.cnt.rows.forEach(function (item) {
             item.reset_queried_data();
         });
@@ -1115,68 +1175,68 @@ function Playlist(x, y) {
         });
 
         this.repaint();
-    };
+    }
 
-    this.on_playback_new_track = function (metadb) {
-        if (playing_item) {
-            playing_item.is_playing = false;
-            playing_item = undefined;
+    on_playback_new_track(metadb) {
+        if (this.playing_item) {
+            this.playing_item.is_playing = false;
+            this.playing_item = undefined;
         }
 
         var playing_item_location = plman.GetPlayingItemLocation();
-        if (playing_item_location.IsValid && playing_item_location.PlaylistIndex === cur_playlist_idx) {
-            playing_item = this.cnt.rows[playing_item_location.PlaylistItemIndex];
-            playing_item.is_playing = true;
+        if (playing_item_location.IsValid && playing_item_location.PlaylistIndex === this.cur_playlist_idx) {
+            this.playing_item = this.cnt.rows[playing_item_location.PlaylistItemIndex];
+            this.playing_item.is_playing = true;
 
             if (fb.CursorFollowPlayback) {
-                selection_handler.clear_selection();
+                this.selection_handler.clear_selection();
 
-                if (collapse_handler && g_properties.auto_colapse) {
-                    collapse_handler.collapse_all_but_now_playing();
+                if (this.collapse_handler && g_properties.auto_colapse) {
+                    this.collapse_handler.collapse_all_but_now_playing();
                 }
-                scroll_to_now_playing();
+                this.scroll_to_now_playing();
             }
         }
 
         this.repaint();
-    };
+    }
 
-    this.on_playback_pause = function (state) {
-        if (playing_item) {
-            playing_item.repaint();
+    on_playback_pause(state) {
+        if (this.playing_item) {
+            this.playing_item.repaint();
         }
     }
 
-    this.on_playback_queue_changed = function (origin) {
-        if (!queue_handler) {
+    on_playback_queue_changed(origin) {
+        if (!this.queue_handler) {
             return;
         }
 
-        queue_handler.initialize_queue();
+        this.queue_handler.initialize_queue();
         this.repaint();
-    };
+    }
 
-    this.on_playback_stop = function (reason) {
-        if (playing_item) {
-            playing_item.clear_title_text(); // Mordred: need to regen tracknumber
-            playing_item.is_playing = false;
-            playing_item.repaint();
+    on_playback_stop(reason) {
+        if (this.playing_item) {
+            this.playing_item.clear_title_text(); // Mordred: need to regen tracknumber
+            this.playing_item.is_playing = false;
+            this.playing_item.repaint();
         }
-    };
+    }
 
-    this.on_focus = function (is_focused) {
-        if (focused_item) {
-            focused_item.is_focused = is_focused;
-            focused_item.repaint();
+    on_focus(is_focused) {
+        if (this.focused_item) {
+            this.focused_item.is_focused = is_focused;
+            this.focused_item.repaint();
         }
-        is_in_focus = is_focused;
-    };
+        this.is_in_focus = is_focused;
+    }
 
-    this.on_metadb_changed = function (handles, fromhook) {
+    on_metadb_changed(handles, fromhook) {
         this.on_playback_dynamic_info_track();
-    };
+    }
 
-    this.on_get_album_art_done = function (metadb, art_id, image, image_path) {
+    on_get_album_art_done(metadb, art_id, image, image_path) {
         if (!image) {
             image = null;
         }
@@ -1193,9 +1253,9 @@ function Playlist(x, y) {
                 }
             }
         });
-    };
+    }
 
-    this.on_notify_data = function (name, info) {
+    on_notify_data(name, info) {
         if (name === 'sync_group_query_state') {
             if (!window.IsVisible) {
                 // Need to reinitialize grouping_handler manually, since most of the callbacks are ignored when panel is hidden
@@ -1207,155 +1267,155 @@ function Playlist(x, y) {
                 Header.grouping_handler.sync_state(info);
 
                 this.initialize_list();
-                scroll_to_focused_or_now_playing();
+                this.scroll_to_focused_or_now_playing();
             }
         }
-    };
+    }
     //</editor-fold>
 
     /**
      * @param {KeyActionHandler} key_handler
      */
-    this.register_key_actions = function (key_handler) {
+    register_key_actions(key_handler) {
         key_handler.register_key_action(VK_UP,
-            _.bind(function (modifiers) {
+            (modifiers) => {
                 if (!this.cnt.rows.length) {
                     return;
                 }
 
                 if (modifiers.ctrl && modifiers.shift) {
-                    if (!selection_handler.has_selected_items()) {
+                    if (!this.selection_handler.has_selected_items()) {
                         return;
                     }
 
-                    selection_handler.move_selection_up();
+                    this.selection_handler.move_selection_up();
                     return;
                 }
 
-                if (!focused_item) {
+                if (!this.focused_item) {
                     var top_item = this.items_to_draw[0];
-                    focused_item = _.isInstanceOf(top_item, Row) ? top_item : top_item.get_first_row();
+                    this.focused_item = _.isInstanceOf(top_item, Row) ? top_item : top_item.get_first_row();
                 }
 
-                var visible_item = cnt_helper.is_item_visible(focused_item) ? focused_item : cnt_helper.get_visible_parent(focused_item);
-                var new_item = cnt_helper.get_navigateable_neighbour(visible_item, -1);
+                var visible_item = this.cnt_helper.is_item_visible(this.focused_item) ? this.focused_item : this.cnt_helper.get_visible_parent(this.focused_item);
+                var new_item = this.cnt_helper.get_navigateable_neighbour(visible_item, -1);
                 if (!new_item) {
                     new_item = visible_item;
                 }
 
-                selection_handler.update_selection(new_item, undefined, modifiers.shift);
+                this.selection_handler.update_selection(new_item, undefined, modifiers.shift);
                 this.repaint();
-            }, this));
+            });
 
         key_handler.register_key_action(VK_DOWN,
-            _.bind(function (modifiers) {
+            (modifiers) => {
                 if (!this.cnt.rows.length) {
                     // skip repaint
                     return;
                 }
 
                 if (modifiers.ctrl && modifiers.shift) {
-                    if (!selection_handler.has_selected_items()) {
+                    if (!this.selection_handler.has_selected_items()) {
                         return;
                     }
 
-                    selection_handler.move_selection_down();
+                    this.selection_handler.move_selection_down();
                     return;
                 }
 
-                if (!focused_item) {
+                if (!this.focused_item) {
                     var top_item = this.items_to_draw[0];
-                    focused_item = _.isInstanceOf(top_item, Row) ? top_item : top_item.get_first_row();
+                    this.focused_item = _.isInstanceOf(top_item, Row) ? top_item : top_item.get_first_row();
                 }
 
-                var visible_item = cnt_helper.is_item_visible(focused_item) ? focused_item : cnt_helper.get_visible_parent(focused_item);
-                var new_item = cnt_helper.get_navigateable_neighbour(visible_item, 1);
+                var visible_item = this.cnt_helper.is_item_visible(this.focused_item) ? this.focused_item : this.cnt_helper.get_visible_parent(this.focused_item);
+                var new_item = this.cnt_helper.get_navigateable_neighbour(visible_item, 1);
                 if (!new_item) {
                     new_item = visible_item;
                 }
 
-                selection_handler.update_selection(new_item, undefined, modifiers.shift);
+                this.selection_handler.update_selection(new_item, undefined, modifiers.shift);
                 this.repaint();
-            }, this));
+            });
 
         key_handler.register_key_action(VK_LEFT,
-            _.bind(function (modifiers) {
-                if (!collapse_handler || !this.cnt.rows.length) {
+            (modifiers) => {
+                if (!this.collapse_handler || !this.cnt.rows.length) {
                     return;
                 }
 
-                if (!focused_item) {
+                if (!this.focused_item) {
                     var top_item = this.items_to_draw[0];
-                    focused_item = _.isInstanceOf(top_item, Row) ? top_item : top_item.get_first_row();
+                    this.focused_item = _.isInstanceOf(top_item, Row) ? top_item : top_item.get_first_row();
                 }
-                var new_focus = focused_item;
+                var new_focus = this.focused_item;
 
                 // Get top uncollapsed header
-                var visible_header = cnt_helper.get_visible_parent(focused_item);
+                var visible_header = this.cnt_helper.get_visible_parent(this.focused_item);
                 if (visible_header) {
                     while (_.isInstanceOf(visible_header.parent, BaseHeader) && visible_header.is_collapsed) {
                         visible_header = visible_header.parent;
                     }
 
-                    collapse_handler.collapse(visible_header);
+                    this.collapse_handler.collapse(visible_header);
                     new_focus = visible_header;
                 }
 
-                selection_handler.update_selection(new_focus);
+                this.selection_handler.update_selection(new_focus);
                 this.repaint();
-            }, this));
+            });
 
         key_handler.register_key_action(VK_RIGHT,
-            _.bind(function (modifiers) {
-                if (!collapse_handler || !this.cnt.rows.length) {
+            (modifiers) => {
+                if (!this.collapse_handler || !this.cnt.rows.length) {
                     return;
                 }
 
-                if (!focused_item) {
+                if (!this.focused_item) {
                     var top_item = this.items_to_draw[0];
-                    focused_item = _.isInstanceOf(top_item, Row) ? top_item : top_item.get_first_row();
+                    this.focused_item = _.isInstanceOf(top_item, Row) ? top_item : top_item.get_first_row();
                 }
-                var new_focus = focused_item;
+                var new_focus = this.focused_item;
 
-                var visible_header = cnt_helper.get_visible_parent(focused_item);
+                var visible_header = this.cnt_helper.get_visible_parent(this.focused_item);
                 var new_focus_item = visible_header.get_first_row();
 
-                collapse_handler.expand(visible_header);
-                if (collapse_handler.changed) {
-                    scroll_to_row(focused_item, new_focus_item);
+                this.collapse_handler.expand(visible_header);
+                if (this.collapse_handler.changed) {
+                    this.scroll_to_row(this.focused_item, new_focus_item);
                     new_focus = new_focus_item;
                 }
 
-                selection_handler.update_selection(new_focus);
+                this.selection_handler.update_selection(new_focus);
                 this.repaint();
-            }, this));
+            });
 
         key_handler.register_key_action(VK_PRIOR,
-            _.bind(function (modifiers) {
+            (modifiers) => {
                 if (!this.cnt.rows.length) {
                     return;
                 }
 
-                if (!focused_item) {
+                if (!this.focused_item) {
                     var top_item = this.items_to_draw[0];
-                    focused_item = _.isInstanceOf(top_item, Row) ? top_item : top_item.get_first_row();
+                    this.focused_item = _.isInstanceOf(top_item, Row) ? top_item : top_item.get_first_row();
                 }
 
                 var new_focus_item;
                 if (this.is_scrollbar_available) {
                     new_focus_item = this.items_to_draw[0];
-                    if (!cnt_helper.is_item_navigateable(new_focus_item)) {
-                        new_focus_item = cnt_helper.get_navigateable_neighbour(new_focus_item, 1);
+                    if (!this.cnt_helper.is_item_navigateable(new_focus_item)) {
+                        new_focus_item = this.cnt_helper.get_navigateable_neighbour(new_focus_item, 1);
                     }
                     if (new_focus_item.y < this.list_y && new_focus_item.y + new_focus_item.h > this.list_y) {
-                        new_focus_item = cnt_helper.get_navigateable_neighbour(new_focus_item, 1);
+                        new_focus_item = this.cnt_helper.get_navigateable_neighbour(new_focus_item, 1);
                     }
-                    if (new_focus_item === focused_item) {
+                    if (new_focus_item === this.focused_item) {
                         this.scrollbar.shift_page(-1);
 
                         new_focus_item = this.items_to_draw[0];
-                        if (!cnt_helper.is_item_navigateable(new_focus_item)) {
-                            new_focus_item = cnt_helper.get_navigateable_neighbour(new_focus_item, 1);
+                        if (!this.cnt_helper.is_item_navigateable(new_focus_item)) {
+                            new_focus_item = this.cnt_helper.get_navigateable_neighbour(new_focus_item, 1);
                         }
                     }
                 }
@@ -1363,37 +1423,37 @@ function Playlist(x, y) {
                     new_focus_item = this.items_to_draw[0];
                 }
 
-                selection_handler.update_selection(new_focus_item, undefined, modifiers.shift);
+                this.selection_handler.update_selection(new_focus_item, undefined, modifiers.shift);
                 this.repaint();
-            }, this));
+            });
 
         key_handler.register_key_action(VK_NEXT,
-            _.bind(function (modifiers) {
+            (modifiers) => {
                 if (!this.cnt.rows.length) {
                     return;
                 }
 
-                if (!focused_item) {
-                    focused_item = this.items_to_draw[0];
-                    if (!cnt_helper.is_item_navigateable(focused_item)) {
-                        focused_item = cnt_helper.get_navigateable_neighbour(focused_item, 1);
+                if (!this.focused_item) {
+                    this.focused_item = this.items_to_draw[0];
+                    if (!this.cnt_helper.is_item_navigateable(this.focused_item)) {
+                        this.focused_item = this.cnt_helper.get_navigateable_neighbour(this.focused_item, 1);
                     }
                 }
 
                 var new_focus_item;
                 if (this.is_scrollbar_available) {
                     new_focus_item = _.last(this.items_to_draw);
-                    if (!cnt_helper.is_item_navigateable(new_focus_item)) {
-                        new_focus_item = cnt_helper.get_navigateable_neighbour(new_focus_item, -1);
+                    if (!this.cnt_helper.is_item_navigateable(new_focus_item)) {
+                        new_focus_item = this.cnt_helper.get_navigateable_neighbour(new_focus_item, -1);
                     }
                     if (new_focus_item.y < this.list_y + this.list_h && new_focus_item.y + new_focus_item.h > this.list_y + this.list_h) {
-                        new_focus_item = cnt_helper.get_navigateable_neighbour(new_focus_item, -1);
+                        new_focus_item = this.cnt_helper.get_navigateable_neighbour(new_focus_item, -1);
                     }
-                    if (new_focus_item === focused_item) {
+                    if (new_focus_item === this.focused_item) {
                         this.scrollbar.shift_page(1);
                         new_focus_item = _.last(this.items_to_draw);
-                        if (!cnt_helper.is_item_navigateable(new_focus_item)) {
-                            new_focus_item = cnt_helper.get_navigateable_neighbour(new_focus_item, -1);
+                        if (!this.cnt_helper.is_item_navigateable(new_focus_item)) {
+                            new_focus_item = this.cnt_helper.get_navigateable_neighbour(new_focus_item, -1);
                         }
                     }
                 }
@@ -1401,135 +1461,135 @@ function Playlist(x, y) {
                     new_focus_item = _.last(this.items_to_draw);
                 }
 
-                selection_handler.update_selection(new_focus_item, undefined, modifiers.shift);
+                this.selection_handler.update_selection(new_focus_item, undefined, modifiers.shift);
                 this.repaint();
-            }, this));
+            });
 
         key_handler.register_key_action(VK_HOME,
-            _.bind(function (modifiers) {
-                selection_handler.update_selection(this.cnt.rows[0], undefined, modifiers.shift);
+            (modifiers) => {
+                this.selection_handler.update_selection(this.cnt.rows[0], undefined, modifiers.shift);
                 this.repaint();
-            }, this));
+            });
 
         key_handler.register_key_action(VK_END,
-            _.bind(function (modifiers) {
-                selection_handler.update_selection(_.last(this.cnt.rows), undefined, modifiers.shift);
+            (modifiers) => {
+                this.selection_handler.update_selection(_.last(this.cnt.rows), undefined, modifiers.shift);
                 this.repaint();
-            }, this));
+            });
 
         key_handler.register_key_action(VK_DELETE,
-            _.bind(function (modifiers) {
-                if (!selection_handler.has_selected_items() && focused_item) {
-                    selection_handler.update_selection(focused_item);
+            (modifiers) => {
+                if (!this.selection_handler.has_selected_items() && this.focused_item) {
+                    this.selection_handler.update_selection(this.focused_item);
                 }
-                plman.UndoBackup(cur_playlist_idx);
-                plman.RemovePlaylistSelection(cur_playlist_idx);
-            }, this));
+                plman.UndoBackup(this.cur_playlist_idx);
+                plman.RemovePlaylistSelection(this.cur_playlist_idx);
+            });
 
         key_handler.register_key_action(VK_KEY_A,
-            _.bind(function (modifiers) {
+            (modifiers) => {
                 if (modifiers.ctrl) {
-                    selection_handler.select_all();
+                    this.selection_handler.select_all();
                     this.repaint();
                 }
-            }, this));
+            });
 
         key_handler.register_key_action(VK_KEY_F,
-            _.bind(function (modifiers) {
+            (modifiers) => {
                 if (modifiers.ctrl) {
                     fb.RunMainMenuCommand('Edit/Search');
                 }
                 else if (modifiers.shift) {
                     fb.RunMainMenuCommand('Library/Search');
                 }
-            }, this));
+            });
 
         key_handler.register_key_action(VK_RETURN,
-            _.bind(function (modifiers) {
-                plman.ExecutePlaylistDefaultAction(cur_playlist_idx, focused_item.idx);
-            }, this));
+            (modifiers) => {
+                plman.ExecutePlaylistDefaultAction(this.cur_playlist_idx, this.focused_item.idx);
+            });
 
         key_handler.register_key_action(VK_KEY_O,
-            _.bind(function (modifiers) {
+            (modifiers) => {
                 if (modifiers.shift) {
-                    fb.RunContextCommandWithMetadb('Open Containing Folder', focused_item.metadb);
+                    fb.RunContextCommandWithMetadb('Open Containing Folder', this.focused_item.metadb);
                 }
-            }, this));
+            });
 
         key_handler.register_key_action(VK_KEY_Q,
-            _.bind(function (modifiers) {
-                if (!queue_handler) {
+            (modifiers) => {
+                if (!this.queue_handler) {
                     return;
                 }
 
                 if (modifiers.ctrl && modifiers.shift) {
-                    queue_handler.flush();
+                    this.queue_handler.flush();
                 }
-                else if (selection_handler.selected_items_count() >= 1) {
+                else if (this.selection_handler.selected_items_count() >= 1) {
                     var rows = this.cnt.rows;
                     if (modifiers.ctrl) {
-                        const indexes = selection_handler.get_selected_items();
+                        const indexes = this.selection_handler.get_selected_items();
                         indexes.forEach(function (idx) {
-                            queue_handler.add_row(rows[idx]);
+                            this.queue_handler.add_row(rows[idx]);
                         });
                     }
                     else if (modifiers.shift) {
-                        const indexes = selection_handler.get_selected_items();
+                        const indexes = this.selection_handler.get_selected_items();
                         indexes.forEach(function (idx) {
-                            queue_handler.remove_row(rows[idx]);
+                            this.queue_handler.remove_row(rows[idx]);
                         });
                     }
                 }
-            }, this));
+            });
 
         key_handler.register_key_action(VK_F5,
-            _.bind(function (modifiers) {
+            (modifiers) => {
                 Header.art_cache.clear();
                 this.initialize_and_repaint_list(true);
-            }, this));
+            });
 
         key_handler.register_key_action(VK_KEY_C,
-            _.bind(function (modifiers) {
+            (modifiers) => {
                 if (modifiers.ctrl) {
-                    selection_handler.copy();
+                    this.selection_handler.copy();
                 }
-            }, this));
+            });
 
         key_handler.register_key_action(VK_KEY_X,
-            _.bind(function (modifiers) {
+            (modifiers) => {
                 if (modifiers.ctrl) {
-                    selection_handler.cut();
+                    this.selection_handler.cut();
                 }
-            }, this));
+            });
 
         key_handler.register_key_action(VK_KEY_V,
-            _.bind(function (modifiers) {
-                if (modifiers.ctrl && !plman.IsPlaylistLocked(cur_playlist_idx)) {
-                    selection_handler.paste();
+            (modifiers) => {
+                if (modifiers.ctrl && !plman.IsPlaylistLocked(this.cur_playlist_idx)) {
+                    this.selection_handler.paste();
                 }
-            }, this));
+            });
     };
 
-    this.initialize_and_repaint_list = function (refocus) {
+    initialize_and_repaint_list(refocus) {
         this.initialize_list();
         if (refocus) {
             // Needed after drag-drop, because it might cause dropped (i.e. focused) item to be outside of drawn list
-            scroll_to_focused();
+            this.scroll_to_focused();
         }
         this.repaint();
-    };
+    }
 
     /**
      * This method does not contain any redraw calls - it's purely back-end
      */
-    this.initialize_list = function () {
+    initialize_list() {
         trace_call && console.log('initialize_list');
         var profiler = fb.CreateProfiler();
         if (trace_initialize_list_performance) {
             var profiler_part = fb.CreateProfiler();
         }
 
-        cur_playlist_idx = plman.ActivePlaylist;
+        this.cur_playlist_idx = plman.ActivePlaylist;
 
         // Clear contents
 
@@ -1540,53 +1600,53 @@ function Playlist(x, y) {
 
         trace_initialize_list_performance && profiler_part.Reset();
 
-        var rows_metadb = plman.GetPlaylistItems(cur_playlist_idx);
-        this.cnt.rows = initialize_rows(plman.GetPlaylistItems(cur_playlist_idx));
+        var rows_metadb = plman.GetPlaylistItems(this.cur_playlist_idx);
+        this.cnt.rows = this.initialize_rows(plman.GetPlaylistItems(this.cur_playlist_idx));
 
         trace_initialize_list_performance && console.log('Rows initialized in ' + profiler_part.Time + 'ms');
 
-        playing_item = undefined;
+        this.playing_item = undefined;
         var playing_item_location = plman.GetPlayingItemLocation();
-        if (playing_item_location.IsValid && playing_item_location.PlaylistIndex === cur_playlist_idx) {
-            playing_item = this.cnt.rows[playing_item_location.PlaylistItemIndex];
-            playing_item.is_playing = true;
+        if (playing_item_location.IsValid && playing_item_location.PlaylistIndex === this.cur_playlist_idx) {
+            this.playing_item = this.cnt.rows[playing_item_location.PlaylistItemIndex];
+            this.playing_item.is_playing = true;
         }
 
-        focused_item = undefined;
-        var focus_item_idx = plman.GetPlaylistFocusItemIndex(cur_playlist_idx);
+        this.focused_item = undefined;
+        var focus_item_idx = plman.GetPlaylistFocusItemIndex(this.cur_playlist_idx);
         if (focus_item_idx !== -1) {
-            focused_item = this.cnt.rows[focus_item_idx];
-            focused_item.is_focused = true;
+            this.focused_item = this.cnt.rows[focus_item_idx];
+            this.focused_item.is_focused = true;
         }
 
         // Initialize headers
 
         trace_initialize_list_performance && profiler_part.Reset();
 
-        Header.grouping_handler.set_active_playlist(plman.GetPlaylistName(cur_playlist_idx));
-        this.cnt.sub_items = create_headers(this.cnt.rows, rows_metadb);
+        Header.grouping_handler.set_active_playlist(plman.GetPlaylistName(this.cur_playlist_idx));
+        this.cnt.sub_items = this.create_headers(this.cnt.rows, rows_metadb);
 
         trace_initialize_list_performance && console.log('Headers initialized in ' + profiler_part.Time + 'ms');
 
-        if (!was_on_size_called) {
+        if (!this.was_on_size_called) {
             // First time init
 
             if (g_properties.show_header) {
-                collapse_handler = new CollapseHandler(/** @type {PlaylistContent} */ this.cnt);
+                this.collapse_handler = new CollapseHandler(/** @type {PlaylistContent} */ this.cnt);
                 if (g_properties.collapse_on_start) {
-                    collapse_handler.collapse_all();
+                    this.collapse_handler.collapse_all();
                 }
 
-                collapse_handler.set_callback(_.bind(function () {
+                this.collapse_handler.set_callback(() => {
                     this.on_list_items_change();
-                }, this));
+                });
             }
         }
         else {
             // Update list control
 
-            if (collapse_handler) {
-                collapse_handler.on_content_change();
+            if (this.collapse_handler) {
+                this.collapse_handler.on_content_change();
             }
 
             this.on_list_items_change();
@@ -1595,43 +1655,44 @@ function Playlist(x, y) {
         // Initialize other objects
 
         if (g_properties.show_queue_position) {
-            queue_handler = new QueueHandler(this.cnt.rows, cur_playlist_idx);
+            this.queue_handler = new QueueHandler(this.cnt.rows, this.cur_playlist_idx);
         }
-        selection_handler = new SelectionHandler(/** @type {PlaylistContent} */ this.cnt, cur_playlist_idx);
+        this.selection_handler = new SelectionHandler(/** @type {PlaylistContent} */ this.cnt, this.cur_playlist_idx);
 
         (true || trace_initialize_list_performance) && console.log('Playlist initialized in ' + profiler.Time + 'ms');
-    };
+    }
 
-    this.reinitialize = function () {
-        if (cur_playlist_idx !== plman.ActivePlaylist) {
-            g_properties.scroll_pos = _.isNil(scroll_pos_list[plman.ActivePlaylist]) ? 0 : scroll_pos_list[plman.ActivePlaylist];
+    reinitialize() {
+        if (this.cur_playlist_idx !== plman.ActivePlaylist) {
+            g_properties.scroll_pos = _.isNil(this.scroll_pos_list[plman.ActivePlaylist]) ? 0 : this.scroll_pos_list[plman.ActivePlaylist];
         }
         this.row_h = scaleForDisplay(g_properties.row_h);
-        header_h_in_rows = calcHeaderRows();
+        this.header_h_in_rows = this.calcHeaderRows();
         this.initialize_list();
-        scroll_to_focused();
+        this.scroll_to_focused();
     };
 
     /**
      * @protected
      * @override
      */
-    this.on_content_to_draw_change = function () {
-        set_rows_boundary_status();
+    on_content_to_draw_change() {
+        this.set_rows_boundary_status();
         List.prototype.on_content_to_draw_change.apply(this);
         if (g_properties.show_album_art && !g_properties.use_compact_header) {
             get_album_art(this.items_to_draw);
         }
-    };
+    }
 
     /**
      * @protected
      * @override
      */
-    this.scrollbar_redraw_callback = function () {
-        scroll_pos_list[cur_playlist_idx] = Math.round(this.scrollbar.scroll * 1e2) / 1e2;
+    scrollbar_redraw_callback() {
+        this.scroll_pos_list[this.cur_playlist_idx] = Math.round(this.scrollbar.scroll * 1e2) / 1e2;
         List.prototype.scrollbar_redraw_callback.apply(this);
-    };
+    }
+
 
     //private:
 
@@ -1639,12 +1700,12 @@ function Playlist(x, y) {
      * @param {FbMetadbHandleList} playlist_items
      * @return {Array<Row>}
      */
-    function initialize_rows(playlist_items) {
+    initialize_rows(playlist_items) {
         var playlist_items_array = playlist_items.Convert();
 
         var rows = [];
         for (var i = 0, playlist_size = playlist_items_array.length; i < playlist_size; ++i) {
-            rows[i] = new Row(that.list_x, 0, that.list_w, that.row_h, playlist_items_array[i], i, cur_playlist_idx);
+            rows[i] = new Row(this.list_x, 0, this.list_w, this.row_h, playlist_items_array[i], i, this.cur_playlist_idx);
             if (!g_properties.show_header) {
                 rows[i].is_odd = !(i & 1);
             }
@@ -1658,60 +1719,26 @@ function Playlist(x, y) {
      * @param {FbMetadbHandleList} rows_metadb
      * @return {Array<Header>}
      */
-    function create_headers(rows, rows_metadb) {
+    create_headers(rows, rows_metadb) {
         var prepared_rows = Header.prepare_initialization_data(rows, rows_metadb);
-        return Header.create_headers(/** @type {PlaylistContent} */ that.cnt, that.list_x, 0, that.list_w, that.row_h * header_h_in_rows, prepared_rows);
+        return Header.create_headers(/** @type {PlaylistContent} */ this.cnt, this.list_x, 0, this.list_w, this.row_h * this.header_h_in_rows, prepared_rows);
     }
 
-    /**
-     * @type {function(Array<Header>)}
-     */
-    var debounced_get_album_art = _.debounce(function (items) {
-        _.forEach(items, function (item) {
-            if (!_.isInstanceOf(item, Header) || item.is_art_loaded()) {
-                return;
-            }
-
-            var metadb = item.get_first_row().metadb;
-            var cached_art = Header.art_cache.get_image_for_meta(metadb);
-            if (cached_art) {
-                item.assign_art(cached_art);
-            }
-            else {
-                utils.GetAlbumArtAsync(window.ID, metadb, g_album_art_id.front);
-            }
-        });
-    }, 500, {
-        leading:  false,
-        trailing: true
-    });
-
-    /**
-     * @param {Array<Header>} items
-     */
-    function get_album_art(items) {
-        if (!g_properties.show_album_art || g_properties.use_compact_header) {
-            return;
-        }
-
-        debounced_get_album_art(items);
-    }
-
-    function set_rows_boundary_status() {
-        var last_row = _.last(that.cnt.rows);
+    set_rows_boundary_status() {
+        var last_row = _.last(this.cnt.rows);
         if (last_row) {
-            last_row.is_cropped = that.is_scrollbar_available ? that.scrollbar.is_scrolled_down : false;
+            last_row.is_cropped = this.is_scrollbar_available ? this.scrollbar.is_scrolled_down : false;
         }
     }
 
     //<editor-fold desc="Context Menu">
 
     /**
-     * @param {Context.Menu} parent_menu
+     * @param {ContextMenu} parent_menu
      */
-    function append_edit_menu_to(parent_menu) {
-        var has_selected_item = selection_handler.has_selected_items();
-        var is_playlist_locked = plman.IsPlaylistLocked(cur_playlist_idx);
+    append_edit_menu_to(parent_menu) {
+        var has_selected_item = this.selection_handler.has_selected_items();
+        var is_playlist_locked = plman.IsPlaylistLocked(this.cur_playlist_idx);
         // Check only for data presence, since parsing it's contents might take a while
         var has_data_in_clipboard = fb.CheckClipboardContents();
 
@@ -1723,16 +1750,16 @@ function Playlist(x, y) {
             if (has_selected_item) {
                 parent_menu.append_item(
                     'Cut',
-                    function () {
-                        selection_handler.cut();
+                    () => {
+                        this.selection_handler.cut();
                     },
                     {is_grayed_out: !has_selected_item}
                 );
 
                 parent_menu.append_item(
                     'Copy',
-                    function () {
-                        selection_handler.copy();
+                    () => {
+                        this.selection_handler.copy();
                     },
                     {is_grayed_out: !has_selected_item}
                 );
@@ -1741,8 +1768,8 @@ function Playlist(x, y) {
             if (has_data_in_clipboard) {
                 parent_menu.append_item(
                     'Paste',
-                    function () {
-                        selection_handler.paste();
+                    () => {
+                        this.selection_handler.paste();
                     },
                     {is_grayed_out: !has_data_in_clipboard || is_playlist_locked}
                 );
@@ -1756,8 +1783,8 @@ function Playlist(x, y) {
 
             parent_menu.append_item(
                 'Remove',
-                function () {
-                    plman.RemovePlaylistSelection(cur_playlist_idx);
+                () => {
+                    plman.RemovePlaylistSelection(this.cur_playlist_idx);
                 },
                 {is_grayed_out: is_playlist_locked}
             );
@@ -1765,18 +1792,18 @@ function Playlist(x, y) {
     }
 
     /**
-     * @param {Context.Menu} parent_menu
+     * @param {ContextMenu} parent_menu
      */
-    function append_collapse_menu_to(parent_menu) {
-        var ce = new Context.Menu('Collapse/Expand');
+    append_collapse_menu_to(parent_menu) {
+        var ce = new ContextMenu('Collapse/Expand');
         parent_menu.append(ce);
 
         ce.append_item(
             'Collapse all',
-            function () {
-                collapse_handler.collapse_all();
-                if (collapse_handler.changed) {
-                    scroll_to_focused_or_now_playing();
+            () => {
+                this.collapse_handler.collapse_all();
+                if (this.collapse_handler.changed) {
+                    this.scroll_to_focused_or_now_playing();
                 }
             }
         );
@@ -1784,10 +1811,10 @@ function Playlist(x, y) {
         if (plman.ActivePlaylist === plman.PlayingPlaylist) {
             ce.append_item(
                 'Collapse all but now playing',
-                function () {
-                    collapse_handler.collapse_all_but_now_playing();
-                    if (collapse_handler.changed) {
-                        scroll_to_now_playing_or_focused();
+                () => {
+                    this.collapse_handler.collapse_all_but_now_playing();
+                    if (this.collapse_handler.changed) {
+                        this.scroll_to_now_playing_or_focused();
                     }
                 }
             );
@@ -1795,10 +1822,10 @@ function Playlist(x, y) {
 
         ce.append_item(
             'Expand all',
-            function () {
-                collapse_handler.expand_all();
-                if (collapse_handler.changed) {
-                    scroll_to_focused_or_now_playing();
+            () => {
+                this.collapse_handler.expand_all();
+                if (this.collapse_handler.changed) {
+                    this.scroll_to_focused_or_now_playing();
                 }
             });
 
@@ -1806,12 +1833,12 @@ function Playlist(x, y) {
 
         ce.append_item(
             'Auto',
-            function () {
+            () => {
                 g_properties.auto_colapse = !g_properties.auto_colapse;
                 if (g_properties.auto_colapse) {
-                    collapse_handler.collapse_all_but_now_playing();
-                    if (collapse_handler.changed) {
-                        scroll_to_now_playing_or_focused();
+                    this.collapse_handler.collapse_all_but_now_playing();
+                    if (this.collapse_handler.changed) {
+                        this.scroll_to_now_playing_or_focused();
                     }
                 }
             },
@@ -1820,7 +1847,7 @@ function Playlist(x, y) {
 
         ce.append_item(
             'Collapse on start',
-            function () {
+            () => {
                 g_properties.collapse_on_start = !g_properties.collapse_on_start;
             },
             {is_checked: g_properties.collapse_on_start}
@@ -1828,7 +1855,7 @@ function Playlist(x, y) {
 
         ce.append_item(
             'Collapse on playlist switch',
-            function () {
+            () => {
                 g_properties.collapse_on_playlist_switch = !g_properties.collapse_on_playlist_switch;
             },
             {is_checked: g_properties.collapse_on_playlist_switch}
@@ -1836,94 +1863,94 @@ function Playlist(x, y) {
     }
 
     /**
-     * @param {Context.Menu} parent_menu
+     * @param {ContextMenu} parent_menu
      */
-    function append_appearance_menu_to(parent_menu) {
-        var appear = new Context.Menu('Appearance');
+    append_appearance_menu_to(parent_menu) {
+        var appear = new ContextMenu('Appearance');
         parent_menu.append(appear);
 
         PlaylistManager.append_playlist_info_visibility_context_menu_to(appear);
 
-        that.append_scrollbar_visibility_context_menu_to(appear);
+        this.append_scrollbar_visibility_context_menu_to(appear);
 
         appear.append_item(
             'Show group header',
-            _.bind(function () {
+            () => {
                 g_properties.show_header = !g_properties.show_header;
                 if (g_properties.show_header) {
-                    collapse_handler = new CollapseHandler(/** @type {PlaylistContent} */ this.cnt);
-                    collapse_handler.expand_all();
-                    collapse_handler.set_callback(_.bind(function () {
+                    this.collapse_handler = new CollapseHandler(/** @type {PlaylistContent} */ this.cnt);
+                    this.collapse_handler.expand_all();
+                    this.collapse_handler.set_callback(() => {
                         this.on_list_items_change();
-                    }, that));
+                    });
                 }
                 else {
-                    collapse_handler.expand_all();
-                    collapse_handler = null;
+                    this.collapse_handler.expand_all();
+                    this.collapse_handler = null;
                 }
 
                 this.initialize_list();
-                scroll_to_focused_or_now_playing();
-            }, that),
+                this.scroll_to_focused_or_now_playing();
+            },
             {is_checked: g_properties.show_header}
         );
 
         if (g_properties.show_header) {
-            var appear_header = new Context.Menu('Headers');
+            var appear_header = new ContextMenu('Headers');
             appear.append(appear_header);
 
             appear_header.append_item(
                 'Use compact group header',
-                _.bind(function () {
+                () => {
                     g_properties.use_compact_header = !g_properties.use_compact_header;
-                    header_h_in_rows = calcHeaderRows();
+                    this.header_h_in_rows = this.calcHeaderRows();
                     this.initialize_list();
-                    scroll_to_focused_or_now_playing();
-                }, that),
+                    this.scroll_to_focused_or_now_playing();
+                },
                 {is_checked: g_properties.use_compact_header}
             );
 
             appear_header.append_item(
                 'Show disc sub-header',
-                _.bind(function () {
+                () => {
                     g_properties.show_disc_header = !g_properties.show_disc_header;
                     this.initialize_list();
-                    scroll_to_focused_or_now_playing();
-                }, that),
+                    this.scroll_to_focused_or_now_playing();
+                },
                 {is_checked: g_properties.show_disc_header}
             );
 
             if (!g_properties.use_compact_header) {
                 appear_header.append_item(
                     'Show group info',
-                    function () {
+                    () => {
                         g_properties.show_group_info = !g_properties.show_group_info;
                     },
                     {is_checked: g_properties.show_group_info}
                 );
 
-                var art = new Context.Menu('Album art');
+                var art = new ContextMenu('Album art');
                 appear_header.append(art);
 
                 art.append_item(
                     'Show',
-                    _.bind(function () {
+                    () => {
                         g_properties.show_album_art = !g_properties.show_album_art;
                         if (g_properties.show_album_art) {
                             get_album_art(this.items_to_draw);
                         }
-                    }, that),
+                    },
                     {is_checked: g_properties.show_album_art}
                 );
 
                 art.append_item(
                     'Auto',
-                    _.bind(function () {
+                    () => {
                         g_properties.auto_album_art = !g_properties.auto_album_art;
                         if (g_properties.show_album_art) {
                             get_album_art(this.items_to_draw);
                         }
-                    }, that),
+                    },
                     {
                         is_checked:    g_properties.auto_album_art,
                         is_grayed_out: !g_properties.show_album_art
@@ -1932,12 +1959,12 @@ function Playlist(x, y) {
             }
         }
 
-        var appear_row = new Context.Menu('Rows');
+        var appear_row = new ContextMenu('Rows');
         appear.append(appear_row);
 
         appear_row.append_item(
             'Alternate row color',
-            function () {
+            () => {
                 g_properties.alternate_row_color = !g_properties.alternate_row_color;
             },
             {is_checked: g_properties.alternate_row_color}
@@ -1945,7 +1972,7 @@ function Playlist(x, y) {
 
         appear_row.append_item(
             'Show play count',
-            function () {
+            () => {
                 g_properties.show_playcount = !g_properties.show_playcount;
             },
             {
@@ -1956,16 +1983,16 @@ function Playlist(x, y) {
 
         appear_row.append_item(
             'Show queue position',
-            _.bind(function () {
+            () => {
                 g_properties.show_queue_position = !g_properties.show_queue_position;
-                queue_handler = g_properties.show_queue_position ? new QueueHandler(this.cnt.rows, cur_playlist_idx) : undefined;
-            }, that),
+                this.queue_handler = g_properties.show_queue_position ? new QueueHandler(this.cnt.rows, this.cur_playlist_idx) : undefined;
+            },
             {is_checked: g_properties.show_queue_position}
         );
 
         appear_row.append_item(
             'Show rating',
-            function () {
+            () => {
                 g_properties.show_rating = !g_properties.show_rating;
             },
             {
@@ -1976,13 +2003,13 @@ function Playlist(x, y) {
     }
 
     /**
-     * @param {Context.Menu} parent_menu
+     * @param {ContextMenu} parent_menu
      */
-    function append_sort_menu_to(parent_menu) {
-        var has_multiple_selected_items = selection_handler.selected_items_count() > 1;
-        var is_auto_playlist = plman.IsAutoPlaylist(cur_playlist_idx);
+    append_sort_menu_to(parent_menu) {
+        var has_multiple_selected_items = this.selection_handler.selected_items_count() > 1;
+        var is_auto_playlist = plman.IsAutoPlaylist(this.cur_playlist_idx);
 
-        var sort = new Context.Menu(
+        var sort = new ContextMenu(
             has_multiple_selected_items ? 'Sort selection' : 'Sort',
             {is_grayed_out: is_auto_playlist}
         );
@@ -1990,7 +2017,7 @@ function Playlist(x, y) {
 
         sort.append_item(
             'by...',
-            function () {
+            () => {
                 if (has_multiple_selected_items) {
                     fb.RunMainMenuCommand('Edit/Selection/Sort/Sort by...');
                 }
@@ -2002,7 +2029,7 @@ function Playlist(x, y) {
 
         sort.append_item(
             'by album',
-            function () {
+            () => {
                 if (has_multiple_selected_items) {
                     fb.RunMainMenuCommand('Edit/Selection/Sort/Sort by album');
                 }
@@ -2014,7 +2041,7 @@ function Playlist(x, y) {
 
         sort.append_item(
             'by artist',
-            function () {
+            () => {
                 if (has_multiple_selected_items) {
                     fb.RunMainMenuCommand('Edit/Selection/Sort/Sort by artist');
                 }
@@ -2026,7 +2053,7 @@ function Playlist(x, y) {
 
         sort.append_item(
             'by file path',
-            function () {
+            () => {
                 if (has_multiple_selected_items) {
                     fb.RunMainMenuCommand('Edit/Selection/Sort/Sort by file path');
                 }
@@ -2038,7 +2065,7 @@ function Playlist(x, y) {
 
         sort.append_item(
             'by title',
-            function () {
+            () => {
                 if (has_multiple_selected_items) {
                     fb.RunMainMenuCommand('Edit/Selection/Sort/Sort by title');
                 }
@@ -2050,7 +2077,7 @@ function Playlist(x, y) {
 
         sort.append_item(
             'by track number',
-            function () {
+            () => {
                 if (has_multiple_selected_items) {
                     fb.RunMainMenuCommand('Edit/Selection/Sort/Sort by track number');
                 }
@@ -2062,9 +2089,9 @@ function Playlist(x, y) {
 
         sort.append_item(
             'by date',
-            function () {
-                plman.UndoBackup(cur_playlist_idx);
-                plman.SortByFormat(cur_playlist_idx, '%date%', has_multiple_selected_items);
+            () => {
+                plman.UndoBackup(this.cur_playlist_idx);
+                plman.SortByFormat(this.cur_playlist_idx, '%date%', has_multiple_selected_items);
             }
         );
 
@@ -2072,7 +2099,7 @@ function Playlist(x, y) {
 
         sort.append_item(
             'Randomize',
-            function () {
+            () => {
                 if (has_multiple_selected_items) {
                     fb.RunMainMenuCommand('Edit/Selection/Sort/Randomize');
                 }
@@ -2084,7 +2111,7 @@ function Playlist(x, y) {
 
         sort.append_item(
             'Reverse',
-            function () {
+            () => {
                 if (has_multiple_selected_items) {
                     fb.RunMainMenuCommand('Edit/Selection/Sort/Reverse');
                 }
@@ -2096,11 +2123,11 @@ function Playlist(x, y) {
     }
 
     /**
-     * @param {Context.Menu} parent_menu
+     * @param {ContextMenu} parent_menu
      * @param {FbMetadbHandle} metadb
      */
-    function append_weblinks_menu_to(parent_menu, metadb) {
-        var web = new Context.Menu('Weblinks');
+    append_weblinks_menu_to(parent_menu, metadb) {
+        var web = new ContextMenu('Weblinks');
         parent_menu.append(web);
 
         var web_links = [
@@ -2123,27 +2150,27 @@ function Playlist(x, y) {
     }
 
     /**
-     * @param {Context.Menu} parent_menu
+     * @param {ContextMenu} parent_menu
      */
-    function append_send_items_menu_to(parent_menu) {
+    append_send_items_menu_to(parent_menu) {
         var playlist_count = plman.PlaylistCount;
 
-        var send = new Context.Menu('Send selection');
+        var send = new ContextMenu('Send selection');
         parent_menu.append(send);
 
         send.append_item(
             'To top',
-            function () {
-                plman.UndoBackup(cur_playlist_idx);
-                plman.MovePlaylistSelection(cur_playlist_idx, -plman.GetPlaylistFocusItemIndex(cur_playlist_idx));
+            () => {
+                plman.UndoBackup(this.cur_playlist_idx);
+                plman.MovePlaylistSelection(this.cur_playlist_idx, -plman.GetPlaylistFocusItemIndex(this.cur_playlist_idx));
             }
         );
 
         send.append_item(
             'To bottom',
-            function () {
-                plman.UndoBackup(cur_playlist_idx);
-                plman.MovePlaylistSelection(cur_playlist_idx, plman.PlaylistItemCount(cur_playlist_idx) - plman.GetPlaylistSelectedItems(cur_playlist_idx).Count);
+            () => {
+                plman.UndoBackup(this.cur_playlist_idx);
+                plman.MovePlaylistSelection(this.cur_playlist_idx, plman.PlaylistItemCount(this.cur_playlist_idx) - plman.GetPlaylistSelectedItems(this.cur_playlist_idx).Count);
             }
         );
 
@@ -2151,9 +2178,9 @@ function Playlist(x, y) {
 
         send.append_item(
             'Create New Playlist \tCtrl+N',
-            function () {
+            () => {
                 plman.CreatePlaylist(playlist_count, '');
-                plman.InsertPlaylistItems(playlist_count, 0, plman.GetPlaylistSelectedItems(cur_playlist_idx), true);
+                plman.InsertPlaylistItems(playlist_count, 0, plman.GetPlaylistSelectedItems(this.cur_playlist_idx), true);
             }
         );
 
@@ -2174,9 +2201,9 @@ function Playlist(x, y) {
             send.append_item(
                 playlist_text,
                 function (playlist_idx) {
-                    selection_handler.send_to_playlist(playlist_idx);
+                    this.selection_handler.send_to_playlist(playlist_idx);
                 }.bind(null, i),
-                {is_grayed_out: is_item_autoplaylist || i === cur_playlist_idx}
+                {is_grayed_out: is_item_autoplaylist || i === this.cur_playlist_idx}
             );
         }
     }
@@ -2188,19 +2215,19 @@ function Playlist(x, y) {
      * @param {number} y
      * @return {{row: ?Row, is_above: ?boolean}}
      */
-    function get_drop_row_info(x, y) {
+    get_drop_row_info(x, y) {
         var drop_info = {
             row:      undefined,
             is_above: undefined
         };
 
-        var item = that.get_item_under_mouse(x, y);
+        var item = this.get_item_under_mouse(x, y);
         if (!item) {
-            if (!that.trace_list(x, y) || !that.cnt.rows.length) {
+            if (!this.trace_list(x, y) || !this.cnt.rows.length) {
                 return drop_info;
             }
 
-            item = _.last(that.cnt.rows);
+            item = _.last(this.cnt.rows);
         }
 
         var is_above = y < (item.y + item.h / 2);
@@ -2209,12 +2236,12 @@ function Playlist(x, y) {
             var first_row_in_header = item.get_first_row();
 
             if (is_above) {
-                if (first_row_in_header === that.cnt.rows[0]) {
+                if (first_row_in_header === this.cnt.rows[0]) {
                     drop_info.row = first_row_in_header;
                     drop_info.is_above = true;
                 }
                 else {
-                    drop_info.row = that.cnt.rows[first_row_in_header.idx - 1];
+                    drop_info.row = this.cnt.rows[first_row_in_header.idx - 1];
                     drop_info.is_above = false;
                 }
             }
@@ -2230,12 +2257,12 @@ function Playlist(x, y) {
             }
             else {
                 if (g_properties.show_header && item.idx === _.last(item.parent.sub_items).idx
-                    || item === _.last(that.cnt.rows)) {
+                    || item === _.last(this.cnt.rows)) {
                     drop_info.row = item;
                     drop_info.is_above = false;
                 }
                 else {
-                    drop_info.row = that.cnt.rows[item.idx + 1];
+                    drop_info.row = this.cnt.rows[item.idx + 1];
                     drop_info.is_above = true;
                 }
             }
@@ -2245,52 +2272,52 @@ function Playlist(x, y) {
     }
 
     //<editor-fold desc="'Scroll to' Methods">
-    function show_now_playing() {
+    show_now_playing() {
         var playing_item_location = plman.GetPlayingItemLocation();
         if (!playing_item_location.IsValid) {
             return;
         }
 
-        if (playing_item_location.PlaylistIndex !== cur_playlist_idx) {
+        if (playing_item_location.PlaylistIndex !== this.cur_playlist_idx) {
             plman.ActivePlaylist = playing_item_location.PlaylistIndex;
-            that.initialize_list();
+            this.initialize_list();
         }
-        else if (collapse_handler) {
-            collapse_handler.expand(playing_item.parent);
+        else if (this.collapse_handler) {
+            this.collapse_handler.expand(this.playing_item.parent);
         }
 
-        selection_handler.update_selection(that.cnt.rows[playing_item_location.PlaylistItemIndex]);
+        this.selection_handler.update_selection(this.cnt.rows[playing_item_location.PlaylistItemIndex]);
 
-        scroll_to_now_playing();
+        this.scroll_to_now_playing();
     }
 
-    function scroll_to_now_playing_or_focused() {
-        if (playing_item) {
-            scroll_to_row(null, playing_item);
+    scroll_to_now_playing_or_focused() {
+        if (this.playing_item) {
+            this.scroll_to_row(null, this.playing_item);
         }
-        else if (focused_item) {
-            scroll_to_row(null, focused_item);
-        }
-    }
-
-    function scroll_to_focused_or_now_playing() {
-        if (focused_item) {
-            scroll_to_row(null, focused_item);
-        }
-        else if (fb.CursorFollowPlayback && playing_item) {
-            scroll_to_row(null, playing_item);
+        else if (this.focused_item) {
+            this.scroll_to_row(null, this.focused_item);
         }
     }
 
-    function scroll_to_focused() {
-        if (focused_item) {
-            scroll_to_row(null, focused_item);
+    scroll_to_focused_or_now_playing() {
+        if (this.focused_item) {
+            this.scroll_to_row(null, this.focused_item);
+        }
+        else if (fb.CursorFollowPlayback && this.playing_item) {
+            this.scroll_to_row(null, this.playing_item);
         }
     }
 
-    function scroll_to_now_playing() {
-        if (playing_item) {
-            scroll_to_row(null, playing_item);
+    scroll_to_focused() {
+        if (this.focused_item) {
+            this.scroll_to_row(null, this.focused_item);
+        }
+    }
+
+    scroll_to_now_playing() {
+        if (this.playing_item) {
+            this.scroll_to_row(null, this.playing_item);
         }
     }
 
@@ -2298,15 +2325,15 @@ function Playlist(x, y) {
      * @param {?Row} from_row
      * @param {Row} to_row
      */
-    function scroll_to_row(from_row, to_row) {
-        if (!that.is_scrollbar_available) {
+    scroll_to_row(from_row, to_row) {
+        if (!this.is_scrollbar_available) {
             return;
         }
 
         var has_headers = g_properties.show_header;
 
-        var visible_to_item = cnt_helper.is_item_visible(to_row) ? to_row : cnt_helper.get_visible_parent(to_row);
-        var to_item_state = get_item_visibility_state(visible_to_item);
+        var visible_to_item = this.cnt_helper.is_item_visible(to_row) ? to_row : this.cnt_helper.get_visible_parent(to_row);
+        var to_item_state = this.get_item_visibility_state(visible_to_item);
 
         var shifted_successfully = false;
         switch (to_item_state.visibility) {
@@ -2315,9 +2342,9 @@ function Playlist(x, y) {
                     break;
                 }
 
-                var visible_from_item = cnt_helper.is_item_visible(from_row) ? from_row : cnt_helper.get_visible_parent(from_row);
+                var visible_from_item = this.cnt_helper.is_item_visible(from_row) ? from_row : this.cnt_helper.get_visible_parent(from_row);
 
-                var from_item_state = get_item_visibility_state(visible_from_item);
+                var from_item_state = this.get_item_visibility_state(visible_from_item);
                 if (from_item_state.visibility === visibility_state.none) {
                     break;
                 }
@@ -2326,10 +2353,10 @@ function Playlist(x, y) {
                 var scroll_shift = 0;
                 var neighbour_item = visible_from_item;
                 do {
-                    var neighbour_item_state = get_item_visibility_state(neighbour_item);
+                    var neighbour_item_state = this.get_item_visibility_state(neighbour_item);
                     scroll_shift += neighbour_item_state.invisible_part;
-                    neighbour_item = direction > 0 ? cnt_helper.get_next_visible_item(neighbour_item) : cnt_helper.get_prev_visible_item(neighbour_item);
-                } while (neighbour_item && !cnt_helper.is_item_navigateable(neighbour_item));
+                    neighbour_item = direction > 0 ? this.cnt_helper.get_next_visible_item(neighbour_item) : this.cnt_helper.get_prev_visible_item(neighbour_item);
+                } while (neighbour_item && !this.cnt_helper.is_item_navigateable(neighbour_item));
 
                 assert(!_.isNil(neighbour_item),
                     LogicError, 'Failed to get navigateable neighbour');
@@ -2339,26 +2366,26 @@ function Playlist(x, y) {
                     break;
                 }
 
-                scroll_shift += visible_to_item.h / that.row_h;
+                scroll_shift += visible_to_item.h / this.row_h;
 
-                that.scrollbar.scroll_to(g_properties.scroll_pos + direction * scroll_shift);
+                this.scrollbar.scroll_to(g_properties.scroll_pos + direction * scroll_shift);
                 shifted_successfully = true;
 
                 break;
             }
             case visibility_state.partial_top: {
                 if (to_item_state.invisible_part % 1 > 0) {
-                    that.scrollbar.shift_line(-1);
+                    this.scrollbar.shift_line(-1);
                 }
-                that.scrollbar.scroll_to(g_properties.scroll_pos - Math.floor(to_item_state.invisible_part));
+                this.scrollbar.scroll_to(g_properties.scroll_pos - Math.floor(to_item_state.invisible_part));
                 shifted_successfully = true;
                 break;
             }
             case visibility_state.partial_bottom: {
                 if (to_item_state.invisible_part % 1 > 0) {
-                    that.scrollbar.shift_line(1);
+                    this.scrollbar.shift_line(1);
                 }
-                that.scrollbar.scroll_to(g_properties.scroll_pos + Math.floor(to_item_state.invisible_part));
+                this.scrollbar.scroll_to(g_properties.scroll_pos + Math.floor(to_item_state.invisible_part));
                 shifted_successfully = true;
                 break;
             }
@@ -2377,48 +2404,38 @@ function Playlist(x, y) {
                 var top_item = visible_to_item;
                 while (top_item.parent && _.isInstanceOf(top_item.parent, BaseHeader) && top_item === top_item.parent.sub_items[0]) {
                     top_item = top_item.parent;
-                    var header_state = get_item_visibility_state(top_item);
+                    var header_state = this.get_item_visibility_state(top_item);
                     scroll_shift += header_state.invisible_part;
                 }
-                that.scrollbar.scroll_to(g_properties.scroll_pos - scroll_shift);
+                this.scrollbar.scroll_to(g_properties.scroll_pos - scroll_shift);
             }
         }
         else {
-            var item_draw_idx = get_item_draw_row_idx(visible_to_item);
-            var new_scroll_pos = Math.max(0, item_draw_idx - Math.floor(that.rows_to_draw_precise / 2));
-            that.scrollbar.scroll_to(new_scroll_pos);
+            var item_draw_idx = this.get_item_draw_row_idx(visible_to_item);
+            var new_scroll_pos = Math.max(0, item_draw_idx - Math.floor(this.rows_to_draw_precise / 2));
+            this.scrollbar.scroll_to(new_scroll_pos);
         }
     }
-
-    /**
-     * @enum {number}
-     */
-    var visibility_state = {
-        none:           0,
-        partial_top:    1,
-        partial_bottom: 2,
-        full:           3
-    };
 
     /**
      * @param {Row|BaseHeader} item_to_check
      * @return {{visibility: visibility_state, invisible_part: number}}
      */
-    function get_item_visibility_state(item_to_check) {
+    get_item_visibility_state(item_to_check) {
         var item_state = {
             visibility:     visibility_state.none,
-            invisible_part: item_to_check.h / that.row_h
+            invisible_part: item_to_check.h / this.row_h
         };
 
-        _.forEach(that.items_to_draw, function (item) {
+        _.forEach(this.items_to_draw, (item) => {
             if (item === item_to_check) {
-                if (item.y < that.list_y && item.y + item.h > that.list_y) {
+                if (item.y < this.list_y && item.y + item.h > this.list_y) {
                     item_state.visibility = visibility_state.partial_top;
-                    item_state.invisible_part = (that.list_y - item.y) / that.row_h;
+                    item_state.invisible_part = (this.list_y - item.y) / this.row_h;
                 }
-                else if (item.y < that.list_y + that.list_h && item.y + item.h > that.list_y + that.list_h) {
+                else if (item.y < this.list_y + this.list_h && item.y + item.h > this.list_y + this.list_h) {
                     item_state.visibility = visibility_state.partial_bottom;
-                    item_state.invisible_part = ((item.y + item.h) - (that.list_y + that.list_h)) / that.row_h;
+                    item_state.invisible_part = ((item.y + item.h) - (this.list_y + this.list_h)) / this.row_h;
                 }
                 else {
                     item_state.visibility = visibility_state.full;
@@ -2437,13 +2454,13 @@ function Playlist(x, y) {
      * @param {Row|BaseHeader} target_item
      * @return {number}
      */
-    function get_item_draw_row_idx(target_item) {
+    get_item_draw_row_idx(target_item) {
         var cur_row = 0;
         var is_target_row = _.isInstanceOf(target_item, Row);
 
-        function iterate_level(sub_items, target_item) {
+        const iterate_level = (sub_items, target_item) => {
             if (_.isInstanceOf(sub_items[0], BaseHeader)) {
-                var header_h_in_rows = Math.round(sub_items[0].h / that.row_h);
+                var header_h_in_rows = Math.round(sub_items[0].h / this.row_h);
 
                 for (var i = 0; i < sub_items.length; ++i) {
                     var header = sub_items[i];
@@ -2480,7 +2497,7 @@ function Playlist(x, y) {
             return false;
         }
 
-        if (!iterate_level(g_properties.show_header ? that.cnt.sub_items : that.cnt.rows, target_item)) {
+        if (!iterate_level(g_properties.show_header ? this.cnt.sub_items : this.cnt.rows, target_item)) {
             throw new LogicError('Could not find item in drawn item list');
         }
 
@@ -2492,86 +2509,86 @@ function Playlist(x, y) {
     /**
      * @param {string} key 'up' or 'down'
      */
-    function start_drag_scroll(key) {
-        if (drag_scroll_timeout_timer) {
+    start_drag_scroll(key) {
+        if (this.drag_scroll_timeout_timer) {
             return;
         }
 
-        drag_scroll_timeout_timer = setTimeout(function () {
-            if (drag_scroll_repeat_timer) {
+        this.drag_scroll_timeout_timer = setTimeout(() => {
+            if (this.drag_scroll_repeat_timer) {
                 return;
             }
 
-            drag_scroll_repeat_timer = setInterval(function () {
-                if (!that.scrollbar.in_sbar && !selection_handler.is_dragging() || !drag_scroll_timeout_timer) {
+            this.drag_scroll_repeat_timer = setInterval(() => {
+                if (!this.scrollbar.in_sbar && !this.selection_handler.is_dragging() || !this.drag_scroll_timeout_timer) {
                     return;
                 }
 
-                drag_scroll_in_progress = true;
+                this.drag_scroll_in_progress = true;
 
                 var cur_marked_item;
                 if (key === 'up') {
-                    that.scrollbar.shift_line(-1);
+                    this.scrollbar.shift_line(-1);
 
-                    cur_marked_item = that.items_to_draw[0];
+                    cur_marked_item = this.items_to_draw[0];
                     if (_.isInstanceOf(cur_marked_item, BaseHeader)) {
-                        collapse_handler.expand(cur_marked_item);
-                        if (collapse_handler.changed) {
-                            that.scrollbar.scroll_to(g_properties.scroll_pos + cur_marked_item.get_sub_items_total_h_in_rows());
+                        this.collapse_handler.expand(cur_marked_item);
+                        if (this.collapse_handler.changed) {
+                            this.scrollbar.scroll_to(g_properties.scroll_pos + cur_marked_item.get_sub_items_total_h_in_rows());
                         }
 
                         cur_marked_item = cur_marked_item.get_first_row();
                     }
 
-                    selection_handler.drag(cur_marked_item, true);
+                    this.selection_handler.drag(cur_marked_item, true);
                     cur_marked_item.is_drop_boundary_reached = true;
                 }
                 else if (key === 'down') {
-                    that.scrollbar.shift_line(1);
+                    this.scrollbar.shift_line(1);
 
-                    cur_marked_item = _.last(that.items_to_draw);
+                    cur_marked_item = _.last(this.items_to_draw);
                     if (_.isInstanceOf(cur_marked_item, BaseHeader)) {
-                        collapse_handler.expand(cur_marked_item);
-                        if (collapse_handler.changed) {
-                            that.repaint();
+                        this.collapse_handler.expand(cur_marked_item);
+                        if (this.collapse_handler.changed) {
+                            this.repaint();
                         }
 
-                        cur_marked_item = that.cnt.rows[cur_marked_item.get_first_row().idx - 1];
+                        cur_marked_item = this.cnt.rows[cur_marked_item.get_first_row().idx - 1];
                     }
 
-                    selection_handler.drag(cur_marked_item, false);
+                    this.selection_handler.drag(cur_marked_item, false);
                     cur_marked_item.is_drop_boundary_reached = true;
                 }
                 else {
                     throw new ArgumentError('drag_scroll_command', key);
                 }
 
-                if (that.scrollbar.is_scrolled_down || that.scrollbar.is_scrolled_up) {
-                    stop_drag_scroll();
+                if (this.scrollbar.is_scrolled_down || this.scrollbar.is_scrolled_up) {
+                    this.stop_drag_scroll();
                 }
             }, 50);
         }, 350);
     }
 
-    function stop_drag_scroll() {
-        if (drag_scroll_repeat_timer) {
-            clearInterval(drag_scroll_repeat_timer);
+    stop_drag_scroll() {
+        if (this.drag_scroll_repeat_timer) {
+            clearInterval(this.drag_scroll_repeat_timer);
         }
-        if (drag_scroll_timeout_timer) {
-            clearTimeout(drag_scroll_timeout_timer);
+        if (this.drag_scroll_timeout_timer) {
+            clearTimeout(this.drag_scroll_timeout_timer);
         }
 
-        drag_scroll_timeout_timer = undefined;
-        drag_scroll_repeat_timer = undefined;
+        this.drag_scroll_timeout_timer = undefined;
+        this.drag_scroll_repeat_timer = undefined;
 
-        drag_scroll_in_progress = false;
+        this.drag_scroll_in_progress = false;
     }
 
     /**
      * @param {number} effect
      * @return {number}
      */
-    function filter_effect_by_modifiers(effect) {
+    filter_effect_by_modifiers(effect) {
         var ctrl_pressed = utils.IsKeyPressed(VK_CONTROL);
         var shift_pressed = utils.IsKeyPressed(VK_SHIFT);
         var alt_pressed = utils.IsKeyPressed(VK_MENU);
@@ -2597,9 +2614,9 @@ function Playlist(x, y) {
     }
 
     // private:
-    var that = this;
+    // var that = this;
 
-    function calcHeaderRows() {
+    calcHeaderRows() {
         var numRows;
         if (g_properties.use_compact_header) {
             numRows = g_properties.rows_in_compact_header;
@@ -2611,103 +2628,94 @@ function Playlist(x, y) {
         }
         return numRows;
     }
-
-    // Constants
-    /** @type {number} */
-    var header_h_in_rows = calcHeaderRows();
-
-    // Window state
-    var was_on_size_called = false;
-
-    var is_in_focus = false;
-
-    // Playback state
-    /** @type {number} */
-    var cur_playlist_idx = undefined;
-    /** @type {?Row} */
-    var playing_item = undefined;
-    /** @type {?Row} */
-    var focused_item = undefined;
-
-    // Mouse and key state
-    var mouse_on_item = false;
-    var key_down = false;
-    var drag_event_invoked = false;
-
-    // Item events
-    /** @type {?Row|?BaseHeader} */
-    var last_hover_item = undefined;
-    /** @type  {{x: ?number, y: ?number}} */
-    var last_pressed_coord = {
-        x: undefined,
-        y: undefined
-    };
-
-    // Timers
-    var drag_scroll_in_progress = false;
-    var drag_scroll_timeout_timer;
-    var drag_scroll_repeat_timer;
-
-    // Scrollbar props
-    /** @type {Array<number>} float */
-    var scroll_pos_list = [];
-
-    // Objects
-    /** @type {?SelectionHandler} */
-    var selection_handler = undefined;
-    /** @type {?QueueHandler} */
-    var queue_handler = undefined;
-    /** @type {?CollapseHandler} */
-    var collapse_handler = undefined;
-    /**
-     * @const
-     * @type {ContentNavigationHelper}
-     */
-    var cnt_helper = this.cnt.helper;
 }
-
-Playlist.prototype = Object.create(List.prototype);
-Playlist.prototype.constructor = Playlist;
-
+// Playlist.prototype = Object.create(List.prototype);
+// Playlist.prototype.constructor = Playlist;
 
 /**
- * @final
- * @constructor
- * @extend {List.RowContent}
+ * @type {function}
  */
-PlaylistContent = function () {
-    List.RowContent.call(this);
+var debounced_get_album_art = _.debounce(function (items) {
+    _.forEach(items, (item) => {
+        if (!_.isInstanceOf(item, Header) || item.is_art_loaded()) {
+            return;
+        }
+
+        var metadb = item.get_first_row().metadb;
+        var cached_art = Header.art_cache.get_image_for_meta(metadb);
+        if (cached_art) {
+            item.assign_art(cached_art);
+        }
+        else {
+            utils.GetAlbumArtAsync(window.ID, metadb, g_album_art_id.front);
+        }
+    });
+}, 500, {
+    leading:  false,
+    trailing: true
+});
+
+/**
+ * @param {Array<Header>} items
+ */
+function get_album_art(items) {
+    if (!g_properties.show_album_art || g_properties.use_compact_header) {
+        return;
+    }
+
+    debounced_get_album_art(items);
+}
+
+
+class PlaylistContent extends ListRowContent {
+    /**
+     * @final
+     * @constructor
+     */
+    constructor() {
+        super();
+
+        /**
+         * It is assumed that every sub_items array contains only items of the same single type
+         *
+         * @type {Array<Header>}
+         */
+        this.sub_items = [];
+
+        this.helper = new ContentNavigationHelper(this);
+
+    }
 
     /** @override */
-    this.generate_items_to_draw = function (wy, wh, row_shift, pixel_shift, row_h) {
+    generate_items_to_draw(wy, wh, row_shift, pixel_shift, row_h) {
         if (!this.rows.length) {
             return [];
         }
 
         if (!g_properties.show_header) {
-            return List.RowContent.prototype.generate_items_to_draw.apply(this, [wy, wh, row_shift, pixel_shift, row_h]);
+            return ListRowContent.prototype.generate_items_to_draw.apply(this, [wy, wh, row_shift, pixel_shift, row_h]);
         }
 
-        var first_item = generate_first_item_to_draw(wy, wh, row_shift, pixel_shift, row_h);
-        return generate_all_items_to_draw(wy, wh, first_item);
+        var first_item = this.generate_first_item_to_draw(wy, wh, row_shift, pixel_shift, row_h);
+        return this.generate_all_items_to_draw(wy, wh, first_item);
     };
 
     /** @override */
-    this.update_items_w_size = function (w) {
+    update_items_w_size(w) {
         if (!g_properties.show_header) {
-            List.RowContent.prototype.update_items_w_size.apply(this, [w]);
+            ListRowContent.prototype.update_items_w_size.apply(this, [w]);
             return;
         }
 
         this.sub_items.forEach(function (item) {
             item.set_w(w);
         });
-    };
+    }
 
     /** @override */
-    this.calculate_total_h_in_rows = function () {
+    calculate_total_h_in_rows() {
         if (!g_properties.show_header) {
-            return List.RowContent.prototype.calculate_total_h_in_rows.apply(this);
+            return ListRowContent.prototype.calculate_total_h_in_rows.apply(this);
         }
 
         if (!this.sub_items.length) {
@@ -2723,7 +2731,7 @@ PlaylistContent = function () {
         });
 
         return total_height_in_rows;
-    };
+    }
 
     /**
      * @param {number} wy
@@ -2733,7 +2741,7 @@ PlaylistContent = function () {
      * @param {number} row_h
      * @return {Row|BaseHeader}
      */
-    function generate_first_item_to_draw(wy, wh, row_shift, pixel_shift, row_h) {
+    generate_first_item_to_draw(wy, wh, row_shift, pixel_shift, row_h) {
         var start_y = wy + pixel_shift;
         var cur_row = 0;
 
@@ -2748,6 +2756,7 @@ PlaylistContent = function () {
                 var header_h_in_rows = Math.round(sub_items[0].h / row_h);
 
                 for (var i = 0; i < sub_items.length; ++i) {
+                    /** @type {BaseHeader} */
                     var header = sub_items[i];
                     if (cur_row + header_h_in_rows - 1 >= row_shift && !header.dont_draw) {
                         header.set_y(start_y + (cur_row - row_shift) * row_h);
@@ -2785,7 +2794,7 @@ PlaylistContent = function () {
             return null;
         }
 
-        var first_item = iterate_level(that.sub_items);
+        var first_item = iterate_level(this.sub_items);
         assert(!_.isNil(first_item),
             LogicError, 'first_item_to_draw can\'t be null!');
 
@@ -2798,7 +2807,7 @@ PlaylistContent = function () {
      * @param {Row|BaseHeader} first_item
      * @return {Array<Row|BaseHeader>}
      */
-    function generate_all_items_to_draw(wy, wh, first_item) {
+    generate_all_items_to_draw(wy, wh, first_item) {
         var items_to_draw = [first_item];
         var cur_y = first_item.y + first_item.h;
 
@@ -2856,24 +2865,14 @@ PlaylistContent = function () {
             return start_item_used;
         }
 
-        iterate_level(that.sub_items, first_item);
+        iterate_level(this.sub_items, first_item);
 
         return items_to_draw;
     }
-
-    /**
-     * It is assumed that every sub_items array contains only items of the same single type
-     *
-     * @type {Array<Header>}
-     */
-    this.sub_items = [];
-
-    this.helper = new ContentNavigationHelper(this);
-
-    var that = this;
-};
-PlaylistContent.prototype = Object.create(List.RowContent.prototype);
-PlaylistContent.prototype.constructor = PlaylistContent;
+    // var that = this;
+}
+// PlaylistContent.prototype = Object.create(ListRowContent.prototype);
+// PlaylistContent.prototype.constructor = PlaylistContent;
 
 function getItemType(item) {
     if (!item) {
@@ -3069,196 +3068,206 @@ function ContentNavigationHelper(cnt_arg) {
 }
 
 //<editor-fold desc="BaseHeader">
-
-/**
- * @param {List.Content|BaseHeader} parent
- * @param {number} x
- * @param {number} y
- * @param {number} w
- * @param {number} h
- * @param {number} idx
- *
- * @abstract
- * @constructor
- * @extends {List.Item}
- */
-function BaseHeader(parent, x, y, w, h, idx) {
-    List.Item.call(this, x, y, w, h);
-
+class BaseHeader extends ListItem {
     /**
-     * @const
-     * @type {BaseHeader|List.Content}
+     * @param {ListContent|BaseHeader} parent
+     * @param {number} x
+     * @param {number} y
+     * @param {number} w
+     * @param {number} h
+     * @param {number} idx
+     *
+     * @abstract
+     * @constructor
      */
-    this.parent = parent;
+    constructor(parent, x, y, w, h, idx) {
+        super(x, y, w, h);
 
-    /**
-     * @const
-     * @type {number}
-     */
-    this.idx = idx;
+        /**
+         * @const
+         * @type {BaseHeader|ListContent}
+         */
+        this.parent = parent;
 
-    /** @type {boolean} */
-    this.is_collapsed = false;
+        /**
+         * @const
+         * @type {number}
+         */
+        this.idx = idx;
 
-    /**
-     * @type {number}
-     * @private
-     */
-    this.row_count = 0;
+        /** @type {boolean} */
+        this.is_collapsed = false;
 
-    /** @type{Array<Row>|Array<BaseHeader>} */
-    this.sub_items = [];
-}
+        /**
+         * @type {number}
+         * @private
+         */
+        this.row_count = 0;
 
-BaseHeader.prototype = Object.create(List.Item.prototype);
-BaseHeader.prototype.constructor = BaseHeader;
-
-/**
- * @param {Array<Row>|Array<BaseHeader>} items
- * @return {number} Number of processed items
- * @abstract
- */
-BaseHeader.prototype.initialize_items = function (items) {
-    throw new LogicError("initialize_contents not implemented");
-};
-
-/**
- * @override
- * @abstract
- */
-BaseHeader.prototype.draw = function (gr) {
-    // Need this useless method to suppress warning =(
-    throw new LogicError("draw not implemented");
-};
-
-/** @override */
-BaseHeader.prototype.set_w = function (w) {
-    List.Item.prototype.set_w.apply(this, [w]);
-
-    this.sub_items.forEach(function (item) {
-        item.set_w(w);
-    });
-};
-
-BaseHeader.prototype.get_first_row = function () {
-    if (!this.sub_items.length) {
-        return null;
+        /** @type{Array<Row>|Array<BaseHeader>} */
+        this.sub_items = [];
     }
 
-    var item = this.sub_items[0];
-    while (item && !_.isInstanceOf(item, Row)) {
-        item = item.sub_items[0];
+    /**
+     * @param {Array<Row>|Array<BaseHeader>} items
+     * @return {number} Number of processed items
+     * @abstract
+     */
+    initialize_items(items) {
+        throw new LogicError("initialize_contents not implemented");
     }
 
-    return item;
-};
+    /**
+     * @override
+     * @abstract
+     */
+    draw(gr) {
+        // Need this useless method to suppress warning =(
+        throw new LogicError("draw not implemented");
+    }
 
-BaseHeader.prototype.get_row_indexes = function () {
-    var row_indexes = [];
+    /** @override */
+    set_w(w) {
+        ListItem.prototype.set_w.apply(this, [w]);
 
-    if (_.isInstanceOf(this.sub_items[0], Row)) {
         this.sub_items.forEach(function (item) {
-            row_indexes.push(item.idx);
-        });
-    }
-    else {
-        this.sub_items.forEach(function (item) {
-            row_indexes = row_indexes.concat(item.get_row_indexes());
+            item.set_w(w);
         });
     }
 
-    return row_indexes;
-};
-
-/**
- * @return {number}
- */
-BaseHeader.prototype.get_sub_items_total_h_in_rows = function () {
-    if (!this.sub_items.length) {
-        return 0;
-    }
-
-    if (_.isInstanceOf(this.sub_items[0], Row)) {
-        return this.sub_items.length;
-    }
-
-    var row_h = playlist_geo.row_h;
-    var h_in_rows = Math.round(this.sub_items[0].h / row_h) * this.sub_items.length;
-    _.forEach(this.sub_items, function (item) {
-        if (!item.is_collapsed) {
-            h_in_rows += item.get_sub_items_total_h_in_rows();
+    get_first_row() {
+        if (!this.sub_items.length) {
+            return null;
         }
-    });
 
-    return h_in_rows;
-};
+        var item = this.sub_items[0];
+        while (item && !_.isInstanceOf(item, Row)) {
+            item = item.sub_items[0];
+        }
 
-BaseHeader.prototype.has_selected_items = function () {
-    var is_function = typeof this.sub_items[0].has_selected_items === "function";
-    return this.sub_items.some(item => {
-        return is_function ? item.has_selected_items() : item.is_selected();
-    });
-};
+        return item;
+    }
 
-BaseHeader.prototype.is_completely_selected = function () {
-    var is_function = typeof this.sub_items[0].is_completely_selected === "function";
-    return this.sub_items.every(item => {
-        return is_function ? item.is_completely_selected() : item.is_selected();
-    });
-};
+    get_row_indexes() {
+        var row_indexes = [];
 
-BaseHeader.prototype.is_playing = function () {
-    var is_function = typeof this.sub_items[0].is_playing === "function";
-    return this.sub_items.some(item => {
-        return is_function ? item.is_playing() : item.is_playing;
-    });
-};
+        if (_.isInstanceOf(this.sub_items[0], Row)) {
+            this.sub_items.forEach(function (item) {
+                row_indexes.push(item.idx);
+            });
+        }
+        else {
+            this.sub_items.forEach(function (item) {
+                row_indexes = row_indexes.concat(item.get_row_indexes());
+            });
+        }
 
-BaseHeader.prototype.is_focused = function () {
-    var is_function = typeof this.sub_items[0].is_focused === "function";
-    return this.sub_items.some(item => {
-        return is_function ? item.is_focused() : item.is_focused;
-    });
-};
+        return row_indexes;
+    }
 
-BaseHeader.prototype.on_mouse_lbtn_dblclk = function (x, y, m) {
-    plman.ExecutePlaylistDefaultAction(plman.ActivePlaylist, this.get_first_row().idx);
+    /**
+     * @return {number}
+     */
+    get_sub_items_total_h_in_rows() {
+        if (!this.sub_items.length) {
+            return 0;
+        }
+
+        if (_.isInstanceOf(this.sub_items[0], Row)) {
+            return this.sub_items.length;
+        }
+
+        var row_h = playlist_geo.row_h;
+        var h_in_rows = Math.round(this.sub_items[0].h / row_h) * this.sub_items.length;
+        _.forEach(this.sub_items, (item) => {
+            if (!item.is_collapsed) {
+                h_in_rows += item.get_sub_items_total_h_in_rows();
+            }
+        });
+
+        return h_in_rows;
+    }
+
+    has_selected_items() {
+        var is_function = typeof this.sub_items[0].has_selected_items === "function";
+        return this.sub_items.some(item => {
+            return is_function ? item.has_selected_items() : item.is_selected();
+        });
+    }
+
+    is_completely_selected() {
+        var is_function = typeof this.sub_items[0].is_completely_selected === "function";
+        return this.sub_items.every(item => {
+            return is_function ? item.is_completely_selected() : item.is_selected();
+        });
+    }
+
+    is_playing() {
+        var is_function = typeof this.sub_items[0].is_playing === "function";
+        return this.sub_items.some(item => {
+            return is_function ? item.is_playing() : item.is_playing;
+        });
+    }
+
+    is_focused() {
+        var is_function = typeof this.sub_items[0].is_focused === "function";
+        return this.sub_items.some(item => {
+            return is_function ? item.is_focused() : item.is_focused;
+        });
+    }
+
+    on_mouse_lbtn_dblclk(x, y, m) {
+        plman.ExecutePlaylistDefaultAction(plman.ActivePlaylist, this.get_first_row().idx);
+    }
+
+    /**
+     * @return {number} float number
+     */
+    get_duration() {
+        var duration_in_seconds = 0;
+
+        if (_.isInstanceOf(this.sub_items[0], Row)) {
+            _.forEach(this.sub_items, (item) => {
+                duration_in_seconds += item.metadb.Length;
+            });
+        }
+        else {
+            _.forEach(this.sub_items, (item) => {
+                duration_in_seconds += item.get_duration();
+            });
+        }
+
+        return duration_in_seconds;
+    }
 }
 
-/**
- * @return {number} float number
- */
-BaseHeader.prototype.get_duration = function () {
-    var duration_in_seconds = 0;
-
-    if (_.isInstanceOf(this.sub_items[0], Row)) {
-        _.forEach(this.sub_items, function (item) {
-            duration_in_seconds += item.metadb.Length;
-        });
-    }
-    else {
-        _.forEach(this.sub_items, function (item) {
-            duration_in_seconds += item.get_duration();
-        });
-    }
-
-    return duration_in_seconds;
-};
+// BaseHeader.prototype = Object.create(ListItem.prototype);
+// BaseHeader.prototype.constructor = BaseHeader;
 
 //</editor-fold>
 
-function DiscHeader(parent, x, y, w, h, idx) {
-    BaseHeader.call(this, parent, x, y, w, h, idx);
+class DiscHeader extends BaseHeader {
+    constructor(parent, x, y, w, h, idx) {
+        super(parent, x, y, w, h, idx);
+
+        this.idx = idx;
+
+        this.num_in_header = 0;
+        this.dont_draw = false;
+        this.is_odd = false;    // TODO: does this ever get set?
+
+        this.disc_title = '';
+    }
 
     /** @override */
-    this.initialize_items = function (rows_with_data) {
+    initialize_items(rows_with_data) {
         this.sub_items = [];
         if (!rows_with_data.length) {
             return 0;
         }
 
         var first_data = rows_with_data[0][1];
-        _.forEach(rows_with_data, _.bind(function (item, i) {
+        _.forEach(rows_with_data, (item, i) => {
             if (first_data !== item[1]) {
                 return false;
             }
@@ -3271,15 +3280,15 @@ function DiscHeader(parent, x, y, w, h, idx) {
             row.parent = this;
 
             this.sub_items.push(row);
-        }, this));
+        });
 
         this.disc_title = first_data;
 
         return this.sub_items.length;
-    };
+    }
 
     //public:
-    this.draw = function (gr, top, bottom) {
+    draw(gr, top, bottom) {
         gr.FillSolidRect(this.x, this.y, this.w, this.h, g_pl_colors.background);
 
         if (this.is_collapsed || (this.is_odd && g_properties.alternate_row_color)) {
@@ -3302,7 +3311,7 @@ function DiscHeader(parent, x, y, w, h, idx) {
         gr.DrawString(disc_text, title_font, title_color, cur_x, this.y, this.w, this.h, disc_header_text_format);
         var disc_w = Math.ceil(gr.MeasureString(disc_text, title_font, 0, 0, 0, 0).Width + 5);
 
-        var tracks_text = this.sub_items.length + ' Track' + (this.sub_items.length > 1 ? 's' : '') + ' - ' + get_duration();
+        var tracks_text = this.sub_items.length + ' Track' + (this.sub_items.length > 1 ? 's' : '') + ' - ' + utils.FormatDuration(this.get_duration());
 
         var tracks_w = Math.ceil(gr.MeasureString(tracks_text, title_font, 0, 0, 0, 0).Width + 5);
         var tracks_x = this.x + this.w - tracks_w - right_pad;
@@ -3318,50 +3327,47 @@ function DiscHeader(parent, x, y, w, h, idx) {
             var line_y = Math.round(this.y + this.h / 2);
             gr.DrawLine(cur_x + disc_w, line_y, this.x + this.w - tracks_w - 10, line_y, 1, RGBA(100,100,100,100));
         }
-    };
+    }
 
-    this.is_selected = function () {
-        return that.sub_items.every(row => {
+    is_selected() {
+        return this.sub_items.every(row => {
             return row.is_selected();
         });
     };
 
-    this.toggle_collapse = function () {
+    toggle_collapse() {
         this.is_collapsed = !this.is_collapsed;
 
         // this.header.collapse();
         // this.header.expand();
     }
 
-    this.on_mouse_lbtn_dblclk = function(x, y, m, collapse_handler) {
+    on_mouse_lbtn_dblclk(x, y, m, collapse_handler) {
         collapse_handler.toggle_collapse(this);
     }
 
-    function get_duration() {
+    /** @override
+     * @return {number} float
+    */
+    get_duration() {
         var duration_in_seconds = 0;
 
-        for (var i = 0; i < that.sub_items.length; ++i) {
-            duration_in_seconds += that.sub_items[i].metadb.Length;
+        for (var i = 0; i < this.sub_items.length; ++i) {
+            duration_in_seconds += this.sub_items[i].metadb.Length;
         }
 
         if (!duration_in_seconds) {
-            return '';
+            return 0;
         }
 
-        return utils.FormatDuration(duration_in_seconds);
+        return duration_in_seconds;
     }
 
-    this.idx = idx;
-
-    this.num_in_header = 0;
-    this.dont_draw = false;
-
-    this.disc_title = '';
-    var that = this;
+    // var that = this;
 }
 
-DiscHeader.prototype = Object.create(BaseHeader.prototype);
-DiscHeader.prototype.constructor = Header;
+// DiscHeader.prototype = Object.create(BaseHeader.prototype);
+// DiscHeader.prototype.constructor = Header;
 
 /**
  * @param {Array<Row>} rows_to_process
@@ -3433,11 +3439,33 @@ DiscHeader.create_headers = function (parent, x, y, w, h, prepared_rows, rows_to
  * @constructor
  * @extends {BaseHeader}
  */
-function Header(parent, x, y, w, h, idx) {
-    BaseHeader.call(this, parent, x, y, w, h, idx);
+class Header extends BaseHeader {
+    constructor(parent, x, y, w, h, idx) {
+        super(parent, x, y, w, h, idx);
+
+        /**
+         * @const
+         * @type {number}
+         */
+        this.art_max_size = this.h - scaleForDisplay(16);
+
+        /** @type {FbMetadbHandle} */
+        this.metadb;
+        /**
+         * @type {?GdiBitmap}
+         */
+        this.art = undefined; // undefined > Not Loaded; null > Loaded & Not Found; !_.isNil > Loaded & Found
+        this.grouping_handler = Header.grouping_handler;
+
+        this.hyperlinks = {};
+        this.hyperlinks_initialized = false;
+        this.was_playing = undefined; // last value of this.is_playing() updated each draw cycle
+
+        this.header_image = undefined;
+    }
 
     /** @override */
-    this.initialize_items = function (rows_with_data) {
+    initialize_items(rows_with_data) {
         this.sub_items = [];
 
         var rows_with_header_data = rows_with_data[0];
@@ -3456,12 +3484,12 @@ function Header(parent, x, y, w, h, idx) {
             owned_rows.push(item[0]);
         });
 
-        metadb = owned_rows[0].metadb;
+        this.metadb = owned_rows[0].metadb;
 
         var sub_headers = [];
-        if (g_properties.show_disc_header && grouping_handler.show_cd()) {
+        if (g_properties.show_disc_header && this.grouping_handler.show_cd()) {
             var rows_with_discheader_data = rows_with_data[1];
-            sub_headers = create_cd_headers(rows_with_discheader_data, owned_rows.length);
+            sub_headers = this.create_cd_headers(rows_with_discheader_data, owned_rows.length);
             if (sub_headers.length) {
                 this.sub_items = sub_headers;
             }
@@ -3473,14 +3501,14 @@ function Header(parent, x, y, w, h, idx) {
         else {
             this.sub_items = owned_rows;
 
-            _.forEach(owned_rows, _.bind(function (item, i) {
+            _.forEach(owned_rows, (item, i) => {
                 item.idx_in_header = i;
                 if (g_properties.show_header) {
                     // noinspection JSBitwiseOperatorUsage
                     item.is_odd = !(i & 1);
                 }
                 item.parent = this;
-            }, this));
+            });
         }
 
         return owned_rows.length;
@@ -3491,42 +3519,42 @@ function Header(parent, x, y, w, h, idx) {
      * @param {number} rows_to_proccess_count
      * @return {Array<DiscHeader>}
      */
-    function create_cd_headers(prepared_rows, rows_to_proccess_count) {
-        return DiscHeader.create_headers(that, that.x, 0, that.w, playlist_geo.row_h, prepared_rows, rows_to_proccess_count);
+    create_cd_headers(prepared_rows, rows_to_proccess_count) {
+        return DiscHeader.create_headers(this, this.x, 0, this.w, playlist_geo.row_h, prepared_rows, rows_to_proccess_count);
     }
 
-    this.getGroupInfoString = function (is_radio, hasGenreTags) {
-        var bitspersample = _.tf('$Info(bitspersample)', metadb);
-        var samplerate = _.tf('$Info(samplerate)', metadb);
-        var sample = ((bitspersample > 16 || samplerate > 44100) ? _.tf(' [$Info(bitspersample)bit/]', metadb) + samplerate / 1000 + 'khz' : '');
-        var codec = _.tf('$ext(%path%)', metadb);
+    getGroupInfoString(is_radio, hasGenreTags) {
+        var bitspersample = _.tf('$Info(bitspersample)', this.metadb);
+        var samplerate = _.tf('$Info(samplerate)', this.metadb);
+        var sample = ((bitspersample > 16 || samplerate > 44100) ? _.tf(' [$Info(bitspersample)bit/]', this.metadb) + samplerate / 1000 + 'khz' : '');
+        var codec = _.tf('$ext(%path%)', this.metadb);
 
         if (codec == "dca (dts coherent acoustics)") {
             codec = "dts";
         }
         if (codec === 'cue') {
-            codec = _.tf('$ext($Info(referenced_file))', metadb);
+            codec = _.tf('$ext($Info(referenced_file))', this.metadb);
         }
         else if (codec === 'mpc') {
-            codec += _.tf('[-$Info(codec_profile)]', metadb).replace('quality ', 'q');
+            codec += _.tf('[-$Info(codec_profile)]', this.metadb).replace('quality ', 'q');
         }
         else if (codec === 'dts' || codec === 'ac3' || codec === 'atsc a/52') {
-            codec += _.tf("[ $replace($replace($replace($info(channel_mode), + LFE,),' front, ','/'),' rear surround channels',$if($strstr($info(channel_mode),' + LFE'),.1,.0))] %bitrate%", metadb) + ' kbps';
+            codec += _.tf("[ $replace($replace($replace($info(channel_mode), + LFE,),' front, ','/'),' rear surround channels',$if($strstr($info(channel_mode),' + LFE'),.1,.0))] %bitrate%", this.metadb) + ' kbps';
             codec = codec.replace('atsc a/52', 'Dolby Digital');
         }
-        else if (_.tf('$Info(encoding)', metadb) === 'lossy') {
-            if (_.tf('$Info(codec_profile)', metadb) === 'CBR') {
-                codec += _.tf('[-%bitrate% kbps]', metadb);
+        else if (_.tf('$Info(encoding)', this.metadb) === 'lossy') {
+            if (_.tf('$Info(codec_profile)', this.metadb) === 'CBR') {
+                codec += _.tf('[-%bitrate% kbps]', this.metadb);
             }
             else {
-                codec += _.tf('[-$Info(codec_profile)]', metadb);
+                codec += _.tf('[-$Info(codec_profile)]', this.metadb);
             }
         }
         if (codec) {
             codec = codec + sample;
         }
         else {
-            codec = (_.startsWith(metadb.RawPath, '3dydfy:') || _.startsWith(metadb.RawPath, 'fy+')) ? 'yt' : metadb.Path;
+            codec = (_.startsWith(this.metadb.RawPath, '3dydfy:') || _.startsWith(this.metadb.RawPath, 'fy+')) ? 'yt' : this.metadb.Path;
         }
 
         var track_count = this.sub_items.length;
@@ -3534,16 +3562,16 @@ function Header(parent, x, y, w, h, idx) {
         if (_.isInstanceOf(this.sub_items[0], DiscHeader)) {
             track_count = 0;
             has_discs = true;
-            _.forEach(this.sub_items, function(discHeader) {
+            _.forEach(this.sub_items, discHeader => {
                 track_count += discHeader.sub_items.length
             });
         }
 
-        var disc_number = (!grouping_handler.show_cd() && _.tf('[%totaldiscs%]', metadb) !== '1') ? _.tf('[ | Disc: %discnumber%[/%totaldiscs%]]', metadb) : '';
+        var disc_number = (!this.grouping_handler.show_cd() && _.tf('[%totaldiscs%]', this.metadb) !== '1') ? _.tf('[ | Disc: %discnumber%[/%totaldiscs%]]', this.metadb) : '';
         var track_text = is_radio ? '' : ' | ' +
-                (grouping_handler.show_cd() && has_discs ? this.sub_items.length + ' Discs - ' : '') +
+                (this.grouping_handler.show_cd() && has_discs ? this.sub_items.length + ' Discs - ' : '') +
                 track_count + (track_count === 1 ? ' Track' : ' Tracks');
-        var info_text = _.tf(codec + disc_number + '[ | %replaygain_album_gain%]', metadb) + track_text;
+        var info_text = _.tf(codec + disc_number + '[ | %replaygain_album_gain%]', this.metadb) + track_text;
         if (hasGenreTags) {
             info_text = ' | ' + info_text;
         }
@@ -3554,7 +3582,7 @@ function Header(parent, x, y, w, h, idx) {
     }
 
     /** @override */
-    this.draw = function (gr, top, bottom) {
+    draw(gr, top, bottom) {
         // drawProfiler = fb.CreateProfiler('Header.draw items:' + this.sub_items.length);
         if (g_properties.use_compact_header) {
             this.draw_compact_header(gr)
@@ -3563,24 +3591,24 @@ function Header(parent, x, y, w, h, idx) {
             this.draw_normal_header(gr, top, bottom);
         }
         // drawProfiler.Print();
-    };
+    }
 
     /**
      * @param {GdiGraphics} gr
      */
-    this.draw_normal_header = function (gr, top, bottom) {
-        if (!hyperlinks_initialized) {
+    draw_normal_header(gr, top, bottom) {
+        if (!this.hyperlinks_initialized) {
             this.initialize_hyperlinks(gr);
         }
         var cache_header = true;  // caching is a lot faster, but need to handle artwork loading
-        if (was_playing !== this.is_playing()) {
-            was_playing = this.is_playing();
+        if (this.was_playing !== this.is_playing()) {
+            this.was_playing = this.is_playing();
             cache_header = false;
-            if (header_image) {
-                header_image = null;
+            if (this.header_image) {
+                this.header_image = null;
             }
         }
-        if (!cache_header || !header_image) {
+        if (!cache_header || !this.header_image) {
             var artist_color = g_pl_colors.artist_normal;
             var album_color = g_pl_colors.album_normal;
             var info_color = g_pl_colors.info_normal;
@@ -3634,36 +3662,36 @@ function Header(parent, x, y, w, h, idx) {
             //---> Artbox
             if (g_properties.show_album_art) {
                 if (!this.is_art_loaded()) {
-                    var cached_art = Header.art_cache.get_image_for_meta(metadb);
+                    var cached_art = Header.art_cache.get_image_for_meta(this.metadb);
                     if (cached_art) {
                         this.assign_art(cached_art);
                     }
                 }
 
-                if (art !== null || !g_properties.auto_album_art) {
+                if (this.art !== null || !g_properties.auto_album_art) {
                     var p = scaleForDisplay(6);
                     var spacing = scaleForDisplay(2);
 
-                    var art_box_size = art_max_size + spacing * 2;
+                    var art_box_size = this.art_max_size + spacing * 2;
                     var art_box_x = p * 3;
                     var art_box_y = p;
                     var art_box_w = art_box_size;
                     var art_box_h = art_box_size;
 
-                    if (art) {
+                    if (this.art) {
                         var art_x = art_box_x + spacing;
                         var art_y = art_box_y + spacing;
-                        var art_h = art.Height;
-                        var art_w = art.Width;
+                        var art_h = this.art.Height;
+                        var art_w = this.art.Width;
                         if (art_h > art_w) {
                             art_box_w = art_w + spacing * 2;
                         }
                         else {
                             art_box_h = art_h + spacing * 2;
-                            art_y += Math.round((art_max_size - art_h) / 2);
+                            art_y += Math.round((this.art_max_size - art_h) / 2);
                             art_box_y = art_y - spacing;
                         }
-                        grClip.DrawImage(art, art_x, art_y, art_w, art_h, 0, 0, art_w, art_h, 0, 220);
+                        grClip.DrawImage(this.art, art_x, art_y, art_w, art_h, 0, 0, art_w, art_h, 0, 220);
                     }
                     else if (!this.is_art_loaded()) {
                         grClip.DrawString('LOADING', g_pl_fonts.cover, line_color, art_box_x, art_box_y, art_box_size, art_box_size, g_string_format.align_center);
@@ -3676,22 +3704,22 @@ function Header(parent, x, y, w, h, idx) {
                     grClip.DrawRect(art_box_x, art_box_y, art_box_w - 1, art_box_h - 1, 1, line_color);
 
                     left_pad += art_box_x + art_box_w;
-                    hyperlinks.artist && hyperlinks.artist.set_xOffset(left_pad);
+                    this.hyperlinks.artist && this.hyperlinks.artist.set_xOffset(left_pad);
                     var i = 0;
                     var offset = 0;
-                    while (hyperlinks['genre' + i]) {
+                    while (this.hyperlinks['genre' + i]) {
                         if (i === 0) {
-                            offset = hyperlinks.genre0.x - left_pad;
+                            offset = this.hyperlinks.genre0.x - left_pad;
                             if (!offset) break;
                         }
-                        hyperlinks['genre' + i].x -= offset;
+                        this.hyperlinks['genre' + i].x -= offset;
                         i++;
                     }
                 }
             }
 
             //************************************************************//
-            var is_radio = _.startsWith(metadb.RawPath, 'http') || _.startsWith(metadb.Path, 'spotify');
+            var is_radio = _.startsWith(this.metadb.RawPath, 'http') || _.startsWith(this.metadb.Path, 'spotify');
 
             // part1: artist
             // part2: album + line + Date OR line
@@ -3704,20 +3732,20 @@ function Header(parent, x, y, w, h, idx) {
             var part2_right_pad = 0;
 
             //---> DATE
-            if (grouping_handler.show_date()) {
+            if (this.grouping_handler.show_date()) {
                 var date_query = '[$year(' + tf.year + ')]';
 
-                var date_text = _.tf(date_query, metadb);
+                var date_text = _.tf(date_query, this.metadb);
                 if (date_text && date_text !== '0000') {
                     var date_w = Math.ceil(gr.MeasureString(date_text, date_font, 0, 0, 0, 0).Width + 5);
                     var date_x = this.w - date_w - 5;
 
-                    if (!hyperlinks.date && date_x > left_pad) {
+                    if (!this.hyperlinks.date && date_x > left_pad) {
                         var date_y = 0;
                         var date_h = this.h - 4;
                         grClip.DrawString(date_text, date_font, date_color, date_x, date_y, date_w, date_h, g_string_format.v_align_center);
                     } else {
-                        hyperlinks.date.draw(grClip, date_color);
+                        this.hyperlinks.date.draw(grClip, date_color);
                     }
 
                     part2_right_pad += this.w - date_x;
@@ -3725,8 +3753,8 @@ function Header(parent, x, y, w, h, idx) {
             }
 
             //---> TITLE
-            if (grouping_handler.get_title_query()) {
-                var artist_text = _.tf(grouping_handler.get_title_query(), metadb);
+            if (this.grouping_handler.get_title_query()) {
+                var artist_text = _.tf(this.grouping_handler.get_title_query(), this.metadb);
                 if (!artist_text && is_radio) {
                     artist_text = 'Radio Stream';
                 }
@@ -3740,18 +3768,18 @@ function Header(parent, x, y, w, h, idx) {
                     }
 
                     var artist_text_format = g_string_format.v_align_far | g_string_format.trim_ellipsis_char | g_string_format.no_wrap;
-                    if (is_radio || !hyperlinks.artist)  {
+                    if (is_radio || !this.hyperlinks.artist)  {
                         grClip.DrawString(artist_text, artist_font, artist_color, artist_x, 0, artist_w, artist_h, artist_text_format);
                     } else {
-                        hyperlinks.artist.draw(grClip, artist_color);
+                        this.hyperlinks.artist.draw(grClip, artist_color);
                     }
                     //part1_cur_x += artist_w;
                 }
             }
 
             //---> SUB TITLE
-            if (grouping_handler.get_sub_title_query()) {
-                var album_text = _.tf(grouping_handler.get_sub_title_query(), metadb);
+            if (this.grouping_handler.get_sub_title_query()) {
+                var album_text = _.tf(this.grouping_handler.get_sub_title_query(), this.metadb);
                 if (album_text) {
                     var album_h = part_h;
                     var album_y = part_h;
@@ -3770,10 +3798,10 @@ function Header(parent, x, y, w, h, idx) {
                         album_text_format |= g_string_format.v_align_center;
                     }
 
-                    if (!hyperlinks.album) {
+                    if (!this.hyperlinks.album) {
                         grClip.DrawString(album_text, g_pl_fonts.album, album_color, album_x, album_y, album_w, album_h, album_text_format);
                     } else {
-                        hyperlinks.album.draw(grClip, album_color);
+                        this.hyperlinks.album.draw(grClip, album_color);
                     }
 
                     var album_text_w = Math.ceil(
@@ -3799,19 +3827,19 @@ function Header(parent, x, y, w, h, idx) {
                 var genre_text_w = 0;
                 var extraGenreSpacing = 0; //is_4k ? 6 : 8;  // don't use scaleForDisplay due to font differences
                 var genreX = info_x;
-                if (!is_radio && grouping_handler.get_query_name() !== 'artist') {
-                    if (!hyperlinks.genre0) {
-                        var genre_text = _.tf('[%genre%]', metadb).replace(/, /g,' \u2022 ');
+                if (!is_radio && this.grouping_handler.get_query_name() !== 'artist') {
+                    if (!this.hyperlinks.genre0) {
+                        var genre_text = _.tf('[%genre%]', this.metadb).replace(/, /g,' \u2022 ');
                         genre_text_w = Math.ceil(gr.MeasureString(genre_text, g_pl_fonts.info, 0, 0, 0, 0).Width + extraGenreSpacing);
                         grClip.DrawString(genre_text, g_pl_fonts.info, info_color, genreX, info_y, info_w, info_h, info_text_format);
                     } else {
                         var i = 0;
                         let genre_hyperlink = undefined;
-                        while (hyperlinks['genre' + i]) {
+                        while (this.hyperlinks['genre' + i]) {
                             if (i > 0) {
                                 grClip.DrawString(' \u2022 ', g_pl_fonts.info, info_color, genre_hyperlink.x + genre_hyperlink.getWidth(), info_y, scaleForDisplay(20), info_h);
                             }
-                            genre_hyperlink = hyperlinks['genre' + i];
+                            genre_hyperlink = this.hyperlinks['genre' + i];
                             genre_hyperlink.draw(grClip, info_color);
                             genreX = genre_hyperlink.x;
                             genre_text_w = genre_hyperlink.getWidth();
@@ -3826,8 +3854,8 @@ function Header(parent, x, y, w, h, idx) {
                 var info_text_w = Math.ceil(gr.MeasureString(info_text, g_pl_fonts.info, 0, 0, 0, 0).Width);    // TODO: Mordred - should only call MeasureString once
 
                 //---> Record labels
-                if (!hyperlinks.label0) {
-                    var label_string = $('$if2(%label%,[%publisher%])', metadb).replace(/, /g,' \u2022 ');
+                if (!this.hyperlinks.label0) {
+                    var label_string = $('$if2(%label%,[%publisher%])', this.metadb).replace(/, /g,' \u2022 ');
                     var label_w = Math.ceil(gr.MeasureString(label_string, g_pl_fonts.info, 0, 0, 0, 0).Width + 10);
                     if (info_w > label_w + info_text_w) {
                         grClip.DrawString(label_string, g_pl_fonts.info, info_color, this.w - label_w - 10, info_y, label_w, info_h, g_string_format.h_align_far);
@@ -3836,8 +3864,8 @@ function Header(parent, x, y, w, h, idx) {
                     var i = 0;
                     var drawCount = 0;
                     var lastLabel;
-                    while (hyperlinks['label' + i]) {
-                        var label_hyperlink = hyperlinks['label' + i];
+                    while (this.hyperlinks['label' + i]) {
+                        var label_hyperlink = this.hyperlinks['label' + i];
                         if (label_hyperlink.x > genreX + genre_text_w + info_text_w) {
                             if (drawCount > 0) {
                                 grClip.DrawString(' \u2022', g_pl_fonts.info, info_color, lastLabel.x + lastLabel.getWidth(), info_y, scaleForDisplay(20), info_h);
@@ -3876,7 +3904,7 @@ function Header(parent, x, y, w, h, idx) {
 
             clipImg.ReleaseGraphics(grClip);
             if (cache_header) {
-                header_image = clipImg;
+                this.header_image = clipImg;
             }
         }
 
@@ -3890,14 +3918,14 @@ function Header(parent, x, y, w, h, idx) {
         } else if (this.y + this.h > bottom) {
             h = bottom - this.y;
         }
-        gr.DrawImage(cache_header ? header_image : clipImg, this.x, y, this.w, h, 0, srcY, this.w, h);
+        gr.DrawImage(cache_header ? this.header_image : clipImg, this.x, y, this.w, h, 0, srcY, this.w, h);
         clipImg = null;
-    };
+    }
 
     /**
      * @param {GdiGraphics} gr
      */
-    this.draw_compact_header = function (gr) {
+    draw_compact_header(gr) {
         var artist_color = g_pl_colors.artist_normal;
         var album_color = g_pl_colors.album_normal;
         var date_color = g_pl_colors.date_normal;
@@ -3937,17 +3965,17 @@ function Header(parent, x, y, w, h, idx) {
 
         //************************************************************//
 
-        var is_radio = _.startsWith(metadb.RawPath, 'http');
+        var is_radio = _.startsWith(this.metadb.RawPath, 'http');
 
         var left_pad = 10;
         var right_pad = 0;
         var cur_x = left_pad;
 
         //---> DATE
-        if (grouping_handler.show_date()) {
+        if (this.grouping_handler.show_date()) {
             var date_query = '$year(' + tf.year + ')';
 
-            var date_text = _.tf(date_query, metadb);
+            var date_text = _.tf(date_query, this.metadb);
             if (date_text) {
                 var date_w = Math.ceil(gr.MeasureString(date_text, date_font, 0, 0, 0, 0).Width + 5);
                 var date_x = this.w - date_w - 5;
@@ -3963,8 +3991,8 @@ function Header(parent, x, y, w, h, idx) {
         }
 
         //---> TITLE
-        if (grouping_handler.get_title_query()) {
-            var artist_text = _.tf(grouping_handler.get_title_query(), metadb);
+        if (this.grouping_handler.get_title_query()) {
+            var artist_text = _.tf(this.grouping_handler.get_title_query(), this.metadb);
             if (!artist_text) {
                 artist_text = is_radio ? 'Radio Stream' : '?';
             }
@@ -3985,9 +4013,9 @@ function Header(parent, x, y, w, h, idx) {
         }
 
         //---> SUB TITLE
-        if (grouping_handler.get_sub_title_query()) {
+        if (this.grouping_handler.get_sub_title_query()) {
 
-            var album_text = _.tf(grouping_handler.get_sub_title_query(), metadb);
+            var album_text = _.tf(this.grouping_handler.get_sub_title_query(), this.metadb);
             if (album_text) {
                 album_text = ' - ' + album_text;
 
@@ -4004,25 +4032,25 @@ function Header(parent, x, y, w, h, idx) {
 
         clipImg.ReleaseGraphics(grClip);
         gr.DrawImage(clipImg, this.x, this.y, this.w, this.h, 0, 0, this.w, this.h, 0, 255);
-    };
+    }
 
     /**
      * @param {GdiBitmap} image
      */
-    this.assign_art = function (image) {
+    assign_art(image) {
         if (!image || !g_properties.show_album_art) {
-            art = null;
+            this.art = null;
             return;
         }
 
-        if ((image.Height === art_max_size && image.Width <= art_max_size)
-            || (image.Height <= art_max_size && image.Width === art_max_size)) {
-            art = image;
+        if ((image.Height === this.art_max_size && image.Width <= this.art_max_size)
+            || (image.Height <= this.art_max_size && image.Width === this.art_max_size)) {
+                this.art = image;
         }
         else {
             var ratio = image.Height / image.Width;
-            var art_h = art_max_size;
-            var art_w = art_max_size;
+            var art_h = this.art_max_size;
+            var art_w = this.art_max_size;
             if (image.Height > image.Width) {
                 art_w = Math.round(art_h / ratio);
             }
@@ -4030,64 +4058,64 @@ function Header(parent, x, y, w, h, idx) {
                 art_h = Math.round(art_w * ratio);
             }
 
-            art = image.Resize(art_w, art_h);
+            this.art = image.Resize(art_w, art_h);
         }
 
-        Header.art_cache.add_image_for_meta(art, metadb);
-    };
+        Header.art_cache.add_image_for_meta(this.art, this.metadb);
+    }
 
     /**
      * @return {boolean}
      */
-    this.is_art_loaded = function () {
-        return art !== undefined;
-    };
+    is_art_loaded() {
+        return this.art !== undefined;
+    }
 
-    this.initialize_hyperlinks = function (gr) {
+    initialize_hyperlinks(gr) {
         var right_edge = scaleForDisplay(5);
-        hyperlinks_initialized = true;
+        this.hyperlinks_initialized = true;
         var date_font = g_pl_fonts.date;
         var artist_font = g_pl_fonts.artist_normal;
 
         const date_query = '$year(' + tf.year + ')'; // Mordred: my date query
 
-        var date_text = _.tf(date_query, metadb);
+        var date_text = _.tf(date_query, this.metadb);
         if (date_text) {
             var date_w = Math.ceil(gr.MeasureString(date_text, date_font, 0, 0, 0, 0).Width + 5);
             var date_x = -date_w - right_edge;
             var date_y = Math.floor((this.h / 2) - scaleForDisplay(17));
 
-            hyperlinks.date = new Hyperlink(date_text, date_font, 'date', date_x, date_y, this.w, true);
+            this.hyperlinks.date = new Hyperlink(date_text, date_font, 'date', date_x, date_y, this.w, true);
         }
 
         var left_pad = scaleForDisplay(10);
         var art_box_x = 3 * scaleForDisplay(6);
         var spacing = scaleForDisplay(2);
-        var art_box_size = art_max_size + spacing * 2;
+        var art_box_size = this.art_max_size + spacing * 2;
         var part_h = (!g_properties.show_group_info) ? this.h / 2 : this.h / 3;
         left_pad += art_box_x + art_box_size;
 
-        if (!_.startsWith(metadb.RawPath, 'http')) {
+        if (!_.startsWith(this.metadb.RawPath, 'http')) {
             // don't create for radio
-            var artist_text = _.tf(grouping_handler.get_title_query(), metadb);
+            var artist_text = _.tf(this.grouping_handler.get_title_query(), this.metadb);
             if (artist_text) {
                 var artist_x = left_pad;
 
-                hyperlinks.artist = new Hyperlink(artist_text, artist_font, 'artist', artist_x, 5, this.w, true);
+                this.hyperlinks.artist = new Hyperlink(artist_text, artist_font, 'artist', artist_x, 5, this.w, true);
             }
         }
 
         var album_y = part_h + scaleForDisplay(3);
-        var album_text = _.tf(grouping_handler.get_sub_title_query(), metadb);
+        var album_text = _.tf(this.grouping_handler.get_sub_title_query(), this.metadb);
         if (album_text) {
-            hyperlinks.album = new Hyperlink(album_text, g_pl_fonts.album, 'album', left_pad, album_y, this.w, true);
+            this.hyperlinks.album = new Hyperlink(album_text, g_pl_fonts.album, 'album', left_pad, album_y, this.w, true);
         }
 
         var separatorWidth = gr.MeasureString(' \u2020', g_pl_fonts.info, 0, 0, 0, 0).Width;
         var bulletWidth = Math.ceil(gr.MeasureString('\u2020', g_pl_fonts.info, 0, 0, 0, 0).Width);
         var spaceWidth = Math.ceil(separatorWidth - bulletWidth) + scaleForDisplay(1);
 
-        var label_string = _.tf('$if2(%label%,[%publisher%])', metadb).replace(', Inc.', '= Inc.');
+        var label_string = _.tf('$if2(%label%,[%publisher%])', this.metadb).replace(', Inc.', '= Inc.');
         var labels = label_string.split(', ');
         var label_left = -right_edge * 2;
         let label_y = Math.round(2 * this.h / 3);
@@ -4098,10 +4126,10 @@ function Header(parent, x, y, w, h, idx) {
             labels[i] = labels[i].replace('= Inc.', ', Inc.');
             var label_w = gr.MeasureString(labels[i], g_pl_fonts.info, 0, 0, 0, 0).Width;
             label_left -= label_w;
-            hyperlinks['label' + i] = new Hyperlink(labels[i], g_pl_fonts.info, 'label', label_left, label_y, this.w, true);
+            this.hyperlinks['label' + i] = new Hyperlink(labels[i], g_pl_fonts.info, 'label', label_left, label_y, this.w, true);
         }
 
-        var genre_string = _.tf('[%genre%]', metadb);
+        var genre_string = _.tf('[%genre%]', this.metadb);
         var genres = genre_string.split(', ');
         var genre_left = left_pad;
         var genre_y = label_y;
@@ -4110,37 +4138,37 @@ function Header(parent, x, y, w, h, idx) {
                 genre_left += bulletWidth + spaceWidth * 2;   // spacing between genres
             }
             var genre_w = gr.MeasureString(genres[i], g_pl_fonts.info, 0, 0, 0, 0).Width;
-            hyperlinks['genre' + i] = new Hyperlink(genres[i], g_pl_fonts.info, 'genre', genre_left, genre_y, this.w, true);
+            this.hyperlinks['genre' + i] = new Hyperlink(genres[i], g_pl_fonts.info, 'genre', genre_left, genre_y, this.w, true);
             genre_left += genre_w;
         }
 
-        for (h in hyperlinks) {
-            hyperlinks[h].set_y(this.y);
+        for (let h in this.hyperlinks) {
+            this.hyperlinks[h].set_y(this.y);
         }
     }
 
-    this.on_mouse_move = function (x, y, m) {
+    on_mouse_move(x, y, m) {
         var handled = false;
         var needs_redraw = false;
 
-        for (h in hyperlinks) {
-            if (hyperlinks[h].trace(x - that.x, y)) {
-                if (hyperlinks[h].state !== HyperlinkStates.Hovered) {
-                    hyperlinks[h].state = HyperlinkStates.Hovered;
+        for (let h in this.hyperlinks) {
+            if (this.hyperlinks[h].trace(x - this.x, y)) {
+                if (this.hyperlinks[h].state !== HyperlinkStates.Hovered) {
+                    this.hyperlinks[h].state = HyperlinkStates.Hovered;
                     needs_redraw = true;
                 }
                 handled = true;
             } else {
-                if (hyperlinks[h].state !== HyperlinkStates.Normal) {
-                    hyperlinks[h].state = HyperlinkStates.Normal;
+                if (this.hyperlinks[h].state !== HyperlinkStates.Normal) {
+                    this.hyperlinks[h].state = HyperlinkStates.Normal;
                     needs_redraw = true;
                 }
             }
         }
 
         if (needs_redraw) {
-            if (header_image) {
-                header_image = null;
+            if (this.header_image) {
+                this.header_image = null;
             }
             this.repaint();
         }
@@ -4148,12 +4176,12 @@ function Header(parent, x, y, w, h, idx) {
         return handled;
     }
 
-    this.on_mouse_lbtn_down = function (x, y, m) {
+    on_mouse_lbtn_down(x, y, m) {
         var handled = false;
 
-        for (h in hyperlinks) {
-            if (hyperlinks[h].trace(x - that.x, y)) {
-                hyperlinks[h].click();
+        for (let h in this.hyperlinks) {
+            if (this.hyperlinks[h].trace(x - this.x, y)) {
+                this.hyperlinks[h].click();
                 handled = true;
                 break;
             }
@@ -4162,58 +4190,36 @@ function Header(parent, x, y, w, h, idx) {
         return handled;
     }
 
-    this.set_y = function (y) {
-        List.Item.prototype.set_y.apply(this, [y]);
+    set_y(y) {
+        ListItem.prototype.set_y.apply(this, [y]);
 
-        for (h in hyperlinks) {
-            hyperlinks[h].set_y(y);
+        for (let h in this.hyperlinks) {
+            this.hyperlinks[h].set_y(y);
         }
     }
 
-    this.set_w = function (w) {
+    set_w(w) {
         // console.log('this.set_w:', w);
-        List.Item.prototype.set_w.apply(this, [w]);
+        ListItem.prototype.set_w.apply(this, [w]);
 
         this.sub_items.forEach(function (item) {
             item.set_w(w);
         });
 
-        for (h in hyperlinks) {
-            hyperlinks[h].setContainerWidth(w);
+        for (let h in this.hyperlinks) {
+            this.hyperlinks[h].setContainerWidth(w);
         }
     }
 
-    this.reset_hyperlinks = function () {
-        hyperlinks_initialized = false;
-        hyperlinks = {};
+    reset_hyperlinks() {
+        this.hyperlinks_initialized = false;
+        this.hyperlinks = {};
     }
 
-    //private:
-    var that = this;
-
-    /**
-     * @const
-     * @type {number}
-     */
-    var art_max_size = that.h - scaleForDisplay(16);
-
-    /** @type {FbMetadbHandle} */
-    var metadb;
-    /**
-     * @type {?GdiBitmap}
-     */
-    var art = undefined; // undefined > Not Loaded; null > Loaded & Not Found; !_.isNil > Loaded & Found
-    var grouping_handler = Header.grouping_handler;
-
-    var hyperlinks = {};
-    var hyperlinks_initialized = false;
-    var was_playing = undefined; // last value of this.is_playing() updated each draw cycle
-
-    var header_image = undefined;
 }
 
-Header.prototype = Object.create(BaseHeader.prototype);
-Header.prototype.constructor = Header;
+// Header.prototype = Object.create(BaseHeader.prototype);
+// Header.prototype.constructor = Header;
 
 /**
  * @param {Array<Row>} rows_to_process
@@ -4270,13 +4276,80 @@ Header.create_headers = function (parent, x, y, w, h, prepared_rows) {
  * @param {number} idx
  * @param {number} cur_playlist_idx_arg
  * @constructor
- * @extends {List.Item}
+ * @extends {ListItem}
  */
-function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
-    List.Item.call(this, x, y, w, h);
+class Row extends ListItem {
+    constructor(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
+        super(x, y, w, h);
+
+        /**
+         * @const
+         * @type {number}
+         */
+        this.idx = idx;
+        /**
+         * @const
+         * @type {FbMetadbHandle}
+         */
+        this.metadb = metadb;
+
+        //const after header creation
+        /** @type {boolean} */
+        this.is_odd = false;
+        /** @type {number} */
+        this.idx_in_header = undefined;
+        /**
+         * @const
+         * @type {BaseHeader}
+         */
+        this.parent = undefined;
+
+        /** @type {?number} */
+        this.queue_idx = undefined;
+        /** @type {number} */
+        this.queue_idx_count = 0;
+
+        //state
+        this.is_playing = false;
+        this.is_focused = false;
+        this.is_drop_boundary_reached = false;
+        this.is_drop_bottom_selected = false;
+        this.is_drop_top_selected = false;
+        this.is_cropped = false;
+
+
+        /**
+         * @const
+         * @type {number}
+         */
+        this.cur_playlist_idx = cur_playlist_idx_arg;
+
+        var that = this;
+        /**
+         * @type {number}
+         */
+        this.rating_left_pad = 0;
+        /**
+         * @type {number}
+         */
+        this.rating_right_pad = 10;
+        /** @type {?Rating} */
+        this.rating = undefined;
+
+        /** @type {?string} */
+        this.title_text = undefined;
+        /** @type {?string} */
+        this.title_artist_text = undefined;
+        /** @type {?string} */
+        this.count_text = undefined;
+        /** @type {?string} */
+        this.length_text = undefined;
+
+        this.initialize_rating();
+    }
 
     //public:
-    this.draw = function (gr) {
+    draw(gr) {
         gr.SetSmoothingMode(SmoothingMode.None);
         gr.FillSolidRect(this.x, this.y, this.w, this.h, g_pl_colors.background);
 
@@ -4342,56 +4415,56 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
 
         //---> LENGTH
         {
-            if (_.isNil(length_text)) {
-                length_text = _.tf('[%length%]', this.metadb);
+            if (_.isNil(this.length_text)) {
+                this.length_text = _.tf('[%length%]', this.metadb);
             }
 
             var length_w = is_4k ? 80 : 50;
-            if (length_text) {
+            if (this.length_text) {
                 var length_x = this.x + this.w - length_w - right_pad;
 
-                gr.DrawString(length_text, title_font, title_color, length_x, this.y, length_w, this.h, g_string_format.h_align_far | g_string_format.v_align_center);
+                gr.DrawString(this.length_text, title_font, title_color, length_x, this.y, length_w, this.h, g_string_format.h_align_far | g_string_format.v_align_center);
                 testRect && gr.DrawRect(length_x, this.y - 1, length_w, this.h, 1, RGBA(155, 155, 255, 250));
             }
             // We always want that padding
-            right_pad += Math.max(length_w, Math.ceil(gr.MeasureString(length_text, title_font, 0, 0, 0, 0).Width + 10));
+            right_pad += Math.max(length_w, Math.ceil(gr.MeasureString(this.length_text, title_font, 0, 0, 0, 0).Width + 10));
         }
 
         //---> RATING
         if (g_properties.show_rating) {
-            rating.x = this.x + this.w - rating.w - right_pad;
-            rating.y = this.y;
-            rating.draw(gr, title_color);
+            this.rating.x = this.x + this.w - this.rating.w - right_pad;
+            this.rating.y = this.y;
+            this.rating.draw(gr, title_color);
 
-            right_pad += rating.w + rating_right_pad + rating_left_pad;
+            right_pad += this.rating.w + this.rating_right_pad + this.rating_left_pad;
         }
 
         //---> COUNT
         if (g_properties.show_playcount) {
-            if (_.isNil(count_text)) {
+            if (_.isNil(this.count_text)) {
                 if (is_radio) {
-                    count_text = '';
+                    this.count_text = '';
                 }
                 else {
-                    count_text = _.tf('%play_count%', this.metadb);
-                    if (count_text != '0') {
-                        count_text = _.tf('[$max(%play_count%, %lastfm_play_count%)]', this.metadb);
-                        count_text = !_.toNumber(count_text) ? '' : (count_text + ' |');
+                    this.count_text = _.tf('%play_count%', this.metadb);
+                    if (this.count_text != '0') {
+                        this.count_text = _.tf('[$max(%play_count%, %lastfm_play_count%)]', this.metadb);
+                        this.count_text = !_.toNumber(this.count_text) ? '' : (this.count_text + ' |');
                     } else {
                         // don't want to show lastfm play count if track hasn't been played locally
-                        count_text = '';
+                        this.count_text = '';
                     }
                 }
             }
 
-            if (count_text) {
+            if (this.count_text) {
                 var count_w = Math.ceil(
                     /** @type {!number} */
-                    gr.MeasureString(count_text, g_pl_fonts.playcount, 0, 0, 0, 0).Width
+                    gr.MeasureString(this.count_text, g_pl_fonts.playcount, 0, 0, 0, 0).Width
                 );
                 var count_x = this.x + this.w - count_w - right_pad;
 
-                gr.DrawString(count_text, g_pl_fonts.playcount, count_color, count_x, this.y, count_w, this.h, g_string_format.align_center);
+                gr.DrawString(this.count_text, g_pl_fonts.playcount, count_color, count_x, this.y, count_w, this.h, g_string_format.align_center);
                 testRect && gr.DrawRect(count_x, this.y - 1, count_w, this.h, 1, RGBA(155, 155, 255, 250));
 
                 right_pad += count_w;
@@ -4414,7 +4487,7 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
         // We need to draw 'queue' text with title text, it will cause weird spacing if drawn separately
 
         //---> TITLE init
-        if (_.isNil(title_text)) {
+        if (_.isNil(this.title_text)) {
             // var track_num_query = '$if2(%tracknumber%,$pad_right(' + this.num_in_header + ',2,0)).';
             // Mordred's track query
             var track_num_query = '$if(%tracknumber%,%tracknumber%,$pad_right(' + (this.idx_in_header + 1) + ',2,0)).';
@@ -4424,19 +4497,19 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
                 track_num_query = '      ';
             }
             var title_query = track_num_query + '  %title%[ \'(\'%original artist%\' cover)\']';
-            title_text = (fb.IsPlaying && this.is_playing && is_radio) ? _.tfe(title_query) : _.tf(title_query, metadb);
+            this.title_text = (fb.IsPlaying && this.is_playing && is_radio) ? _.tfe(title_query) : _.tf(title_query, this.metadb);
         }
 
         //---> TITLE ARTIST init
-        if (_.isNil(title_artist_text)) {
-            var pattern = '^' + _.tf('%album artist%', metadb).replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&") + ' ';
+        if (_.isNil(this.title_artist_text)) {
+            var pattern = '^' + _.tf('%album artist%', this.metadb).replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&") + ' ';
             var regex = new RegExp(pattern);
-            title_artist_text = _.tf('[$if($strcmp(' + tf.artist + ',%artist%),$if(%album artist%,$if(%track artist%,%track artist%,),),' + tf.artist + ')]', metadb);
-            if (title_artist_text.length) {
+            this.title_artist_text = _.tf('[$if($strcmp(' + tf.artist + ',%artist%),$if(%album artist%,$if(%track artist%,%track artist%,),),' + tf.artist + ')]', this.metadb);
+            if (this.title_artist_text.length) {
                 // if tf.artist evaluates to something different than %album artist% strip %artist% from the start of the string
-                // i.e. tf.artist = "Metallica feat. Iron Maiden" then we want title_artist_text = "feat. Iron Maiden"
-                title_artist_text = title_artist_text.replace(regex, '');
-                title_artist_text = '  \u25AA  ' + title_artist_text;
+                // i.e. tf.artist = "Metallica feat. Iron Maiden" then we want this.title_artist_text = "feat. Iron Maiden"
+                this.title_artist_text = this.title_artist_text.replace(regex, '');
+                this.title_artist_text = '  \u25AA  ' + this.title_artist_text;
             }
         }
 
@@ -4445,7 +4518,7 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
             var title_w = this.w - right_pad - scaleForDisplay(22);
 
             var title_text_format = g_string_format.v_align_center | g_string_format.trim_ellipsis_char | g_string_format.no_wrap;
-            gr.DrawString(title_text + (title_artist_text ? '' : queue_text), title_font, title_color, cur_x, this.y, title_w, this.h, title_text_format);
+            gr.DrawString(this.title_text + (this.title_artist_text ? '' : queue_text), title_font, title_color, cur_x, this.y, title_w, this.h, title_text_format);
             if (this.is_playing) {
                 gr.DrawString(fb.IsPaused ? g_guifx.pause : g_guifx.play, ft.guifx, title_color, cur_x + 1, this.y, title_w, this.h, title_text_format);
             }
@@ -4454,40 +4527,40 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
 
             cur_x += Math.ceil(
                 /** @type {!number} */
-                gr.MeasureString(title_text, title_font, 0, 0, title_w, this.h, title_text_format | g_string_format.measure_trailing_spaces).Width
+                gr.MeasureString(this.title_text, title_font, 0, 0, title_w, this.h, title_text_format | g_string_format.measure_trailing_spaces).Width
             );
         }
 
         //---> TITLE ARTIST draw
-        if (title_artist_text) {
+        if (this.title_artist_text) {
             var title_artist_x = cur_x;
             var title_artist_w = this.w - (title_artist_x - this.x) - right_pad;
 
             var title_artist_text_format = g_string_format.v_align_center | g_string_format.trim_ellipsis_char | g_string_format.no_wrap;
-            gr.DrawString(title_artist_text + queue_text, title_artist_font, title_artist_color, title_artist_x, this.y, title_artist_w, this.h, title_artist_text_format);
+            gr.DrawString(this.title_artist_text + queue_text, title_artist_font, title_artist_color, title_artist_x, this.y, title_artist_w, this.h, title_artist_text_format);
         }
         gr.SetSmoothingMode(SmoothingMode.HighQuality);
     };
 
     /** @override */
-    this.set_y = function (y) {
-        List.Item.prototype.set_y.apply(this, [y]);
-        rating.y = y;
+    set_y(y) {
+        ListItem.prototype.set_y.apply(this, [y]);
+        this.rating.y = y;
     };
 
     /** @override */
-    this.set_w = function (w) {
-        List.Item.prototype.set_w.apply(this, [w]);
-        initialize_rating();
+    set_w(w) {
+        ListItem.prototype.set_w.apply(this, [w]);
+        this.initialize_rating();
     };
 
-    this.reset_queried_data = function () {
-        title_text = undefined;
-        title_artist_text = undefined;
-        count_text = undefined;
-        length_text = undefined;
+    reset_queried_data() {
+        this.title_text = undefined;
+        this.title_artist_text = undefined;
+        this.count_text = undefined;
+        this.length_text = undefined;
 
-        rating.reset_queried_data();
+        this.rating.reset_queried_data();
     };
 
     /**
@@ -4495,109 +4568,43 @@ function Row(x, y, w, h, metadb, idx, cur_playlist_idx_arg) {
      * @param {number} y
      * @return {boolean}
      */
-    this.rating_trace = function (x, y) {
+    rating_trace(x, y) {
         if (!g_properties.show_rating) {
             return false;
         }
-        return rating.trace(x, y);
+        return this.rating.trace(x, y);
     };
 
     /**
      * @param {number} x
      * @param {number} y
      */
-    this.rating_click = function (x, y) {
+    rating_click(x, y) {
         assert(g_properties.show_rating,
             LogicError, 'Rating_click was called, when there was no rating object.\nShould use trace before calling click');
 
-        rating.click(x, y);
-    };
+        this.rating.click(x, y);
+    }
 
     /**
      * @return {boolean}
      */
-    this.is_selected = function () {
-        return plman.IsPlaylistItemSelected(cur_playlist_idx, this.idx);
-    };
-
-    function initialize_rating() {
-        rating = new Rating(0, that.y, that.w - rating_right_pad, that.h, metadb);
-        rating.x = that.x + that.w - (rating.w + rating_right_pad);
+    is_selected() {
+        return plman.IsPlaylistItemSelected(this.cur_playlist_idx, this.idx);
     }
 
-    this.clear_title_text = function () {
-        title_text = null;
+    initialize_rating() {
+        this.rating = new Rating(0, this.y, this.w - this.rating_right_pad, this.h, this.metadb);
+        this.rating.x = this.x + this.w - (this.rating.w + this.rating_right_pad);
     }
 
-    /**
-     * @const
-     * @type {number}
-     */
-    this.idx = idx;
-    /**
-     * @const
-     * @type {FbMetadbHandle}
-     */
-    this.metadb = metadb;
+    clear_title_text() {
+        this.title_text = null;
+    }
 
-    //const after header creation
-    /** @type {boolean} */
-    this.is_odd = false;
-    /** @type {number} */
-    this.idx_in_header = undefined;
-    /**
-     * @const
-     * @type {BaseHeader}
-     */
-    this.parent = undefined;
-
-    /** @type {?number} */
-    this.queue_idx = undefined;
-    /** @type {number} */
-    this.queue_idx_count = 0;
-
-    //state
-    this.is_playing = false;
-    this.is_focused = false;
-    this.is_drop_boundary_reached = false;
-    this.is_drop_bottom_selected = false;
-    this.is_drop_top_selected = false;
-    this.is_cropped = false;
-
-    var that = this;
-
-    /**
-     * @const
-     * @type {number}
-     */
-    var cur_playlist_idx = cur_playlist_idx_arg;
-
-    /**
-     * @const
-     * @type {number}
-     */
-    var rating_left_pad = 0;
-    /**
-     * @const
-     * @type {number}
-     */
-    var rating_right_pad = 10;
-    /** @type {?Rating} */
-    var rating = undefined;
-
-    /** @type {?string} */
-    var title_text = undefined;
-    /** @type {?string} */
-    var title_artist_text = undefined;
-    /** @type {?string} */
-    var count_text = undefined;
-    /** @type {?string} */
-    var length_text = undefined;
-
-    initialize_rating();
 }
-Row.prototype = Object.create(List.Item.prototype);
-Row.prototype.constructor = Row;
+// Row.prototype = Object.create(ListItem.prototype);
+// Row.prototype.constructor = Row;
 
 /**
  *
@@ -4671,7 +4678,7 @@ function Rating(x, y, max_w, h, metadb) {
     /**
      * @return {number}
      */
-    this.get_rating = function () {
+    this.get_rating = () => {
         if (_.isNil(rating)) {
             var current_rating;
             if (g_properties.use_rating_from_tags) {
@@ -4730,7 +4737,7 @@ function Rating(x, y, max_w, h, metadb) {
 function SelectionHandler(cnt_arg, cur_playlist_idx_arg) {
     this.initialize_selection = function () {
         selected_indexes = [];
-        _.forEach(rows, function (item, i) {
+        _.forEach(rows, (item, i) => {
             if (plman.IsPlaylistItemSelected(cur_playlist_idx, item.idx)) {
                 selected_indexes.push(i);
             }
@@ -4823,7 +4830,7 @@ function SelectionHandler(cnt_arg, cur_playlist_idx_arg) {
 
             var items_to_remove = [];
             var playlist_items = plman.GetPlaylistItems(cur_playlist_idx);
-            _.forEach(cur_selected_indexes, function (idx) {
+            _.forEach(cur_selected_indexes, (idx) => {
                 var cur_item = playlist_items[idx];
                 if (_.startsWith(cur_item.RawPath, 'file://') && !fso.FileExists(cur_item.Path)) {
                     items_to_remove.push(idx);
@@ -5242,7 +5249,7 @@ function SelectionHandler(cnt_arg, cur_playlist_idx_arg) {
      */
     function is_selection_contiguous() {
         var is_contiguous = true;
-        _.forEach(selected_indexes, function (item, i) {
+        _.forEach(selected_indexes, (item, i) => {
             if (i === 0) {
                 return true;
             }
@@ -5345,31 +5352,31 @@ function CollapseHandler(cnt_arg) {
 
     this.collapse_all = function () {
         this.changed = false;
-        _.forEach(headers, _.bind(function (item) {
-            this.changed |= set_collapsed_state_recursive(item, true);
-        }, this));
+        _.forEach(headers, (item) => {
+            this.changed = set_collapsed_state_recursive(item, true) || this.changed;
+        });
 
         trigger_callback();
     };
 
     this.collapse_all_but_now_playing = function () {
         this.changed = false;
-        _.forEach(headers, _.bind(function (item) {
+        _.forEach(headers, (item) => {
             if (item.is_playing()) {
-                this.changed |= set_collapsed_state_recursive(item, false);
+                this.changed = set_collapsed_state_recursive(item, false) || this.changed;
                 return;
             }
-            this.changed |= set_collapsed_state_recursive(item, true);
-        }, this));
+            this.changed = set_collapsed_state_recursive(item, true) || this.changed;
+        });
 
         trigger_callback();
     };
 
     this.expand_all = function () {
         this.changed = false;
-        _.forEach(headers, _.bind(function (item) {
-            this.changed |= set_collapsed_state_recursive(item, false);
-        }, this));
+        _.forEach(headers, (item) => {
+            this.changed = set_collapsed_state_recursive(item, false) || this.changed;
+        });
 
         trigger_callback();
     };
@@ -5401,8 +5408,8 @@ function CollapseHandler(cnt_arg) {
             return changed;
         }
 
-        _.forEach(sub_items, function (item) {
-            changed |= set_collapsed_state_recursive(item, is_collapsed);
+        _.forEach(sub_items, item => {
+            changed = set_collapsed_state_recursive(item, is_collapsed) || changed;
         });
 
         return changed;
@@ -5442,7 +5449,7 @@ function QueueHandler(rows_arg, cur_playlist_idx_arg) {
         }
 
         queue_contents.forEach(function (queued_item, i) {
-            if (queued_item.PlaylistIndex !== cur_playlist_idx || queued_item.PlaylistItemIndex === -1) {
+            if (queued_item.PlaylistIndex !== this.cur_playlist_idx || queued_item.PlaylistItemIndex === -1) {
                 return;
             }
 
@@ -5454,7 +5461,7 @@ function QueueHandler(rows_arg, cur_playlist_idx_arg) {
 
             if (!cur_queued_row) {
                 console.log('>>> Error! - queued_item.PlaylistIndex:', queued_item.PlaylistIndex,
-                    'queued_item.PlaylistItemIndex:', queued_item.PlaylistItemIndex, 'cur_playlist_idx:', cur_playlist_idx);
+                    'queued_item.PlaylistItemIndex:', queued_item.PlaylistItemIndex, 'this.cur_playlist_idx:', this.cur_playlist_idx);
                 return;
             }
 
@@ -5707,7 +5714,7 @@ function PlaylistManager(x, y, w, h) {
             }
         }
 
-        var cmm = new Context.MainMenu();
+        var cmm = new ContextMainMenu();
 
         PlaylistManager.append_playlist_info_visibility_context_menu_to(cmm);
 
@@ -5754,25 +5761,25 @@ function PlaylistManager(x, y, w, h) {
      */
     this.register_key_actions = function (key_handler) {
         key_handler.register_key_action(VK_KEY_N,
-            _.bind(function (modifiers) {
+            (modifiers) => {
                 if (modifiers.ctrl) {
                     plman.CreatePlaylist(plman.PlaylistCount, '');
                     plman.ActivePlaylist = plman.PlaylistCount - 1;
                 }
-            }, this));
+            });
 
         key_handler.register_key_action(VK_KEY_M,
-            _.bind(function (modifiers) {
+            (modifiers) => {
                 if (modifiers.ctrl) {
                     fb.RunMainMenuCommand('View/Playlist Manager');
                 }
-            }, this));
+            });
     };
 
-    var throttled_repaint = _.throttle(_.bind(function () {
+    var throttled_repaint = _.throttle(() => {
         window.RepaintRect(this.x, this.y, this.w, this.h);
-    }, this), 1000 / 60);
-    this.repaint = function () {
+    }, 1000 / 60);
+    this.repaint = () => {
         throttled_repaint();
     };
 
@@ -5894,12 +5901,12 @@ function PlaylistManager(x, y, w, h) {
 }
 
 /**
- * @param {Context.Menu} parent_menu
+ * @param {ContextMenu} parent_menu
  */
 PlaylistManager.append_playlist_info_visibility_context_menu_to = function (parent_menu) {
     parent_menu.append_item(
         'Show playlist manager',
-        function () {
+        () => {
             g_properties.show_playlist_info = !g_properties.show_playlist_info;
         },
         {is_checked: g_properties.show_playlist_info}
@@ -5910,7 +5917,7 @@ PlaylistManager.append_playlist_info_visibility_context_menu_to = function (pare
  * @constructor
  */
 function GroupingHandler() {
-    this.on_playlists_changed = function () {
+    this.on_playlists_changed = () => {
         var playlist_count = plman.PlaylistCount;
         var new_playlists = [];
         for (var i = 0; i < playlist_count; ++i) {
@@ -6036,16 +6043,16 @@ function GroupingHandler() {
     };
 
     /**
-     * @param {Context.Menu} parent_menu
+     * @param {ContextMenu} parent_menu
      * @param {function} on_execute_callback_fn
      */
     this.append_menu_to = function (parent_menu, on_execute_callback_fn) {
-        var group = new Context.Menu('Grouping');
+        var group = new ContextMenu('Grouping');
         parent_menu.append(group);
 
         group.append_item(
             'Manage presets',
-            function () {
+            () => {
                 manage_groupings(on_execute_callback_fn);
             }
         );
@@ -6054,7 +6061,7 @@ function GroupingHandler() {
 
         group.append_item(
             'Reset to default',
-            function () {
+            () => {
                 delete settings.playlist_custom_group_data[cur_playlist_name];
                 delete settings.playlist_group_data[cur_playlist_name];
 
@@ -6075,7 +6082,7 @@ function GroupingHandler() {
         }
         group.append_item(
             group_by_text,
-            function () {
+            () => {
                 request_user_query(on_execute_callback_fn);
             },
             {is_radio_checked: cur_group.name === 'user_defined'}
@@ -6089,7 +6096,7 @@ function GroupingHandler() {
 
             group.append_item(
                 group_by_text,
-                function () {
+                () => {
                     cur_group = group_item;
 
                     delete settings.playlist_custom_group_data[cur_playlist_name];
@@ -6142,7 +6149,7 @@ function GroupingHandler() {
      */
     function manage_groupings(on_execute_callback_fn) {
         var on_ok_fn = function (ret_val_json) {
-            ret_val = JSON.parse(ret_val_json);
+            const ret_val = JSON.parse(ret_val_json);
 
             settings.group_presets = ret_val[0];
             settings.default_group_name = ret_val[2];
@@ -6172,13 +6179,13 @@ function GroupingHandler() {
     }
 
     function cleanup_settings() {
-        _.forEach(settings.playlist_group_data, function (item, i) {
+        _.forEach(settings.playlist_group_data, (item, i) => {
             if (!playlists.includes(i)) {
                 delete settings.playlist_group_data[i];
             }
         });
 
-        _.forEach(settings.playlist_custom_group_data, function (item, i) {
+        _.forEach(settings.playlist_custom_group_data, (item, i) => {
             if (!playlists.includes(i)) {
                 delete settings.playlist_custom_group_data[i];
             }
@@ -6312,7 +6319,7 @@ GroupingHandler.Settings = function () {
  * @param {?string=} [group_query='']
  * @param {?string=} [title_query='[%album artist%]']
  * @param {?string=} [sub_title_query="[%album%[ '('%albumsubtitle%')']][ - '['%edition%']']"]
- * @param {object=}  [options={}]
+ * @param {object}  [options={}]
  * @param {boolean=} [options.show_date=false]
  * @param {boolean=} [options.show_cd=false]
  * @constructor
