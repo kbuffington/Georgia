@@ -622,5 +622,3 @@ class ListRowContent extends ListContent {
         return this.rows.length;
     }
 }
-// List.RowContent.prototype = Object.create(List.Content.prototype);
-// List.RowContent.prototype.constructor = List.RowContent;

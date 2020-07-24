@@ -368,7 +368,7 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
         this.scroll_to(new_scroll, set_scroll_only);
     };
 
-    this.scroll_to = function (new_position, scroll_wo_redraw) {
+    this.scroll_to = function (new_position, scroll_wo_redraw = false) {
         var s = Math.max(0, Math.min(new_position, this.scrollable_lines));
         if (s === this.scroll) {
             return;

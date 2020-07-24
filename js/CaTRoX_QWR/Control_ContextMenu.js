@@ -65,7 +65,6 @@ class ContextMenu extends ContextBaseObject {
         /** @protected */
         this.menu_items = [];
 
-        /** @protected */
         this.cm = window.CreatePopupMenu();
     }
 
@@ -127,7 +126,6 @@ class ContextMenu extends ContextBaseObject {
     };
 
     dispose() {
-        this.cm.Dispose();
         this.cm = null;
 
         var items = this.menu_items;
@@ -327,7 +325,7 @@ class ContextFoobarMenu extends ContextBaseObject {
     constructor (metadb_handles_arg) {
         super('');
 
-        /** @private{IContextMenuManager} */
+        /** @private {IContextMenuManager} */
         this.cm = fb.CreateContextMenuManager();
 
         this.metadb_handles = metadb_handles_arg;
@@ -335,7 +333,6 @@ class ContextFoobarMenu extends ContextBaseObject {
     }
 
     dispose() {
-        this.cm.Dispose();
         this.cm = null;
     }
 

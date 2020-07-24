@@ -3131,7 +3131,6 @@ function menu_object() {
 		}
 		if (idx >= 5000 && idx <= 5800) {show_context && Context.ExecuteByID(idx - 5000);}
 		this.r_up = false;
-		// Context.Dispose(); FilterMenu.Dispose(); menu.Dispose(); OptionsMenu.Dispose(); PlaylistMenu.Dispose(); ThemeMenu.Dispose();
 	}
 }
 // var men = new menu_object();
