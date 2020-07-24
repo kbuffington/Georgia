@@ -21,6 +21,9 @@ var lyrPos; // this is the absolute yPosition of the very first line in the lyri
 var lyricsWidth = 0; // minimum width needed to display the lyrics to speed up drawing
 
 
+const LYRICS_TIMER_INTERVAL = 30; // do not modify this value
+const SCROLL_TIME = 300;	// max time in ms for new line to scroll
+
 // Lyrics Objects
 
 class sentence {
@@ -119,6 +122,8 @@ class Lyrics {
 		this.fileName = '';
 		this.activeLine = -1;	// index into this.lines
 		this.scrolling = false;
+		this.scrollOffset = 0;
+		this.scrollStep = 0;	// when scrolling to a new value, how much should we scroll
 		this.x = 0;
 		this.y = 0;
 		this.w = 0;
@@ -126,16 +131,22 @@ class Lyrics {
 		this.lineSpacing = scaleForDisplay(10);
 		this.lineHeight = 0;
 		this.getLyrics();
+		/** @protected */
+		this.timerId = 0;
 		if (fb.IsPlaying) {
 			this.seek();
+			if (!fb.IsPaused) {
+				this.startTimer();
+			}
 		}
 	}
 
+	// Callbacks
 	on_size(x, y, w, h) {
 		this.x = x + pref.lyrics_h_padding;
-		this.y = y;
-		this.w = w - pref.lyrics_h_padding * 2;
-		this.h = h;
+		this.y = y + pref.lyrics_h_padding;
+		this.w = w - pref.lyrics_h_padding * 2;	// should width/height be split?
+		this.h = h - pref.lyrics_h_padding * 2;
 		this.lineSpacing = scaleForDisplay(10);
 		if (this.lines.length && this.w > 10 && this.h > 100) {
 			const tmpImg = gdi.CreateImage(this.w, Math.round(this.h / 5));
@@ -150,6 +161,32 @@ class Lyrics {
 		}
 	}
 
+
+	on_playback_pause(state) {
+		if (state) {
+			this.clearTimer();
+		} else {	// unpausing
+			this.startTimer();
+		}
+	}
+
+	on_playback_stop(reason) {
+		this.clearTimer();
+	}
+
+	clearTimer() {
+		if (this.timerId) {
+			clearInterval(this.timerId);
+			this.timerId = 0;
+		}
+	}
+
+	startTimer() {
+		this.clearTimer();
+		this.timerId = setInterval(() => { this.timerTick(); }, LYRICS_TIMER_INTERVAL);
+	}
+
+	// Methods
 	getLyrics() {
 		const tpath = [];
 		const tfilename = [];
@@ -190,9 +227,10 @@ class Lyrics {
 		if (this.lyricsType === LyricsType.Synced) {
 			this.lines.forEach(l => l.focus = false);
 			const index = this.lines.findIndex(l => l.timeMs >= time);
-			this.activeLine = index === -1 ? this.lines.length - 1 : index;
+			this.activeLine = index === -1 ? this.lines.length - 1 : Math.max(0, index - 1);	// if time > all timeMs values, then we're on the last line of the song, otherwise choose previous line
 			if (this.activeLine >= 0) {
 				this.lines[this.activeLine].focus = true;
+				this.repaint();
 			}
 		}
 
@@ -255,18 +293,27 @@ class Lyrics {
 		/** @type {float} */
 		const time = Math.round(fb.PlaybackTime * 1000);
 		if (this.lyricsType === LyricsType.Synced) {
-			if (this.scrolling) {
-
-			} else if ((this.lines.length > this.activeLine + 1) && (time > this.lines[this.activeLine + 1].timeMs)) {
+			if ((this.lines.length > this.activeLine + 1) && (time > this.lines[this.activeLine + 1].timeMs)) {
 				// advance active Line
-				// this.scrolling = true;
+				this.scrolling = true;
 				if (this.activeLine !== -1) {
 					this.lines[this.activeLine].focus = false;
+					this.scrollOffset = this.lines[this.activeLine].height + this.lineSpacing;	// scrollOffset is actually the previously activeline that we want to scroll out of the way
+					this.scrollStep = Math.max(1, Math.round(this.scrollOffset / (SCROLL_TIME / LYRICS_TIMER_INTERVAL)));
+					// console.log(this.scrollOffset, this.scrollStep);
+				} else {
+					this.scrollOffset = 0;
 				}
 				this.lines[++this.activeLine].focus = true;
-
+			} else if (this.scrolling) {
+				this.scrollOffset = Math.max(0, this.scrollOffset - this.scrollStep);
+				if (this.scrollOffset <= 0) {
+					this.scrolling = false;
+				}
+				this.repaint();
+				// console.log('scrolling', this.scrollOffset, this.scrolling);
 			} else {
-
+				// do nothing?
 			}
 		} else { // LyricsType.Unsynced
 
@@ -278,18 +325,21 @@ class Lyrics {
 	 */
 	drawLyrics(gr) {
 		if (this.activeLine >= 0) {
-			const halfHeight = Math.floor(this.h / 2);
-			const activeY = this.lines[this.activeLine].y - this.lines[this.activeLine].height;
+			const halfHeight = Math.floor(this.h * .4);
+			const activeY = this.lines[this.activeLine].y;// - this.lines[this.activeLine].height;
 
-			const viewportTop = activeY - halfHeight
+			const viewportTop = activeY - halfHeight;
 			this.lines.forEach(l => {
-
 				if (l.y > viewportTop && l.y + l.height < this.h + viewportTop) {
-					l.draw(gr, this.x, this.w, this.y - viewportTop);
+					l.draw(gr, this.x, this.w, this.y - viewportTop + this.scrollOffset);
 				}
 			});
 			// console.log(activeY, halfHeight, viewportTop);
 		}
+	}
+
+	repaint() {
+		window.RepaintRect(this.x - 1, this.y - 1, this.w + 2, this.h + 2);
 	}
 }
 
@@ -337,7 +387,7 @@ function drawLyrics(gr, tab, posy) {
 
 function timerTick() {
 	if (displayLyrics) {
-		gLyrics.timerTick();
+		// gLyrics.timerTick();
 
 		var t1 = parseInt(elap_seconds.Eval()) * 100 + hundredth;
 		var t2 = parseInt(len_seconds.Eval()) * 100;
@@ -394,8 +444,8 @@ function refresh_lyrics() {
 		if (g_lyrics_status > 0) {
 			var k = g_tab[focus].ante_lines * pref.lyrics_line_height;
 			lyrPos = midpoint - k;
-			g_playtimer && clearInterval(g_playtimer);
-			g_playtimer = setInterval(() => { timerTick(); }, PLAYTIMER_VALUE);
+			// g_playtimer && clearInterval(g_playtimer);
+			// g_playtimer = setInterval(() => { timerTick(); }, LYRICS_TIMER_INTERVAL);
 			g_timer_abs = 4;
 		} else {
 			const delta = (g_tab[g_tab.length-1].ante_lines + g_tab[g_tab.length-1].total_lines);
@@ -415,8 +465,8 @@ function updateLyricsPositionOnScreen() {
 		refresh_lyrics();
 		console.log("updatePosition: lyrPos = " + lyrPos + ' - Could set timerTick() - g_lyrics_status = ' + g_lyrics_status);
 		if (g_lyrics_status > 0) {
-			g_playtimer && clearInterval(g_playtimer);
-			g_playtimer = setInterval(() => { timerTick(); }, PLAYTIMER_VALUE);
+			// g_playtimer && clearInterval(g_playtimer);
+			// g_playtimer = setInterval(() => { timerTick(); }, LYRICS_TIMER_INTERVAL);
 			g_timer_abs = 4;
 		}
 	}

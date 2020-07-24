@@ -208,8 +208,6 @@ var timings = {
 // Lyrics Constants
 var DEFAULT_OFFSET = 29;
 var SCROLL_STEP = 1; // do not modify this value
-var PLAYTIMER_VALUE = 1; // do not modify this value
-
 
 // PLAYLIST JUNK
 var btns = {};
@@ -1417,10 +1415,11 @@ function on_playback_new_track(metadb) {
 	}
 
 	// Lyrics stuff
-	g_playtimer && clearInterval(g_playtimer);
-	g_playtimer = null;
+	// g_playtimer && clearInterval(g_playtimer);
+	// g_playtimer = null;
 	if (displayLyrics) { // no need to try retrieving them if we aren't going to display them now
-		updateLyricsPositionOnScreen();
+		refresh_lyrics();
+		// updateLyricsPositionOnScreen();
 	}
 	if (timings.showDebugTiming) newTrackProfiler.Print();
 }
@@ -1563,7 +1562,8 @@ function on_playback_order_changed(this_pb) {
 function on_playback_seek() {
 	progressMoved = true;
 	if (displayLyrics) {
-		refresh_lyrics();
+		// refresh_lyrics();
+		gLyrics.seek();
 	}
 	on_playback_time();
 	refresh_seekbar();
@@ -1646,9 +1646,6 @@ function on_mouse_lbtn_dblclk(x, y, m) {
 			albumart = null;
 			art_cache.clear();
 			on_playback_new_track(fb.GetNowPlaying());
-		}
-		if (displayLyrics) {
-			refresh_lyrics();
 		}
 		buttonEventHandler(x, y, m);
 	}
@@ -1911,7 +1908,7 @@ function on_playback_pause(state) {
 
 	pauseBtn.repaint();
 	if (albumart && displayLyrics) { // if we are displaying lyrics we need to refresh all the lyrics to avoid tearing at the edges of the pause button
-		window.RepaintRect(albumart_size.x + (albumart_size.w - lyricsWidth) / 2, albumart_size.y + pref.lyrics_h_padding, lyricsWidth, albumart_size.h - pref.lyrics_h_padding * 2);
+		gLyrics.on_playback_pause(state);
 	}
 
 	if (displayPlaylist) {
@@ -1946,6 +1943,9 @@ function on_playback_stop(reason) {
 	}
     bandLogo = disposeImg(bandLogo);
     invertedBandLogo = disposeImg(invertedBandLogo);
+	if (displayLyrics) {
+		gLyrics.on_playback_stop(reason);
+	}
 
 	while (flagImgs.length > 0)
 		disposeImg(flagImgs.pop());
@@ -2058,15 +2058,6 @@ function on_script_unload() {
 function on_playback_time() {
 	// Refresh playback time
 	str.time = $('%playback_time%');
-
-	// at each new second, hundredth is reset to 0 (Increment on timer every 100ms)
-	hundredth = 0;
-	if (displayLyrics && g_lyrics_status == 0 && lyricsWidth > 0 && albumart_size.w > 0) {
-		if (elap_seconds.Eval() == 3) {
-			refresh_lyrics();
-		}
-		window.RepaintRect(albumart_size.x + (albumart_size.w - lyricsWidth) / 2, albumart_size.y + pref.lyrics_h_padding, lyricsWidth, albumart_size.h - pref.lyrics_h_padding * 2);
-	}
 }
 
 function refresh_seekbar() {
@@ -2411,6 +2402,9 @@ function ResizeArtwork(resetCDPosition) {
 		cdart_size = new ImageSize(0, 0, 0, 0);
 	}
 	if (hasArtwork) {
+		if (gLyrics) {
+			gLyrics.on_size(albumart_size.x, albumart_size.y, albumart_size.w, albumart_size.h);
+		}
 		if (!pref.darkMode) {
 			createDropShadow();
 		}
