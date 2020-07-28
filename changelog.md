@@ -1,3 +1,10 @@
+### v2.0.0 - 2020-08-??
+ - foo_jscript_panel replaced with foo_spider_monkey_panel
+ - Simplified script initialization (no more pasting contents of Georgia.txt into Configuration panel after initial setup time)
+ - Automatically generating and reading preferences from georgia-preferences.json
+ - When using hyperlinks to search, if current playing song is in results, it will show as playing
+ - Added georgia-config.jsonc file to store preferences outside foobar
+
 ### v1.1.9 - 2020-07-10
  - Fix library panel not showing tracks with foo_jscript_panel 2.4.x
  - Allow specifying a custom cdart filename
