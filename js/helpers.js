@@ -28,6 +28,25 @@ function $(field, metadb) {
 }
 
 /**
+ * Given a metadata field of name, returns an array of all corresponding metadata values.
+ * Will strip leading and trailing %'s from name.
+ * @param {string} name
+ * @returns {Array<string>}
+ */
+function getMetaValues(name) {
+	let vals = [];
+	const searchName = name.replace('%', '');
+	for (let i = 0; i < parseInt($(`$meta_num(${searchName})`)); i++) {
+		vals.push($(`$meta(${searchName},${i})`));
+	}
+	if (!vals.length) {
+		vals = $(name).split(', ');
+	}
+
+	return vals;
+}
+
+/**
  * Use the debugLog function instead of console.log to easily hide messages that I don't want cluttering the console constantly
  * @type {function(...*):void} var_args
  */

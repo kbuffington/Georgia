@@ -2421,11 +2421,11 @@ function LoadCountryFlags() {
 	while (flagImgs.length) {
 		disposeImg(flagImgs.pop());
 	}
-	for (let i = 0; i < parseInt($('$meta_num(' + tf.artist_country + ')')); i++) {
-		const path = $(pref.flags_base) + (is_4k ? '64\\' : '32\\') + $('$meta(' + tf.artist_country + ',' + i + ')').replace(/ /g, '-') + '.png';
+	getMetaValues(tf.artist_country).forEach(country => {
+		const path = $(pref.flags_base) + (is_4k ? '64\\' : '32\\') + country.trim().replace(/ /g, '-') + '.png';
 		var fImg = gdi.Image(path);
 		fImg && flagImgs.push(fImg);
-	}
+	});
 }
 
 function replaceFileChars(s) {
