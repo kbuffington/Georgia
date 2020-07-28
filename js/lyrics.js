@@ -343,6 +343,14 @@ class Lyrics {
 	}
 }
 
+/**
+ * Load lyrics of NowPlaying song, and sets size of the lyrics draw area
+ */
+function initLyrics() {
+	gLyrics = new Lyrics(fb.GetNowPlaying());
+	gLyrics.on_size(albumart_size.x, albumart_size.y, albumart_size.w, albumart_size.h);
+}
+
 // Lyrics Functions
 
 function drawLyrics(gr, tab, posy) {
@@ -429,9 +437,6 @@ function timerTick() {
 
 function refresh_lyrics() {
 	if (fb.IsPlaying || fb.IsPaused) {
-		gLyrics = new Lyrics(fb.GetNowPlaying());
-		gLyrics.on_size(albumart_size.x, albumart_size.y, albumart_size.w, albumart_size.h);
-
 		let refreshLyricsProfiler = null;
 
 		if (timings.showLyricsTiming) refreshLyricsProfiler = fb.CreateProfiler("refresh_lyrics");
@@ -599,8 +604,8 @@ function load_track_info() {
 	var tab = Array(new sentence, new sentence, new sentence, new sentence);
 	var count = 0;
 	console.log("in load_track_info()");
-	tab[count++].text = fb.TitleFormat(tf["artist"]).Eval();
-	tab[count++].text = fb.TitleFormat(tf["title"]).Eval();
+	tab[count++].text = fb.TitleFormat(tf.artist).Eval();
+	tab[count++].text = fb.TitleFormat(tf.title).Eval();
 	return calc_lines(tab);
 }
 
@@ -870,7 +875,7 @@ function get_lyrics() {
 	lyrPos = midpoint;
 	focus = 0;
 	// check TAGs
-	tag = fb.TitleFormat(tf["lyrics"]).Eval();
+	tag = fb.TitleFormat(tf.lyrics).Eval();
 	if (tag.length > 0) {
 		bool_tag = true;
 		g_lyrics_status = tag[0]=="[" ? 1 : 2;

@@ -161,9 +161,8 @@ function VolumeBtn() {
         this.w = window.Width;
         this.h = window.Height;
 
-        var playback_y = this.h - playback_h;
-
-        var volume_bar_y = playback_y + Math.floor(playback_h / 2 - volume_bar_w / 2 - 10);
+        const playback_y = this.h - playback_h;
+        const volume_bar_y = playback_y + Math.floor(playback_h / 2 - volume_bar_w / 2 - 10);
         volume_bar = new _.volume(volume_bar_x, volume_bar_y, Math.min(this.w - volume_bar_x - 4, volume_bar_h), volume_bar_w);
 
     };
@@ -174,7 +173,7 @@ function VolumeBtn() {
         var center = Math.floor(btnWidth / 2);
 
         volume_bar_x = x;
-        volume_bar_y = y
+        const volume_bar_y = y;
         volume_bar = new _.volume(volume_bar_x + center - volume_bar_w / 2, volume_bar_y + center, volume_bar_w, Math.min(this.h - volume_bar_y - 4, volume_bar_h));
     }
 
