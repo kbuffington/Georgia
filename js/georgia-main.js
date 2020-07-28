@@ -1211,9 +1211,6 @@ function on_init() {
 		on_playback_new_track(fb.GetNowPlaying());
 	}
 
-	g_playtimer && clearInterval(g_playtimer);
-	g_playtimer = null;
-
 	/** Workaround so we can use the Edit menu or run fb.RunMainMenuCommand("Edit/Something...")
 		when the panel has focus and a dedicated playlist viewer doesn't. */
 	plman.SetActivePlaylistContext(); // once on startup
@@ -1273,9 +1270,6 @@ function on_size() {
 		midpoint = Math.ceil(albumart_size.y + pref.lyrics_line_height + albumart_size.h / 2);
 	else
 		midpoint = Math.ceil((wh - geo.lower_bar_h + pref.lyrics_line_height) / 2);
-	if (displayLyrics) {
-		refresh_lyrics();
-	}
 
 	playlist_shadow = disposeImg(playlist_shadow);
 	if (displayPlaylist) {
@@ -1415,11 +1409,8 @@ function on_playback_new_track(metadb) {
 	}
 
 	// Lyrics stuff
-	// g_playtimer && clearInterval(g_playtimer);
-	// g_playtimer = null;
 	if (displayLyrics) { // no need to try retrieving them if we aren't going to display them now
-		refresh_lyrics();
-		// updateLyricsPositionOnScreen();
+		initLyrics();
 	}
 	if (timings.showDebugTiming) newTrackProfiler.Print();
 }
@@ -1490,8 +1481,7 @@ function on_metadb_changed(handle_list, fromhook) {
 			str.grid = [];
 			for (let k = 0; k < tf.grid.length; k++) {
 				let val = $(tf.grid[k].val);
-				if (tf.grid[k].label && val) {
-				if (val) {
+				if (val && tf.grid[k].label) {
 					if (tf.grid[k].age) {
 						val = $('$date(' + val + ')'); // never show time
 						var age = calcAgeDateString(val);
@@ -1505,7 +1495,6 @@ function on_metadb_changed(handle_list, fromhook) {
 						val: val,
 					});
 				}
-			}
 			}
 
 			var lastfm_count = $('%lastfm_play_count%');
@@ -1562,7 +1551,6 @@ function on_playback_order_changed(this_pb) {
 function on_playback_seek() {
 	progressMoved = true;
 	if (displayLyrics) {
-		// refresh_lyrics();
 		gLyrics.seek();
 	}
 	on_playback_time();
@@ -1952,8 +1940,6 @@ function on_playback_stop(reason) {
 	rotatedCD = disposeImg(rotatedCD);
 	globTimer = 0;
 
-	g_playtimer && clearInterval(g_playtimer);
-	g_playtimer = null;
 	if (reason === 0) {
 		// Stop
 		cdart = disposeCDImg(cdart);
@@ -2261,7 +2247,6 @@ function glob_image(index, loadFromCache) {
 			ResizeArtwork(true);
 			cdart && CreateRotatedCDImage();
 			lastLeftEdge = 0; // recalc label location
-			displayLyrics && updateLyricsPositionOnScreen();
 			RepaintWindow();
 		});
 		album_art_path = aa_list[index];
@@ -2273,7 +2258,6 @@ function glob_image(index, loadFromCache) {
 	if (cdart) {
 		CreateRotatedCDImage();
 	}
-	displayLyrics && updateLyricsPositionOnScreen();
 }
 
 function disposeImg(oldImage) {
@@ -2510,9 +2494,10 @@ function fetchNewArtwork(metadb) {
 			}
 		}
 		if (disc_art_exists) {
-			var temp_cdart;
-			if (loadFromCache)
+			let temp_cdart;
+			if (loadFromCache) {
 				temp_cdart = art_cache.getImage(cdartPath);
+			}
 			if (temp_cdart) {
 				disposeCDImg(cdart);
 				cdart = temp_cdart;
