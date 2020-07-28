@@ -123,13 +123,12 @@ class Hyperlink {
 	}
 
 	click() {
-		var query = this.type + ' IS ' + this.text;
-		var populatePlaylist = function (query) {
-			var handle_list = fb.GetQueryItems(fb.GetLibraryItems(), query);
+		const populatePlaylist = function (query) {
+			const handle_list = fb.GetQueryItems(fb.GetLibraryItems(), query);
 			if (handle_list.Count) {
 				const pl = plman.FindOrCreatePlaylist('Search', true);
 				handle_list.Sort();
-				const index = handle_list.BSearch(fb.GetNowPlaying());
+				const index = fb.IsPlaying ? handle_list.BSearch(fb.GetNowPlaying()) : -1;
 				if (pl === plman.PlayingPlaylist && plman.GetPlayingItemLocation().PlaylistIndex === pl && index !== -1) {
 					// remove everything in playlist except currently playing song
 					plman.ClearPlaylistSelection(pl);
@@ -150,20 +149,28 @@ class Hyperlink {
 			}
 			return false;
 		}
-
-		if (this.type === 'update') {
-			// get update
-			_.runCmd('https://github.com/kbuffington/Georgia/releases');
-		} else {
-			if (this.type === 'date') {
+		/** @type {string} */
+		let query;
+		switch (this.type) {
+			case 'update':
+				_.runCmd('https://github.com/kbuffington/Georgia/releases');
+				break;
+			case 'date':
 				query = '"$year(%date%)" IS ' + this.text;
-			}
-			if (!populatePlaylist(query)) {
-				var start = this.text.indexOf('[');
-				if (start) {
-					query = this.type + ' IS ' + this.text.substr(0, start - 3);	// remove ' - [...]' from end of string
-					populatePlaylist(query);
-				}
+				break;
+			case 'artist':
+				query = `Artist HAS ${this.text} OR ARTISTFILTER HAS ${this.text}`;
+				break;
+			default:
+				query = this.type + ' IS ' + this.text;
+				break;
+		}
+
+		if (!populatePlaylist(query)) {
+			var start = this.text.indexOf('[');
+			if (start) {
+				query = this.type + ' IS ' + this.text.substr(0, start - 3);	// remove ' - [...]' from end of string
+				populatePlaylist(query);
 			}
 		}
 	}
