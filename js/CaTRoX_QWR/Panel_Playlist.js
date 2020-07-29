@@ -3722,7 +3722,7 @@ class Header extends BaseHeader {
 
 			//---> DATE
 			if (this.grouping_handler.show_date()) {
-				var date_query = '[$year(' + tf.year + ')]';
+				var date_query = tf.year;
 
 				var date_text = _.tf(date_query, this.metadb);
 				if (date_text && date_text !== '0000') {
@@ -3962,7 +3962,7 @@ class Header extends BaseHeader {
 
 		//---> DATE
 		if (this.grouping_handler.show_date()) {
-			var date_query = '$year(' + tf.year + ')';
+			var date_query = tf.year;
 
 			var date_text = _.tf(date_query, this.metadb);
 			if (date_text) {
@@ -4066,7 +4066,7 @@ class Header extends BaseHeader {
 		var date_font = g_pl_fonts.date;
 		var artist_font = g_pl_fonts.artist_normal;
 
-		const date_query = '$year(' + tf.year + ')'; // Mordred: my date query
+		const date_query = tf.year;
 
 		var date_text = _.tf(date_query, this.metadb);
 		if (date_text) {
