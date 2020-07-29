@@ -4362,6 +4362,7 @@ class Row extends ListItem {
 			else {
 				gr.FillSolidRect(this.x, this.y, this.w, this.h, g_pl_colors.row_selected);
 			}
+			gr.FillSolidRect(this.x, this.y, scaleForDisplay(2), this.h + 1, col.accent);
 
 			title_color = g_pl_colors.title_selected;
 			title_font = g_pl_fonts.title_selected;
@@ -4375,11 +4376,12 @@ class Row extends ListItem {
 			title_font = g_pl_fonts.title_playing;
 			count_color = g_pl_colors.count_playing;
 
-			var bg_color = this.is_selected() ? col.accent : col.darkAccent;
+			const bg_color = this.is_selected() ? col.accent : col.darkAccent;
 			gr.FillSolidRect(this.x, this.y, this.w, this.h, bg_color);
 			if (colorDistance(bg_color, title_artist_color) < 150) {
 				title_artist_color = title_color;
 			}
+			gr.FillSolidRect(this.x, this.y, scaleForDisplay(2), this.h, col.accent);
 		}
 
 		//--->
