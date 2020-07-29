@@ -240,7 +240,7 @@ Button.prototype.onClick = function () {
 			displayLyrics = !displayLyrics;
 			if ((fb.IsPlaying || fb.IsPaused) && albumart_scaled) {
 				if (displayLyrics) {
-					refresh_lyrics();
+					initLyrics();
 				}
 				window.RepaintRect(albumart_size.x - 1, albumart_size.y - 1, albumart_scaled.Width + 2, albumart_scaled.Height + 2);
 			}
