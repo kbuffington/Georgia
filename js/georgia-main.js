@@ -374,15 +374,13 @@ function draw_ui(gr) {
 				drawArt = fb.CreateProfiler('on_paint -> artwork');
 			}
 			if (!pref.cdart_ontop || displayLyrics) {
-				if (rotatedCD && !displayPlaylist && !displayLibrary && pref.display_cdart &&
-						cdart_size.y > albumart_size.y && cdart_size.h < albumart_size.h) {
+				if (rotatedCD && !displayPlaylist && !displayLibrary) {
 					drawCdArt(gr);
 				}
 				gr.DrawImage(albumart_scaled, albumart_size.x, albumart_size.y, albumart_size.w, albumart_size.h, 0, 0, albumart_scaled.Width, albumart_scaled.Height);
 			} else { // draw cdart on top of front cover
 				gr.DrawImage(albumart_scaled, albumart_size.x, albumart_size.y, albumart_size.w, albumart_size.h, 0, 0, albumart_scaled.Width, albumart_scaled.Height);
-				if (rotatedCD && !displayPlaylist && !displayLibrary && pref.display_cdart &&
-						cdart_size.y > albumart_size.y && cdart_size.h < albumart_size.h) {
+				if (rotatedCD && !displayPlaylist && !displayLibrary) {
 					drawCdArt(gr);
 				}
 			}
@@ -902,10 +900,12 @@ function draw_ui(gr) {
 }
 
 function drawCdArt(gr) {
-	let drawCdProfiler = null;
-	if (timings.showExtraDrawTiming) drawCdProfiler = fb.CreateProfiler('cdart');
-	gr.DrawImage(rotatedCD, cdart_size.x, cdart_size.y, cdart_size.w, cdart_size.h, 0, 0, rotatedCD.Width, rotatedCD.Height, 0);
-	if (timings.showExtraDrawTiming) drawCdProfiler.Print();
+	if (pref.display_cdart && cdart_size.y >= albumart_size.y && cdart_size.h <= albumart_size.h) {
+		let drawCdProfiler = null;
+		if (timings.showExtraDrawTiming) drawCdProfiler = fb.CreateProfiler('cdart');
+		gr.DrawImage(rotatedCD, cdart_size.x, cdart_size.y, cdart_size.w, cdart_size.h, 0, 0, rotatedCD.Width, rotatedCD.Height, 0);
+		if (timings.showExtraDrawTiming) drawCdProfiler.Print();
+	}
 }
 
 function on_paint(gr) {
@@ -2165,7 +2165,7 @@ function calcDateRatios(dontUpdateLastPlayed, currentLastPlayed) {
 	var playedTimes = [];
 	if (componentEnhancedPlaycount) {
 		const playedTimesJson = $('[%played_times_js%]', fb.GetNowPlaying());
-		const  lastfmJson = $('[%lastfm_played_times_js%]', fb.GetNowPlaying());
+		const lastfmJson = $('[%lastfm_played_times_js%]', fb.GetNowPlaying());
 		var log = true;
 		if (playedTimesJson == playedTimesJsonLast && lastfmJson == lfmPlayedTimesJsonLast) {
 			log = false;    // cut down on spam
@@ -2356,7 +2356,7 @@ function ResizeArtwork(resetCDPosition) {
 			// console.log(cdart_size.x, cdart_size.y, cdart_size.w, cdart_size.h);
 		} else {
 			// no album art so we need to calc size of disc
-			var album_scale = Math.min(((displayPlaylist || displayLibrary) ? 0.47 * ww : 0.75 * ww) / cdart.Width, (wh - geo.top_art_spacing - lowerSpace - scaleForDisplay(16)) / cdart.Height);
+			const cd_scale = Math.min(((displayPlaylist || displayLibrary) ? 0.47 * ww : 0.75 * ww) / cdart.Width, (wh - geo.top_art_spacing - lowerSpace - scaleForDisplay(16)) / cdart.Height);
 			let xCenter = 0;
 			if (displayPlaylist || displayLibrary) {
 				xCenter = 0.25 * ww;
@@ -2365,20 +2365,21 @@ function ResizeArtwork(resetCDPosition) {
 			} else {
 				xCenter = 0.5 * ww;
 				art_off_center = false;
-				if (album_scale == 0.75 * ww / cdart.Width) {
+				if (cd_scale == 0.75 * ww / cdart.Width) {
 					xCenter += 0.1 * ww;
 					art_off_center = true; // TODO: We should probably suppress labels in this case
 				}
 			}
-			cdart_size.w = Math.floor(cdart.Width * album_scale); // width
-			cdart_size.h = Math.floor(cdart.Height * album_scale); // height
+			// need to -4 from height and add 2 to y to avoid skipping cdArt drawing - not sure this is needed
+			cdart_size.w = Math.floor(cdart.Width * cd_scale) - 4; // width
+			cdart_size.h = cdart_size.w; // height
 			cdart_size.x = Math.floor(xCenter - 0.5 * cdart_size.w); // left
-			if (album_scale !== (wh - geo.top_art_spacing - lowerSpace - scaleForDisplay(16)) / cdart.Height) {
+			if (cd_scale !== (wh - geo.top_art_spacing - lowerSpace - scaleForDisplay(16)) / cdart.Height) {
 				// restricted by width
 				var y = geo.top_art_spacing + Math.floor(((wh - geo.top_art_spacing - lowerSpace - scaleForDisplay(16)) / 2) - cdart_size.h / 2);
 				cdart_size.y = Math.min(y, 160);
 			} else {
-				cdart_size.y = geo.top_art_spacing; // height of menu bar + spacing + height of Artist text (32+32+32)	// top
+				cdart_size.y = geo.top_art_spacing + 2; // top
 			}
 			pauseBtn.setCoords(cdart_size.x + cdart_size.w / 2, cdart_size.y + cdart_size.h / 2);
 			hasArtwork = true;
