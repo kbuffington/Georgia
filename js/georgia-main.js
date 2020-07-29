@@ -1392,7 +1392,7 @@ function on_playback_new_track(metadb) {
 
 	last_path = current_path; // for art caching purposes
 	lastDiscNumber = $('$if2(%discnumber%,0)'); // for art caching purposes
-	lastVinylSide = $('$if2(" + tf.vinyl_side + ",ZZ)');
+	lastVinylSide = $('$if2(' + tf.vinyl_side + ',ZZ)');
 	currentLastPlayed = $(tf.last_played);
 
 	if (fb.GetNowPlaying()) {
