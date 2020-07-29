@@ -259,7 +259,7 @@ var state = {}; // panel state
 // TIMERS
 var progressTimer; // 40ms repaint of progress bar
 var globTimer; // Timer for rotating globs
-var hideCursor; // Timer for hiding cursor
+let hideCursorTimer; // Timer for hiding cursor
 
 // STATUS VARIABLES
 let ww = 0;
@@ -1450,7 +1450,7 @@ function on_metadb_changed(handle_list, fromhook) {
 			if (str.year === '0000') {
 				str.year = '';
 			}
-            str.album = $("[%album%][ '['" + tf.album_trans + "']']");
+            str.album = $("[%album%][ '['" + tf.album_translation + "']']");
 			str.album_subtitle = $("[ '['" + tf.album_subtitle + "']']");
 			var codec = $("$lower($if2(%codec%,$ext(%path%)))");
 			if (codec == "dca (dts coherent acoustics)") {
@@ -1670,9 +1670,10 @@ function on_mouse_move(x, y, m) {
 		}
 		state["mouse_x"] = x;
 		state["mouse_y"] = y;
-		if (pref.hide_cursor) {
-			clearTimeout(hideCursor);
-			hideCursor = setTimeout(() => {
+
+		if (settings.hide_cursor) {
+			clearTimeout(hideCursorTimer);
+			hideCursorTimer = setTimeout(() => {
 				// if there's a menu id (i.e. a menu is down) we don't want the cursor to ever disappear
 				if (!menu_down) {
 					window.SetCursor(-1); // hide cursor
@@ -1951,7 +1952,7 @@ function on_playback_stop(reason) {
 }
 
 function on_playback_starting(cmd, is_paused) {
-	if (pref.hide_cursor) {
+	if (settings.hide_cursor) {
 		window.SetCursor(-1); // hide cursor
 	}
 	createButtonObjects(ww, wh); // play button to pause
@@ -1986,7 +1987,7 @@ function on_focus(is_focused) {
 	if (is_focused) {
 		plman.SetActivePlaylistContext(); // When the panel gets focus but not on every click.
 	} else {
-		clearTimeout(hideCursor); // not sure this is required, but I think the mouse was occasionally disappearing
+		clearTimeout(hideCursorTimer); // not sure this is required, but I think the mouse was occasionally disappearing
 	}
 }
 

@@ -3,7 +3,7 @@ var globals = new PanelProperties();
 /** @type {*} */
 var pref = new PanelProperties(); // preferences
 /** @type {*} */
-var tf = new PanelProperties(); // titleformating strings
+let settings = {};
 
 const currentVersion = '1.1.9';
 let updateAvailable = false;
@@ -13,7 +13,6 @@ const g_component_playcount = utils.CheckComponent('foo_playcount');
 const g_component_utils = utils.CheckComponent('foo_utils');
 const componentEnhancedPlaycount = utils.CheckComponent('foo_enhanced_playcount');
 
-// these used to be initialized in js_marc2003/js/helpers.js
 /** @type {*} */
 const doc = new ActiveXObject('htmlfile');
 const app = new ActiveXObject('Shell.Application');
@@ -90,49 +89,60 @@ var g_txt_highlightcolour = eval(pref.lyrics_focus_color);
 var g_txt_shadowcolor = RGBA(0, 0, 0, 255);
 
 //Tag Properties
-tf.add_properties({
-	// added:          ['Tag Fields: Added', '$ifgreater($if(%lastfm_added%,$replace($date(%lastfm_added%),-,),999999999),$replace($date(%added%),-,),[%added%],[%lastfm_added%])'],
-	added: ['Tag Fields: Added', '[$if2(%added_enhanced%,%added%)]'],
-	album_subtitle: ['Tag Fields: Album Subtitle', '%albumsubtitle%'],
-	artist: ['Tag Fields: Artist String', '$if3(%artist%,%composer%,%performer%,%album artist%)'],
-	artist_country: ['Tag Fields: Country', '%artistcountry%'], // we call meta_num(artistcountry) so don't wrap this in % signs
-	disc: ['Tag Fields: Disc String', '$ifgreater(%totaldiscs%,1,CD %discnumber%/%totaldiscs%,)'],
-	disc_subtitle: ['Tag Fields: Disc Subtitle', '%discsubtitle%'],
-	year: ['Tag Fields: Year', '$if3(%original release date%,%originaldate%,%date%,%fy_upload_date%)'],
-	date: ['Tag Fields: Date', '$if3(%original release date%,%originaldate%,%date%,%fy_upload_date%)'],
-	last_played: ['Tag Fields: Last Played', '[$if2(%last_played_enhanced%,%last_played%)]'],
-	title: ['Tag Fields: Song Title String', "%title%[ '['%translation%']']"],
-	vinyl_side: ['Tag Fields: Vinyl Side', '%vinyl side%'], // the tag used for determining what side a song appears on for vinyl releases - i.e. song A1 has a %vinyl side% of "A"
-	vinyl_tracknum: ['Tag Fields: Vinyl Track#', '%vinyl tracknumber%'], // the tag used for determining the track number on vinyl releases i.e. song A1 has %vinyl tracknumber% set to "1"
-	translation: ['Tag Fields: Translated song title', '%translation%'],
-	album_trans: ['Tag Fields: Translated album title', '%albumtranslation%'],
-	edition: ['Tag Fields: Edition', '[$if(%original release date%,$ifequal($year(%original release date%),$year(%date%),,$year(%date%) ))$if2(%edition%,\'release\')]'],
-	original_artist: ['Tag Fields: Original Artist', "[ '('%original artist%' cover)']"],
-})
+// tf.add_properties({
+// 	// added:          ['Tag Fields: Added', '$ifgreater($if(%lastfm_added%,$replace($date(%lastfm_added%),-,),999999999),$replace($date(%added%),-,),[%added%],[%lastfm_added%])'],
+// 	album_subtitle: ['Tag Fields: Album Subtitle', '%albumsubtitle%'],
+// 	artist: ['Tag Fields: Artist String', '$if3(%artist%,%composer%,%performer%,%album artist%)'],
+// 	artist_country: ['Tag Fields: Country', '%artistcountry%'], // we call meta_num(artistcountry) so don't wrap this in % signs
+// 	disc: ['Tag Fields: Disc String', '$ifgreater(%totaldiscs%,1,CD %discnumber%/%totaldiscs%,)'],
+// 	disc_subtitle: ['Tag Fields: Disc Subtitle', '%discsubtitle%'],
+// 	year: ['Tag Fields: Year', '$if3(%original release date%,%originaldate%,%date%,%fy_upload_date%)'],
+// 	date: ['Tag Fields: Date', '$if3(%original release date%,%originaldate%,%date%,%fy_upload_date%)'],
+// 	last_played: ['Tag Fields: Last Played', '[$if2(%last_played_enhanced%,%last_played%)]'],
+// 	title: ['Tag Fields: Song Title String', "%title%[ '['%translation%']']"],
+// 	vinyl_side: ['Tag Fields: Vinyl Side', '%vinyl side%'], // the tag used for determining what side a song appears on for vinyl releases - i.e. song A1 has a %vinyl side% of "A"
+// 	vinyl_tracknum: ['Tag Fields: Vinyl Track#', '%vinyl tracknumber%'], // the tag used for determining the track number on vinyl releases i.e. song A1 has %vinyl tracknumber% set to "1"
+// 	translation: ['Tag Fields: Translated song title', '%translation%'],
+// 	album_translation: ['Tag Fields: Translated album title', '%albumtranslation%'],
+// 	edition: ['Tag Fields: Edition', '[$if(%original release date%,$ifequal($year(%original release date%),$year(%date%),,$year(%date%) ))$if2(%edition%,\'release\')]'],
+// 	original_artist: ['Tag Fields: Original Artist', "[ '('%original artist%' cover)']"],
+// });
 
-// Playlist TF strings, not currently saved in globals:
-// %album%[ — '['$if(%original release date%,$ifequal($year(%original release date%),$year(%date%),,$year(%date%) ))%edition%']']
+/** @type {*} */
+let tf = {};	// title formatting strings - defining each entry separately for auto-complete purposes
+tf.album_subtitle = '%albumsubtitle%';
+tf.album_translation = '%albumtranslation%';
+tf.artist_country = '$if3(%albumtranslation%,%artistcountry%)';
+tf.artist = '$if3(%artist%,%composer%,%performer%,%album artist%)';
+tf.date = '$if3(%original release date%,%originaldate%,%date%,%fy_upload_date%)';
+tf.disc_subtitle = '%discsubtitle%';
+tf.disc = '$ifgreater(%totaldiscs%,1,CD %discnumber%/%totaldiscs%,)';
+tf.edition = '[$if(%original release date%,$ifequal($year(%original release date%),$year(%date%),,$year(%date%) ))$if2(%edition%,\'release\')]';
+tf.last_played = '[$if2(%last_played_enhanced%,%last_played%)]';
+tf.lyrics = '[$if3(%lyrics%,%lyric%,%unsynced lyrics%,%unsynced lyric%)]';
+tf.original_artist = '[ \'(\'%original artist%\' cover)\']';
+tf.title = '%title%[ \'[\'%translation%\']\']';
+tf.tracknum = '[%tracknumber%.]';
+tf.vinyl_side = '%vinyl side%';
+tf.vinyl_tracknum = '%vinyl tracknumber%';
+tf.year = '[$year($if3(%original release date%,%originaldate%,%date%,%fy_upload_date%))]';
 
-if (!componentEnhancedPlaycount) {
-	console.log('foo_enhanced_playcount not loaded');
-	tf.played_times = '';
-	tf.last_fm_plays = '';
-} else {
-	tf.add_properties({
-		played_times: ['Tag Fields: All Played Times', "$if($strcmp(%played_times%,'[]'),,%played_times%)"],
-		last_fm_plays: ['Tag Fields: All Last.Fm Played Times', "$if($strcmp(%lastfm_played_times_js%,'[]'),,%lastfm_played_times_js%)"],
-	})
+const titleFormatComments = {
+	artist_country: 'Only used for displaying artist flags.',
+	date: 'The full date stored for the track',
+	lyrics: 'Lyrics.js will check these fields in order if no local lyrics file is found.',
+	title: 'Track title shown above the progress bar',
+	vinyl_side: 'Used for determining what side a song appears on for vinyl releases - i.e. song A1 has a %vinyl side% of "A"',
+	vinyl_tracknum: 'Used for determining the track number on vinyl releases - i.e. song A1 has %vinyl tracknumber% set to "1"',
+	year: 'Just the year portion of any stored date.',
 }
+const titleFormatSchema = new ConfigurationObjectSchema('title_format_strings', ConfigurationObjectType.Object, undefined,
+		'Title formatting fields, used throughout the display. Do NOT change the key names.');
 
 // TEXT FIELDS
 var stoppedStr1 = 'foobar2000';
 var stoppedStr2 = 'plays music';
 var stoppedTime = 'Georgia v' + currentVersion;
-tf.tracknum = '[%tracknumber%.]';
-tf.title_trans = "%title%[ '['" + tf.translation + "']']";
-tf.vinyl_track = '$if2(' + tf.vinyl_side + '[' + tf.vinyl_tracknum + ']. ,[%tracknumber%. ])';
-tf.vinyl_title = tf.vinyl_track + "%title%[ '['" + tf.translation + "']']";
-tf.artist_country = tf.artist_country.replace('%', ''); // need to strip %'s because we use meta_num on this field
 
 /* My ridiculous artist string:
 $ifgreater($meta_num(ArtistFilter),1,$puts(mArtist,$meta(ArtistFilter,0))$if($put(comma,$sub($strstr($get(mArtist),', '),1)),$puts(mArtist,$substr($get(mArtist),$add($get(comma),3),$len($get(mArtist))) $substr($get(mArtist),0,$get(comma))),)\
@@ -153,32 +163,75 @@ $ifgreater($meta_num(ArtistFilter),1,$puts(mArtist,$meta(ArtistFilter,0))$if($pu
 */
 
 // Info grid. Simply add, change, reorder, or remove entries to change grid layout
-tf.grid = [
+const grid = [
 	{ label: 'Disc',         val: '$if('+ tf.disc_subtitle +',[Disc %discnumber% - ]'+ tf.disc_subtitle +')' },
 	{ label: 'Release Type', val: '$if($strstr(%releasetype%,Album),,[%releasetype%])' },
-	{ label: 'Year',         val: '$puts(d,'+tf.year+')$if($strcmp($year($get(d)),$get(d)),$get(d),)' },            // tf.year is used if the date is YYYY
-	{ label: 'Release Date', val: '$puts(d,'+tf.date+')$if($strcmp($year($get(d)),$get(d)),,$get(d))', age: true }, // tf.date is used if the date is YYYY-MM-DD
+	{ label: 'Year',         val: '$puts(d,'+tf.date+')$if($strcmp($year($get(d)),$get(d)),$get(d),)', comment: 'Year is shown if the date format is YYYY' },
+	{ label: 'Release Date', val: '$puts(d,'+tf.date+')$if($strcmp($year($get(d)),$get(d)),,$get(d))', age: true, comment: 'is used if the date is YYYY-MM-DD' },
 	{ label: 'Edition',      val: tf.edition },
-	{ label: 'Label',        val: '[$replace(%label%,\', \',\' \u2022 \')]' },
+	{ label: 'Label',        val: '[$meta_sep(label, \u2022 )]' },
 	{ label: 'Catalog #',    val: '[%catalognumber%]' },
 	{ label: 'Track',        val: '$if(%tracknumber%,$num(%tracknumber%,1)$if(%totaltracks%,/$num(%totaltracks%,1))$ifgreater(%totaldiscs%,1,   CD %discnumber%/$num(%totaldiscs%,1),)' },
-	// { label: 'Genre',        val: '[$replace(%genre%,\', \',\' • \')]' },
-	{ label: 'Genre',        val: '[$replace(%genre%,\', \',\' \u2022 \')]' },
-	{ label: 'Style',        val: '[$replace(%style%,\', \',\' \u2022 \')]' },
+	{ label: 'Genre',        val: '[$meta_sep(genre, \u2022 )]' },
+	{ label: 'Style',        val: '[$meta_sep(style, \u2022 )]' },
 	{ label: 'Release',      val: '[%release%]' },
 	{ label: 'Codec',   	 val: "[$if($not($strstr(%codec%,'MP3')),$replace($if2(%codec_profile%,%codec%),ATSC A/52,Dolby Digital)[ $replace($replace($replace($info(channel_mode), + LFE,),' front, ','/'),' rear surround channels',$if($strstr($info(channel_mode),' + LFE'),.1,.0))])]" },
-	{ label: 'Added',        val: '[' + tf.added + ']', age: true },
+	{ label: 'Added',        val: '[$if2(%added_enhanced%,%added%)]', age: true },
 	{ label: 'Last Played',  val: '[' + tf.last_played + ']', age: true },
 	{ label: 'Hotness',	     val: "$puts(X,5)$puts(Y,$div(%_dynamic_rating%,400))$repeat($repeat(I,$get(X))   ,$div($get(Y),$get(X)))$repeat(I,$mod($get(Y),$get(X)))$ifgreater(%_dynamic_rating%,0,   $replace($div(%_dynamic_rating%,1000)'.'$mod($div(%_dynamic_rating%,100),10),0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9),)" },
 	{ label: 'View Count',   val: '[%fy_view_count%]' },
-	{ label: 'Likes',        val: "[$if(%fy_like_count%,%fy_like_count% ▲ / %fy_dislike_count% ▼,)]" },
-	// { label: 'Play Count',   val: '$if($or(%play_count%,%lastfm_play_count%),$puts(X,5)$puts(Y,$max(%play_count%,%lastfm_play_count%))$repeat($repeat(I,$get(X)) ,$div($get(Y),$get(X)))$repeat(I,$mod($get(Y),$get(X)))   $get(Y))' },
+	{ label: 'Likes',        val: "[$if(%fy_like_count%,%fy_like_count% \u25B2 / %fy_dislike_count% \u25BC,)]" },
 	{ label: 'Play Count',   val: '$if($or(%play_count%,%lastfm_play_count%),$puts(X,5)$puts(Y,$max(%play_count%,%lastfm_play_count%))$ifgreater($get(Y),30,,$repeat($repeat(I,$get(X)) ,$div($get(Y),$get(X)))$repeat(I,$mod($get(Y),$get(X)))   )$get(Y))' },
 	{ label: 'Rating', 	     val: '$if(%rating%,$repeat(\u2605 ,%rating%))' },
 	{ label: 'Mood',         val: '$if(%mood%,$puts(X,5)$puts(Y,$mul(5,%mood%))$repeat($repeat(I,$get(X))   ,$div($get(Y),$get(X)))$repeat(I,$mod($get(Y),$get(X)))$replace(%mood%,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9))' },
 ];
-tf.lyrics = '[$if3(%LYRICS%,%LYRIC%,%UNSYNCED LYRICS%,%UNSYNCED LYRIC%)]';
+const gridSchema = new ConfigurationObjectSchema('metadata_grid', ConfigurationObjectType.Array, [
+	{ name: 'label' },
+	{ name: 'val' },	// todo: change this to 'value'?
+	{ name: 'age', optional: true },
+], '*NOTE* Entries that evaluate to an empty string will not be shown in the grid');
 
+const settingsPref = {
+	hide_cursor: false,
+	locked: false,
+}
+const settingsComments = {
+	hide_cursor: 'Hides cursor when song is playing after 10 seconds of no mouse activity',
+	locked: 'Locks theme by preventing right-clicking on the background from bringing up a menu.'
+}
+const settingsSchema = new ConfigurationObjectSchema('settings', ConfigurationObjectType.Object,
+		// will display as key/val pairs with comments attached
+		undefined, 'General settings for the theme.');
+
+const configPath = fb.ProfilePath + '\\georgia\\georgia-config.jsonc';
+const config = new Configuration(configPath);
+let titleformat = {};
+if (!config.fileExists || true) {
+	settings = config.addConfigurationObject(settingsSchema, settingsPref, settingsComments);
+	tf = config.addConfigurationObject(titleFormatSchema, tf, titleFormatComments);
+	config.addConfigurationObject(gridSchema, grid);
+	config.writeConfiguration();
+	tf.grid = grid;	// these aren't key/value pairs so can't be updated using ThemeSettings
+}
+if (config.fileExists) {
+	const prefs = config.readConfiguration();
+	settings = config.addConfigurationObject(settingsSchema, prefs.settings, settingsComments);
+	tf = config.addConfigurationObject(titleFormatSchema, prefs.title_format_strings, titleFormatComments);
+	config.addConfigurationObject(gridSchema, prefs.metadata_grid, titleFormatComments);
+	// parse configuration then add back in configObjs with stored comments so we can regen config file with comments intact
+	tf.grid = prefs.metadata_grid;	// these aren't key/value pairs so can't be updated using ThemeSettings
+	// settings = config.getConfigObject(settingsSchema.name);
+}
+
+
+// else {
+// 	tf.grid = grid;
+// 	Object.assign(tf, tag_fields);
+// 	settings = config.getConfigObject(settingsSchema.name);
+// }
+
+/* All tf values from here below will NOT be writting to the Config file */
+tf.vinyl_track = '$if2(' + tf.vinyl_side + '[' + tf.vinyl_tracknum + ']. ,[%tracknumber%. ])';
 // GLOB PICTURES
 tf.glob_paths = [ // simply add, change or re-order entries as needed
 	'$replace(%path%,%filename_ext%,)folder*',
@@ -190,7 +243,8 @@ tf.glob_paths = [ // simply add, change or re-order entries as needed
 
 tf.lyr_path = [ // simply add, change or re-order entries as needed
 	'$replace($replace(%path%,%filename_ext%,),\,\\)',
-	fb.ProfilePath + "lyrics\\",
+	fb.ProfilePath + 'lyrics\\',
+	fb.FoobarPath + 'lyrics\\',
 ];
 tf.lyr_artist = "$replace(%artist%,'/','_',':','_','\"','_')"; // we need to strip some special characters so we can't use just use tf.artist
 tf.lyr_title = "$replace(%title%,'/','_',':','_','\"','_')"; // we need to strip special characters so we can't just use tf.title
@@ -218,53 +272,6 @@ function migrateCheck(version, storedVersion) {
 	if (version !== storedVersion) {
 		// this function clears default values which have changed
 		switch (storedVersion) {
-			case '0.9.5':
-			case '0.9.5.1':
-			case '0.9.6':
-			case 'NONE':
-				pref.lyrics_line_height = null;
-				pref.lyrics_font_size = null;
-				window.SetProperty('user.list.pad.bottom', null);
-				window.SetProperty('user.list.pad.left', null);
-				window.SetProperty('user.list.pad.right', null);
-				window.SetProperty('user.list.pad.top', null);
-			case '0.9.9':
-				tf.title = null;
-
-			case '1.0.0':
-				window.SetProperty('Library: Font Size', null);
-				window.SetProperty('SYSTEM.Font Size', null);
-				window.SetProperty('user.row.height', null);
-
-			case '1.1.0':
-			case '1.1.1':
-				tf.edition = null;
-
-			case '1.1.2':
-			case '1.1.3':
-			case '1.1.4':
-			case '1.1.5':
-				tf.date = null;
-				tf.year = null;
-
-			case '1.1.6':
-			case '1.1.7':
-				window.SetProperty('Lyrics: Font Size', null);
-				window.SetProperty('user.header.original_date.show', null);
-				window.SetProperty('user.row.focused.show', null);
-
-			case '1.1.8-beta1':
-			case '1.1.8-beta2':
-				tf.date = null;
-				tf.year = null;
-				window.SetProperty('Show transport controls', null);
-				window.SetProperty('Show transport below art', null);
-				window.SetProperty('Show Random Button', null);
-				window.SetProperty('Show Volume Button', null);
-				window.SetProperty('Show Reload Button', null);
-
-			case '1.1.8':
-				window.SetProperty('Time-zone (formatted +/-HH:MM, e.g. -06:00)', null);
 
 			case '1.1.9':
 				// after all previous versions have fallen through
