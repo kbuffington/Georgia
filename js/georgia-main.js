@@ -386,7 +386,7 @@ function draw_ui(gr) {
 			}
 			if (displayLyrics && albumart_scaled && fb.IsPlaying) {
 				gr.FillSolidRect(albumart_size.x - 1, albumart_size.y - 1, albumart_size.w + 1, albumart_size.h + 1, RGBA(0, 0, 0, 155));
-				drawLyrics(gr, g_tab, Math.floor(lyrPos - pref.lyrics_h_padding));
+				gLyrics && gLyrics.drawLyrics(gr);
 			}
 			if (timings.showExtraDrawTiming) drawArt.Print();
 		} else if (rotatedCD && pref.display_cdart) {
@@ -1410,7 +1410,11 @@ function on_playback_new_track(metadb) {
 
 	// Lyrics stuff
 	if (displayLyrics) { // no need to try retrieving them if we aren't going to display them now
+		setTimeout(() => {
+			console.log($(tf.lyrics));
 		initLyrics();
+			// window.RepaintRect(albumart_size.x, albumart_size.y, albumart_size.w, albumart_size.h);
+		}, 100);
 	}
 	if (timings.showDebugTiming) newTrackProfiler.Print();
 }
