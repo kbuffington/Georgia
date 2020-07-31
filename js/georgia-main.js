@@ -1261,11 +1261,6 @@ function on_size() {
 	// we aren't creating these buttons anymore, but we still use these values for now. TODO: replace these
 	const settingsY = btns[30].y;
 
-	if (albumart)
-		midpoint = Math.ceil(albumart_size.y + pref.lyrics_line_height + albumart_size.h / 2);
-	else
-		midpoint = Math.ceil((wh - geo.lower_bar_h + pref.lyrics_line_height) / 2);
-
 	playlist_shadow = disposeImg(playlist_shadow);
 	if (displayPlaylist) {
 		playlist.on_size(ww, wh);

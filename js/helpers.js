@@ -35,7 +35,7 @@ function $(field, metadb) {
  */
 function getMetaValues(name) {
 	let vals = [];
-	const searchName = name.replace('%', '');
+	const searchName = name.replace(/%/g, '');
 	for (let i = 0; i < parseInt($(`$meta_num(${searchName})`)); i++) {
 		vals.push($(`$meta(${searchName},${i})`));
 	}

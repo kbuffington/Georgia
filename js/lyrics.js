@@ -1,26 +1,12 @@
 // Lyrics Variables
-var len_seconds = fb.TitleFormat('%length_seconds%');
+const len_seconds = fb.TitleFormat('%length_seconds%');
 
 const LYRICS_TIMER_INTERVAL = 30; // do not modify this value
 const SCROLL_TIME = 300;	// max time in ms for new line to scroll
 const SCROLL_WHEEL_TIME_OFFSET = 500;	// amount of time (ms) to adjust lyrics when scrolling
 const OFFSET_DISPLAY_TIME = 5000;	// time in ms to display scroll offset at the top of the lyrics area
 const LYRICS_PADDING = 24;	// padding between edge of artwork and the lyrics
-
-// Lyrics Objects
-
-class sentence {
-	constructor() {
-		this.timer = 0;
-		this.text = '';
-		this.total_lines = 0;
-		this.ante_lines = 0;
-		this.ToString = function ToString() {
-			var str = "timer= " + this.timer + " text: " + this.text + " total_lines= " + this.total_lines + " ante_lines= " + this.ante_lines;
-			return str;
-		}
-	}
-}
+const NO_LYRICS_STRING = 'No lyrics found';	// what to show when no lyrics exist
 
 /**
  * @typedef {Object} LineObj
@@ -223,8 +209,11 @@ class Lyrics {
 				rawLyrics = embeddedLyrics.split('\n');
 			}
 		}
-		if (rawLyrics) {
+		if (rawLyrics.length) {
 			this.processLyrics(rawLyrics);
+		} else {
+			// no lyrics found
+			this.processLyrics([NO_LYRICS_STRING]);
 		}
 	}
 
@@ -263,16 +252,17 @@ class Lyrics {
 	 */
 	processLyrics(rawLyrics) {
 		let tsCount = 0;
+		const noLyrics = rawLyrics[0] === NO_LYRICS_STRING;
 
 		rawLyrics.forEach(line => {
 			if (timeStampRegex.test(line)) {
 				tsCount++;
 			}
 		})
-		if (tsCount > rawLyrics.length * .3) {
+		if (tsCount > rawLyrics.length * .3 && noLyrics) {
 			this.lyricsType = LyricsType.Synced;
 		}
-		let lyrics = [{ timeStamp: '00:00.00', time: 0, lyric: '' }];
+		let lyrics = [{ timeStamp: '00:00.00', time: 0, lyric: noLyrics ? NO_LYRICS_STRING : '' }];
 		if (this.lyricsType === LyricsType.Synced) {
 			rawLyrics.forEach(line => {
 				const r = timeStampRegex.exec(line);
@@ -291,7 +281,7 @@ class Lyrics {
 					}
 				}
 			});
-		} else {
+		} else if (!noLyrics) {
 			this.lyricsType = LyricsType.Unsynced;
 			const unsyncedScrollDelay = Math.max(Math.floor(this.songLength * .08), 10);	// num seconds to wait before scrolling at start of song.
 			const availSecs = this.songLength - unsyncedScrollDelay * 2;
@@ -351,7 +341,7 @@ class Lyrics {
 			const activeY = this.lines[this.activeLine].y;
 
 			const viewportTop = activeY - activeTop;
-			const highlightActive = this.lyricsType === LyricsType.Synced;
+			const highlightActive = this.lyricsType !== LyricsType.Unsynced;	// highlight no lyrics text
 			this.lines.forEach(l => {
 				if (l.y > viewportTop && l.y + l.height < this.h + viewportTop) {
 					l.draw(gr, this.x, this.w, this.y - viewportTop + this.scrollOffset, highlightActive);
@@ -373,7 +363,7 @@ class Lyrics {
  */
 function initLyrics() {
 	gLyrics = new Lyrics(fb.GetNowPlaying());
-	if (!gLyrics.lines.length) {
+	if (gLyrics.lyricsType === LyricsType.None) {
 		this.loadingTimerId = setTimeout(() => {
 			gLyrics.getLyrics();
 			gLyrics.on_size(albumart_size.x, albumart_size.y, albumart_size.w, albumart_size.h);
