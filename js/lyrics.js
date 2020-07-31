@@ -1,28 +1,11 @@
 // Lyrics Variables
 var len_seconds = fb.TitleFormat('%length_seconds%');
-var elap_seconds = fb.TitleFormat('%playback_time_seconds%');
-
-var g_timer_abs;
-
-// TODO: Improve this variable names
-var g_tab = [];
-var g_scroll = 0;
-var g_lyrics_path;
-var g_lyrics_filename;
-var g_lyrics_status;
-var focus = 0;
-var focus_next = 0;
-var hundredth = 0;
-var g_is_scrolling = false;
-var g_tab_length;
-
-var midpoint; // this is the center of the lyrics, where the highlighted line will display
-var lyrPos; // this is the absolute yPosition of the very first line in the lyrics. It will start at midpoint and then move up and off the screen
-var lyricsWidth = 0; // minimum width needed to display the lyrics to speed up drawing
-
 
 const LYRICS_TIMER_INTERVAL = 30; // do not modify this value
 const SCROLL_TIME = 300;	// max time in ms for new line to scroll
+const SCROLL_WHEEL_TIME_OFFSET = 500;	// amount of time (ms) to adjust lyrics when scrolling
+const OFFSET_DISPLAY_TIME = 5000;	// time in ms to display scroll offset at the top of the lyrics area
+const LYRICS_PADDING = 24;	// padding between edge of artwork and the lyrics
 
 // Lyrics Objects
 
@@ -127,11 +110,15 @@ class Lyrics {
 		this.y = 0;
 		this.w = 0;
 		this.h = 0;
+		this.timeOffset = 0;
 		this.lineSpacing = scaleForDisplay(10);
 		this.lineHeight = 0;
 		this.getLyrics();
 		/** @protected */
 		this.timerId = 0;
+		this.loadingTimerId = 0;	// timer when loading embedded lyrics
+		this.showOffsetTimerId = 0; // timer to hide offset
+		this.showOffset = false;
 		if (fb.IsPlaying) {
 			this.seek();
 			if (!fb.IsPaused) {
@@ -142,10 +129,10 @@ class Lyrics {
 
 	// Callbacks
 	on_size(x, y, w, h) {
-		this.x = x + pref.lyrics_h_padding;
-		this.y = y + pref.lyrics_h_padding;
-		this.w = w - pref.lyrics_h_padding * 2;	// should width/height be split?
-		this.h = h - pref.lyrics_h_padding * 2;
+		this.x = x + LYRICS_PADDING;
+		this.y = y + LYRICS_PADDING;
+		this.w = w - LYRICS_PADDING * 2;	// should width/height be split?
+		this.h = h - LYRICS_PADDING * 2;
 		this.lineSpacing = scaleForDisplay(10);
 		if (this.lines.length && this.w > 10 && this.h > 100) {
 			const tmpImg = gdi.CreateImage(this.w, Math.round(this.h / 5));
@@ -174,11 +161,28 @@ class Lyrics {
 		this.lines = [];
 	}
 
+	on_mouse_wheel(delta) {
+		if (delta > 0) {
+			this.timeOffset -= SCROLL_WHEEL_TIME_OFFSET;
+		} else {
+			this.timeOffset += SCROLL_WHEEL_TIME_OFFSET;
+		}
+		this.showOffset = this.timeOffset !== 0;
+		clearTimeout(this.showOffsetTimerId);
+		this.showOffsetTimerId = setTimeout(() => {
+			this.showOffset = false;
+			this.repaint();
+		}, OFFSET_DISPLAY_TIME);
+		this.seek();
+	}
+
 	clearTimer() {
 		if (this.timerId) {
 			clearInterval(this.timerId);
 			this.timerId = 0;
 		}
+		clearTimeout(this.loadingTimerId);
+		clearTimeout(this.showOffsetTimerId);
 	}
 
 	startTimer() {
@@ -213,7 +217,11 @@ class Lyrics {
 			console.log('Found Lyrics:', this.fileName);
 			rawLyrics = utils.ReadTextFile(this.fileName).split('\n');
 		} else {
-			rawLyrics = $(tf.lyrics).split('\n');
+			const embeddedLyrics = $(tf.lyrics);
+			// when loading embedded lyrics sometimes FB returns a "." initially. Don't display this.
+			if (embeddedLyrics.length && embeddedLyrics !== '.') {
+				rawLyrics = embeddedLyrics.split('\n');
+			}
 		}
 		if (rawLyrics) {
 			this.processLyrics(rawLyrics);
@@ -224,7 +232,7 @@ class Lyrics {
 	 * Sets the focus line. Should be called when playback starts, or whenever seeking in the file
 	 */
 	seek() {
-		const time = Math.round(fb.PlaybackTime * 1000);
+		const time = Math.round(fb.PlaybackTime * 1000) + this.timeOffset;
 		this.lines.forEach(l => l.focus = false);
 		const index = this.lines.findIndex(l => l.timeMs >= time);
 		this.activeLine = index === -1 ? this.lines.length - 1 : Math.max(0, index - 1);	// if time > all timeMs values, then we're on the last line of the song, otherwise choose previous line
@@ -309,7 +317,7 @@ class Lyrics {
 
 	timerTick() {
 		/** @type {float} */
-		const time = Math.round(fb.PlaybackTime * 1000);
+		const time = Math.round(fb.PlaybackTime * 1000) + this.timeOffset;
 		if ((this.lines.length > this.activeLine + 1) && (time > this.lines[this.activeLine + 1].timeMs)) {
 			// advance active Line
 			this.scrolling = true;
@@ -317,7 +325,6 @@ class Lyrics {
 				this.lines[this.activeLine].focus = false;
 				this.scrollOffset = this.lines[this.activeLine].height + this.lineSpacing;	// scrollOffset is actually the previously activeline that we want to scroll out of the way
 				this.scrollStep = Math.max(1, Math.round(this.scrollOffset / (SCROLL_TIME / LYRICS_TIMER_INTERVAL)));
-				// console.log(this.scrollOffset, this.scrollStep);
 			} else {
 				this.scrollOffset = 0;
 			}
@@ -350,6 +357,9 @@ class Lyrics {
 					l.draw(gr, this.x, this.w, this.y - viewportTop + this.scrollOffset, highlightActive);
 				}
 			});
+			if (this.lyricsType === LyricsType.Synced && this.timeOffset && this.showOffset) {
+				gr.DrawString(`Offset: ${this.timeOffset / 1000}s`, ft.lyrics, g_txt_highlightcolour, this.x, this.y, this.w, this.h + 1, StringFormat(2, 0));
+			}
 		}
 	}
 
@@ -363,5 +373,11 @@ class Lyrics {
  */
 function initLyrics() {
 	gLyrics = new Lyrics(fb.GetNowPlaying());
+	if (!gLyrics.lines.length) {
+		this.loadingTimerId = setTimeout(() => {
+			gLyrics.getLyrics();
+			gLyrics.on_size(albumart_size.x, albumart_size.y, albumart_size.w, albumart_size.h);
+		}, 500);
+	}
 	gLyrics.on_size(albumart_size.x, albumart_size.y, albumart_size.w, albumart_size.h);
 }

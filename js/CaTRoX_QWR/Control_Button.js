@@ -242,7 +242,7 @@ Button.prototype.onClick = function () {
 				if (displayLyrics) {
 					initLyrics();
 				}
-				window.RepaintRect(albumart_size.x - 1, albumart_size.y - 1, albumart_scaled.Width + 2, albumart_scaled.Height + 2);
+				window.RepaintRect(albumart_size.x, albumart_size.y, albumart_size.w, albumart_size.h);
 			}
 			break;
 		case 'ShowLibrary':

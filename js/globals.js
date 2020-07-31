@@ -62,12 +62,8 @@ pref.add_properties({
 	use_4k: ['Detect 4k', 'auto'], // auto: switch to 4k mode when window width wide enough, never: never use 4k mode, always: always use 4k mode
 	checkForUpdates: ['Check for Updates', true], // true: check github repo to determine if updates exist
 
-	lyrics_line_height: ['Lyrics: Line height', 32],
 	lyrics_normal_color: ['Lyrics: Text Color', 'RGBA(255, 255, 255, 255);'],
 	lyrics_focus_color: ['Lyrics: Text Highlite Color', 'RGBA(255, 241, 150, 255);'],
-	lyrics_h_padding: ['Lyrics: Padding Between Lines', 24],
-	lyrics_glow: ['Lyrics: Glow enabled', true],
-	lyrics_text_shadow: ['Lyrics: Text Shadow', true],
 
 	show_weblinks: ['Playlist: Show weblinks', true],
 
