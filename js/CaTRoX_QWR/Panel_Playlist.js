@@ -4104,22 +4104,23 @@ class Header extends BaseHeader {
 		var bulletWidth = Math.ceil(gr.MeasureString('\u2020', g_pl_fonts.info, 0, 0, 0, 0).Width);
 		var spaceWidth = Math.ceil(separatorWidth - bulletWidth) + scaleForDisplay(1);
 
-		var label_string = _.tf('$if2(%label%,[%publisher%])', this.metadb).replace(', Inc.', '= Inc.');
-		var labels = label_string.split(', ');
+		let labels = []
+		for (let i = 0; i < tf.labels.length; i++) {
+			labels.push(...getMetaValues(tf.labels[i], this.metadb));
+		}
+		labels = [... new Set(labels)];	// remove duplicates
 		var label_left = -right_edge * 2;
 		let label_y = Math.round(2 * this.h / 3);
 		for (var i = labels.length - 1; i >= 0; --i) {
 			if (i != labels.length - 1) {
 				label_left -= (bulletWidth + spaceWidth * 2);   // spacing between labels
 			}
-			labels[i] = labels[i].replace('= Inc.', ', Inc.');
 			var label_w = gr.MeasureString(labels[i], g_pl_fonts.info, 0, 0, 0, 0).Width;
 			label_left -= label_w;
 			this.hyperlinks['label' + i] = new Hyperlink(labels[i], g_pl_fonts.info, 'label', label_left, label_y, this.w, true);
 		}
 
-		var genre_string = _.tf('[%genre%]', this.metadb);
-		var genres = genre_string.split(', ');
+		const genres = getMetaValues('%genre%', this.metadb);
 		var genre_left = left_pad;
 		var genre_y = label_y;
 		for (var i = 0; i < genres.length; i++) {

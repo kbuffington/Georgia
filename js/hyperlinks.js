@@ -124,6 +124,7 @@ class Hyperlink {
 
 	click() {
 		const populatePlaylist = function (query) {
+			debugLog(query);
 			const handle_list = fb.GetQueryItems(fb.GetLibraryItems(), query);
 			if (handle_list.Count) {
 				const pl = plman.FindOrCreatePlaylist('Search', true);
@@ -168,7 +169,7 @@ class Hyperlink {
 
 		if (!populatePlaylist(query)) {
 			var start = this.text.indexOf('[');
-			if (start) {
+			if (start > 0) {
 				query = this.type + ' IS ' + this.text.substr(0, start - 3);	// remove ' - [...]' from end of string
 				populatePlaylist(query);
 			}

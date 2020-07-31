@@ -1,9 +1,9 @@
 ### My unprioritized todo list
 
 * ~Added menu based playlist scaling~ (implemented in 1.1.8)
-* Convert to using foo_spider_monkey_panel instead of foo_jscript
+* ~Convert to using foo_spider_monkey_panel instead of foo_jscript~ (implemented in 2.0.0)
 * Handle GIFs for image types?
-* Better lyrics handling
+* ~Better lyrics handling~ (implemented in 2.0.0)
 * Color picker menu with meta_db saving of seleted color based on arist/album/disc
 * Better resolution handling for intermediate sizes (scaling? DPI based?)
 * ~Add option to move transport controls below artwork~ (implemented in 1.1.8)
@@ -12,7 +12,7 @@
 * ~Change sizes of menu fonts through menus~ (implemented in 1.1.8)
 * ~Change sizes of Transport control buttons through menus~ (implemented in 1.1.8)
 * ~Investigate using a config.json file to control grid data, codec information, etc.~ (implemented in 2.0.0)
-* Simplify handling of labels in playlist (actually use meta values instead of splitting on ',') and elsewhere
+* ~Simplify handling of labels in playlist (actually use meta values instead of splitting on ',')~ (implemented in 2.0.0)
 * ~Hide large date if none was found.~ (implemented in 1.1.9)
 * ~If too many label/genre tags ensure hyperlinks do not overlap in playlist~ (implemented in 1.1.9)
 * Add option to draw labels directly on background

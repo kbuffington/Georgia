@@ -1331,9 +1331,7 @@ function on_playback_new_track(metadb) {
         disposeImg(recordLabelsInverted.pop());
     }
 	for (let i = 0; i < tf.labels.length; i++) {
-		for (let j = 0; j < parseInt($('$meta_num(' + tf.labels[i] + ')')); j++) {
-			labelStrings.push($('$meta(' + tf.labels[i] + ',' + j + ')'));
-		}
+		labelStrings.push(...getMetaValues(tf.labels[i], this.metadb));
 	}
 	labelStrings = [... new Set(labelStrings)];
 	for (let i = 0; i < labelStrings.length; i++) {

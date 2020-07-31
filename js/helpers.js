@@ -31,16 +31,20 @@ function $(field, metadb) {
  * Given a metadata field of name, returns an array of all corresponding metadata values.
  * Will strip leading and trailing %'s from name.
  * @param {string} name
+ * @param {FbMetadbHandle=} metadb
  * @returns {Array<string>}
  */
-function getMetaValues(name) {
+function getMetaValues(name, metadb = undefined) {
 	let vals = [];
 	const searchName = name.replace(/%/g, '');
-	for (let i = 0; i < parseInt($(`$meta_num(${searchName})`)); i++) {
-		vals.push($(`$meta(${searchName},${i})`));
+	for (let i = 0; i < parseInt($(`$meta_num(${searchName})`, metadb)); i++) {
+		vals.push($(`$meta(${searchName},${i})`, metadb));
 	}
 	if (!vals.length) {
-		vals = $(name).split(', ');
+		const unsplit = $(name, metadb);
+		if (unsplit !== name) {
+			vals = unsplit.split(', ');
+		}
 	}
 
 	return vals;
