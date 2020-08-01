@@ -201,7 +201,7 @@ class Lyrics {
 		let rawLyrics = [];
 		if (foundLyrics) {
 			console.log('Found Lyrics:', this.fileName);
-			rawLyrics = utils.ReadTextFile(this.fileName).split('\n');
+			rawLyrics = utils.ReadTextFile(this.fileName, 65001).split('\n');
 		} else {
 			const embeddedLyrics = $(tf.lyrics);
 			// when loading embedded lyrics sometimes FB returns a "." initially. Don't display this.
@@ -259,7 +259,7 @@ class Lyrics {
 				tsCount++;
 			}
 		})
-		if (tsCount > rawLyrics.length * .3 && noLyrics) {
+		if (tsCount > rawLyrics.length * .3 && !noLyrics) {
 			this.lyricsType = LyricsType.Synced;
 		}
 		let lyrics = [{ timeStamp: '00:00.00', time: 0, lyric: noLyrics ? NO_LYRICS_STRING : '' }];
@@ -269,8 +269,7 @@ class Lyrics {
 				if (r && r[0]) {
 					// line has at least one timestamp
 					let timestampStr = r[0];
-					const lyric = line.substr(timestampStr.length).trim()
-							.replace(/\u2019/g,"'").replace(/\uFF07/g,"'").replace(/\u00E2\u20AC\u2122/g, "'"); // replace apostrophes
+					const lyric = replaceUnicodeChars(line.substr(timestampStr.length));
 
 					let ts;
 					while (timestampStr.length && (ts = singleTimestampRegex.exec(timestampStr))) {
@@ -287,8 +286,7 @@ class Lyrics {
 			const availSecs = this.songLength - unsyncedScrollDelay * 2;
 			const lineTiming = availSecs / rawLyrics.length;
 			rawLyrics.forEach((line, i) => {
-				const lyric = line.trim()
-						.replace(/\u2019/g,"'").replace(/\uFF07/g,"'").replace(/\u00E2\u20AC\u2122/g, "'"); // replace apostrophes
+				const lyric = replaceUnicodeChars(line);
 				const time = unsyncedScrollDelay + lineTiming * i;
 				lyrics.push({ timeStamp: '--', time, lyric });
 			});
@@ -370,4 +368,16 @@ function initLyrics() {
 		}, 500);
 	}
 	gLyrics.on_size(albumart_size.x, albumart_size.y, albumart_size.w, albumart_size.h);
+}
+
+/**
+ * Strips out unicode characters such as apostrophes which will print as crap in the lyrics.
+ * May not be needed when using UTF-8 code page
+ * @param {*} rawString
+ */
+function replaceUnicodeChars(rawString) {
+	return rawString.trim()
+			.replace(/\u2019/g,"'")
+			.replace(/\uFF07/g,"'")
+			.replace(/\u00E2\u20AC\u2122/g, "'"); // replace apostrophes
 }
