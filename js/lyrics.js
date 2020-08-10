@@ -364,6 +364,7 @@ function initLyrics() {
 	if (gLyrics.lyricsType === LyricsType.None) {
 		this.loadingTimerId = setTimeout(() => {
 			gLyrics.getLyrics();
+			gLyrics.seek();
 			gLyrics.on_size(albumart_size.x, albumart_size.y, albumart_size.w, albumart_size.h);
 		}, 500);
 	}
