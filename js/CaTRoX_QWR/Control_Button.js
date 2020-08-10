@@ -128,7 +128,7 @@ class Button {
 	}
 
 	onClick() {
-		btnActionHandler(this.id);
+		btnActionHandler(this);	// really just need id and x, y, w
 	}
 
 	onDblClick() {
@@ -136,8 +136,11 @@ class Button {
 	}
 }
 
-function btnActionHandler(id) {
-	switch (id) {
+/**
+ * @param {Button} btn
+ */
+function btnActionHandler(btn) {
+	switch (btn.id) {
 		case 'Stop':
 			fb.Stop();
 			break;
@@ -208,13 +211,13 @@ function btnActionHandler(id) {
 		case 'Playback':
 		case 'Library':
 		case 'Help':
-			onMainMenu(this.x, this.y + this.h, this.id);
+			onMainMenu(btn.x, btn.y + btn.h, btn.id);
 			break;
 		case 'Playlists':
-			onPlaylistsMenu(this.x, this.y + this.h);
+			onPlaylistsMenu(btn.x, btn.y + btn.h);
 			break;
 		case 'Options':
-			onOptionsMenu(this.x, this.y + this.h);
+			onOptionsMenu(btn.x, btn.y + btn.h);
 			break;
 		case 'Repeat':
 			var pbo = fb.PlaybackOrder;
@@ -246,7 +249,7 @@ function btnActionHandler(id) {
 			fb.RunContextCommand("Properties");
 			break;
 		case 'Rating':
-			onRatingMenu(this.x, this.y + this.h);
+			onRatingMenu(btn.x, btn.y + btn.h);
 			break;
 		case 'Lyrics':
 			displayLyrics = !displayLyrics;
