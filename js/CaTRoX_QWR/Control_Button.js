@@ -3,7 +3,6 @@ var oldButton, downButton;
 var buttonTimer = null;
 var mainMenuOpen = false;
 
-var tooltipTimeout = null;
 var lastOverButton = null;
 
 var activatedBtns = [];
@@ -50,6 +49,7 @@ function buttonEventHandler(x, y, m) {
 
 			oldButton = thisButton;
 			break;
+
 		case 'on_mouse_lbtn_dblclk':
 			if (thisButton) {
 				thisButton.changeState(2);
@@ -57,12 +57,12 @@ function buttonEventHandler(x, y, m) {
 				downButton.onDblClick();
 			}
 			break;
+
 		case 'on_mouse_lbtn_down':
 			if (thisButton) {
 				thisButton.changeState(2);
 				downButton = thisButton;
 			}
-
 			break;
 
 		case 'on_mouse_lbtn_up':
@@ -78,6 +78,7 @@ function buttonEventHandler(x, y, m) {
 				downButton = undefined;
 			}
 			break;
+
 		case 'on_mouse_leave':
 			oldButton = undefined;
 			if (downButton) return; // for menu buttons
@@ -87,7 +88,6 @@ function buttonEventHandler(x, y, m) {
 					btns[i].changeState(0);
 				}
 			}
-
 			break;
 	}
 }
@@ -99,39 +99,45 @@ const WindowState = {
 	Maximized: 2
 }
 
-function Button(x, y, w, h, id, img, tip = undefined) {
+class Button {
+	constructor(x, y, w, h, id, img, tip = undefined) {
+		this.x = x;
+		this.y = y;
+		this.w = w;
+		this.h = h;
+		this.id = id;
+		this.img = img;
+		this.tooltip = typeof tip !== 'undefined' ? tip : '';
+		this.state = 0;
+		this.hoverAlpha = 0;
+		this.downAlpha = 0;
+	}
 
-	this.x = x;
-	this.y = y;
-	this.w = w;
-	this.h = h;
-	this.id = id;
-	this.img = img;
-	this.tooltip = typeof tip !== 'undefined' ? tip : '';
-	this.state = 0;
-	this.hoverAlpha = 0;
-	this.downAlpha = 0;
+	mouseInThis(x, y) {
+		return (this.x <= x) && (x <= this.x + this.w) && (this.y <= y) && (y <= this.y + this.h);
+	}
 
-}
-// =================================================== //
-Button.prototype.mouseInThis = function (x, y) {
-	return (this.x <= x) && (x <= this.x + this.w) && (this.y <= y) && (y <= this.y + this.h);
-}
-// =================================================== //
-Button.prototype.repaint = function () {
-	window.RepaintRect(this.x, this.y, this.w, this.h);
-}
-// =================================================== //
-Button.prototype.changeState = function (state) {
-	this.state = state;
-	activatedBtns.push(this);
-	buttonAlphaTimer();
-}
-// =================================================== //
-Button.prototype.onClick = function () {
+	repaint() {
+		window.RepaintRect(this.x, this.y, this.w, this.h);
+	}
 
-	switch (this.id) {
+	changeState(state) {
+		this.state = state;
+		activatedBtns.push(this);
+		buttonAlphaTimer();
+	}
 
+	onClick() {
+		btnActionHandler(this.id);
+	}
+
+	onDblClick() {
+		// we don't do anything with dblClick currently
+	}
+}
+
+function btnActionHandler(id) {
+	switch (id) {
 		case 'Stop':
 			fb.Stop();
 			break;
@@ -159,7 +165,7 @@ Button.prototype.onClick = function () {
 					plman.InsertPlaylistItems(pl, 1, handles);
 					plman.EnsurePlaylistItemVisible(pl, 0);
 					if (displayPlaylist) {
-						playlist.on_playback_new_track(fb.GetNowPlaying());	// used to scroll item into view
+						playlist.on_playback_new_track(fb.GetNowPlaying()); // used to scroll item into view
 					}
 				}
 			} else {
@@ -183,16 +189,14 @@ Button.prototype.onClick = function () {
 			fb.RunMainMenuCommand("View/Hide");
 			break;
 		case 'Maximize':
-			const maximizeToFullScreen = false;	// TODO to clear the error. Test this stuff eventually
-			try {
-				if (maximizeToFullScreen ? !utils.IsKeyPressed(VK_CONTROL) : utils.IsKeyPressed(VK_CONTROL)) {
-					UIHacks.FullScreen = !UIHacks.FullScreen;
-				} else {
-					if (UIHacks.MainWindowState == WindowState.Maximized) UIHacks.MainWindowState = WindowState.Normal;
-					else UIHacks.MainWindowState = WindowState.Maximized;
-				}
-			} catch (e) {
-				console.log(e + " Disable WSH safe mode");
+			const maximizeToFullScreen = false; // TODO to clear the error. Test this stuff eventually
+			if (maximizeToFullScreen ? !utils.IsKeyPressed(VK_CONTROL) : utils.IsKeyPressed(VK_CONTROL)) {
+				UIHacks.FullScreen = !UIHacks.FullScreen;
+			} else {
+				if (UIHacks.MainWindowState == WindowState.Maximized)
+					UIHacks.MainWindowState = WindowState.Normal;
+				else
+					UIHacks.MainWindowState = WindowState.Maximized;
 			}
 			break;
 		case 'Close':
@@ -214,15 +218,23 @@ Button.prototype.onClick = function () {
 			break;
 		case 'Repeat':
 			var pbo = fb.PlaybackOrder;
-			if (pbo == PlaybackOrder.Default) fb.PlaybackOrder = PlaybackOrder.RepeatPlaylist;
-			else if (pbo == PlaybackOrder.RepeatPlaylist) fb.PlaybackOrder = PlaybackOrder.RepeatTrack;
-			else if (pbo == PlaybackOrder.RepeatTrack) fb.PlaybackOrder = PlaybackOrder.Default;
-			else fb.PlaybackOrder = PlaybackOrder.RepeatPlaylist;
+			if (pbo == PlaybackOrder.Default) {
+				fb.PlaybackOrder = PlaybackOrder.RepeatPlaylist;
+			} else if (pbo == PlaybackOrder.RepeatPlaylist) {
+				fb.PlaybackOrder = PlaybackOrder.RepeatTrack;
+			} else if (pbo == PlaybackOrder.RepeatTrack) {
+				fb.PlaybackOrder = PlaybackOrder.Default;
+			} else {
+				fb.PlaybackOrder = PlaybackOrder.RepeatPlaylist;
+			}
 			break;
 		case 'Shuffle':
 			var pbo = fb.PlaybackOrder;
-			if (pbo != PlaybackOrder.ShuffleTracks) fb.PlaybackOrder = PlaybackOrder.ShuffleTracks;
-			else fb.PlaybackOrder = PlaybackOrder.Default;
+			if (pbo != PlaybackOrder.ShuffleTracks) {
+				fb.PlaybackOrder = PlaybackOrder.ShuffleTracks;
+			} else {
+				fb.PlaybackOrder = PlaybackOrder.Default;
+			}
 			break;
 		case 'Mute':
 			fb.VolumeMute();
@@ -259,7 +271,6 @@ Button.prototype.onClick = function () {
 			window.Repaint();
 			break;
 		case 'Playlist':
-			// we appear to be getting album art way too frequently here -- delete this comment and others when verified this is cool
 			displayPlaylist = !displayPlaylist;
 			if (displayPlaylist) {
 				playlist.on_size(ww, wh);
@@ -273,12 +284,6 @@ Button.prototype.onClick = function () {
 			break;
 	}
 }
-// =================================================== //
-
-Button.prototype.onDblClick = function () {
-	// we don't do anything with dblClick currently
-}
-// =================================================== //
 
 function onPlaylistsMenu(x, y) {
 
@@ -350,10 +355,10 @@ function onMainMenu(x, y, name) {
 // =================================================== //
 
 function refreshPlayButton() {
-
-	btns[2].img = (fb.IsPlaying ? (fb.IsPaused ? btnImg.Play : btnImg.Pause) : btnImg.Play);
-	btns[2].repaint();
-
+	if (pref.show_transport) {
+		btns.play.img = !fb.IsPlaying || fb.IsPaused ? btnImg.Play : btnImg.Pause;
+		btns.play.repaint();
+	}
 }
 
 // =================================================== //

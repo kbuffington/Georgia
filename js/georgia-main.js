@@ -1872,10 +1872,7 @@ function on_playback_queue_changed(origin) {
 
 
 function on_playback_pause(state) {
-	if (pref.show_transport) {
-		createButtonObjects(ww, wh);
-		window.RepaintRect(btns[2].x, btns[2].y, btns[2].w, btns[2].h); // redraw play/pause button
-	}
+	refreshPlayButton();
 	if (state) { // pausing
 		if (progressTimer) clearInterval(progressTimer);
 		progressTimer = 0;
@@ -1905,14 +1902,14 @@ function on_playback_stop(reason) {
 		debugLog("Repainting on_playback_stop");
 		RepaintWindow();
 		last_path = '';
-		lastDiscNumber = "0";
+		lastDiscNumber = '0';
 		while (recordLabels.length) {
 			disposeImg(recordLabels.pop());
         }
         while (recordLabelsInverted.length) {
             disposeImg(recordLabelsInverted.pop());
         }
-		createButtonObjects(ww, wh); // switch pause button to play
+		refreshPlayButton();
 		loadFromCache = false;
 	}
 	progressTimer && clearInterval(progressTimer);
@@ -1948,7 +1945,7 @@ function on_playback_starting(cmd, is_paused) {
 	if (settings.hide_cursor) {
 		window.SetCursor(-1); // hide cursor
 	}
-	createButtonObjects(ww, wh); // play button to pause
+	refreshPlayButton();
 }
 
 function on_drag_enter(action, x, y, mask) {
@@ -2569,7 +2566,9 @@ function createButtonObjects(ww, wh) {
 	var buttonSize = scaleForDisplay(pref.transport_buttons_size);
 	//---> Transport buttons
 	if (pref.show_transport) {
-		let count = 4 + (pref.show_random_button ? 1 : 0) + (pref.show_volume_button ? 1 : 0) + (pref.show_reload_button ? 1 : 0);
+		let count = 4 + (pref.show_random_button ? 1 : 0) +
+				(pref.show_volume_button ? 1 : 0) +
+				(pref.show_reload_button ? 1 : 0);
 
 		const y = pref.show_transport_below ? wh - geo.lower_bar_h - scaleForDisplay(10) - buttonSize : scaleForDisplay(10);
 		const w = buttonSize;
@@ -2577,21 +2576,24 @@ function createButtonObjects(ww, wh) {
 		const p = scaleForDisplay(5); // space between buttons
 		const x = (ww - w * count - p * (count - 1)) / 2;
 
-		count = 0;
+		const calcX = (index) => {
+			return x + (w + p) * index;
+		}
 
-		btns[count] = new Button(x, y, w, h, "Stop", btnImg.Stop, "Stop");
-		btns[++count] = new Button(x + (w + p) * count, y, w, h, "Previous", btnImg.Previous, 'Previous');
-		btns[++count] = new Button(x + (w + p) * count, y, w, h, "Play/Pause", (fb.IsPlaying ? (fb.IsPaused ? btnImg.Play : btnImg.Pause) : btnImg.Play), 'Play');
-		btns[++count] = new Button(x + (w + p) * count, y, w, h, "Next", btnImg.Next, 'Next');
+		count = 0;
+		btns.stop = new Button(x, y, w, h, 'Stop', btnImg.Stop, 'Stop');
+		btns.prev = new Button(calcX(++count), y, w, h, 'Previous', btnImg.Previous, 'Previous');
+		btns.play = new Button(calcX(++count), y, w, h, 'Play/Pause', !fb.IsPlaying || fb.IsPaused ? btnImg.Play : btnImg.Pause, 'Play');
+		btns.next = new Button(calcX(++count), y, w, h, 'Next', btnImg.Next, 'Next');
 		if (pref.show_random_button) {
-			btns[++count] = new Button(x + (w + p) * count, y, w, h, "Playback/Random", btnImg.PlaybackRandom, 'Randomize Playlist');
+			btns.random = new Button(calcX(++count), y, w, h, 'Playback/Random', btnImg.PlaybackRandom, 'Randomize Playlist');
 		}
 		if (pref.show_volume_button) {
-			btns[++count] = new Button(x + (w + p) * count, y, w, h, 'Volume', btnImg.ShowVolume);
-			volume_btn.set_position(x + (w + p) * count, y, w);
+			btns.volume = new Button(calcX(++count), y, w, h, 'Volume', btnImg.ShowVolume);
+			volume_btn.set_position(btns.volume.x, y, w);
 		}
 		if (pref.show_reload_button) {
-			btns[++count] = new Button(x + (w + p) * count, y, w, h, "Reload", btnImg.Reload, 'Reload');
+			btns.reload = new Button(calcX(++count), y, w, h, 'Reload', btnImg.Reload, 'Reload');
 		}
 	}
 
@@ -2612,73 +2614,64 @@ function createButtonObjects(ww, wh) {
 	// 		btns[12] = new Button(x + (w + p) * 2, y, w, h, "Close", btnImg.Close);
 
 	// }
-	//---> Menu buttons
 
 	let img = btnImg.File;
 	let x = 5;
 	let y = 5;
 	let h = img[0].Height;
 	let w = img[0].Width;
-	//var p = 0;
-
 	btns[20] = new Button(x, y, w, h, 'File', img);
+
+	x += img[0].Width;
 	img = btnImg.Edit;
-	x = x + w;
-	w = img[0].Width;
-	btns[21] = new Button(x, y, w, h, 'Edit', img);
+	btns[21] = new Button(x, y, img[0].Width, h, 'Edit', img);
+
+	x += img[0].Width;
 	img = btnImg.View;
-	x = x + w;
-	w = img[0].Width;
-	btns[22] = new Button(x, y, w, h, 'View', img);
+	btns[22] = new Button(x, y, img[0].Width, h, 'View', img);
+
+	x += img[0].Width;
 	img = btnImg.Playback;
-	x = x + w;
-	w = img[0].Width;
-	btns[23] = new Button(x, y, w, h, 'Playback', img);
+	btns[23] = new Button(x, y, img[0].Width, h, 'Playback', img);
+
+	x += img[0].Width;
 	img = btnImg.Library;
-	x = x + w;
-	w = img[0].Width;
-	btns[24] = new Button(x, y, w, h, 'Library', img);
+	btns[24] = new Button(x, y, img[0].Width, h, 'Library', img);
+
+	x += img[0].Width;
 	img = btnImg.Help;
-	x = x + w;
-	w = img[0].Width;
-	btns[25] = new Button(x, y, w, h, 'Help', img);
+	btns[25] = new Button(x, y, img[0].Width, h, 'Help', img);
+
+	x += img[0].Width;
 	img = btnImg.Playlists;
-	x = x + w;
-	w = img[0].Width;
-	btns[26] = new Button(x, y, w, h, 'Playlists', img);
+	btns[26] = new Button(x, y, img[0].Width, h, 'Playlists', img);
+
+	x += img[0].Width;
 	img = btnImg.Options;
-	x = x + w;
-	w = img[0].Width;
-	btns[27] = new Button(x, y, w, h, 'Options', img);
+	btns[27] = new Button(x, y, img[0].Width, h, 'Options', img);
 
 	img = btnImg.Settings;
 	x = ww - settingsImg.Width * 2;
 	y = 15;
 	h = img[0].Height;
-	w = img[0].Width;
-	btns[30] = new Button(x, y, w, h, 'Settings', img, 'Foobar Settings');
+	btns[30] = new Button(x, y, img[0].Width, h, 'Settings', img, 'Foobar Settings');
 	img = btnImg.Properties;
-	w = img[0].Width;
-	x -= (w + 10);
-	btns[31] = new Button(x, y, w, h, 'Properties', img, 'Properties');
+	x -= (img[0].Width + 10);
+	btns[31] = new Button(x, y, img[0].Width, h, 'Properties', img, 'Properties');
 	img = btnImg.Rating;
-	w = img[0].Width;
-	x -= (w + 10);
-	btns[32] = new Button(x, y, w, h, 'Rating', img, 'Rate Song');
+	x -= (img[0].Width + 10);
+	btns[32] = new Button(x, y, img[0].Width, h, 'Rating', img, 'Rate Song');
 	img = btnImg.Lyrics;
-	w = img[0].Width;
-	x -= (w + 10);
-	btns[33] = new Button(x, y, w, h, 'Lyrics', img, 'Display Lyrics');
+	x -= (img[0].Width + 10);
+	btns[33] = new Button(x, y, img[0].Width, h, 'Lyrics', img, 'Display Lyrics');
 	if (showLibraryButton) {
 		img = btnImg.ShowLibrary;
-		w = img[0].Width;
-		x -= (w + 10);
-		btns.library = new Button(x, y, w, h, 'ShowLibrary', img, 'Show Library');
+		x -= (img[0].Width + 10);
+		btns.library = new Button(x, y, img[0].Width, h, 'ShowLibrary', img, 'Show Library');
 	}
 	img = btnImg.Playlist;
-	w = img[0].Width;
-	x -= (w + 10);
-	btns.playlist = new Button(x, y, w, h, 'Playlist', img, 'Show Playlist');
+	x -= (img[0].Width + 10);
+	btns.playlist = new Button(x, y, img[0].Width, h, 'Playlist', img, 'Show Playlist');
 	/* if a new image button is added to the left of playlist we need to update the ResizeArtwork code */
 }
 
@@ -2687,11 +2680,11 @@ function createButtonObjects(ww, wh) {
 function createButtonImages() {
 	let createButtonProfiler = null;
 	if (timings.showExtraDrawTiming) createButtonProfiler = fb.CreateProfiler('createButtonImages');
-	var transportCircleSize = Math.round(pref.transport_buttons_size * 0.93333);
+	const transportCircleSize = Math.round(pref.transport_buttons_size * 0.93333);
+	let btns = {}
 
 	try {
-		var btns = {
-
+		btns = {
 			Stop: {
 				ico: g_guifx.stop,
 				font: ft.guifx,
@@ -2772,44 +2765,43 @@ function createButtonImages() {
 			File: {
 				ico: "File",
 				font: ft.SegoeUi,
-				type: "menu"
+				type: 'menu'
 			},
 			Edit: {
 				ico: "Edit",
 				font: ft.SegoeUi,
-				type: "menu"
+				type: 'menu'
 			},
 			View: {
 				ico: "View",
 				font: ft.SegoeUi,
-				type: "menu"
+				type: 'menu'
 			},
 			Playback: {
 				ico: "Playback",
 				font: ft.SegoeUi,
-				type: "menu"
+				type: 'menu'
 			},
 			Library: {
 				ico: "Library",
 				font: ft.SegoeUi,
-				type: "menu"
+				type: 'menu'
 			},
 			Help: {
 				ico: "Help",
 				font: ft.SegoeUi,
-				type: "menu"
+				type: 'menu'
 			},
 			Playlists: {
 				ico: "Playlists",
 				font: ft.SegoeUi,
-				type: "menu"
+				type: 'menu'
 			},
 			Options: {
 				ico: "Options",
 				font: ft.SegoeUi,
-				type: "menu"
+				type: 'menu'
 			},
-
 
 			Playlist: {
 				ico: playlistImg,
@@ -2899,29 +2891,29 @@ function createButtonImages() {
             }
 
 			var useDarkTransport = !pref.darkMode && pref.show_transport_below;
-			var transportButtonColor = useDarkTransport ? new Color(rgb(110, 112, 114)) : new Color(rgb(150, 152, 154));
-			var transportOutlineColor = useDarkTransport ? new Color(rgb(100, 100, 100)) : new Color(rgb(120, 120, 120));
+			var transportButtonColor = useDarkTransport ? rgb(110, 112, 114) : rgb(150, 152, 154);
+			var transportOutlineColor = useDarkTransport ? rgb(100, 100, 100) : rgb(120, 120, 120);
 
 			var menuTextColor = RGB(140, 142, 144);
 			var menuRectColor = RGB(120, 122, 124);
 			var captionIcoColor = RGB(140, 142, 144);
-			var transportIconColor = transportButtonColor.val;
-			var transportEllipseColor = transportOutlineColor.val;
+			var transportIconColor = transportButtonColor;
+			var transportEllipseColor = transportOutlineColor;
 			var iconAlpha = 140;
 
 			if (s == 1) {	// hover
 				menuTextColor = RGB(180, 182, 184);
 				menuRectColor = RGB(160, 162, 164);
 				captionIcoColor = RGB(190, 192, 194);
-				transportIconColor = useDarkTransport ? shadeColor(transportButtonColor.val, 40) : tintColor(transportButtonColor.val, 30);
-				transportEllipseColor = useDarkTransport ? shadeColor(transportOutlineColor.val, 35) : tintColor(transportOutlineColor.val, 35);
+				transportIconColor = useDarkTransport ? shadeColor(transportButtonColor, 40) : tintColor(transportButtonColor, 30);
+				transportEllipseColor = useDarkTransport ? shadeColor(transportOutlineColor, 35) : tintColor(transportOutlineColor, 35);
 				iconAlpha = 215;
 			} else if (s == 2) {	// down
 				menuTextColor = RGB(180, 182, 184);
 				menuRectColor = RGB(160, 162, 164);
 				captionIcoColor = RGB(100, 102, 104);
-				transportIconColor = useDarkTransport ? tintColor(transportButtonColor.val, 15) : shadeColor(transportButtonColor.val, 20);
-				transportEllipseColor = useDarkTransport ? tintColor(transportOutlineColor.val, 15) : shadeColor(transportOutlineColor.val, 20);
+				transportIconColor = useDarkTransport ? tintColor(transportButtonColor, 15) : shadeColor(transportButtonColor, 20);
+				transportEllipseColor = useDarkTransport ? tintColor(transportOutlineColor, 15) : shadeColor(transportOutlineColor, 20);
 				iconAlpha = 190;
 			}
 
@@ -2941,11 +2933,9 @@ function createButtonImages() {
 
 			img.ReleaseGraphics(g);
 			stateImages[s] = img;
-
 		}
 
 		btnImg[i] = stateImages;
-
 	}
 	if (timings.showExtraDrawTiming) createButtonProfiler.Print();
 }
