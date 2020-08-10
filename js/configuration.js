@@ -269,13 +269,9 @@ class ThemeSetting {
 	 */
 	set(new_value) {
 		if (this.value !== new_value) {
-			// window.SetProperty(this.name, new_value);
 			this.value = new_value;
         }
 	};
-
-	/** @type {*} */
-	// var value = window.GetProperty(this.name, default_value);
 }
 
 class ThemeSettings {
@@ -293,7 +289,6 @@ class ThemeSettings {
         this._config = config;
         this.objName = objName;
         if (properties) {
-            console.log(objName);
             this.add_properties(properties.values);
         }
     }
@@ -335,8 +330,10 @@ class ThemeSettings {
 				return this[item_id + '_internal'].get();
 			},
 			set: function (new_value) {
+                if (this[item_id + '_internal'].get() !== new_value) {
                 this[item_id + '_internal'].set(new_value);
                 this._config.updateConfigObjValues(this.objName, { [item_id]: new_value});
+			}
 			}
 		});
 	}

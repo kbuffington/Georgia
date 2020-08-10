@@ -330,7 +330,6 @@ function draw_ui(gr) {
 		gr.SetSmoothingMode(SmoothingMode.None);
 		gr.FillSolidRect(0, albumart_size.y, albumart_size.x, albumart_size.h, col.info_bg);
 		gr.DrawRect(-1, albumart_size.y, albumart_size.x, albumart_size.h - 1, 1, col.accent);
-		gr.SetSmoothingMode(SmoothingMode.AntiAliasGridFit);
 	}
 
 	gr.SetSmoothingMode(SmoothingMode.AntiAliasGridFit);
@@ -1201,10 +1200,13 @@ function on_init() {
 
 	last_pb = fb.PlaybackOrder;
 
+	if (pref.loadAsync) {
+		on_size();	// needed when loading async, otherwise just needed in fb.IsPlaying conditional
+	}
 	if (fb.IsPlaying && fb.GetNowPlaying()) {
-		on_size();
 		on_playback_new_track(fb.GetNowPlaying());
 	}
+	window.Repaint();	// needed when loading async, otherwise superfluous
 
 	/** Workaround so we can use the Edit menu or run fb.RunMainMenuCommand("Edit/Something...")
 		when the panel has focus and a dedicated playlist viewer doesn't. */
@@ -1686,7 +1688,7 @@ function on_mouse_move(x, y, m) {
         } else if (str.timeline && str.timeline.mouse_in_this(x, y)) {
 			str.timeline.on_mouse_move(x, y, m);
 		}
-		if (pref.show_volume_button) {
+		if (pref.show_volume_button && volume_btn) {
 			volume_btn.on_mouse_move(x, y, m);
 		}
 	}
@@ -2521,7 +2523,7 @@ function fetchNewArtwork(metadb) {
 		for (let k = 0; k < tf.glob_paths.length; k++) {
 			aa_list = aa_list.concat(utils.Glob($(tf.glob_paths[k])));
 		}
-		const pattern = new RegExp('(cd|vinyl|' + pref.artwork_cdart_filename + ')([0-9]*|[a-h])\.png', 'i');
+		const pattern = new RegExp('(cd|vinyl|' + settings.cdart_basename + ')([0-9]*|[a-h])\.png', 'i');
 		const imageTest = /jpg|png$/i;
 		// remove duplicates and cd/vinyl art and make sure all files are jpg or pngs
 		aa_list = [... new Set(aa_list)].filter(path => !pattern.test(path) && imageTest.test(path));

@@ -29,11 +29,11 @@ globals.add_properties({
 
 // THEME PREFERENCES/PROPERTIES EXPLANATIONS - After initial run, these values are changed in Options Menu or by Right Click >> Properties and not here!
 pref.add_properties({
-	locked: ['Lock theme', false], // true: prevent changing theme with right click
+	// locked: ['Lock theme', false], // true: prevent changing theme with right click
 	rotation_amt: ['Art: Degrees to rotate CDart', 3], // # of degrees to rotate per track change.
 	aa_glob: ['Art: Cycle through all images', true], // true: use glob, false: use albumart reader (front only)
 	display_cdart: ['Art: Display CD art', true], // true: show CD artwork behind album artwork. This artwork is expected to be named cd.png and have transparent backgrounds (can be found at fanart.tv)
-	artwork_cdart_filename: ['Art: CD art filename (without file extension)', 'cd'], // string: example "discart" if metadata consumer uses that name for cdart and you want those filtered from showing as albumart
+	// artwork_cdart_filename: ['Art: CD art filename (without file extension)', 'cd'], // string: example "discart" if metadata consumer uses that name for cdart and you want those filtered from showing as albumart
 	art_rotate_delay: ['Art: Seconds to display each art', 30], // seconds per image
 	rotate_cdart: ['Art: Rotate CD art on new track', true], // true: rotate cdArt based on track number. i.e. rotationAmt = %tracknum% * x degrees
 	cdart_ontop: ['Art: Show CD art above front cover', false], // true: display cdArt above front cover
@@ -61,6 +61,7 @@ pref.add_properties({
     darkMode: ['Use Dark Theme', true], // true: use a darker background
 	use_4k: ['Detect 4k', 'auto'], // auto: switch to 4k mode when window width wide enough, never: never use 4k mode, always: always use 4k mode
 	checkForUpdates: ['Check for Updates', true], // true: check github repo to determine if updates exist
+	loadAsync: ['Load Theme Asynchronously', true],	// loads individual theme files asynchronously at startup to reduce risk of FSM throwing slow script error on startup
 
 	lyrics_normal_color: ['Lyrics: Text Color', 'RGBA(255, 255, 255, 255);'],
 	lyrics_focus_color: ['Lyrics: Text Highlite Color', 'RGBA(255, 241, 150, 255);'],
@@ -76,7 +77,6 @@ pref.add_properties({
 if (pref.art_rotate_delay < 5) {
 	pref.art_rotate_delay = 5;
 }
-pref.artwork_cdart_filename = pref.artwork_cdart_filename.trim().length ? pref.artwork_cdart_filename.trim() : 'cd';
 
 // Lyrics variables
 // lyrics color definitions
@@ -188,12 +188,14 @@ const gridSchema = new ConfigurationObjectSchema('metadata_grid', ConfigurationO
 ], '*NOTE* Entries that evaluate to an empty string will not be shown in the grid');
 
 const settingsPref = {
+	cdart_basename: 'cd',
 	hide_cursor: false,
 	locked: false,
 }
 const settingsComments = {
+	cdart_basename: 'Do not include extension. Example: "discart", if metadata consumer uses that name for cdart and you want those filtered from showing as albumart',
 	hide_cursor: 'Hides cursor when song is playing after 10 seconds of no mouse activity',
-	locked: 'Locks theme by preventing right-clicking on the background from bringing up a menu.'
+	locked: 'Locks theme by preventing right-clicking on the background from bringing up a menu.',
 }
 const settingsSchema = new ConfigurationObjectSchema('settings', ConfigurationObjectType.Object,
 		// will display as key/val pairs with comments attached
@@ -214,17 +216,12 @@ if (config.fileExists) {
 	settings = config.addConfigurationObject(settingsSchema, prefs.settings, settingsComments);
 	tf = config.addConfigurationObject(titleFormatSchema, prefs.title_format_strings, titleFormatComments);
 	config.addConfigurationObject(gridSchema, prefs.metadata_grid, titleFormatComments);
-	// parse configuration then add back in configObjs with stored comments so we can regen config file with comments intact
-	tf.grid = prefs.metadata_grid;	// these aren't key/value pairs so can't be updated using ThemeSettings
-	// settings = config.getConfigObject(settingsSchema.name);
+	tf.grid = prefs.metadata_grid;	// these aren't key/value pairs so can't be updated using ThemeSettings for now
 }
 
+/* Safety checks. Fix up potentially bad vals from config */
+settings.cdart_basename = settings.cdart_basename.trim().length ? settings.cdart_basename.trim() : 'cd';
 
-// else {
-// 	tf.grid = grid;
-// 	Object.assign(tf, tag_fields);
-// 	settings = config.getConfigObject(settingsSchema.name);
-// }
 
 /* All tf values from here below will NOT be writting to the Config file */
 tf.vinyl_track = '$if2(' + tf.vinyl_side + '[' + tf.vinyl_tracknum + ']. ,[%tracknumber%. ])';
@@ -260,8 +257,8 @@ tf.labels = [ // Array of fields to test for publisher. Add, change or re-order 
 // we expect cd-art will be in .png with transparent background, best found at fanart.tv.
 pref.vinylside_path = '$replace(%path%,%filename_ext%,)vinyl$if2(' + tf.vinyl_side + ',).png' // vinyl cdart named vinylA.png, vinylB.png, etc.
 pref.vinyl_path = '$replace(%path%,%filename_ext%,)vinyl.png' // vinyl cdart named vinylA.png, vinylB.png, etc.
-pref.cdartdisc_path = '$replace(%path%,%filename_ext%,)' + pref.artwork_cdart_filename + '$ifgreater(%totaldiscs%,1,%discnumber%,).png'; // cdart named cd1.png, cd2.png, etc.
-pref.cdart_path = '$replace(%path%,%filename_ext%,)' + pref.artwork_cdart_filename + '.png'; // cdart named cd.png (or whatever custom value was specified). This is the most common single disc case.
+pref.cdartdisc_path = '$replace(%path%,%filename_ext%,)' + settings.cdart_basename + '$ifgreater(%totaldiscs%,1,%discnumber%,).png'; // cdart named cd1.png, cd2.png, etc.
+pref.cdart_path = '$replace(%path%,%filename_ext%,)' + settings.cdart_basename + '.png'; // cdart named cd.png (or whatever custom value was specified). This is the most common single disc case.
 pref.cdart_amount = 0.48; // show 48% of the CD image if it will fit on the screen
 
 function migrateCheck(version, storedVersion) {

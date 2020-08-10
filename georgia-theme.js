@@ -1,9 +1,28 @@
 window.DefinePanel('Georgia', {author: 'Mordred', version: '2.0.0', features: {drag_n_drop: true} });
 
-const basePath = fb.ProfilePath + '\\georgia\\';
+const basePath = fb.ProfilePath + 'georgia\\';
 
-function includeFiles(fileList) {
-    fileList.forEach(filePath => include(basePath + filePath));
+function loadAsyncFile(filePath) {
+    return new Promise(resolve => {
+        setTimeout(() => {
+            include(filePath);
+            resolve();
+        }, 1);
+    })
+}
+
+const loadAsync = window.GetProperty('Load Theme Asynchronously', true);
+async function includeFiles(fileList) {
+    if (loadAsync) {
+        const startTime = new Date().getTime();
+
+        for (let i = 0; i < fileList.length; i++) {
+            await loadAsyncFile(basePath + fileList[i]);
+        }
+        console.log(`Georgia loaded in ${new Date().getTime() - startTime}ms`);
+    } else {
+        fileList.forEach(filePath => include(basePath + filePath));
+    }
 }
 
 includeFiles([
