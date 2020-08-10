@@ -45,6 +45,5 @@ includeFiles([
     'js\\image-caching.js',
     'js\\ui-components.js',
     'js\\lyrics.js',
-    'js\\timeline.js',
     'js\\georgia-main.js'
 ]);
