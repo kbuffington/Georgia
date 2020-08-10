@@ -15,16 +15,16 @@ var ft = {}; // fonts
 var col = {}; // colors
 /**
  * @typedef {Object} GeometryObj
- * @property {number} aa_shadow size of albumart shadow
- * @property {number} lower_bar_h height of song title and time + progress bar area
- * @property {number} pause_size width and height of pause button
- * @property {number} prog_bar_h height of progress bar
- * @property {number} timeline_h height of timeline
- * @property {number} top_art_spacing space between top of theme and artwork
- * @property {number} top_bg_h height of offset color background
+ * @property {number=} aa_shadow size of albumart shadow
+ * @property {number=} lower_bar_h height of song title and time + progress bar area
+ * @property {number=} pause_size width and height of pause button
+ * @property {number=} prog_bar_h height of progress bar
+ * @property {number=} timeline_h height of timeline
+ * @property {number=} top_art_spacing space between top of theme and artwork
+ * @property {number=} top_bg_h height of offset color background
  */
 /** @type GeometryObj */
-let geo = undefined; // sizes
+let geo = {};
 
 let is_4k = false;
 
@@ -151,15 +151,13 @@ function initColors() {
 initColors();
 
 function setGeometry() {
-	geo = {
-		aa_shadow: scaleForDisplay(8), // size of albumart shadow
-		pause_size: scaleForDisplay(150),
-		prog_bar_h: scaleForDisplay(12) + (ww > 1920 ? 2 : 0), // height of progress bar
-		lower_bar_h: scaleForDisplay(80), // height of song title and time + progress bar area
-		top_art_spacing: scaleForDisplay(96), // space between top of theme and artwork
-		top_bg_h: scaleForDisplay(160), // height of offset color background
-		timeline_h: scaleForDisplay(18), // height of timeline
-	};
+	geo.aa_shadow = scaleForDisplay(8); // size of albumart shadow
+	geo.pause_size = scaleForDisplay(150);
+	geo.prog_bar_h = scaleForDisplay(12) + (ww > 1920 ? 2 : 0); // height of progress bar
+	geo.lower_bar_h = scaleForDisplay(80); // height of song title and time + progress bar area
+	geo.top_art_spacing = scaleForDisplay(96); // space between top of theme and artwork
+	geo.top_bg_h = scaleForDisplay(160); // height of offset color background
+	geo.timeline_h = scaleForDisplay(18); // height of timeline
 	if (!pref.show_progress_bar) {
 		geo.lower_bar_h -= geo.prog_bar_h * 2;
 	}
@@ -261,7 +259,31 @@ var playCountVerifiedByLastFm = false; // show Last.fm image when we %lastfm_pla
 var art_off_center = false; // if true, album art has been shifted 40 pixels to the right
 var loadFromCache = true; // always load art from cache unless this is set
 
-var str = {};
+/**
+ * @typedef {Object} MetadataGridObj
+ * @property {boolean=} age Should the age of the field also be calculated (i.e. add the "(3y 5m 11d)" to `val`)
+ * @property {string} label Grid label
+ * @property {string} val Grid value. If `val.trim().length === 0`. The grid entry will not be shown.
+ */
+/**
+ * @typedef {Object} StringsObj Collection of strings and other objects to be displayed throughout UI
+ * @property {string=} artist
+ * @property {string=} album
+ * @property {string=} album_subtitle
+ * @property {string=} disc By default this string is displayed if there is more than one total disc. Formated like: "CD1/2"
+ * @property {Array<MetadataGridObj>=} grid
+ * @property {string=} length Length of the song in MM:SS format
+ * @property {string=} original_artist
+ * @property {string=} time Current time of the song in MM:SS format
+ * @property {string=} title Title of the song
+ * @property {string=} title_lower Title of the song to be displayed above the progress bar. Can include more information such as translation, original artist, etc.
+ * @property {string=} tracknum
+ * @property {*=} trackInfo The piece of text shown in the upper right corner under the year
+ * @property {string=} year
+ * @property {Timeline=} timeline Timeline object
+ */
+/** @type StringsObj */
+let str = {};
 var state = {}; // panel state
 
 // TIMERS
@@ -1524,7 +1546,7 @@ function on_playback_seek() {
 }
 
 function on_mouse_lbtn_down(x, y, m) {
-	if (progressBar.mouse_in_this(x, y)) {
+	if (progressBar.mouseInThis(x, y)) {
 		progressBar.on_mouse_lbtn_down(x, y);
 	} else if (!volume_btn.on_mouse_lbtn_down(x, y, m)) {
 		// not handled by volume_btn
@@ -1574,7 +1596,7 @@ function on_mouse_lbtn_up(x, y, m) {
 			} else {
 				if ((albumart && albumart_size.x <= x && albumart_size.y <= y && albumart_size.x + albumart_size.w >= x && albumart_size.y + albumart_size.h >= y) ||
 					(cdart && !albumart && cdart_size.x <= x && cdart_size.y <= y && cdart_size.x + cdart_size.w >= x && cdart_size.y + cdart_size.h >= y) ||
-					pauseBtn.trace(x, y)) {
+					pauseBtn.mouseInThis(x, y)) {
 					fb.PlayOrPause();
 				}
 			}
@@ -1655,7 +1677,7 @@ function on_mouse_move(x, y, m) {
 			playlist.on_mouse_move(x, y, m);
 		} else if (displayLibrary && library.mouse_in_this(x, y)) {
 			library.on_mouse_move(x, y, m);
-        } else if (str.timeline && str.timeline.mouse_in_this(x, y)) {
+        } else if (str.timeline && str.timeline.mouseInThis(x, y)) {
 			str.timeline.on_mouse_move(x, y, m);
 		}
 		if (pref.show_volume_button && volume_btn) {
@@ -1685,8 +1707,6 @@ function on_mouse_wheel(delta) {
 	}
 }
 // =================================================== //
-
-// trace_call = true;
 
 function on_mouse_leave() {
 
@@ -2885,7 +2905,6 @@ function createButtonImages() {
 				iconAlpha = 190;
 			}
 
-			//--->
 			if (btns[i].type == 'menu') {
 				s && g.DrawRoundRect(Math.floor(lw / 2), Math.floor(lw / 2), w - lw, h - lw, 3, 3, 1, menuRectColor);
 				g.DrawString(btns[i].ico, btns[i].font, menuTextColor, 0, 0, w, h - 1, StringFormat(1, 1));
@@ -2897,7 +2916,6 @@ function createButtonImages() {
 			} else if (btns[i].type == 'image') {
 				g.DrawImage(btns[i].ico, Math.round((w - btns[i].ico.Width) / 2), Math.round((h - btns[i].ico.Height) / 2), btns[i].ico.Width, btns[i].ico.Height, 0, 0, btns[i].ico.Width, btns[i].ico.Height, 0, iconAlpha);
 			}
-			//--->
 
 			img.ReleaseGraphics(g);
 			stateImages[s] = img;

@@ -1,38 +1,45 @@
-function PauseButton() {
-	this.xCenter = 0;
-	this.yCenter = 0;
-	this.top = 0;
-	this.left = 0;
+class PauseButton {
+	constructor() {
+		this.xCenter = 0;
+		this.yCenter = 0;
+		this.top = 0;
+		this.left = 0;
+	}
 
-	this.setCoords = function(xCenter, yCenter) {
+	/**
+	 * Set the coordinates of the center point of the pause button
+	 * @param {number} xCenter The x-coordinate of the center of the pause button
+	 * @param {number} yCenter The y-coordinate of the center of the pause button
+	 */
+	setCoords(xCenter, yCenter) {
 		this.xCenter = xCenter;
 		this.yCenter = yCenter;
 		this.top = Math.round(this.yCenter - geo.pause_size / 2);
 		this.left = Math.round(this.xCenter - geo.pause_size / 2);
-	}
+	};
 
-	this.draw = function (gr) {
+	draw(gr) {
 		var pauseBorderWidth = scaleForDisplay(2);
 		var halfBorderWidth = Math.floor(pauseBorderWidth / 2);
 
 		gr.FillRoundRect(this.left, this.top, geo.pause_size, geo.pause_size,
-				0.1*geo.pause_size, 0.1*geo.pause_size, rgba(0,0,0,150));
+			0.1 * geo.pause_size, 0.1 * geo.pause_size, rgba(0, 0, 0, 150));
 		gr.DrawRoundRect(this.left + halfBorderWidth, this.top + halfBorderWidth, geo.pause_size - pauseBorderWidth, geo.pause_size - pauseBorderWidth,
-				0.1*geo.pause_size, 0.1*geo.pause_size, pauseBorderWidth, rgba(128,128,128,60));
-		gr.FillRoundRect(this.left + 0.26*geo.pause_size, this.top + 0.25 * geo.pause_size,
-									 0.12*geo.pause_size, 0.5*geo.pause_size, 2,2, rgba(255,255,255,160));
-		gr.FillRoundRect(this.left + 0.62*geo.pause_size, this.top + 0.25 * geo.pause_size,
-									 0.12*geo.pause_size, 0.5*geo.pause_size, 2,2, rgba(255,255,255,160));
-	}
+			0.1 * geo.pause_size, 0.1 * geo.pause_size, pauseBorderWidth, rgba(128, 128, 128, 60));
+		gr.FillRoundRect(this.left + 0.26 * geo.pause_size, this.top + 0.25 * geo.pause_size,
+			0.12 * geo.pause_size, 0.5 * geo.pause_size, 2, 2, rgba(255, 255, 255, 160));
+		gr.FillRoundRect(this.left + 0.62 * geo.pause_size, this.top + 0.25 * geo.pause_size,
+			0.12 * geo.pause_size, 0.5 * geo.pause_size, 2, 2, rgba(255, 255, 255, 160));
+	};
 
-	this.repaint = function() {
+	repaint() {
 		window.RepaintRect(this.left - 1, this.top - 1, geo.pause_size + 2, geo.pause_size + 2);
-	}
+	};
 
-	this.trace = function(x, y) {
+	mouseInThis(x, y) {
 		// console.log(x, y, this.top, x >= this.left, y >= this.top, x < this.left + geo.pause_size + 1, y <= this.top + geo.pause_size + 1)
 		return (x >= this.left && y >= this.top && x < this.left + geo.pause_size + 1 && y <= this.top + geo.pause_size + 1);
-	}
+	};
 }
 
 class ProgressBar {
@@ -111,7 +118,7 @@ class ProgressBar {
 
 	on_mouse_lbtn_up(x, y) {
 		this.drag = false;
-		if (this.mouse_in_this(x, y)) {
+		if (this.mouseInThis(x, y)) {
 			this.setPlaybackTime(x);
 		}
 	}
@@ -122,7 +129,7 @@ class ProgressBar {
 		}
 	}
 
-	mouse_in_this(x, y) {
+	mouseInThis(x, y) {
 		return (x >= this.x && y >= this.y && x < this.x + this.w && y <= this.y + this.h);
 	}
 
