@@ -13,7 +13,18 @@ var themeBaseName = "Georgia"; // this is the base name of the theme, and will b
 
 var ft = {}; // fonts
 var col = {}; // colors
-var geo = {}; // sizes
+/**
+ * @typedef {Object} GeometryObj
+ * @property {number} aa_shadow size of albumart shadow
+ * @property {number} lower_bar_h height of song title and time + progress bar area
+ * @property {number} pause_size width and height of pause button
+ * @property {number} prog_bar_h height of progress bar
+ * @property {number} timeline_h height of timeline
+ * @property {number} top_art_spacing space between top of theme and artwork
+ * @property {number} top_bg_h height of offset color background
+ */
+/** @type GeometryObj */
+let geo = undefined; // sizes
 
 let is_4k = false;
 
@@ -140,13 +151,15 @@ function initColors() {
 initColors();
 
 function setGeometry() {
-	geo.aa_shadow = scaleForDisplay(8); // size of albumart shadow
-	geo.pause_size = scaleForDisplay(150);
-	geo.prog_bar_h = scaleForDisplay(12) + (ww > 1920 ? 2 : 0); // height of progress bar
-	geo.lower_bar_h = scaleForDisplay(80); // height of song title and time + progress bar area
-	geo.top_art_spacing = scaleForDisplay(96); // space between top of theme and artwork
-	geo.top_bg_h = scaleForDisplay(160); // height of offset color background
-	geo.timeline_h = scaleForDisplay(18); // height of timeline
+	geo = {
+		aa_shadow: scaleForDisplay(8), // size of albumart shadow
+		pause_size: scaleForDisplay(150),
+		prog_bar_h: scaleForDisplay(12) + (ww > 1920 ? 2 : 0), // height of progress bar
+		lower_bar_h: scaleForDisplay(80), // height of song title and time + progress bar area
+		top_art_spacing: scaleForDisplay(96), // space between top of theme and artwork
+		top_bg_h: scaleForDisplay(160), // height of offset color background
+		timeline_h: scaleForDisplay(18), // height of timeline
+	};
 	if (!pref.show_progress_bar) {
 		geo.lower_bar_h -= geo.prog_bar_h * 2;
 	}
@@ -259,10 +272,9 @@ let hideCursorTimer; // Timer for hiding cursor
 // STATUS VARIABLES
 let ww = 0;
 let wh = 0; // size of panel
-var progressLength = 0; // fixing jumpiness in progressBar
-var progressMoved = false; // playback position changed, so reset progressLength
+/** @type ProgressBar */
+let progressBar = null;
 var last_pb; // saves last playback order
-var g_drag = 0; // status variable for clickable progress bar
 var just_dblclicked = false;
 var aa_list = [];
 var albumArtIndex = 0; // index of currently displayed album art if more than 1
@@ -273,7 +285,6 @@ let lastLabelHeight = 0;
 let displayPlaylist = false;
 let displayLibrary = false;
 let displayLyrics = false;
-var showLibraryButton = true;
 
 var tl_firstPlayedRatio = 0;
 var tl_lastPlayedRatio = 0;
@@ -284,8 +295,8 @@ var lastDiscNumber;
 var lastVinylSide;
 var currentLastPlayed = '';
 
-var g_tooltip;
-var tt = new _.tt_handler;
+let g_tooltip;
+const tt = new _.tt_handler;
 
 let g_playtimer = null;
 
@@ -735,7 +746,6 @@ function draw_ui(gr) {
 
 	// LOWER BAR
 	var lowerBarTop = wh - geo.lower_bar_h;
-	var pbLeft = Math.round(0.025 * ww);
 
 	// Title & artist
 	let timeAreaWidth = 0;
@@ -795,9 +805,8 @@ function draw_ui(gr) {
 	var ft_lower_orig_artist = ft.lower_bar_artist;
 	var trackNumWidth = Math.ceil(gr.MeasureString(str.tracknum, ft_lower, 0, 0, 0, 0).Width);
 	var titleMeasurements = gr.MeasureString(str.title_lower, ft_lower, 0, 0, 0, 0);
-	var titleWidth = titleMeasurements.Width;
 	var origArtistWidth = gr.MeasureString(str.original_artist, ft_lower_orig_artist, 0, 0, 0, 0).Width;
-	if (timeAreaWidth + trackNumWidth + titleWidth + origArtistWidth > 0.95 * ww) {
+	if (timeAreaWidth + trackNumWidth + titleMeasurements.Width + origArtistWidth > 0.95 * ww) {
 		// we don't have room for all the text so use a smaller font and recalc size
 		ft_lower_bold = ft.lower_bar_sml_bold;
 		ft_lower = ft.lower_bar_sml;
@@ -810,10 +819,10 @@ function draw_ui(gr) {
 			timeAreaWidth = gr.CalcTextWidth(' ' + str.time + '   ' + str.length, ft_lower);
 		}
     }
-    var heightAdjustment = is_4k ? 1 : 0;
-    gr.DrawString(str.tracknum, ft_lower_bold, col.now_playing, pbLeft, lowerBarTop + heightAdjustment, 0.95 * ww - timeAreaWidth, titleMeasurements.Height, StringFormat(0, 0, 4, 0x00001000));
+	var heightAdjustment = is_4k ? 1 : 0;
+    gr.DrawString(str.tracknum, ft_lower_bold, col.now_playing, progressBar.x, lowerBarTop + heightAdjustment, 0.95 * ww - timeAreaWidth, titleMeasurements.Height, StringFormat(0, 0, 4, 0x00001000));
 	let bottomTextWidth = timeAreaWidth + trackNumWidth;
-	gr.DrawString(str.title_lower, ft_lower, col.now_playing, pbLeft + trackNumWidth, lowerBarTop, 0.95 * ww - bottomTextWidth, titleMeasurements.Height, StringFormat(0, 0, 4, 0x00001000));
+	gr.DrawString(str.title_lower, ft_lower, col.now_playing, progressBar.x + trackNumWidth, lowerBarTop, 0.95 * ww - bottomTextWidth, titleMeasurements.Height, StringFormat(0, 0, 4, 0x00001000));
 	bottomTextWidth += Math.ceil(titleMeasurements.Width);
 	if (str.original_artist && bottomTextWidth < 0.95 * ww) {
 		var h_spacing = 0;
@@ -822,62 +831,24 @@ function draw_ui(gr) {
 			h_spacing = scaleForDisplay(4);
 			v_spacing = scaleForDisplay(1);
 		}
-		gr.DrawString(str.original_artist, ft_lower_orig_artist, col.now_playing, pbLeft + trackNumWidth + titleMeasurements.Width + h_spacing, lowerBarTop + v_spacing, 0.95 * ww - bottomTextWidth, titleMeasurements.Height, StringFormat(0, 0, 4, 0x00001000));
+		gr.DrawString(str.original_artist, ft_lower_orig_artist, col.now_playing, progressBar.x + trackNumWidth + titleMeasurements.Width + h_spacing, lowerBarTop + v_spacing, 0.95 * ww - bottomTextWidth, titleMeasurements.Height, StringFormat(0, 0, 4, 0x00001000));
 	}
 
 	// Progress bar/Seekbar
-	var pbTop = Math.round(lowerBarTop + titleMeasurements.Height) + scaleForDisplay(8);
-	gr.SetSmoothingMode(SmoothingMode.None); // disable smoothing
-	if (pref.show_progress_bar) {
-		// if (pref.darkMode) {
-		//     // TODO: keep this? Only do when accent is too close?
-		//     gr.SetSmoothingMode(SmoothingMode.AntiAliasGridFit);
-		//     gr.DrawRect(pbLeft - 0.5, pbTop - 0.5, Math.round(0.95 * ww), geo.prog_bar_h, 1, col.darkAccent);
-		//     gr.SetSmoothingMode(SmoothingMode.None); // disable smoothing
-		// }
-		gr.FillSolidRect(pbLeft, pbTop, Math.round(0.95 * ww), geo.prog_bar_h, col.progress_bar);
-	}
-	if (fb.PlaybackLength > 0) {
+	progressBar.setY(Math.round(lowerBarTop + titleMeasurements.Height) + scaleForDisplay(8));
+	if (ww > 600) {
         gr.SetSmoothingMode(SmoothingMode.AntiAliasGridFit);
-		if (ww > 600) {
+		if (fb.PlaybackLength > 0) {
+			gr.SetSmoothingMode(SmoothingMode.AntiAliasGridFit);
 			gr.DrawString(str.length, ft_lower, col.now_playing, 0.725 * ww, lowerBarTop, 0.25 * ww, titleMeasurements.Height, StringFormat(2, 0));
 			let width = gr.CalcTextWidth('  ' + str.length, ft_lower);
 			gr.DrawString(str.time, ft_lower_bold, col.now_playing, 0.725 * ww, lowerBarTop + heightAdjustment, 0.25 * ww - width, titleMeasurements.Height, StringFormat(2, 0));
 			width += gr.CalcTextWidth('  ' + str.time, ft_lower_bold);
 			gr.DrawString(str.disc, ft_lower, col.now_playing, 0.725 * ww, lowerBarTop, 0.25 * ww - width, titleMeasurements.Height, StringFormat(2, 0));
-		}
-
-        gr.SetSmoothingMode(SmoothingMode.None); // disable smoothing
-		if (pref.show_progress_bar) {
-			var progressStationary = false;
-			/* in some cases the progress bar would move backwards at the end of a song while buffering/streaming was occurring.
-				This created strange looking jitter so now the progress bar can only increase unless the user seeked in the track. */
-			if (progressMoved || Math.floor(0.95 * ww * (fb.PlaybackTime / fb.PlaybackLength)) > progressLength) {
-				progressLength = Math.floor(0.95 * ww * (fb.PlaybackTime / fb.PlaybackLength));
-			} else {
-				progressStationary = true;
-			}
-			progressMoved = false;
-			gr.FillSolidRect(pbLeft, pbTop, progressLength, geo.prog_bar_h, col.progress_fill);
-			if (pref.darkMode) {
-				// TODO: keep this? Only do when accent is too close?
-				gr.DrawRect(pbLeft, pbTop, progressLength, geo.prog_bar_h - 1, 1, col.darkAccent);
-			}
-			if (progressStationary && fb.IsPlaying && !fb.IsPaused) {
-				if (col.accent !== last_accent_col || progressAlphaCol === undefined) {
-					var c = new Color(col.accent);
-					progressAlphaCol = rgba(c.r, c.g, c.b, 100); // fake anti-aliased edge so things look a little smoother
-					last_accent_col = col.accent;
-				}
-				gr.DrawLine(progressLength + pbLeft + 1, pbTop, progressLength + pbLeft + 1, pbTop + geo.prog_bar_h - 1, 1, progressAlphaCol);
-			}
-		}
-	} else if (ww > 600) {
-        gr.SetSmoothingMode(SmoothingMode.AntiAliasGridFit);
-		if (fb.IsPlaying) { // streaming, but still want to show time
+		} else if (fb.IsPlaying) { // streaming, but still want to show time
 			gr.DrawString(str.time, ft.lower_bar, col.now_playing, Math.floor(0.725 * ww), lowerBarTop, 0.25 * ww, 0.5 * geo.lower_bar_h, StringFormat(2, 0));
 		} else {
-			var color = pref.darkMode ? tintColor(col.bg,20) : shadeColor(col.bg, 20);
+			var color = pref.darkMode ? tintColor(col.bg, 20) : shadeColor(col.bg, 20);
 			var offset = 0;
 			if (updateAvailable) {
 				offset = updateHyperlink.getWidth();
@@ -889,6 +860,9 @@ function draw_ui(gr) {
 			}
 			gr.DrawString(str.time, ft.lower_bar, color, Math.floor(0.725 * ww) - offset, lowerBarTop, 0.25 * ww, geo.lower_bar_h, StringFormat(2, 0));
 		}
+	}
+	if (pref.show_progress_bar) {
+		progressBar.draw(gr);
 	}
     gr.SetSmoothingMode(SmoothingMode.AntiAliasGridFit);
 }
@@ -1188,7 +1162,6 @@ function on_mouse_leave() {
 
 // custom initialisation function, called once after variable declarations
 function on_init() {
-	var i;
 	console.log("in on_init()");
 
 	str = clearUIVariables();
@@ -1203,6 +1176,8 @@ function on_init() {
 	if (pref.loadAsync) {
 		on_size();	// needed when loading async, otherwise just needed in fb.IsPlaying conditional
 	}
+	setGeometry();
+	progressBar = new ProgressBar(ww, wh);
 	if (fb.IsPlaying && fb.GetNowPlaying()) {
 		on_playback_new_track(fb.GetNowPlaying());
 	}
@@ -1253,6 +1228,7 @@ function on_size() {
             str.timeline.setHeight(geo.timeline_h);
         }
 	}
+	progressBar && progressBar.on_size(ww, wh);
 
 	lastLeftEdge = 0;
 
@@ -1390,7 +1366,7 @@ function on_playback_new_track(metadb) {
 	}
 
 	on_playback_time();
-	progressLength = 0;
+	progressBar.progressLength = 0;
 
 	if (displayPlaylist) {
 		playlist.on_playback_new_track(metadb);
@@ -1539,7 +1515,7 @@ function on_playback_order_changed(this_pb) {
 }
 
 function on_playback_seek() {
-	progressMoved = true;
+	progressBar.progressMoved = true;
 	if (displayLyrics) {
 		gLyrics.seek();
 	}
@@ -1548,11 +1524,9 @@ function on_playback_seek() {
 }
 
 function on_mouse_lbtn_down(x, y, m) {
-	if (y > wh - geo.lower_bar_h) {
-		g_drag = 1;
-	}
-
-	if (!volume_btn.on_mouse_lbtn_down(x, y, m)) {
+	if (progressBar.mouse_in_this(x, y)) {
+		progressBar.on_mouse_lbtn_down(x, y);
+	} else if (!volume_btn.on_mouse_lbtn_down(x, y, m)) {
 		// not handled by volume_btn
 
 		// clicking on progress bar
@@ -1579,7 +1553,7 @@ function on_mouse_lbtn_down(x, y, m) {
 }
 
 function on_mouse_lbtn_up(x, y, m) {
-	g_drag = 0;
+	progressBar.on_mouse_lbtn_up(x, y);
 
 	if (!volume_btn.on_mouse_lbtn_up(x, y, m)) {
 		// not handled by volume_btn
@@ -1651,15 +1625,11 @@ function on_mouse_rbtn_up(x, y, m) {
 }
 
 function on_mouse_move(x, y, m) {
-	if (x != state["mouse_x"] || y != state["mouse_y"]) {
+	if (x != state.mouse_x || y != state.mouse_y) {
 		window.SetCursor(32512); // arrow
-		if (g_drag) {
-			var v = (x - 0.025 * ww) / (0.95 * ww);
-			v = (v < 0) ? 0 : (v < 1) ? v : 1;
-			if (fb.PlaybackTime != v * fb.PlaybackLength) fb.PlaybackTime = v * fb.PlaybackLength;
-		}
-		state["mouse_x"] = x;
-		state["mouse_y"] = y;
+		progressBar.on_mouse_move(x, y);
+		state.mouse_x = x;
+		state.mouse_y = y;
 
 		if (settings.hide_cursor) {
 			clearTimeout(hideCursorTimer);
@@ -1908,7 +1878,7 @@ function on_playback_stop(reason) {
         }
         while (recordLabelsInverted.length) {
             disposeImg(recordLabelsInverted.pop());
-        }
+		}
 		refreshPlayButton();
 		loadFromCache = false;
 	}
@@ -2664,11 +2634,9 @@ function createButtonObjects(ww, wh) {
 	img = btnImg.Lyrics;
 	x -= (img[0].Width + 10);
 	btns[33] = new Button(x, y, img[0].Width, h, 'Lyrics', img, 'Display Lyrics');
-	if (showLibraryButton) {
-		img = btnImg.ShowLibrary;
-		x -= (img[0].Width + 10);
-		btns.library = new Button(x, y, img[0].Width, h, 'ShowLibrary', img, 'Show Library');
-	}
+	img = btnImg.ShowLibrary;
+	x -= (img[0].Width + 10);
+	btns.library = new Button(x, y, img[0].Width, h, 'ShowLibrary', img, 'Show Library');
 	img = btnImg.Playlist;
 	x -= (img[0].Width + 10);
 	btns.playlist = new Button(x, y, img[0].Width, h, 'Playlist', img, 'Show Playlist');
