@@ -1,10 +1,4 @@
 var themeArray = [];
-var themeList = [];
-
-themeList.push = function (theme) {
-	registerTheme(theme);
-	return Array.prototype.push.apply(theme);
-}
 
 const redTheme = {
 	name: 'salmon/brightred',
@@ -13,11 +7,9 @@ const redTheme = {
 		darkAccent: rgb(170, 26, 42),
 		accent: rgb(206, 58, 72),
 		lightAccent: rgb(238, 135, 146),
-		playedLine: rgba(255, 255, 255, 75),
 	},
 	hint: [rgb(235, 70, 80), rgb(240,230,220)]
 };
-themeList.push(redTheme);
 
 const blueTheme = {
 	name: 'blue',
@@ -26,48 +18,31 @@ const blueTheme = {
 		darkAccent: rgb(21, 36, 74),
 		accent: rgb(61, 78, 120),
 		lightAccent: rgb(97, 112, 148),
-		playedLine: rgba(255, 255, 255, 75),
 	},
 	hint: [rgb(40, 57, 99), rgb(220,230,240)]
 };
-themeList.push(blueTheme);
 
-themeList.push({
-	name: 'lighterblue',
-	colors: {
-		primary: rgb(51, 77, 141),
-		darkAccent: rgb(36, 54, 99),
-		accent: rgb(43, 65, 120),
-		lightAccent: rgb(76, 100, 160),
-		playedLine: rgba(255, 255, 255, 75),
-	},
-	hint: [rgb(51, 77, 141)]
-});
-
-themeList.push({
+const midnightBlueTheme = {
 	name: 'midnightBlue',
 	colors: {
 		primary: rgb(0, 0, 48),
 		darkAccent: rgb(0, 0, 32),
 		accent: rgb(31, 31, 92),
 		lightAccent: rgb(64, 64, 116),
-		playedLine: rgba(255, 255, 255, 75),
-		gridCol: rgb(255, 255, 255),
 	},
 	hint: [rgb(0, 0, 48)]
-});
+};
 
-themeList.push({
+const blackTheme = {
 	name: 'black',
 	colors: {
 		primary: rgb(10,10,10),
 		darkAccent: rgb(32, 32, 32),
 		accent: rgb(56, 56, 56),
 		lightAccent: rgb(78, 78, 78),
-		playedLine: rgba(255, 255, 255, 75),
 	},
 	hint: [rgb(0, 0, 0)]
-});
+};
 
 
 function setTheme(theme) {
@@ -113,60 +88,29 @@ function setTheme(theme) {
 	col.darkAccent = theme.darkAccent;
 	col.accent = theme.accent;
 	col.lightAccent = theme.lightAccent;
-	col.info_text = theme.gridCol ? theme.gridCol : rgb(255,255,255);
 }
 
-function registerTheme(theme) {
-	for (let i = 0; i < theme.hint.length; i++) {
-		var themeObj = { colors: theme.colors, hint: theme.hint[i], name: theme.name };
-		themeArray.push(themeObj);
-	}
-}
-
-function findClosestTheme(color) {
-	var red = getRed(color);
-	var green = getGreen(color);
-	var blue = getBlue(color);
-	var closest;
-	var closestDistance = 999;
-
-	for (let i = 0; i < themeArray.length; i++) {
-		var themeRed = getRed(themeArray[i].hint);
-		var themeGreen = getGreen(themeArray[i].hint);
-		var themeBlue = getBlue(themeArray[i].hint);
-
-		var distance = Math.abs(red - themeRed);
-		distance += Math.abs(green - themeGreen);
-		distance += Math.abs(blue - themeBlue);
-
-		if (distance < closestDistance) {
-			if (pref.show_theme_log) console.log(distance, themeArray[i].name + ' - ' + colToRgb(themeArray[i].hint, false));
-			closestDistance = distance;
-			closest = themeArray[i];
-		}
-	}
-	setTheme(closest.colors);
-	if (pref.show_theme_log) console.log(closest.name + ' - ' + colToRgb(closest.hint));
-}
-
+/**
+ * @param {GdiBitmap} image
+ * @param {number} maxColorsToPull
+ */
 function getThemeColorsJson(image, maxColorsToPull) {
-	var selectedColor;
-	var minFrequency = 0.015;
-	var colorsWeighted = [];
-	var maxBrightness = pref.darkMode ? 255 : 212;
+	let selectedColor;
+	const minFrequency = 0.015;
+	const maxBrightness = pref.darkMode ? 255 : 212;
 
 	try {
-		colorsWeighted = JSON.parse(image.GetColourSchemeJSON(maxColorsToPull));
-		colorsWeighted.forEach(function (c, i) {
-			colorsWeighted[i].col = new Color(c.col);
+		let colorsWeighted = JSON.parse(image.GetColourSchemeJSON(maxColorsToPull));
+		colorsWeighted.map(c => {
+			c.col = new Color(c.col);
 		});
 
 		if (pref.show_theme_log) console.log('idx      color        bright  freq   weight');
 		let maxWeight = 0;
 		selectedColor = colorsWeighted[0].col;  // choose first color in case no color selected below
-		colorsWeighted.forEach(function (c, i) {
-			var col = c.col;
-			var midBrightness = 127 - Math.abs(127 - col.brightness);   // favors colors with a brightness around 127
+		colorsWeighted.forEach((c, i) => {
+			const col = c.col;
+			const midBrightness = 127 - Math.abs(127 - col.brightness);   // favors colors with a brightness around 127
 			c.weight = c.freq * midBrightness * 10; // multiply by 10 so numbers are easier to compare
 
 			if (c.freq >= minFrequency && !col.isCloseToGreyscale && col.brightness < maxBrightness) {
@@ -187,7 +131,7 @@ function getThemeColorsJson(image, maxColorsToPull) {
 			if (pref.show_theme_log) console.log(selectedColor.getRGB(true), 'brightness:', selectedColor.brightness, 'too dark -- searching for highlight color');
 			let brightest = selectedColor;
 			maxWeight = 0;
-			colorsWeighted.forEach(function (c, i) {
+			colorsWeighted.forEach(c => {
 				if (c.col.brightness > selectedColor.brightness &&
 					c.col.brightness < 200 &&
 					!c.col.isCloseToGreyscale &&
@@ -207,9 +151,9 @@ function getThemeColorsJson(image, maxColorsToPull) {
 }
 
 function getThemeColors(image) {
-	var calculatedColor;
+	let calculatedColor;
+	const val = $('[%THEMECOLOR%]');
 
-	var val = $('[%THEMECOLOR%]');
 	if (val.length) {	// color hardcoded
 		var themeRgb = val.match(/\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\)/);
 		if (themeRgb) {
@@ -221,7 +165,7 @@ function getThemeColors(image) {
 		calculatedColor = getThemeColorsJson(image, 14);
 	}
 	if (!isNaN(calculatedColor)) {
-		var color = new Color(calculatedColor);
+		let color = new Color(calculatedColor);
 		while (!pref.darkMode && color.brightness > 200) {
 			calculatedColor = shadeColor(calculatedColor, 3);
 			if (pref.show_theme_log) console.log(' >> Shading: ', colToRgb(calculatedColor), ' - brightness: ', color.brightness);
@@ -232,30 +176,28 @@ function getThemeColors(image) {
 			if (pref.show_theme_log) console.log(' >> Tinting: ', colToRgb(calculatedColor), ' - brightness: ', color.brightness);
 			color = new Color(calculatedColor);
 		}
-		if (color.brightness > 17) {
-			var tObj = createThemeColorObject(color)
-			setTheme(tObj);
-		} else {
-			findClosestTheme(calculatedColor);
-		}
+		const tObj = createThemeColorObject(color)
+		setTheme(tObj);
 	}
 }
 
 function createThemeColorObject(color) {
-    var themeObj = {
+    const themeObj = {
         primary: color.val,
         darkAccent: shadeColor(color.val, 30),
         accent: shadeColor(color.val, 15),
         lightAccent: tintColor(color.val, 20),
-        playedLine: rgba(255,255,255,75),
-        gridCol: rgb(255,255,255)
     };
-    if (color.brightness < 40) {
+	if (color.brightness < 18) {
+		// hard code these values otherwise darkAccent and accent can be very hard to see on background
+		themeObj.darkAccent = rgb(32, 32, 32);
+		themeObj.accent = rgb(56, 56, 56);
+		themeObj.lightAccent = rgb(78, 78, 78);
+	} else if (color.brightness < 40) {
         themeObj.darkAccent = shadeColor(color.val, 35);
         themeObj.accent = tintColor(color.val, 10);
         themeObj.lightAccent = tintColor(color.val, 20);
-    }
-    if (color.brightness > 210) {
+    } else if (color.brightness > 210) {
         themeObj.darkAccent = shadeColor(color.val, 30);
         themeObj.accent = shadeColor(color.val, 20);
         themeObj.lightAccent = shadeColor(color.val, 10);
@@ -264,23 +206,23 @@ function createThemeColorObject(color) {
 }
 
 function shadeColor(color, percent) {
-	var red = getRed(color);
-	var green = getGreen(color);
-	var blue = getBlue(color);
+	const red = getRed(color);
+	const green = getGreen(color);
+	const blue = getBlue(color);
 
 	return rgba(darkenColorVal(red, percent), darkenColorVal(green, percent), darkenColorVal(blue, percent), getAlpha(color));
 }
 
 function tintColor(color, percent) {
-	var red = getRed(color);
-	var green = getGreen(color);
-	var blue = getBlue(color);
+	const red = getRed(color);
+	const green = getGreen(color);
+	const blue = getBlue(color);
 
 	return rgba(lightenColorVal(red, percent), lightenColorVal(green, percent), lightenColorVal(blue, percent), getAlpha(color));
 }
 
 function darkenColorVal(color, percent) {
-	var shift = Math.max(color * percent / 100, percent / 2);
+	const shift = Math.max(color * percent / 100, percent / 2);
 	const val = Math.round(color - shift);
 	return Math.max(val, 0);
 }
@@ -291,15 +233,15 @@ function lightenColorVal(color, percent) {
 }
 
 function colorDistance(a, b, log) {
-	var aCol = new Color(a);
-	var bCol = new Color(b);
+	const aCol = new Color(a);
+	const bCol = new Color(b);
 
-	var rho = (aCol.r + bCol.r) / 2;
-	var deltaR = Math.pow(aCol.r - bCol.r, 2);
-	var deltaG = Math.pow(aCol.g - bCol.g, 2);
-	var deltaB = Math.pow(aCol.b - bCol.b, 2);
+	const rho = (aCol.r + bCol.r) / 2;
+	const deltaR = Math.pow(aCol.r - bCol.r, 2);
+	const deltaG = Math.pow(aCol.g - bCol.g, 2);
+	const deltaB = Math.pow(aCol.b - bCol.b, 2);
 
-	var distance = Math.sqrt(2 * deltaR + 4 * deltaG + 3 * deltaB + (rho * (deltaR - deltaB))/256);
+	const distance = Math.sqrt(2 * deltaR + 4 * deltaG + 3 * deltaB + (rho * (deltaR - deltaB))/256);
 	if (log === true) {
 		if (pref.show_theme_log) console.log('distance from:', aCol.getRGB(), 'to:', bCol.getRGB(), '=', distance);
 	}
