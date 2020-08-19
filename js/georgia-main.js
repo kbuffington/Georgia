@@ -12,6 +12,28 @@
 var themeBaseName = "Georgia"; // this is the base name of the theme, and will be used for finding some of the theme's files in the configuration folder.
 
 var ft = {}; // fonts
+
+/**
+ * @typedef {Object} ColorsObj
+ * @property {number=} shadow color of the shadow
+ * @property {number=} accent typically, the primary color shaded by 15%
+ * @property {number=} artist color of artist text on background
+ * @property {number=} bg background of the entire panel from geo.top_bg_h to bottom
+ * @property {number=} darkAccent typically, the primary color shaded by 30%
+ * @property {number=} extraDarkAccent the primary color shaded by 50% - used for dropshadow of colored text
+ * @property {number=} hotness color of hotness text in metadatagrid
+ * @property {number=} primary primary theme color generated from artwork
+ * @property {number=} info_text default color of text in metadatagrid
+ * @property {number=} lightAccent typically, the primary color tinted (lightened) 20%
+ * @property {number=} menu_bg background color under menu (i.e. from y = 0 - geo.top_bg_h)
+ * @property {number=} now_playing color of the lower bar text, including tracknum, title, elapsed and remaining time
+ * @property {number=} progress_bar the background of the progress bar. Fill will be `col.primary`
+ * @property {number=} rating color of rating stars in metadatagrid
+ * @property {number=} tl_added background color for timeline block from added to first played
+ * @property {number=} tl_played background color for timeline block from first played to last played
+ * @property {number=} tl_unplayed background color for timeline block from last played to present time
+ */
+/** @type ColorsObj */
 var col = {}; // colors
 /**
  * @typedef {Object} GeometryObj
@@ -115,38 +137,27 @@ function createFonts() {
 
 function initColors() {
 	col.artist = RGB(255, 255, 255);
-	col.info_text = RGB(255, 255, 255);
 
 	if (!pref.darkMode) {
 		col.bg = RGB(205, 205, 205);
 		col.menu_bg = RGB(58, 58, 58);
-		col.progress_fill = RGB(235, 59, 70);
 		col.progress_bar = RGB(125, 125, 125);
 		col.now_playing = RGB(0, 0, 0); // tracknumber, title, and time
-		col.aa_shadow = RGBA(0, 0, 0, 64);
+		col.shadow = RGBA(0, 0, 0, 64);
 	} else {
 		col.bg = RGB(50, 54, 57);
 		col.menu_bg = RGB(23, 23, 23);
-		col.progress_fill = RGB(235, 59, 70);
 		col.progress_bar = RGB(23, 22, 25);
 		col.now_playing = RGB(255, 255, 255); // tracknumber, title, and time
-		col.aa_shadow = RGBA(128, 128, 128, 54);
+		col.shadow = RGBA(128, 128, 128, 54);
 	}
 
 	col.rating = RGB(255, 170, 32);
-	col.mood = RGB(0, 128, 255);
 	col.hotness = RGB(192, 192, 0);
-
-	col.playcount = RGB(0, 153, 153);
-	col.dark_grey = RGB(128, 128, 128);
 
 	col.tl_added = RGB(15, 51, 65);
 	col.tl_played = RGB(44, 66, 75);
 	col.tl_unplayed = RGB(126, 173, 195);
-	col.tl_play = RGB(255, 255, 255); // each individual play
-
-	// ALBUM ART DISPLAY PROPERTIES
-	col.aa_border = RGBA(60, 60, 60, 128);
 }
 initColors();
 
@@ -361,7 +372,7 @@ function draw_ui(gr) {
 	gr.FillSolidRect(0, 0, ww, geo.top_bg_h, col.menu_bg);
 	if ((fb.IsPaused || fb.IsPlaying) && (!albumart && cdart)) {
 		gr.SetSmoothingMode(SmoothingMode.None);
-		gr.FillSolidRect(0, albumart_size.y, albumart_size.x, albumart_size.h, col.info_bg);
+		gr.FillSolidRect(0, albumart_size.y, albumart_size.x, albumart_size.h, col.primary);
 		gr.DrawRect(-1, albumart_size.y, albumart_size.x, albumart_size.h - 1, 1, col.accent);
 	}
 
@@ -423,7 +434,7 @@ function draw_ui(gr) {
 	}
 	if (fb.IsPlaying && (albumart || !cdart)) {
 		gr.SetSmoothingMode(SmoothingMode.None);
-		gr.FillSolidRect(0, albumart_size.y, albumart_size.x, albumart_size.h, col.info_bg); // info bg -- must be drawn after shadow
+		gr.FillSolidRect(0, albumart_size.y, albumart_size.x, albumart_size.h, col.primary); // info bg -- must be drawn after shadow
 		gr.DrawRect(-1, albumart_size.y, albumart_size.x, albumart_size.h - 1, 1, col.accent);
 		gr.SetSmoothingMode(SmoothingMode.AntiAliasGridFit);
 	}
@@ -461,7 +472,7 @@ function draw_ui(gr) {
 
 		if (timings.showExtraDrawTiming) drawTextGrid = fb.CreateProfiler('on_paint -> textGrid');
 
-		var c = new Color(col.info_bg);
+		var c = new Color(col.primary);
 		if (c.brightness > 190) {
 			col.info_text = rgb(32,32,32);
 		} else {
@@ -582,10 +593,6 @@ function draw_ui(gr) {
 							grid_val_col = col.rating;
 							dropShadow = true;
 							break;
-						case 'Mood':
-							grid_val_col = col.mood;
-							dropShadow = true;
-							break;
 						case 'Hotness':
 							grid_val_col = col.hotness;
 							dropShadow = true;
@@ -633,7 +640,7 @@ function draw_ui(gr) {
 	if ((fb.IsPlaying && !displayPlaylist && !displayLibrary) || (!albumart && !cdart && noArtwork)) {
 		let drawBandLogos = null;
         // BAND LOGO drawing code
-        const brightBackground = (new Color(col.info_bg).brightness) > 190;
+        const brightBackground = (new Color(col.primary).brightness) > 190;
 		timings.showExtraDrawTiming && (drawBandLogos = fb.CreateProfiler('on_paint -> band logos'));
         const availableSpace = albumart_size.y + albumart_size.h - top;
         var logo = brightBackground ? (invertedBandLogo ? invertedBandLogo : bandLogo) : bandLogo;
@@ -747,7 +754,7 @@ function draw_ui(gr) {
 						0, 0, labelShadowImg.Width, labelShadowImg.Height);
 				}
 				gr.SetSmoothingMode(SmoothingMode.None); // disable smoothing
-                gr.FillSolidRect(labelX - leftEdgeWidth, topEdge - 20, ww - labelX + leftEdgeWidth, labelHeight + 40, col.info_bg);
+                gr.FillSolidRect(labelX - leftEdgeWidth, topEdge - 20, ww - labelX + leftEdgeWidth, labelHeight + 40, col.primary);
                 gr.DrawRect(labelX - leftEdgeWidth, topEdge - 20, ww - labelX + leftEdgeWidth, labelHeight + 40 - 1, 1, col.accent);
 				gr.SetSmoothingMode(SmoothingMode.AntiAliasGridFit);
 				for (let i = 0; i < labels.length; i++) {
@@ -2046,7 +2053,7 @@ function doRotateImage() {
 function createShadowRect(width, height) {
 	var shadow = gdi.CreateImage(width + 2 * geo.aa_shadow, height + 2 * geo.aa_shadow);
 	var shimg = shadow.GetGraphics();
-	shimg.FillRoundRect(geo.aa_shadow, geo.aa_shadow, width, height, 0.5 * geo.aa_shadow, 0.5 * geo.aa_shadow, col.aa_shadow);
+	shimg.FillRoundRect(geo.aa_shadow, geo.aa_shadow, width, height, 0.5 * geo.aa_shadow, 0.5 * geo.aa_shadow, col.shadow);
 	shadow.ReleaseGraphics(shimg);
 	shadow.StackBlur(geo.aa_shadow);
 
@@ -2067,15 +2074,15 @@ function createDropShadow() {
 			const shimg = shadow_image.GetGraphics();
 			if (albumart) {
 				shimg.FillRoundRect(geo.aa_shadow, geo.aa_shadow, albumart_size.x + albumart_size.w, albumart_size.h,
-					0.5 * geo.aa_shadow, 0.5 * geo.aa_shadow, col.aa_shadow);
+					0.5 * geo.aa_shadow, 0.5 * geo.aa_shadow, col.shadow);
 			}
 
 			if (cdart && pref.display_cdart && !displayPlaylist && !displayLibrary) {
 				var offset = cdart_size.w * 0.40; // don't change this value
 				var xVal = cdart_size.x;
 				var shadowOffset = geo.aa_shadow * 2;
-				shimg.DrawEllipse(xVal + shadowOffset, shadowOffset + 1, cdart_size.w - shadowOffset, cdart_size.w - shadowOffset, geo.aa_shadow, col.aa_shadow); // outer shadow
-				shimg.DrawEllipse(xVal + geo.aa_shadow + offset - 2, offset + geo.aa_shadow + 1, cdart_size.w - offset * 2, cdart_size.h - offset * 2, 60, col.aa_shadow); // inner shadow
+				shimg.DrawEllipse(xVal + shadowOffset, shadowOffset + 1, cdart_size.w - shadowOffset, cdart_size.w - shadowOffset, geo.aa_shadow, col.shadow); // outer shadow
+				shimg.DrawEllipse(xVal + geo.aa_shadow + offset - 2, offset + geo.aa_shadow + 1, cdart_size.w - offset * 2, cdart_size.h - offset * 2, 60, col.shadow); // inner shadow
 			}
 			shadow_image.ReleaseGraphics(shimg);
 			shadow_image.StackBlur(geo.aa_shadow);

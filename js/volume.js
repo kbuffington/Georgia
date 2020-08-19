@@ -151,7 +151,7 @@ function VolumeBtn() {
                 var lineThickness = scaleForDisplay(1);
 
                 gr.FillSolidRect(x, y + p, w, h, col.bg);
-                gr.FillSolidRect(x, y + p + h - fillHeight, w, fillHeight, col.progress_fill);
+                gr.FillSolidRect(x, y + p + h - fillHeight, w, fillHeight, col.primary);
                 gr.DrawRect(x, y + p, w, h - lineThickness, lineThickness, col.progress_bar);
             }
         }

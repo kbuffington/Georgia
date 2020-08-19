@@ -89,7 +89,7 @@ class ProgressBar {
 					progressStationary = true;
 				}
 				this.progressMoved = false;
-				gr.FillSolidRect(this.x, this.y, this.progressLength, this.h, col.progress_fill);
+				gr.FillSolidRect(this.x, this.y, this.progressLength, this.h, col.primary);
 				if (pref.darkMode) {
 					gr.DrawRect(this.x, this.y, this.progressLength, this.h - 1, 1, col.darkAccent);
 				}

@@ -58,7 +58,7 @@ function setTheme(theme) {
             themeCol = new Color(theme.primary);
         }
 	}
-	col.info_bg = theme.primary;
+	col.primary = theme.primary;
 
 	if (!pref.darkMode) {
 		col.progress_bar = rgb(125,125,125);
@@ -74,14 +74,12 @@ function setTheme(theme) {
 			col.progress_bar = rgb(112,112,112);
 		}
     }
-	col.progress_fill = theme.primary;
 	if (str.timeline) {
 		str.timeline.setColors(theme.darkAccent, theme.accent, theme.lightAccent);
 	}
 	col.tl_added = theme.darkAccent;
 	col.tl_played = theme.accent;
 	col.tl_unplayed = theme.lightAccent;
-	col.tl_play = theme.playedLine;
 
 	col.primary = theme.primary;
 	col.extraDarkAccent = shadeColor(theme.primary, 50);
