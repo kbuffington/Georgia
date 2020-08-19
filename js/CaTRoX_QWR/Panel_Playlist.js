@@ -3279,6 +3279,7 @@ class DiscHeader extends BaseHeader {
 
 	//public:
 	draw(gr, top, bottom) {
+		gr.SetSmoothingMode(SmoothingMode.None);
 		gr.FillSolidRect(this.x, this.y, this.w, this.h, g_pl_colors.background);
 
 		if (this.is_collapsed || (this.is_odd && g_properties.alternate_row_color)) {
@@ -3294,6 +3295,7 @@ class DiscHeader extends BaseHeader {
 		if (this.is_selected()) {
 			title_color = g_pl_colors.title_selected;
 			title_font = g_pl_fonts.title_selected;
+			gr.FillSolidRect(this.x, this.y, scaleForDisplay(2), this.h + 1, col.accent);
 		}
 
 		var disc_header_text_format = g_string_format.v_align_center | g_string_format.trim_ellipsis_char | g_string_format.no_wrap;
@@ -3908,6 +3910,9 @@ class Header extends BaseHeader {
 			h = bottom - this.y;
 		}
 		gr.DrawImage(cache_header ? this.header_image : clipImg, this.x, y, this.w, h, 0, srcY, this.w, h);
+		if (this.is_completely_selected()) {
+			gr.FillSolidRect(this.x, y, scaleForDisplay(2), this.h, col.accent);
+		}
 		clipImg = null;
 	}
 
