@@ -2,9 +2,9 @@
 //
 // Description  a fullscreen now-playing script for foo_jscript_panel
 // Author 		Mordred
-// Version 		1.1.6
+// Version 		2.0.0b1
 // Dev. Started 2017-12-22
-// Last change  2019-11-13
+// Last change  2020-08-31
 // --------------------------------------------------------------------------------------
 
 // CONFIGURATION //////////////////////////////////////
@@ -138,18 +138,18 @@ function createFonts() {
 function initColors() {
 	col.artist = RGB(255, 255, 255);
 
-	if (!pref.darkMode) {
-		col.bg = RGB(205, 205, 205);
-		col.menu_bg = RGB(58, 58, 58);
-		col.progress_bar = RGB(125, 125, 125);
-		col.now_playing = RGB(0, 0, 0); // tracknumber, title, and time
-		col.shadow = RGBA(0, 0, 0, 64);
-	} else {
+	if (pref.darkMode) {
 		col.bg = RGB(50, 54, 57);
 		col.menu_bg = RGB(23, 23, 23);
 		col.progress_bar = RGB(23, 22, 25);
 		col.now_playing = RGB(255, 255, 255); // tracknumber, title, and time
 		col.shadow = RGBA(128, 128, 128, 54);
+	} else {
+		col.bg = RGB(185, 185, 185);
+		col.menu_bg = RGB(54, 54, 54);
+		col.progress_bar = RGB(125, 125, 125);
+		col.now_playing = RGB(0, 0, 0); // tracknumber, title, and time
+		col.shadow = RGBA(0, 0, 0, 64);
 	}
 
 	col.rating = RGB(255, 170, 32);
@@ -666,7 +666,7 @@ function draw_ui(gr) {
 		// RECORD LABEL drawing code
 		// this section should draw in 3ms or less always
 		if (recordLabels.length > 0) {
-            const labels = brightBackground ? (recordLabelsInverted.length ? recordLabelsInverted : recordLabels) : recordLabels;
+            const labels = brightBackground && !pref.labelArtOnBg ? (recordLabelsInverted.length ? recordLabelsInverted : recordLabels) : recordLabels;
 			var rightSideGap = 20, // how close last label is to right edge
 				labelSpacing = 0,
 				leftEdgeGap = (art_off_center ? 20 : 40) * (is_4k ? 1.8 : 1), // space between art and label
@@ -746,17 +746,19 @@ function draw_ui(gr) {
 				topEdge = albumart_size.y + albumart_size.h - labelHeight - 20;
 				const origLabelHeight = labelHeight;
 
-				if (!pref.darkMode) {
-					if (!labelShadowImg) {
-						labelShadowImg = createShadowRect(ww - labelX + leftEdgeWidth, labelHeight + 40);
+				if (!pref.labelArtOnBg) {
+					if (!pref.darkMode) {
+						if (!labelShadowImg) {
+							labelShadowImg = createShadowRect(ww - labelX + leftEdgeWidth, labelHeight + 40);
+						}
+						gr.DrawImage(labelShadowImg, labelX - leftEdgeWidth - geo.aa_shadow, topEdge - 20 - geo.aa_shadow, ww - labelX + leftEdgeWidth + 2 * geo.aa_shadow, labelHeight + 40 + 2 * geo.aa_shadow,
+							0, 0, labelShadowImg.Width, labelShadowImg.Height);
 					}
-					gr.DrawImage(labelShadowImg, labelX - leftEdgeWidth - geo.aa_shadow, topEdge - 20 - geo.aa_shadow, ww - labelX + leftEdgeWidth + 2 * geo.aa_shadow, labelHeight + 40 + 2 * geo.aa_shadow,
-						0, 0, labelShadowImg.Width, labelShadowImg.Height);
+					gr.SetSmoothingMode(SmoothingMode.None); // disable smoothing
+					gr.FillSolidRect(labelX - leftEdgeWidth, topEdge - 20, ww - labelX + leftEdgeWidth, labelHeight + 40, col.primary);
+					gr.DrawRect(labelX - leftEdgeWidth, topEdge - 20, ww - labelX + leftEdgeWidth, labelHeight + 40 - 1, 1, col.accent);
+					gr.SetSmoothingMode(SmoothingMode.AntiAliasGridFit);
 				}
-				gr.SetSmoothingMode(SmoothingMode.None); // disable smoothing
-                gr.FillSolidRect(labelX - leftEdgeWidth, topEdge - 20, ww - labelX + leftEdgeWidth, labelHeight + 40, col.primary);
-                gr.DrawRect(labelX - leftEdgeWidth, topEdge - 20, ww - labelX + leftEdgeWidth, labelHeight + 40 - 1, 1, col.accent);
-				gr.SetSmoothingMode(SmoothingMode.AntiAliasGridFit);
 				for (let i = 0; i < labels.length; i++) {
 					// allLabelsWidth can never be greater than 200, so if a label image is 161 pixels wide, never draw it wider than 161
 					var maxWidth = is_4k && labels[i].Width < 200 ? labels[i].Width * 2 : labels[i].Width;
@@ -986,6 +988,10 @@ function onOptionsMenu(x, y) {
 		pref.cdart_ontop = !pref.cdart_ontop;
 		RepaintWindow();
 	}, !pref.display_cdart);
+	menu.addItem('Draw label art on background', pref.labelArtOnBg, () => {
+		pref.labelArtOnBg = !pref.labelArtOnBg;
+		RepaintWindow();
+	});
 
 	menu.addSeparator();
 	var menuFontMenu = new Menu('Menu font size');

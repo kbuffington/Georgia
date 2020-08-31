@@ -37,6 +37,7 @@ pref.add_properties({
 	art_rotate_delay: ['Art: Seconds to display each art', 30], // seconds per image
 	rotate_cdart: ['Art: Rotate CD art on new track', true], // true: rotate cdArt based on track number. i.e. rotationAmt = %tracknum% * x degrees
 	cdart_ontop: ['Art: Show CD art above front cover', false], // true: display cdArt above front cover
+	labelArtOnBg: ['Art: Draw label art on background', false], // true: don't show the theme color background behind label art
 	show_debug_log: ['Debug: Show Debug Output', false], // true: show debug output in console
 	show_theme_log: ['Debug: Show Theme Logging', false], // true: show theme logging in console
 	hide_cursor: ['Hide Cursor when stationary', false], // true: hide cursor when not moving, false: don't

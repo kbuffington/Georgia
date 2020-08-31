@@ -15,6 +15,6 @@
 * ~Simplify handling of labels in playlist (actually use meta values instead of splitting on ',')~ (implemented in 2.0.0)
 * ~Hide large date if none was found.~ (implemented in 1.1.9)
 * ~If too many label/genre tags ensure hyperlinks do not overlap in playlist~ (implemented in 1.1.9)
-* Add option to draw labels directly on background
+* ~Add option to draw labels directly on background~ (implemented in 2.0.0)
 * ~Handle issues with hyperlink searching with extra information (i.e. "[Deluxe Edition]")~ (implemented in 1.1.9)
 * Better handling of FLAC codec information in metadata panel. Should be similar to what shows in playlist.
