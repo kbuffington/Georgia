@@ -881,7 +881,7 @@ function draw_ui(gr) {
 		} else {
 			var color = pref.darkMode ? tintColor(col.bg, 20) : shadeColor(col.bg, 20);
 			var offset = 0;
-			if (updateAvailable) {
+			if (updateAvailable && updateHyperlink) {
 				offset = updateHyperlink.getWidth();
 				updateHyperlink.setContainerWidth(ww);
 				updateHyperlink.set_y(lowerBarTop);
