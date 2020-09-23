@@ -311,7 +311,6 @@ var last_pb; // saves last playback order
 var just_dblclicked = false;
 var aa_list = [];
 var albumArtIndex = 0; // index of currently displayed album art if more than 1
-var bandLogoHQ = false;
 var t_interval; // milliseconds between screen updates
 let lastLeftEdge = 0; // the left edge of the record labels. Saved so we don't have to recalculate every on every on_paint unless size has changed
 let lastLabelHeight = 0;
@@ -646,7 +645,7 @@ function draw_ui(gr) {
         var logo = brightBackground ? (invertedBandLogo ? invertedBandLogo : bandLogo) : bandLogo;
 		if (logo && availableSpace > 75) {
 			// max width we'll draw is 1/2 the full size because the HQ images are just so big
-			let logoWidth = Math.min(bandLogoHQ ? (is_4k ? logo.Width : logo.Width / 2) : logo.Width * 1.5, albumart_size.x - ww * 0.05);
+			let logoWidth = Math.min(is_4k ? logo.Width : logo.Width / 2, albumart_size.x - ww * 0.05);
 			let heightScale = logoWidth / logo.Width; // width is fixed to logoWidth, so scale height accordingly
 			if (logo.Height * heightScale > availableSpace) {
 				// TODO: could probably do this calc just once, but the logic is complicated
@@ -654,7 +653,7 @@ function draw_ui(gr) {
 				logoWidth = logo.Width * heightScale;
 			}
 			let logoTop = Math.round(albumart_size.y + albumart_size.h - (heightScale * logo.Height)) - 4;
-			if (!bandLogoHQ || is_4k) {
+			if (is_4k) {
 				logoTop -= 20;
 			}
 			gr.DrawImage(logo, Math.round(albumart_size.x / 2 - logoWidth / 2), logoTop, Math.round(logoWidth), Math.round(logo.Height * heightScale),
@@ -1359,37 +1358,45 @@ function on_playback_new_track(metadb) {
 		}
 	}
 
-	function testBandLogo(imgDir, bandStr, isHQ) {
-		var logoPath = imgDir + bandStr + '.png'
+	function testArtistLogo(artistStr) {
+		// see if artist logo exists at various paths
+		const testBandLogoPath = (imgDir, name) => {
+			if (name) {
+				const logoPath = imgDir + name + '.png'
 		if (IsFile(logoPath)) {
-			if (isHQ) {
-				bandLogoHQ = true;
 				console.log('Found band logo: ' + logoPath);
-			}
 			return logoPath;
 		}
+			}
 		return false;
+		};
+
+		return testBandLogoPath(pref.logo_hq, artistStr) || // try 800x310 white
+			testBandLogoPath(pref.logo_color, artistStr); // try 800x310 color
 	}
 
 	/* code to retrieve band logo */
-	const bandStr = replaceFileChars($('[%artist%]'));
+	let tryArtistList = [
+		... getMetaValues('%album artist%').map(artist => replaceFileChars(artist)),
+		replaceFileChars($('[%track artist%]')),
+		... getMetaValues('%artist%').map(artist => replaceFileChars(artist))
+	];
+	tryArtistList = [... new Set(tryArtistList)];
+
     bandLogo = disposeImg(bandLogo);
     invertedBandLogo = disposeImg(invertedBandLogo);
-	if (bandStr) {
-		bandLogoHQ = false;
-
-		var path = testBandLogo(pref.logo_hq, bandStr, true) || // try 800x310 white
-			testBandLogo(pref.logo_color, bandStr, true); // try 800x310 color
+	let path;
+	tryArtistList.some(artistString => {
+		return path = testArtistLogo(artistString);
+	});
 		if (path) {
             bandLogo = gdi.Image(path);
             try {
                 invertedBandLogo = bandLogo.InvertColours();
             } catch (e) {
-                // not using the latest foo_jscript_panel so can't InvertColours
                 invertedBandLogo = undefined;
             }
 		}
-	}
 
 	last_path = current_path; // for art caching purposes
 	lastDiscNumber = $('$if2(%discnumber%,0)'); // for art caching purposes
