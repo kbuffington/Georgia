@@ -7,17 +7,6 @@ const HyperlinkStates = {
 const measureStringScratchImg = gdi.CreateImage(1000, 200);
 
 class Hyperlink {
-	// TODO: uncomment once ESR 78 is is SMP
-	// text;
-	// type;
-	// x_offset;
-	// x;
-	// y;
-	// w;
-	// h;
-	// link_dimensions;
-	// container_w;
-
 	/**
 	 *
 	 * @param {string} text The text that will be displayed in the hyperlink
@@ -81,6 +70,7 @@ class Hyperlink {
 			this.x = w + this.x_offset; // add because offset is negative
 		}
 		this.container_w = w;
+		this.link_dimensions = this.updateDimensions();
 		this.w = Math.ceil(Math.min(this.container_w, this.link_dimensions.Width + 1));
 	}
 
@@ -170,7 +160,7 @@ class Hyperlink {
 		if (!populatePlaylist(query)) {
 			var start = this.text.indexOf('[');
 			if (start > 0) {
-				query = this.type + ' IS ' + this.text.substr(0, start - 3);	// remove ' - [...]' from end of string
+				query = this.type + ' IS ' + this.text.substr(0, start - 3);	// remove ' - [...]' from end of string in case we're showing "Album - [Deluxe Edition]", etc.
 				populatePlaylist(query);
 			}
 		}
