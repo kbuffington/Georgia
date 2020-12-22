@@ -878,8 +878,8 @@ function draw_ui(gr) {
 		} else if (fb.IsPlaying) { // streaming, but still want to show time
 			gr.DrawString(str.time, ft.lower_bar, col.now_playing, Math.floor(0.725 * ww), lowerBarTop, 0.25 * ww, 0.5 * geo.lower_bar_h, StringFormat(2, 0));
 		} else {
-			var color = pref.darkMode ? tintColor(col.bg, 20) : shadeColor(col.bg, 20);
-			var offset = 0;
+			let color = pref.darkMode ? tintColor(col.bg, 20) : shadeColor(col.bg, 20);
+			let offset = 0;
 			if (updateAvailable && updateHyperlink) {
 				offset = updateHyperlink.getWidth();
 				updateHyperlink.setContainerWidth(ww);
@@ -946,7 +946,7 @@ function onOptionsMenu(x, y) {
 	menu_down = true;
 
 	var menu = new Menu();	// helper class for creating simple menu items. See helpers.js
-	menu.addToggleItem('Check for theme updates', pref, 'checkForUpdates');
+	menu.addToggleItem('Check for theme updates', pref, 'checkForUpdates', () => { scheduleUpdateCheck(1000) });
 	menu.createRadioSubMenu('Use 4K mode', ['Auto-detect', 'Never', 'Always'], pref.use_4k, ['auto', 'never', 'always'], (mode) => {
 		pref.use_4k = mode;
 		on_size();
@@ -1363,12 +1363,12 @@ function on_playback_new_track(metadb) {
 		const testBandLogoPath = (imgDir, name) => {
 			if (name) {
 				const logoPath = imgDir + name + '.png'
-		if (IsFile(logoPath)) {
-				console.log('Found band logo: ' + logoPath);
-			return logoPath;
-		}
+				if (IsFile(logoPath)) {
+					console.log('Found band logo: ' + logoPath);
+					return logoPath;
+				}
 			}
-		return false;
+			return false;
 		};
 
 		return testBandLogoPath(pref.logo_hq, artistStr) || // try 800x310 white
@@ -1383,20 +1383,20 @@ function on_playback_new_track(metadb) {
 	];
 	tryArtistList = [... new Set(tryArtistList)];
 
-    bandLogo = disposeImg(bandLogo);
+	bandLogo = disposeImg(bandLogo);
     invertedBandLogo = disposeImg(invertedBandLogo);
 	let path;
 	tryArtistList.some(artistString => {
 		return path = testArtistLogo(artistString);
 	});
-		if (path) {
-            bandLogo = gdi.Image(path);
-            try {
-                invertedBandLogo = bandLogo.InvertColours();
-            } catch (e) {
-                invertedBandLogo = undefined;
-            }
+	if (path) {
+		bandLogo = gdi.Image(path);
+		try {
+			invertedBandLogo = bandLogo.InvertColours();
+		} catch (e) {
+			invertedBandLogo = undefined;
 		}
+	}
 
 	last_path = current_path; // for art caching purposes
 	lastDiscNumber = $('$if2(%discnumber%,0)'); // for art caching purposes
