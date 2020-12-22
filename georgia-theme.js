@@ -14,22 +14,21 @@ function loadAsyncFile(filePath) {
 const loadAsync = window.GetProperty('Load Theme Asynchronously', true);
 async function includeFiles(fileList) {
     if (loadAsync) {
-        const startTime = new Date().getTime();
-
         for (let i = 0; i < fileList.length; i++) {
             await loadAsyncFile(basePath + fileList[i]);
         }
-        console.log(`Georgia loaded in ${new Date().getTime() - startTime}ms`);
     } else {
         fileList.forEach(filePath => include(basePath + filePath));
     }
 }
 
+const startTime = new Date().getTime();
 includeFiles([
     'js\\CaTRoX_QWR\\lodash.min.js',
     'js\\configuration.js',   // reads/write from config file. The actual configuration values are specified in globals.js
     'js\\helpers.js',
     'js\\CaTRoX_QWR\\Common.js',
+    'js\\hyperlinks.js',    // used in globals.js
     'js\\globals.js',   // if we stop using PanelProperties can move this above Common.js
     'js\\CaTRoX_QWR\\Utility_LinkedList.js',
     'js\\CaTRoX_QWR\\Control_ContextMenu.js',
@@ -38,7 +37,6 @@ includeFiles([
     'js\\CaTRoX_QWR\\Panel_Playlist.js',
     'js\\CaTRoX_QWR\\Panel_Library.js',
     'js\\CaTRoX_QWR\\Control_Button.js',
-    'js\\hyperlinks.js',
     'js\\color.js',
     'js\\themes.js',
     'js\\volume.js',
@@ -46,4 +44,10 @@ includeFiles([
     'js\\ui-components.js',
     'js\\lyrics.js',
     'js\\georgia-main.js'
-]);
+]).then(() => {
+    console.log(`Georgia loaded in ${new Date().getTime() - startTime}ms`);
+
+    if (pref.checkForUpdates) {
+        scheduleUpdateCheck(0);
+    }
+});
