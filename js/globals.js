@@ -33,7 +33,6 @@ pref.add_properties({
 	rotation_amt: ['Art: Degrees to rotate CDart', 3], // # of degrees to rotate per track change.
 	aa_glob: ['Art: Cycle through all images', true], // true: use glob, false: use albumart reader (front only)
 	display_cdart: ['Art: Display CD art', true], // true: show CD artwork behind album artwork. This artwork is expected to be named cd.png and have transparent backgrounds (can be found at fanart.tv)
-	// artwork_cdart_filename: ['Art: CD art filename (without file extension)', 'cd'], // string: example "discart" if metadata consumer uses that name for cdart and you want those filtered from showing as albumart
 	art_rotate_delay: ['Art: Seconds to display each art', 30], // seconds per image
 	rotate_cdart: ['Art: Rotate CD art on new track', true], // true: rotate cdArt based on track number. i.e. rotationAmt = %tracknum% * x degrees
 	cdart_ontop: ['Art: Show CD art above front cover', false], // true: display cdArt above front cover
@@ -85,32 +84,12 @@ var g_txt_normalcolour = eval(pref.lyrics_normal_color);
 var g_txt_highlightcolour = eval(pref.lyrics_focus_color);
 var g_txt_shadowcolor = RGBA(0, 0, 0, 255);
 
-//Tag Properties
-// tf.add_properties({
-// 	// added:          ['Tag Fields: Added', '$ifgreater($if(%lastfm_added%,$replace($date(%lastfm_added%),-,),999999999),$replace($date(%added%),-,),[%added%],[%lastfm_added%])'],
-// 	album_subtitle: ['Tag Fields: Album Subtitle', '%albumsubtitle%'],
-// 	artist: ['Tag Fields: Artist String', '$if3(%artist%,%composer%,%performer%,%album artist%)'],
-// 	artist_country: ['Tag Fields: Country', '%artistcountry%'], // we call meta_num(artistcountry) so don't wrap this in % signs
-// 	disc: ['Tag Fields: Disc String', '$ifgreater(%totaldiscs%,1,CD %discnumber%/%totaldiscs%,)'],
-// 	disc_subtitle: ['Tag Fields: Disc Subtitle', '%discsubtitle%'],
-// 	year: ['Tag Fields: Year', '$if3(%original release date%,%originaldate%,%date%,%fy_upload_date%)'],
-// 	date: ['Tag Fields: Date', '$if3(%original release date%,%originaldate%,%date%,%fy_upload_date%)'],
-// 	last_played: ['Tag Fields: Last Played', '[$if2(%last_played_enhanced%,%last_played%)]'],
-// 	title: ['Tag Fields: Song Title String', "%title%[ '['%translation%']']"],
-// 	vinyl_side: ['Tag Fields: Vinyl Side', '%vinyl side%'], // the tag used for determining what side a song appears on for vinyl releases - i.e. song A1 has a %vinyl side% of "A"
-// 	vinyl_tracknum: ['Tag Fields: Vinyl Track#', '%vinyl tracknumber%'], // the tag used for determining the track number on vinyl releases i.e. song A1 has %vinyl tracknumber% set to "1"
-// 	translation: ['Tag Fields: Translated song title', '%translation%'],
-// 	album_translation: ['Tag Fields: Translated album title', '%albumtranslation%'],
-// 	edition: ['Tag Fields: Edition', '[$if(%original release date%,$ifequal($year(%original release date%),$year(%date%),,$year(%date%) ))$if2(%edition%,\'release\')]'],
-// 	original_artist: ['Tag Fields: Original Artist', "[ '('%original artist%' cover)']"],
-// });
-
-/** @type {*} */
-let tf = {};	// title formatting strings - defining each entry separately for auto-complete purposes
+/** @type {*} Title formatting strings used throughout the UI */
+let tf = {};	// defining each entry separately for auto-complete purposes
 tf.album_subtitle = '%albumsubtitle%';
 tf.album_translation = '%albumtranslation%';
 tf.artist_country = '%artistcountry%';
-tf.artist = '$if3(%artist%,%composer%,%performer%,%album artist%)';
+tf.artist = '$if3($meta(artist),%composer%,%performer%,%album artist%)';
 tf.date = '$if3(%original release date%,%originaldate%,%date%,%fy_upload_date%)';
 tf.disc_subtitle = '%discsubtitle%';
 tf.disc = '$ifgreater(%totaldiscs%,1,CD %discnumber%/%totaldiscs%,)';
@@ -155,8 +134,8 @@ $puts(mArtist,$meta(ArtistFilter,4))$if($put(comma,$sub($strstr($get(mArtist),',
 $if($get(mArtist),$if($or($stricmp($get(mArtist),'Soundtrack'),$stricmp($get(mArtist),'Various Artists')),,$ifequal($meta_num(ArtistFilter),5,' & ',', ')$get(mArtist)\
 )))))))))),%artist%);
 
-In one line for adding to properties:
-$ifgreater($meta_num(ArtistFilter),1,$puts(mArtist,$meta(ArtistFilter,0))$if($put(comma,$sub($strstr($get(mArtist),', '),1)),$puts(mArtist,$substr($get(mArtist),$add($get(comma),3),$len($get(mArtist))) $substr($get(mArtist),0,$get(comma))),)$if($get(mArtist),$if($or($stricmp($get(mArtist),'Soundtrack'),$stricmp($get(mArtist),'Various Artists')),,$get(mArtist)$if($stricmp($get(mArtist),%artist%),$puts(feat,1),)$puts(mArtist,$meta(ArtistFilter,1))$if($put(comma,$sub($strstr($get(mArtist),', '),1)),$puts(mArtist,$substr($get(mArtist),$add($get(comma),3),$len($get(mArtist))) $substr($get(mArtist),0,$get(comma))),)$if($get(mArtist),$if($or($stricmp($get(mArtist),'Soundtrack'),$stricmp($get(mArtist),'Various Artists')),,$if($get(feat), feat. ,', ')$get(mArtist)$puts(mArtist,$meta(ArtistFilter,2))$if($put(comma,$sub($strstr($get(mArtist),', '),1)),$puts(mArtist,$substr($get(mArtist),$add($get(comma),3),$len($get(mArtist))) $substr($get(mArtist),0,$get(comma))),)$if($get(mArtist),$if($or($stricmp($get(mArtist),'Soundtrack'),$stricmp($get(mArtist),'Various Artists')),,$ifequal($meta_num(ArtistFilter),3,' & ',', ')$get(mArtist)$puts(mArtist,$meta(ArtistFilter,3))$if($put(comma,$sub($strstr($get(mArtist),', '),1)),$puts(mArtist,$substr($get(mArtist),$add($get(comma),3),$len($get(mArtist))) $substr($get(mArtist),0,$get(comma))),)$if($get(mArtist),$if($or($stricmp($get(mArtist),'Soundtrack'),$stricmp($get(mArtist),'Various Artists')),,$ifequal($meta_num(ArtistFilter),4,' & ',', ')$get(mArtist)$puts(mArtist,$meta(ArtistFilter,4))$if($put(comma,$sub($strstr($get(mArtist),', '),1)),$puts(mArtist,$substr($get(mArtist),$add($get(comma),3),$len($get(mArtist))) $substr($get(mArtist),0,$get(comma))),)$if($get(mArtist),$if($or($stricmp($get(mArtist),'Soundtrack'),$stricmp($get(mArtist),'Various Artists')),,$ifequal($meta_num(ArtistFilter),5,' & ',', ')$get(mArtist))))))))))),%artist%)
+In one line for adding to config file:
+$puts(AF,$ifgreater($meta_num(ArtistFilter),1,$puts(mArtist,$meta(ArtistFilter,0))$if($put(comma,$sub($strstr($get(mArtist),', '),1)),$puts(mArtist,$substr($get(mArtist),$add($get(comma),3),$len($get(mArtist))) $substr($get(mArtist),0,$get(comma))),)$if($get(mArtist),$if($or($stricmp($get(mArtist),'Soundtrack'),$stricmp($get(mArtist),'Various Artists')),,$get(mArtist)$if($stricmp($get(mArtist),%artist%),$puts(feat,1),)$puts(mArtist,$meta(ArtistFilter,1))$if($put(comma,$sub($strstr($get(mArtist),', '),1)),$puts(mArtist,$substr($get(mArtist),$add($get(comma),3),$len($get(mArtist))) $substr($get(mArtist),0,$get(comma))),)$if($get(mArtist),$if($or($stricmp($get(mArtist),'Soundtrack'),$stricmp($get(mArtist),'Various Artists')),,$if($get(feat), feat. ,', ')$get(mArtist)$puts(mArtist,$meta(ArtistFilter,2))$if($put(comma,$sub($strstr($get(mArtist),', '),1)),$puts(mArtist,$substr($get(mArtist),$add($get(comma),3),$len($get(mArtist))) $substr($get(mArtist),0,$get(comma))),)$if($get(mArtist),$if($or($stricmp($get(mArtist),'Soundtrack'),$stricmp($get(mArtist),'Various Artists')),,$ifequal($meta_num(ArtistFilter),3,' & ',', ')$get(mArtist)$puts(mArtist,$meta(ArtistFilter,3))$if($put(comma,$sub($strstr($get(mArtist),', '),1)),$puts(mArtist,$substr($get(mArtist),$add($get(comma),3),$len($get(mArtist))) $substr($get(mArtist),0,$get(comma))),)$if($get(mArtist),$if($or($stricmp($get(mArtist),'Soundtrack'),$stricmp($get(mArtist),'Various Artists')),,$ifequal($meta_num(ArtistFilter),4,' & ',', ')$get(mArtist)$puts(mArtist,$meta(ArtistFilter,4))$if($put(comma,$sub($strstr($get(mArtist),', '),1)),$puts(mArtist,$substr($get(mArtist),$add($get(comma),3),$len($get(mArtist))) $substr($get(mArtist),0,$get(comma))),)$if($get(mArtist),$if($or($stricmp($get(mArtist),'Soundtrack'),$stricmp($get(mArtist),'Various Artists')),,$ifequal($meta_num(ArtistFilter),5,' & ',', ')$get(mArtist))))))))))),%artist%))
 */
 
 // Info grid. Simply add, change, reorder, or remove entries to change grid layout
@@ -205,7 +184,7 @@ const settingsSchema = new ConfigurationObjectSchema('settings', ConfigurationOb
 const configPath = fb.ProfilePath + '\\georgia\\georgia-config.jsonc';
 const config = new Configuration(configPath);
 let titleformat = {};
-if (!config.fileExists || true) {
+if (!config.fileExists) {
 	settings = config.addConfigurationObject(settingsSchema, settingsPref, settingsComments);
 	tf = config.addConfigurationObject(titleFormatSchema, tf, titleFormatComments);
 	config.addConfigurationObject(gridSchema, grid);
@@ -229,10 +208,13 @@ tf.vinyl_track = '$if2(' + tf.vinyl_side + '[' + tf.vinyl_tracknum + ']. ,[%trac
 // GLOB PICTURES
 tf.glob_paths = [ // simply add, change or re-order entries as needed
 	'$replace(%path%,%filename_ext%,)folder*',
+	'$replace(%path%,%filename_ext%,)front*',
 	'$replace(%path%,%filename_ext%,)cover*',
+	'$replace(%path%,%directoryname%\\%filename_ext%,)folder*', // all folder images in parent directory
+	'$replace(%path%,%directoryname%\\%filename_ext%,)front*', // all folder images in parent directory
+	'$replace(%path%,%directoryname%\\%filename_ext%,)cover*', // all folder images in parent directory
 	'$replace(%path%,%filename_ext%,)*.jpg',
 	'$replace(%path%,%filename_ext%,)*.png',
-	'$replace(%path%,%directoryname%\\%filename_ext%,)folder*' // all folder images in parent directory
 ];
 
 tf.lyr_path = [ // simply add, change or re-order entries as needed
@@ -282,6 +264,9 @@ function migrateCheck(version, storedVersion) {
 }
 
 migrateCheck(currentVersion, globals.version);
+
+let retryCount = 0;	// don't hammer if it's not working
+
 function checkForUpdates(openUrl) {
 	var url = 'https://api.github.com/repos/kbuffington/Georgia/tags';
 	makeHttpRequest('GET', url, function (resp) {
@@ -290,25 +275,44 @@ function checkForUpdates(openUrl) {
 			updateAvailable = isNewerVersion(currentVersion, respObj[0].name);
 			console.log('Current released version of Georgia: v' + respObj[0].name);
 			if (updateAvailable) {
-				stoppedTime += ' - ';
-				console.log('>>> Georgia update available. Download it here: https://github.com/kbuffington/Georgia/releases')
-				if (!fb.IsPlaying) {
-					str.time = stoppedTime;
-					RepaintWindow();
-				}
+				console.log('>>> Georgia update available. Download it here: https://github.com/kbuffington/Georgia/releases');
 				updateHyperlink = new Hyperlink('Update Available', ft.lower_bar, 'update', 0, 0, window.Width);
-				if (openUrl) {
-					updateHyperlink.click();
+				if (updateHyperlink) {
+					stoppedTime += ' - ';
+					if (!fb.IsPlaying) {
+						str.time = stoppedTime;
+						RepaintWindow();
+					}
+					if (openUrl) {
+						updateHyperlink.click();
+					}
 				}
 			} else {
 				console.log('You are on the most current version of Georgia');
 			}
 		} catch (e) {
-			console.log('Could not check latest version');
+			if (!updateHyperlink && retryCount < 3) {
+				// updateHyperlink failed to be created somehow. Let's check again after 1 minute.
+				retryCount++;
+				updateAvailable = false;
+				scheduleUpdateCheck(61000);
+			}
 		}
 	});
 }
 
-if (pref.checkForUpdates) {
-	checkForUpdates(false);
+
+/**
+ * Schedule an update check. Set at startup and then typically every 24 hours after unless an update is found
+ * @param {number} delay in milliseconds
+ */
+let updateTimer;
+function scheduleUpdateCheck(delay) {
+	clearTimeout(updateTimer);
+	updateTimer = setTimeout(() => {
+		if (!updateAvailable) {
+			checkForUpdates(false);
+			scheduleUpdateCheck(1000 * 60 * 60 * 24);	// check every 24 hours
+		}
+	}, delay)
 }
