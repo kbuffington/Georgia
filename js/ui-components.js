@@ -80,7 +80,8 @@ class ProgressBar {
 			gr.FillSolidRect(this.x, this.y, Math.round(this.w), this.h, col.progress_bar);
 
 			if (fb.PlaybackLength) {
-				var progressStationary = false;
+				let progressStationary = false;
+				let fillColor = col.primary;
 				/* in some cases the progress bar would move backwards at the end of a song while buffering/streaming was occurring.
 					This created strange looking jitter so now the progress bar can only increase unless the user seeked in the track. */
 				if (this.progressMoved || Math.floor(this.w * (fb.PlaybackTime / fb.PlaybackLength)) > this.progressLength) {
@@ -89,7 +90,15 @@ class ProgressBar {
 					progressStationary = true;
 				}
 				this.progressMoved = false;
-				gr.FillSolidRect(this.x, this.y, this.progressLength, this.h, col.primary);
+
+				if (colorDistance(col.primary, col.progress_bar) < 100) {
+					if (pref.darkMode) {
+						fillColor = rgb(255,255,255);
+					} else {
+						fillColor = col.darkAccent;
+					}
+				}
+				gr.FillSolidRect(this.x, this.y, this.progressLength, this.h, fillColor);
 				if (pref.darkMode) {
 					gr.DrawRect(this.x, this.y, this.progressLength, this.h - 1, 1, col.darkAccent);
 				}
