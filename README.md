@@ -19,6 +19,8 @@ I run the theme in Columns UI with a super simple setup using the JScript Panel,
 
 ##### Step-by-step guide (please follow closely)
 
+**NOTE**: These instructions are outdated for the current 2.0.0 betas. They will be updated before the official release. Please follow the instructions in the release notes if installing a beta.
+
 1. Close foobar
 2. Download this theme from the [releases page](https://github.com/kbuffington/Georgia/releases).
 3. Extract it into a folder named `georgia` to your foobar profile folder. On a non-portable installation this will typically be `C:\Users\<USERNAME>\AppData\Roaming\foobar2000`.
