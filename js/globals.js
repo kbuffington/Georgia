@@ -5,7 +5,7 @@ var pref = new PanelProperties(); // preferences
 /** @type {*} */
 let settings = {};
 
-const currentVersion = '1.1.9';
+const currentVersion = '2.0.0-beta.1';
 let updateAvailable = false;
 let updateHyperlink;
 
