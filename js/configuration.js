@@ -10,18 +10,18 @@ const ConfigurationObjectType = {
  */
 
 class ConfigurationObjectSchema {
-    /**
-     * @param {string} name The name to be used for the object in the configuration file. i.e. if the object is `grid: {}`, then name should be `'grid'`
-     * @param {string} container The type of container for the object. Should be of ConfigurationObjectType.
-     * @param {Array<FieldDefinition>=} fields The fields for each entry in the object. If undefined, uses key/value pairs.
-     * @param {string=} comment Adds a '//' field as first entry in the object. Used for explaining things to the user.
-     */
-    constructor(name, container, fields = undefined, comment = undefined) {
-        this.name = name;
-        this.container = container;
-        this.fields = fields;
-        this.comment = comment;
-    }
+	/**
+	 * @param {string} name The name to be used for the object in the configuration file. i.e. if the object is `grid: {}`, then name should be `'grid'`
+	 * @param {string} container The type of container for the object. Should be of ConfigurationObjectType.
+	 * @param {Array<FieldDefinition>=} fields The fields for each entry in the object. If undefined, uses key/value pairs.
+	 * @param {string=} comment Adds a '//' field as first entry in the object. Used for explaining things to the user.
+	 */
+	constructor(name, container, fields = undefined, comment = undefined) {
+		this.name = name;
+		this.container = container;
+		this.fields = fields;
+		this.comment = comment;
+	}
 }
 
 /**
@@ -35,135 +35,135 @@ class ConfigurationObjectSchema {
  * Read/write theme configuration to a JSON file
  */
 class Configuration {
-    /**
-     * Instantiate Configuration object and specify file to read from
-     * @param {string} configurationPath Path to the config file
-     */
-    constructor(configurationPath) {
-        this.path = configurationPath;
-        if (!configurationPath.includes('.jsonc')) {
-            console.log('<WARNING: Config file is not a .jsonc. Text editors may complain about comments in the file.>')
-        }
+	/**
+	 * Instantiate Configuration object and specify file to read from
+	 * @param {string} configurationPath Path to the config file
+	 */
+	constructor(configurationPath) {
+		this.path = configurationPath;
+		if (!configurationPath.includes('.jsonc')) {
+			console.log('<WARNING: Config file is not a .jsonc. Text editors may complain about comments in the file.>')
+		}
 
-        /**
-         * @protected
-         * @type {Array<ConfigurationObject>}
-        */
-        this._configuration = [];
-    }
+		/**
+		 * @protected
+		 * @type {Array<ConfigurationObject>}
+		*/
+		this._configuration = [];
+	}
 
-    /** @returns {boolean} */
-    get fileExists() {
-        return IsFile(this.path);
-    }
+	/** @returns {boolean} */
+	get fileExists() {
+		return IsFile(this.path);
+	}
 
-    /**
-     *
-     * @param {ConfigurationObjectSchema} objectDefinition
-     * @param {*} values
-     * @param {*} comments
-     * @returns {ThemeSettings} Provides getters and setters to automatically update config file when config val changes
-     */
-    addConfigurationObject(objectDefinition, values, comments = []) {
-        /** @type {ConfigurationObject} */
-        const obj = { definition: objectDefinition, values, comments };
-        const idx = this._configuration.findIndex(c => c.definition.name === objectDefinition.name);
-        if (idx !== -1) {
-            this._configuration.splice(idx, 1, obj);
-        } else {
-            // replace existing object
-            this._configuration.push(obj);
-        }
-        return this.getConfigObject(objectDefinition.name);
-    }
+	/**
+	 *
+	 * @param {ConfigurationObjectSchema} objectDefinition
+	 * @param {*} values
+	 * @param {*} comments
+	 * @returns {ThemeSettings} Provides getters and setters to automatically update config file when config val changes
+	 */
+	addConfigurationObject(objectDefinition, values, comments = []) {
+		/** @type {ConfigurationObject} */
+		const obj = { definition: objectDefinition, values, comments };
+		const idx = this._configuration.findIndex(c => c.definition.name === objectDefinition.name);
+		if (idx !== -1) {
+			this._configuration.splice(idx, 1, obj);
+		} else {
+			// replace existing object
+			this._configuration.push(obj);
+		}
+		return this.getConfigObject(objectDefinition.name);
+	}
 
-    /**
-     *
-     * @param {String} name
-     * @returns {ThemeSettings}
-     */
-    getConfigObject(name) {
-        const obj = this._configuration.find(c => c.definition.name === name);
-        return new ThemeSettings(this, name, obj);
-    }
+	/**
+	 *
+	 * @param {String} name
+	 * @returns {ThemeSettings}
+	 */
+	getConfigObject(name) {
+		const obj = this._configuration.find(c => c.definition.name === name);
+		return new ThemeSettings(this, name, obj);
+	}
 
-    /**
-     * Replace the stored values for the object
-     * @param {String} objectName The name to be used for the object in the configuration file. i.e. if the object is `grid: {}`, then objectName should be `'grid'`
-     * @param {*} values
-     */
-    updateConfigObjValues(objectName, values) {
-        const configObj = this._configuration.find(c => c.definition.name === objectName);
-        Object.assign(configObj.values, values);
-        // TODO: skip writing file on conditions?
-        this.writeConfiguration();
-    }
+	/**
+	 * Replace the stored values for the object
+	 * @param {String} objectName The name to be used for the object in the configuration file. i.e. if the object is `grid: {}`, then objectName should be `'grid'`
+	 * @param {*} values
+	 */
+	updateConfigObjValues(objectName, values) {
+		const configObj = this._configuration.find(c => c.definition.name === objectName);
+		Object.assign(configObj.values, values);
+		// TODO: skip writing file on conditions?
+		this.writeConfiguration();
+	}
 
-    /**
-     * @returns {Object} An object containing
-     */
-    readConfiguration() {
-        try {
-            const f = fso.GetFile(this.path);
-            const p = f.OpenAsTextStream(FileMode.Read, FileType.Unicode);
-            const jsonString = stripJsonComments(p.ReadAll());
-            const config = JSON.parse(jsonString);
-            p.Close();
-            return config;
-        }
-        catch (e) {
-            throw new ThemeError(`<ERROR: Could not read from ${this.path}, or JSON may be invalid.>`)
-        }
-    }
+	/**
+	 * @returns {Object} An object containing
+	 */
+	readConfiguration() {
+		try {
+			const f = fso.GetFile(this.path);
+			const p = f.OpenAsTextStream(FileMode.Read, FileType.Unicode);
+			const jsonString = stripJsonComments(p.ReadAll());
+			const config = JSON.parse(jsonString);
+			p.Close();
+			return config;
+		}
+		catch (e) {
+			throw new ThemeError(`<ERROR: Could not read from ${this.path}, or JSON may be invalid.>`)
+		}
+	}
 
-    /**
-     * Writes the configuration file to the path specified when Configuration was instantiated. Only needs
-     * to be called manually the very first time, or if not calling updateConfigObjValues (only happens if
-     * not using a ThemeSettings object received from addConfigurationObject.
-     */
-    writeConfiguration() {
-        const p = fso.CreateTextFile(this.path, true, true);
-        p.WriteLine('/* Configuration file for Georgia. Manual changes to this file will take effect');
-        p.WriteLine('   on the next reload. To ensure changes are not lost, reload the theme immediately');
-        p.WriteLine('   after manually changing values. */');
-        p.WriteLine('{');
-        this._configuration.forEach((conf, i) => {
-            const container = conf.definition.container === ConfigurationObjectType.Array ? '[' : '{';
-            p.WriteLine(`\t"${conf.definition.name}": ${container}`);
-            if (conf.definition.comment) {
-                p.WriteLine(`\t\t// ${conf.definition.comment}`);
-            }
-            if (conf.definition.fields) {
-                // array of fields
-                for (let i=0; i < conf.values.length; i++) {
-                    let entry = '';
-                    if (conf.definition.container === ConfigurationObjectType.Array) {
-                        conf.definition.fields.forEach(field => {
-                            if (!field.optional || conf.values[i][field.name]) {
-                                const quotes = typeof conf.values[i][field.name] === 'string' ? '"': '';
-                                entry += `, "${field.name}": ${quotes}${conf.values[i][field.name]}${quotes}`;
-                            }
-                        });
-                        entry = `{${entry.substr(1)} }`;
-                    }
-                    const comment = conf.values[i].comment ? ' // ' + conf.values[i].comment : '';
-                    p.WriteLine(`\t\t${entry}${i < conf.values.length - 1 ? ',' : ''}${comment}`);
-                }
-            } else {
-                // object with key/value pairs
-                const keys = Object.keys(conf.values);
-                keys.forEach((key, i) => {
-                    const comment = conf.comments[key] ? ` // ${conf.comments[key]}` : '';
-                    const quotes = typeof conf.values[key] === 'string' ? '"': '';
-                    p.WriteLine(`\t\t"${key}": ${quotes}${conf.values[key]}${quotes}${i < keys.length - 1 ? ',' : ''}${comment}`)
-                });
-            }
-            const closeContainer = conf.definition.container === ConfigurationObjectType.Array ? ']' : '}';
-            p.WriteLine(`\t${closeContainer}${i < this._configuration.length - 1 ? ',' : ''}`);
-        });
+	/**
+	 * Writes the configuration file to the path specified when Configuration was instantiated. Only needs
+	 * to be called manually the very first time, or if not calling updateConfigObjValues (only happens if
+	 * not using a ThemeSettings object received from addConfigurationObject.
+	 */
+	writeConfiguration() {
+		const p = fso.CreateTextFile(this.path, true, true);
+		p.WriteLine('/* Configuration file for Georgia. Manual changes to this file will take effect');
+		p.WriteLine('   on the next reload. To ensure changes are not lost, reload the theme immediately');
+		p.WriteLine('   after manually changing values. */');
+		p.WriteLine('{');
+		this._configuration.forEach((conf, i) => {
+			const container = conf.definition.container === ConfigurationObjectType.Array ? '[' : '{';
+			p.WriteLine(`\t"${conf.definition.name}": ${container}`);
+			if (conf.definition.comment) {
+				p.WriteLine(`\t\t// ${conf.definition.comment}`);
+			}
+			if (conf.definition.fields) {
+				// array of fields
+				for (let i=0; i < conf.values.length; i++) {
+					let entry = '';
+					if (conf.definition.container === ConfigurationObjectType.Array) {
+						conf.definition.fields.forEach(field => {
+							if (!field.optional || conf.values[i][field.name]) {
+								const quotes = typeof conf.values[i][field.name] === 'string' ? '"': '';
+								entry += `, "${field.name}": ${quotes}${conf.values[i][field.name]}${quotes}`;
+							}
+						});
+						entry = `{${entry.substr(1)} }`;
+					}
+					const comment = conf.values[i].comment ? ' // ' + conf.values[i].comment : '';
+					p.WriteLine(`\t\t${entry}${i < conf.values.length - 1 ? ',' : ''}${comment}`);
+				}
+			} else {
+				// object with key/value pairs
+				const keys = Object.keys(conf.values);
+				keys.forEach((key, i) => {
+					const comment = conf.comments[key] ? ` // ${conf.comments[key]}` : '';
+					const quotes = typeof conf.values[key] === 'string' ? '"': '';
+					p.WriteLine(`\t\t"${key}": ${quotes}${conf.values[key]}${quotes}${i < keys.length - 1 ? ',' : ''}${comment}`)
+				});
+			}
+			const closeContainer = conf.definition.container === ConfigurationObjectType.Array ? ']' : '}';
+			p.WriteLine(`\t${closeContainer}${i < this._configuration.length - 1 ? ',' : ''}`);
+		});
 		p.WriteLine('}');
 		p.Close();
-    }
+	}
 }
 
 const singleComment = Symbol('singleComment');
@@ -251,18 +251,18 @@ function stripJsonComments(jsonString, options = { whitespace: false }) {
  * @constructor
  */
 class ThemeSetting {
-    constructor(name, settingVal) {
-        /** @const {string} */
-        this.name = name;
-        this.value = settingVal;
-    }
+	constructor(name, settingVal) {
+		/** @const {string} */
+		this.name = name;
+		this.value = settingVal;
+	}
 
 	/**
 	 * @return {*}
 	 */
 	get() {
 		return this.value;
-    }
+	}
 
 	/**
 	 * @param {*} new_value
@@ -270,44 +270,44 @@ class ThemeSetting {
 	set(new_value) {
 		if (this.value !== new_value) {
 			this.value = new_value;
-        }
+		}
 	};
 }
 
 class ThemeSettings {
-    /**
-     *
-     * @param {Configuration} config
-     * @param {String} objName
-     * @param {ConfigurationObject} properties
-     */
+	/**
+	 *
+	 * @param {Configuration} config
+	 * @param {String} objName
+	 * @param {ConfigurationObject} properties
+	 */
 	constructor(config, objName, properties = undefined) {
-        /** @protected */
-        this._properties_name_list = [];
-        /** @protected */
-        /** @type {Configuration} */
-        this._config = config;
-        this.objName = objName;
-        if (properties) {
-            this.add_properties(properties.values);
-        }
-    }
+		/** @protected */
+		this._properties_name_list = [];
+		/** @protected */
+		/** @type {Configuration} */
+		this._config = config;
+		this.objName = objName;
+		if (properties) {
+			this.add_properties(properties.values);
+		}
+	}
 
 	/**
 	 * @param {ConfigurationObject|*} properties Each item in array is an array of objects }
 	 */
 	add_properties(properties) {
-        Object.keys(properties).forEach(key => {
+		Object.keys(properties).forEach(key => {
 			this.validate_config_item(properties[key], key);
 			this.add_config_item(properties[key], key);
 		})
 	};
 
-    /**
-     * TODO: validation for item?
-     * @param {*} item
-     * @param {String} item_id
-     */
+	/**
+	 * TODO: validation for item?
+	 * @param {*} item
+	 * @param {String} item_id
+	 */
 	validate_config_item(item, item_id) {
 		// if (!_.isArray(item) || item.length !== 2 || !_.isString(item[0])) {
 		// 	throw new InvalidTypeError('property', typeof item, '{ string, [string, any] }', 'Usage: add_properties({\n  property_id: [property_name, property_default_value]\n})');
@@ -330,10 +330,10 @@ class ThemeSettings {
 				return this[item_id + '_internal'].get();
 			},
 			set: function (new_value) {
-                if (this[item_id + '_internal'].get() !== new_value) {
-                this[item_id + '_internal'].set(new_value);
-                this._config.updateConfigObjValues(this.objName, { [item_id]: new_value});
-			}
+				if (this[item_id + '_internal'].get() !== new_value) {
+					this[item_id + '_internal'].set(new_value);
+					this._config.updateConfigObjValues(this.objName, { [item_id]: new_value});
+				}
 			}
 		});
 	}

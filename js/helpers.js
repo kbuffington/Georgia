@@ -374,6 +374,7 @@ function makeHttpRequest(type, url, successCB) {
 }
 
 // from: https://github.com/substack/semver-compare/issues/1#issuecomment-594765531
+// release must be in form of 2.0.0-beta.1, or 2.0.1
 function isNewerVersion (oldVer, newVer) {
 	const a = newVer.split('-');
 	const b = oldVer.split('-');

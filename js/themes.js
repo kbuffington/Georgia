@@ -60,10 +60,10 @@ function setTheme(theme) {
 	}
 	col.primary = theme.primary;
 
-	if (!pref.darkMode) {
-		col.progress_bar = rgb(125,125,125);
-	} else {
+	if (pref.darkMode) {
 		col.progress_bar = rgb(23, 22, 25);
+	} else {
+		col.progress_bar = rgb(125,125,125);
 	}
 	if (colorDistance(theme.primary, col.progress_bar, true) < (themeCol.isCloseToGreyscale ? 60 : 45)) {
 		// progress fill is too close in color to bg
