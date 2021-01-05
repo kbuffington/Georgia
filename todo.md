@@ -18,3 +18,5 @@
 * ~Add option to draw labels directly on background~ (implemented in 2.0.0)
 * ~Handle issues with hyperlink searching with extra information (i.e. "[Deluxe Edition]")~ (implemented in 1.1.9)
 * Better handling of FLAC codec information in metadata panel. Should be similar to what shows in playlist.
+* Allow some default theme colors to be specified in configuration file
+* ~Add on_playback_dynamic_info_track updates for streams~ (implemented in 2.0.0)

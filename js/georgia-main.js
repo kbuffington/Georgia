@@ -1300,10 +1300,20 @@ function setLibrarySize() {
 	}
 }
 
+function on_playback_dynamic_info_track() {
+	// how frequently does this get called?
+	const metadb = fb.IsPlaying ? fb.GetNowPlaying() : null;
+	on_playback_new_track(metadb);
+
+	if (displayPlaylist) {
+		playlist.on_playback_dynamic_info_track();
+	}
+}
+
 // new track
 function on_playback_new_track(metadb) {
 	let newTrackProfiler = null;
-	console.log('in on_playback_new_track()');
+	debugLog('in on_playback_new_track()');
 	if (timings.showDebugTiming) newTrackProfiler = fb.CreateProfiler('on_playback_new_track');
 	lastLeftEdge = 0;
 	newTrackFetchingArtwork = true;
