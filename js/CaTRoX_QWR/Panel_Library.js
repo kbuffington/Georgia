@@ -1482,9 +1482,9 @@ function LibraryTree() {
 	}
 	im.ReleaseGraphics(g);
 	this.line_l = 0; this.sel_items = []; this.subCounts =  {"standard": {}, "filter": {}, "search": {}}; this.tree = [];
-	if (!window.GetProperty("SYSTEM.Playlist Checked", false))
-		fb.ShowPopupMessage("Default playlist: Library View.\n\nChange in panel properties if required.", "Library Tree");
-	window.SetProperty("SYSTEM.Playlist Checked", true);
+	// if (!window.GetProperty("SYSTEM.Playlist Checked", false))
+	// 	fb.ShowPopupMessage("Default playlist: Library View.\n\nChange in panel properties if required.", "Library Tree");
+	// window.SetProperty("SYSTEM.Playlist Checked", true);
 	var arr_contains = function(arr, item) {for (var i = 0; i < arr.length; i++) if (arr[i] == item) return true; return false;}
 	var arr_index = function(arr, item) {var n = -1; for (var i = 0; i < arr.length; i++) if (arr[i] == item) {n = i; break;} return n;}
 	var check_node = function(gr) {if (sbar.draw_timer || !ui.node_win) return; try {symb.SetPartAndStateID(2, 1); symb.SetPartAndStateID(2, 2); symb.DrawThemeBackground(gr, -ui.node_sz, -ui.node_sz, ui.node_sz, ui.node_sz);} catch (e) {ui.node_win = 0;}}
