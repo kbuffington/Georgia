@@ -49,11 +49,11 @@ function setTheme(theme) {
 	var themeCol = new Color(theme.primary);
 	if (colorDistance(theme.primary, col.bg, true) < (themeCol.isCloseToGreyscale ? 60 : 45)) {
         if (pref.darkMode) {
-            if (pref.show_theme_log) console.log('>>> Theme primary color is too close to bg color. Tinting theme color.');
+            if (settings.showThemeLog) console.log('>>> Theme primary color is too close to bg color. Tinting theme color.');
             theme.primary = tintColor(theme.primary, 5);
             themeCol = new Color(theme.primary);
         } else {
-            if (pref.show_theme_log) console.log('>>> Theme primary color is too close to bg color. Shading theme color.');
+            if (settings.showThemeLog) console.log('>>> Theme primary color is too close to bg color. Shading theme color.');
             theme.primary = shadeColor(theme.primary, 5);
             themeCol = new Color(theme.primary);
         }
@@ -67,7 +67,7 @@ function setTheme(theme) {
 	}
 	if (colorDistance(theme.primary, col.progress_bar, true) < (themeCol.isCloseToGreyscale ? 60 : 45)) {
 		// progress fill is too close in color to bg
-		if (pref.show_theme_log) console.log('>>> Theme primary color is too close to progress bar. Adjusting progress_bar');
+		if (settings.showThemeLog) console.log('>>> Theme primary color is too close to progress bar. Adjusting progress_bar');
 		if (themeCol.brightness < 125) {
 			col.progress_bar = rgb(138,138,138);
 		} else {
@@ -103,7 +103,7 @@ function getThemeColorsJson(image, maxColorsToPull) {
 			c.col = new Color(c.col);
 		});
 
-		if (pref.show_theme_log) console.log('idx      color        bright  freq   weight');
+		if (settings.showThemeLog) console.log('idx      color        bright  freq   weight');
 		let maxWeight = 0;
 		selectedColor = colorsWeighted[0].col;  // choose first color in case no color selected below
 		colorsWeighted.forEach((c, i) => {
@@ -112,21 +112,21 @@ function getThemeColorsJson(image, maxColorsToPull) {
 			c.weight = c.freq * midBrightness * 10; // multiply by 10 so numbers are easier to compare
 
 			if (c.freq >= minFrequency && !col.isCloseToGreyscale && col.brightness < maxBrightness) {
-				if (pref.show_theme_log) console.log(leftPad(i, 2), col.getRGB(true,true), leftPad(col.brightness, 4), ' ', leftPad((c.freq*100).toFixed(2),5) + '%', leftPad(c.weight.toFixed(2), 7));
+				if (settings.showThemeLog) console.log(leftPad(i, 2), col.getRGB(true,true), leftPad(col.brightness, 4), ' ', leftPad((c.freq*100).toFixed(2),5) + '%', leftPad(c.weight.toFixed(2), 7));
 				if (c.weight > maxWeight) {
 					maxWeight = c.weight;
 					selectedColor = col;
 				}
 			} else if (col.isCloseToGreyscale) {
-				if (pref.show_theme_log) console.log(' -', col.getRGB(true,true), leftPad(col.brightness, 4), ' ', leftPad((c.freq*100).toFixed(2),5) + '%', '   grey');
+				if (settings.showThemeLog) console.log(' -', col.getRGB(true,true), leftPad(col.brightness, 4), ' ', leftPad((c.freq*100).toFixed(2),5) + '%', '   grey');
 			} else {
-				if (pref.show_theme_log) console.log(' -', col.getRGB(true,true), leftPad(col.brightness, 4), ' ', leftPad((c.freq*100).toFixed(2),5) + '%',
+				if (settings.showThemeLog) console.log(' -', col.getRGB(true,true), leftPad(col.brightness, 4), ' ', leftPad((c.freq*100).toFixed(2),5) + '%',
 					(c.freq < minFrequency) ? '   freq' : ' bright');
 			}
 		});
 
 		if (selectedColor.brightness < 37) {
-			if (pref.show_theme_log) console.log(selectedColor.getRGB(true), 'brightness:', selectedColor.brightness, 'too dark -- searching for highlight color');
+			if (settings.showThemeLog) console.log(selectedColor.getRGB(true), 'brightness:', selectedColor.brightness, 'too dark -- searching for highlight color');
 			let brightest = selectedColor;
 			maxWeight = 0;
 			colorsWeighted.forEach(c => {
@@ -141,7 +141,7 @@ function getThemeColorsJson(image, maxColorsToPull) {
 			});
 			selectedColor = brightest;
 		}
-		if (pref.show_theme_log) console.log('Selected Color:', selectedColor.getRGB(true));
+		if (settings.showThemeLog) console.log('Selected Color:', selectedColor.getRGB(true));
 		return selectedColor.val;
 	} catch (e) {
 		console.log('<Error: GetColourSchemeJSON failed.>');
@@ -166,12 +166,12 @@ function getThemeColors(image) {
 		let color = new Color(calculatedColor);
 		while (!pref.darkMode && color.brightness > 200) {
 			calculatedColor = shadeColor(calculatedColor, 3);
-			if (pref.show_theme_log) console.log(' >> Shading: ', colToRgb(calculatedColor), ' - brightness: ', color.brightness);
+			if (settings.showThemeLog) console.log(' >> Shading: ', colToRgb(calculatedColor), ' - brightness: ', color.brightness);
 			color = new Color(calculatedColor);
 		}
 		while (!color.isGreyscale && color.brightness <= 17) {
 			calculatedColor = tintColor(calculatedColor, 3);
-			if (pref.show_theme_log) console.log(' >> Tinting: ', colToRgb(calculatedColor), ' - brightness: ', color.brightness);
+			if (settings.showThemeLog) console.log(' >> Tinting: ', colToRgb(calculatedColor), ' - brightness: ', color.brightness);
 			color = new Color(calculatedColor);
 		}
 		const tObj = createThemeColorObject(color)
@@ -241,7 +241,7 @@ function colorDistance(a, b, log) {
 
 	const distance = Math.sqrt(2 * deltaR + 4 * deltaG + 3 * deltaB + (rho * (deltaR - deltaB))/256);
 	if (log === true) {
-		if (pref.show_theme_log) console.log('distance from:', aCol.getRGB(), 'to:', bCol.getRGB(), '=', distance);
+		if (settings.showThemeLog) console.log('distance from:', aCol.getRGB(), 'to:', bCol.getRGB(), '=', distance);
 	}
 	return distance;
 }

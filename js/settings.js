@@ -29,7 +29,6 @@ globals.add_properties({
 
 // THEME PREFERENCES/PROPERTIES EXPLANATIONS - After initial run, these values are changed in Options Menu or by Right Click >> Properties and not here!
 pref.add_properties({
-	// locked: ['Lock theme', false], // true: prevent changing theme with right click
 	rotation_amt: ['Art: Degrees to rotate CDart', 3], // # of degrees to rotate per track change.
 	aa_glob: ['Art: Cycle through all images', true], // true: use glob, false: use albumart reader (front only)
 	display_cdart: ['Art: Display CD art', true], // true: show CD artwork behind album artwork. This artwork is expected to be named cd.png and have transparent backgrounds (can be found at fanart.tv)
@@ -37,9 +36,6 @@ pref.add_properties({
 	rotate_cdart: ['Art: Rotate CD art on new track', true], // true: rotate cdArt based on track number. i.e. rotationAmt = %tracknum% * x degrees
 	cdart_ontop: ['Art: Show CD art above front cover', false], // true: display cdArt above front cover
 	labelArtOnBg: ['Art: Draw label art on background', false], // true: don't show the theme color background behind label art
-	show_debug_log: ['Debug: Show Debug Output', false], // true: show debug output in console
-	show_theme_log: ['Debug: Show Theme Logging', false], // true: show theme logging in console
-	hide_cursor: ['Hide Cursor when stationary', false], // true: hide cursor when not moving, false: don't
 	show_flags: ['Show country flags', true], // true: show the artist country flags
 	// check_multich:		['Check for MultiChannel version', false],	// true: search paths in tf.MultiCh_paths to see if there is a multichannel version of the current album available
 	use_vinyl_nums: ['Use vinyl style numbering (e.g. A1)', true], // true: if the tags specified in tf.vinyl_side and tf.vinyl_tracknum are set, then we'll show vinyl style track numbers (i.e. "B2." instead of "04.")
@@ -113,14 +109,14 @@ const titleFormatComments = {
 	year: 'Just the year portion of any stored date.',
 }
 const titleFormatSchema = new ConfigurationObjectSchema('title_format_strings', ConfigurationObjectType.Object, undefined,
-		'Title formatting fields, used throughout the display. Do NOT change the key names.');
+		'Title formatting strings, used throughout the display. Do NOT change the key names or add new ones.');
 
 // TEXT FIELDS
 var stoppedStr1 = 'foobar2000';
 var stoppedStr2 = 'plays music';
 var stoppedTime = 'Georgia v' + currentVersion;
 
-/* My ridiculous artist string:
+/* My old ridiculous artist string:
 $ifgreater($meta_num(ArtistFilter),1,$puts(mArtist,$meta(ArtistFilter,0))$if($put(comma,$sub($strstr($get(mArtist),', '),1)),$puts(mArtist,$substr($get(mArtist),$add($get(comma),3),$len($get(mArtist))) $substr($get(mArtist),0,$get(comma))),)\
 $if($get(mArtist),$if($or($stricmp($get(mArtist),'Soundtrack'),$stricmp($get(mArtist),'Various Artists')),,$get(mArtist)\
 $if($stricmp($get(mArtist),%artist%),$puts(feat,1),)\
@@ -135,17 +131,18 @@ $if($get(mArtist),$if($or($stricmp($get(mArtist),'Soundtrack'),$stricmp($get(mAr
 )))))))))),%artist%);
 
 In one line for adding to config file:
-$puts(AF,$ifgreater($meta_num(ArtistFilter),1,$puts(mArtist,$meta(ArtistFilter,0))$if($put(comma,$sub($strstr($get(mArtist),', '),1)),$puts(mArtist,$substr($get(mArtist),$add($get(comma),3),$len($get(mArtist))) $substr($get(mArtist),0,$get(comma))),)$if($get(mArtist),$if($or($stricmp($get(mArtist),'Soundtrack'),$stricmp($get(mArtist),'Various Artists')),,$get(mArtist)$if($stricmp($get(mArtist),%artist%),$puts(feat,1),)$puts(mArtist,$meta(ArtistFilter,1))$if($put(comma,$sub($strstr($get(mArtist),', '),1)),$puts(mArtist,$substr($get(mArtist),$add($get(comma),3),$len($get(mArtist))) $substr($get(mArtist),0,$get(comma))),)$if($get(mArtist),$if($or($stricmp($get(mArtist),'Soundtrack'),$stricmp($get(mArtist),'Various Artists')),,$if($get(feat), feat. ,', ')$get(mArtist)$puts(mArtist,$meta(ArtistFilter,2))$if($put(comma,$sub($strstr($get(mArtist),', '),1)),$puts(mArtist,$substr($get(mArtist),$add($get(comma),3),$len($get(mArtist))) $substr($get(mArtist),0,$get(comma))),)$if($get(mArtist),$if($or($stricmp($get(mArtist),'Soundtrack'),$stricmp($get(mArtist),'Various Artists')),,$ifequal($meta_num(ArtistFilter),3,' & ',', ')$get(mArtist)$puts(mArtist,$meta(ArtistFilter,3))$if($put(comma,$sub($strstr($get(mArtist),', '),1)),$puts(mArtist,$substr($get(mArtist),$add($get(comma),3),$len($get(mArtist))) $substr($get(mArtist),0,$get(comma))),)$if($get(mArtist),$if($or($stricmp($get(mArtist),'Soundtrack'),$stricmp($get(mArtist),'Various Artists')),,$ifequal($meta_num(ArtistFilter),4,' & ',', ')$get(mArtist)$puts(mArtist,$meta(ArtistFilter,4))$if($put(comma,$sub($strstr($get(mArtist),', '),1)),$puts(mArtist,$substr($get(mArtist),$add($get(comma),3),$len($get(mArtist))) $substr($get(mArtist),0,$get(comma))),)$if($get(mArtist),$if($or($stricmp($get(mArtist),'Soundtrack'),$stricmp($get(mArtist),'Various Artists')),,$ifequal($meta_num(ArtistFilter),5,' & ',', ')$get(mArtist))))))))))),%artist%))
+$puts(AF,$ifgreater($meta_num(ArtistFilter),1,$puts(mArtist,$meta(ArtistFilter,0))$if($put(comma,$sub($strstr($get(mArtist),', '),1)),$puts(mArtist,$substr($get(mArtist),$add($get(comma),3),$len($get(mArtist))) $substr($get(mArtist),0,$get(comma))),)$if($get(mArtist),$if($or($stricmp($get(mArtist),'Soundtrack'),$stricmp($get(mArtist),'Various Artists')),,$get(mArtist)$if($stricmp($get(mArtist),%artist%),$puts(feat,1),)$puts(mArtist,$meta(ArtistFilter,1))$if($put(comma,$sub($strstr($get(mArtist),', '),1)),$puts(mArtist,$substr($get(mArtist),$add($get(comma),3),$len($get(mArtist))) $substr($get(mArtist),0,$get(comma))),)$if($get(mArtist),$if($or($stricmp($get(mArtist),'Soundtrack'),$stricmp($get(mArtist),'Various Artists')),,$if($get(feat), feat. ,', ')$get(mArtist)$puts(mArtist,$meta(ArtistFilter,2))$if($put(comma,$sub($strstr($get(mArtist),', '),1)),$puts(mArtist,$substr($get(mArtist),$add($get(comma),3),$len($get(mArtist))) $substr($get(mArtist),0,$get(comma))),)$if($get(mArtist),$if($or($stricmp($get(mArtist),'Soundtrack'),$stricmp($get(mArtist),'Various Artists')),,$ifequal($meta_num(ArtistFilter),3,' & ',', ')$get(mArtist)$puts(mArtist,$meta(ArtistFilter,3))$if($put(comma,$sub($strstr($get(mArtist),', '),1)),$puts(mArtist,$substr($get(mArtist),$add($get(comma),3),$len($get(mArtist))) $substr($get(mArtist),0,$get(comma))),)$if($get(mArtist),$if($or($stricmp($get(mArtist),'Soundtrack'),$stricmp($get(mArtist),'Various Artists')),,$ifequal($meta_num(ArtistFilter),4,' & ',', ')$get(mArtist)$puts(mArtist,$meta(ArtistFilter,4))$if($put(comma,$sub($strstr($get(mArtist),', '),1)),$puts(mArtist,$substr($get(mArtist),$add($get(comma),3),$len($get(mArtist))) $substr($get(mArtist),0,$get(comma))),)$if($get(mArtist),$if($or($stricmp($get(mArtist),'Soundtrack'),$stricmp($get(mArtist),'Various Artists')),,$ifequal($meta_num(ArtistFilter),5,' & ',', ')$get(mArtist))))))))))),%artist%))$ifequal($strcmp(%album artist%,%artist%),1,$get(AF),$if3($meta(artist),%composer%,%performer%,%album artist%))
 */
 
-// Info grid. Simply add, change, reorder, or remove entries to change grid layout
-const grid = [
+// Info grid visible when a song is playing.
+// NOTE: If you wish to make changes to this, edit it in your georgia-config.jsonc file and NOT here.
+let metadataGrid = [
 	{ label: 'Disc',         val: '$if('+ tf.disc_subtitle +',[Disc %discnumber% - ]'+ tf.disc_subtitle +')' },
 	{ label: 'Release Type', val: '$if($strstr(%releasetype%,Album),,[%releasetype%])' },
-	{ label: 'Year',         val: '$puts(d,'+tf.date+')$if($strcmp($year($get(d)),$get(d)),$get(d),)', comment: 'Year is shown if the date format is YYYY' },
-	{ label: 'Release Date', val: '$puts(d,'+tf.date+')$if($strcmp($year($get(d)),$get(d)),,$get(d))', age: true, comment: 'is used if the date is YYYY-MM-DD' },
+	{ label: 'Year',         val: '$puts(d,'+tf.date+')$if($strcmp($year($get(d)),$get(d)),$get(d),)', comment: '\'Year\' is shown if the date format is YYYY' },
+	{ label: 'Release Date', val: '$puts(d,'+tf.date+')$if($strcmp($year($get(d)),$get(d)),,$get(d))', age: true, comment: '\'Release Date\' is shown if the date format is YYYY-MM-DD' },
 	{ label: 'Edition',      val: tf.edition },
-	{ label: 'Label',        val: '[$meta_sep(label, \u2022 )]' },
+	{ label: 'Label',        val: '[$meta_sep(label, \u2022 )]', comment: 'The label(s) or publisher(s) that released the album.' },
 	{ label: 'Catalog #',    val: '[%catalognumber%]' },
 	{ label: 'Track',        val: '$if(%tracknumber%,$num(%tracknumber%,1)$if(%totaltracks%,/$num(%totaltracks%,1))$ifgreater(%totaldiscs%,1,   CD %discnumber%/$num(%totaldiscs%,1),)' },
 	{ label: 'Genre',        val: '[$meta_sep(genre, \u2022 )]' },
@@ -161,52 +158,14 @@ const grid = [
 	{ label: 'Rating', 	     val: '$if(%rating%,$repeat(\u2605 ,%rating%))' },
 	{ label: 'Mood',         val: '$if(%mood%,$puts(X,5)$puts(Y,$mul(5,%mood%))$repeat($repeat(I,$get(X))   ,$div($get(Y),$get(X)))$repeat(I,$mod($get(Y),$get(X)))$replace(%mood%,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9))' },
 ];
-const gridSchema = new ConfigurationObjectSchema('metadata_grid', ConfigurationObjectType.Array, [
+const gridSchema = new ConfigurationObjectSchema('metadataGrid', ConfigurationObjectType.Array, [
 	{ name: 'label' },
 	{ name: 'val' },	// todo: change this to 'value'?
 	{ name: 'age', optional: true },
 ], '*NOTE* Entries that evaluate to an empty string will not be shown in the grid');
 
-const settingsPref = {
-	cdart_basename: 'cd',
-	hide_cursor: false,
-	locked: false,
-}
-const settingsComments = {
-	cdart_basename: 'Do not include extension. Example: "discart", if metadata consumer uses that name for cdart and you want those filtered from showing as albumart',
-	hide_cursor: 'Hides cursor when song is playing after 10 seconds of no mouse activity',
-	locked: 'Locks theme by preventing right-clicking on the background from bringing up a menu.',
-}
-const settingsSchema = new ConfigurationObjectSchema('settings', ConfigurationObjectType.Object,
-		// will display as key/val pairs with comments attached
-		undefined, 'General settings for the theme.');
 
-const configPath = fb.ProfilePath + '\\georgia\\georgia-config.jsonc';
-const config = new Configuration(configPath);
-let titleformat = {};
-if (!config.fileExists) {
-	settings = config.addConfigurationObject(settingsSchema, settingsPref, settingsComments);
-	tf = config.addConfigurationObject(titleFormatSchema, tf, titleFormatComments);
-	config.addConfigurationObject(gridSchema, grid);
-	config.writeConfiguration();
-	tf.grid = grid;	// these aren't key/value pairs so can't be updated using ThemeSettings
-}
-if (config.fileExists) {
-	const prefs = config.readConfiguration();
-	settings = config.addConfigurationObject(settingsSchema, prefs.settings, settingsComments);
-	tf = config.addConfigurationObject(titleFormatSchema, prefs.title_format_strings, titleFormatComments);
-	config.addConfigurationObject(gridSchema, prefs.metadata_grid, titleFormatComments);
-	tf.grid = prefs.metadata_grid;	// these aren't key/value pairs so can't be updated using ThemeSettings for now
-}
-
-/* Safety checks. Fix up potentially bad vals from config */
-settings.cdart_basename = settings.cdart_basename.trim().length ? settings.cdart_basename.trim() : 'cd';
-
-
-/* All tf values from here below will NOT be writting to the Config file */
-tf.vinyl_track = '$if2(' + tf.vinyl_side + '[' + tf.vinyl_tracknum + ']. ,[%tracknumber%. ])';
-// GLOB PICTURES
-tf.glob_paths = [ // simply add, change or re-order entries as needed
+const imgPaths = [ // simply add, change or re-order entries as needed
 	'$replace(%path%,%filename_ext%,)folder*',
 	'$replace(%path%,%filename_ext%,)front*',
 	'$replace(%path%,%filename_ext%,)cover*',
@@ -216,6 +175,66 @@ tf.glob_paths = [ // simply add, change or re-order entries as needed
 	'$replace(%path%,%filename_ext%,)*.jpg',
 	'$replace(%path%,%filename_ext%,)*.png',
 ];
+const imgPathSchema = new ConfigurationObjectSchema('imgPaths', ConfigurationObjectType.Array, undefined,
+	'The titleformatting defined paths for artwork to be displayed. The first image matched will be shown first.' +
+	' Re-arrange, add, or remove as needed. NOTE: folder delimiters must be double-slashes ("\\\\")');
+
+const settingsPref = {
+	cdArtBasename: 'cd',
+	hideCursor: false,
+	showDebugLog: false,
+	showThemeLog: false,
+	locked: false,
+}
+const settingsComments = {
+	cdArtBasename: 'Do not include extension. Example: "discart", if the image provider uses that name for saving cdart and you want those filtered from showing up as albumart. Would also filter out discart1.png, etc.',
+	hideCursor: 'Hides cursor when song is playing after 10 seconds of no mouse activity',
+	showDebugLog: 'Enables extra logging in the console. Probably not needed unless you encounter a problem or you\'re asked to enable it.',
+	showThemeLog: 'Logs the output of the algorithm which determines the primary theme color.',
+	locked: 'Locks theme by preventing right-clicking on the background from bringing up a menu.',
+}
+const settingsSchema = new ConfigurationObjectSchema('settings', ConfigurationObjectType.Object,
+		// will display as key/val pairs with comments attached
+		undefined, 'General settings for the theme.');
+
+const configPath = fb.ProfilePath + 'georgia\\georgia-config.jsonc';
+const config = new Configuration(configPath);
+let titleformat = {};
+if (!config.fileExists) {
+	settings = config.addConfigurationObject(settingsSchema, settingsPref, settingsComments);
+	tf = config.addConfigurationObject(titleFormatSchema, tf, titleFormatComments);
+	config.addConfigurationObject(gridSchema, metadataGrid);	// we don't assign an object here because these aren't key/value pairs and thus can't use the get/setters
+	config.addConfigurationObject(imgPathSchema, imgPaths);
+	console.log('writing', configPath);
+	config.writeConfiguration();
+}
+if (config.fileExists) {
+	const prefs = config.readConfiguration();
+	/**
+	 * While we've read all the values in, we still need to call addConfigurationObject to add the getters/setters
+	 * for the objects so that the file gets automatically written when a setting is changed.
+	 **/
+	settings = config.addConfigurationObject(settingsSchema, Object.assign(settingsPref, prefs.settings), settingsComments);
+	tf = config.addConfigurationObject(titleFormatSchema, prefs.title_format_strings, titleFormatComments);
+	prefs.metadataGrid.forEach(entry => {
+		// copy comments over to existing object so they aren't lost
+		const gridEntryDefinition = metadataGrid.find(gridDefItem => gridDefItem.label === entry.label);
+		if (gridEntryDefinition && gridEntryDefinition.comment) {
+			entry.comment = gridEntryDefinition.comment;
+		}
+	});
+	config.addConfigurationObject(gridSchema, prefs.metadataGrid);
+	config.addConfigurationObject(imgPathSchema, prefs.imgPaths);
+	tf.imgPaths = prefs.imgPaths;
+	metadataGrid = prefs.metadataGrid;
+	// when adding new objects to the config file, add them in the version check below
+}
+
+/* Safety checks. Fix up potentially bad vals from config */
+settings.cdArtBasename = settings.cdArtBasename && settings.cdArtBasename.trim().length ? settings.cdArtBasename.trim() : 'cd';
+
+/* All tf values from here below will NOT be written to the georgia-config file */
+tf.vinyl_track = '$if2(' + tf.vinyl_side + '[' + tf.vinyl_tracknum + ']. ,[%tracknumber%. ])';
 
 tf.lyr_path = [ // simply add, change or re-order entries as needed
 	'$replace($replace(%path%,%filename_ext%,),\,\\)',
@@ -240,8 +259,8 @@ tf.labels = [ // Array of fields to test for publisher. Add, change or re-order 
 // we expect cd-art will be in .png with transparent background, best found at fanart.tv.
 pref.vinylside_path = '$replace(%path%,%filename_ext%,)vinyl$if2(' + tf.vinyl_side + ',).png' // vinyl cdart named vinylA.png, vinylB.png, etc.
 pref.vinyl_path = '$replace(%path%,%filename_ext%,)vinyl.png' // vinyl cdart named vinylA.png, vinylB.png, etc.
-pref.cdartdisc_path = '$replace(%path%,%filename_ext%,)' + settings.cdart_basename + '$ifgreater(%totaldiscs%,1,%discnumber%,).png'; // cdart named cd1.png, cd2.png, etc.
-pref.cdart_path = '$replace(%path%,%filename_ext%,)' + settings.cdart_basename + '.png'; // cdart named cd.png (or whatever custom value was specified). This is the most common single disc case.
+pref.cdartdisc_path = '$replace(%path%,%filename_ext%,)' + settings.cdArtBasename + '$ifgreater(%totaldiscs%,1,%discnumber%,).png'; // cdart named cd1.png, cd2.png, etc.
+pref.cdart_path = '$replace(%path%,%filename_ext%,)' + settings.cdArtBasename + '.png'; // cdart named cd.png (or whatever custom value was specified). This is the most common single disc case.
 pref.cdart_amount = 0.48; // show 48% of the CD image if it will fit on the screen
 
 function migrateCheck(version, storedVersion) {
@@ -249,7 +268,7 @@ function migrateCheck(version, storedVersion) {
 		// this function clears default values which have changed
 		switch (storedVersion) {
 
-			case '1.1.9':
+			case '1.9.9':	// replace with 2.0.0-beta.1
 				// after all previous versions have fallen through
 				console.log('Upgrading Georgia Theme settings');
                 globals.version = currentVersion;

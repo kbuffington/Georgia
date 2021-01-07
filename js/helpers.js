@@ -55,7 +55,7 @@ function getMetaValues(name, metadb = undefined) {
  * @type {function(...*):void} var_args
  */
 const debugLog = (var_args) => {
-	if (pref.show_debug_log) console.log(var_args);
+	if (settings.showDebugLog) console.log(var_args);
 }
 
 /**

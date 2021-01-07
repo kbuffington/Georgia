@@ -1,6 +1,7 @@
 const ConfigurationObjectType = {
 	Array:  'array',
 	Object: 'object',
+	Value: 'value'	// not currently handled
 };
 
 /**
@@ -13,7 +14,7 @@ class ConfigurationObjectSchema {
 	/**
 	 * @param {string} name The name to be used for the object in the configuration file. i.e. if the object is `grid: {}`, then name should be `'grid'`
 	 * @param {string} container The type of container for the object. Should be of ConfigurationObjectType.
-	 * @param {Array<FieldDefinition>=} fields The fields for each entry in the object. If undefined, uses key/value pairs.
+	 * @param {Array<FieldDefinition>=} fields The fields for each entry in the object. If undefined, uses key/value pairs for objects, or comma separated values for arrays.
 	 * @param {string=} comment Adds a '//' field as first entry in the object. Used for explaining things to the user.
 	 */
 	constructor(name, container, fields = undefined, comment = undefined) {
@@ -112,7 +113,8 @@ class Configuration {
 			return config;
 		}
 		catch (e) {
-			throw new ThemeError(`<ERROR: Could not read from ${this.path}, or JSON may be invalid.>`)
+			throw new ThemeError(`<ERROR: Could not read from ${this.path}, or JSON may be invalid. ` +
+				`If file exists please delete or restore from a backup.>`)
 		}
 	}
 
@@ -127,11 +129,24 @@ class Configuration {
 		p.WriteLine('   on the next reload. To ensure changes are not lost, reload the theme immediately');
 		p.WriteLine('   after manually changing values. */');
 		p.WriteLine('{');
+		p.WriteLine(`\t"version": "${currentVersion}",`)
 		this._configuration.forEach((conf, i) => {
 			const container = conf.definition.container === ConfigurationObjectType.Array ? '[' : '{';
 			p.WriteLine(`\t"${conf.definition.name}": ${container}`);
 			if (conf.definition.comment) {
-				p.WriteLine(`\t\t// ${conf.definition.comment}`);
+				let line = conf.definition.comment;
+				let done = false;
+				while (!done) {
+					const lineLen = 100;
+					if (line.length < lineLen) {
+						p.WriteLine(`\t\t// ${line.trim()}`);
+						done = true;
+					} else {
+						const idx = line.lastIndexOf(' ', lineLen);
+						p.WriteLine(`\t\t// ${line.substr(0, idx).trim()}`);
+						line = line.substr(idx);
+					}
+				}
 			}
 			if (conf.definition.fields) {
 				// array of fields
@@ -150,13 +165,20 @@ class Configuration {
 					p.WriteLine(`\t\t${entry}${i < conf.values.length - 1 ? ',' : ''}${comment}`);
 				}
 			} else {
-				// object with key/value pairs
-				const keys = Object.keys(conf.values);
-				keys.forEach((key, i) => {
-					const comment = conf.comments[key] ? ` // ${conf.comments[key]}` : '';
-					const quotes = typeof conf.values[key] === 'string' ? '"': '';
-					p.WriteLine(`\t\t"${key}": ${quotes}${conf.values[key]}${quotes}${i < keys.length - 1 ? ',' : ''}${comment}`)
-				});
+				if (conf.definition.container === ConfigurationObjectType.Array) {
+					// array of comma separated entries
+					conf.values.forEach((val, i) => {
+						p.WriteLine(`\t\t"${val.replace(/\\/g, '\\\\')}"${i < conf.values.length - 1 ? ',' : ''}`);
+					})
+				} else {
+					// object with key/value pairs
+					const keys = Object.keys(conf.values);
+					keys.forEach((key, i) => {
+						const comment = conf.comments[key] ? ` // ${conf.comments[key]}` : '';
+						const quotes = typeof conf.values[key] === 'string' ? '"': '';
+						p.WriteLine(`\t\t"${key}": ${quotes}${conf.values[key]}${quotes}${i < keys.length - 1 ? ',' : ''}${comment}`)
+					});
+				}
 			}
 			const closeContainer = conf.definition.container === ConfigurationObjectType.Array ? ']' : '}';
 			p.WriteLine(`\t${closeContainer}${i < this._configuration.length - 1 ? ',' : ''}`);

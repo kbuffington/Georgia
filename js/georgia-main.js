@@ -1159,10 +1159,10 @@ function onOptionsMenu(x, y) {
 	menu.addSeparator();
 
 	const debugMenu = new Menu('Debug Settings');
-	debugMenu.addToggleItem('Enable debug output', pref, 'show_debug_log');
-	debugMenu.addItem('Enable theme debug output', pref.show_theme_log, () => {
-		pref.show_theme_log = !pref.show_theme_log;
-		if (pref.show_theme_log) {
+	debugMenu.addToggleItem('Enable debug output', settings, 'showDebugLog');
+	debugMenu.addItem('Enable theme debug output', settings.showThemeLog, () => {
+		settings.showThemeLog = !settings.showThemeLog;
+		if (settings.showThemeLog) {
 			albumart = null;
 			on_playback_new_track(fb.GetNowPlaying());
 		}
@@ -1175,7 +1175,7 @@ function onOptionsMenu(x, y) {
 
 	menu.addSeparator();
 
-	menu.addToggleItem('Lock right click...', pref, 'locked');
+	menu.addToggleItem('Lock right click...', settings, 'locked');
 	menu.addItem('Restart foobar', false, () => { fb.RunMainMenuCommand("File/Restart"); });
 
 	var idx = menu.trackPopupMenu(x, y);
@@ -1497,10 +1497,10 @@ function on_metadb_changed(handle_list, fromhook) {
 			str.length = (h > 0 ? h + ":" + (m < 10 ? "0" : '') + m : m) + ":" + (s < 10 ? "0" : '') + s;
 
 			str.grid = [];
-			for (let k = 0; k < tf.grid.length; k++) {
-				let val = $(tf.grid[k].val);
-				if (val && tf.grid[k].label) {
-					if (tf.grid[k].age) {
+			for (let k = 0; k < metadataGrid.length; k++) {
+				let val = $(metadataGrid[k].val);
+				if (val && metadataGrid[k].label) {
+					if (metadataGrid[k].age) {
 						val = $('$date(' + val + ')'); // never show time
 						var age = calcAgeDateString(val);
 						if (age) {
@@ -1508,8 +1508,8 @@ function on_metadb_changed(handle_list, fromhook) {
 						}
 					}
 					str.grid.push({
-						age: tf.grid[k].age,
-						label: tf.grid[k].label,
+						age: metadataGrid[k].age,
+						label: metadataGrid[k].label,
 						val: val,
 					});
 				}
@@ -1673,7 +1673,7 @@ function on_mouse_rbtn_up(x, y, m) {
 		trace_call && console.log(qwr_utils.function_name());
 		return library.on_mouse_rbtn_up(x, y, m);
 	} else
-		return pref.locked;
+		return settings.locked;
 }
 
 function on_mouse_move(x, y, m) {
@@ -1683,7 +1683,7 @@ function on_mouse_move(x, y, m) {
 		state.mouse_x = x;
 		state.mouse_y = y;
 
-		if (settings.hide_cursor) {
+		if (settings.hideCursor) {
 			clearTimeout(hideCursorTimer);
 			hideCursorTimer = setTimeout(() => {
 				// if there's a menu id (i.e. a menu is down) we don't want the cursor to ever disappear
@@ -1962,7 +1962,7 @@ function on_playback_stop(reason) {
 }
 
 function on_playback_starting(cmd, is_paused) {
-	if (settings.hide_cursor) {
+	if (settings.hideCursor) {
 		window.SetCursor(-1); // hide cursor
 	}
 	refreshPlayButton();
@@ -2537,13 +2537,11 @@ function fetchNewArtwork(metadb) {
 		getThemeColors(albumart);
 		ResizeArtwork(true);
 	} else {
-		for (let k = 0; k < tf.glob_paths.length; k++) {
-			aa_list = aa_list.concat(utils.Glob($(tf.glob_paths[k])));
-		}
-		const pattern = new RegExp('(cd|vinyl|' + settings.cdart_basename + ')([0-9]*|[a-h])\.png', 'i');
-		const imageTest = /jpg|png$/i;
+		aa_list = tf.imgPaths.map(path => utils.Glob($(path))).flat();
+		const pattern = new RegExp('(cd|vinyl|' + settings.cdArtBasename + ')([0-9]*|[a-h])\.png', 'i');
+		const imageType = /jpg|png$/i;
 		// remove duplicates and cd/vinyl art and make sure all files are jpg or pngs
-		aa_list = [... new Set(aa_list)].filter(path => !pattern.test(path) && imageTest.test(path));
+		aa_list = [... new Set(aa_list)].filter(path => !pattern.test(path) && imageType.test(path));
 
 		if (aa_list.length) {
 			noArtwork = false;
