@@ -48,9 +48,9 @@ class ProgressBar {
 	 * @param {number} wh window height
 	 */
 	constructor(ww, wh) {
-		this.x = 0.025 * ww;
+		this.x = Math.round(0.025 * ww);
 		this.y = 0;
-		this.w = 0.95 * ww;
+		this.w = Math.round(0.95 * ww);
 		this.h = geo.prog_bar_h;
 		this.progressLength = 0; // fixing jumpiness in progressBar
 		this.progressMoved = false; // playback position changed, so reset progressLength
@@ -71,13 +71,7 @@ class ProgressBar {
 	draw(gr) {
 		if (pref.show_progress_bar) {
 			gr.SetSmoothingMode(SmoothingMode.None); // disable smoothing
-			// if (pref.darkMode) {
-			//     // TODO: keep this? Only do when accent is too close?
-			//     gr.SetSmoothingMode(SmoothingMode.AntiAliasGridFit);
-			//     gr.DrawRect(this.x - 0.5, this.y - 0.5, Math.round(this.w), this.h, 1, col.darkAccent);
-			//     gr.SetSmoothingMode(SmoothingMode.None); // disable smoothing
-			// }
-			gr.FillSolidRect(this.x, this.y, Math.round(this.w), this.h, col.progress_bar);
+			gr.FillSolidRect(this.x, this.y, this.w, this.h, col.progress_bar);
 
 			if (fb.PlaybackLength) {
 				let progressStationary = false;
