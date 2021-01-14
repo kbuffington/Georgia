@@ -166,6 +166,8 @@ let metadataGrid = [
 	{ label: 'Rating', 	     val: '$if(%rating%,$repeat(\u2605 ,%rating%))' },
 	{ label: 'Mood',         val: '$if(%mood%,$puts(X,5)$puts(Y,$mul(5,%mood%))$repeat($repeat(I,$get(X))   ,$div($get(Y),$get(X)))$repeat(I,$mod($get(Y),$get(X)))$replace(%mood%,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9))' },
 ];
+/** @type {MetadataGridEntry[]} */
+const defaultMetadataGrid = _.clone(metadataGrid);
 const gridSchema = new ConfigurationObjectSchema('metadataGrid', ConfigurationObjectType.Array, [
 	{ name: 'label' },
 	{ name: 'val' },	// todo: change this to 'value'?
@@ -192,6 +194,7 @@ const settingsPref = {
 	hideCursor: false,
 	hidePanelBgWhenCollapsed: false,
 	showDebugLog: false,
+	showReleaseCountryFlag: true,
 	showThemeLog: false,
 	stoppedString1: 'foobar2000',
 	stoppedString2: '$replace(%_foobar2000_version%,foobar2000 ,)',
@@ -202,6 +205,7 @@ const settingsComments = {
 	hideCursor: 'Hides cursor when song is playing after 10 seconds of no mouse activity',
 	hidePanelBgWhenCollapsed: 'Hide panel background when playing an album and the playlist or library view is active',
 	showDebugLog: 'Enables extra logging in the console. Probably not needed unless you encounter a problem or you\'re asked to enable it.',
+	showReleaseCountryFlag: 'Shows the country flag for releases when the value specified in title_format_strings.releaseCountry is found',
 	showThemeLog: 'Logs the output of the algorithm which determines the primary theme color.',
 	stoppedString1: 'The bolded portion of text shown above the progress bar when nothing is playing',
 	stoppedString2: 'The second (non-bold) portion of text shown above the progress bar when nothing is playing',

@@ -258,6 +258,7 @@ var shadow_image = null; // shadow behind the artwork + discart
 var labelShadowImg = null; // shadow behind labels
 var playlist_shadow = null; // shadow behind the playlist
 var flagImgs = []; // array of flag images
+let releaseFlagImg = null;
 var rotatedCD = null; // drawing cdArt rotated is slow, so first draw it rotated into the rotatedCD image, and then draw rotatedCD image unrotated
 let disc_art_loading; // for on_load_image_done()
 let album_art_loading; // for on_load_image_done()
@@ -582,7 +583,8 @@ function draw_ui(gr) {
 			for (let k = 0; k < str.grid.length; k++) {
 				var key = str.grid[k].label;
 				var value = str.grid[k].val;
-				var showLastFmImage = false;
+				let showLastFmImage = false;
+				let showReleaseCountryFlagImage = false;
 				var dropShadow = false;
 				var grid_val_col = col.info_text;
 
@@ -598,6 +600,10 @@ function draw_ui(gr) {
 							break;
 						case 'Play Count':
 							showLastFmImage = true;
+							break;
+						case 'Catalog #':
+						case 'Release Country':
+							showReleaseCountryFlagImage = settings.showReleaseCountryFlag;
 							break;
 						default:
 							break;
@@ -616,14 +622,21 @@ function draw_ui(gr) {
 						gr.DrawString(value, grid_val_ft, grid_val_col, col2_left, top, col2_width, cell_height, StringFormat(0, 0, 4));
 
 						if (playCountVerifiedByLastFm && showLastFmImage) {
-                            var lastFmLogo = lastFmImg;
+                            let lastFmLogo = lastFmImg;
 							if (colorDistance(col.primary, rgb(185, 0, 0), false) < 133) {
 								lastFmLogo = lastFmWhiteImg;
 							}
-							var heightRatio = (cell_height - 12) / lastFmLogo.Height;
-							if (txtRec.Width + 20 + Math.round(lastFmLogo.Width * heightRatio) < col2_width) {
-								gr.DrawImage(lastFmLogo, col2_left + txtRec.Width + 20, top + 3, Math.round(lastFmLogo.Width * heightRatio), cell_height - 12,
+							const heightRatio = (cell_height - 12) / lastFmLogo.Height;
+							if (txtRec.Width + scaleForDisplay(12) + Math.round(lastFmLogo.Width * heightRatio) < col2_width) {
+								gr.DrawImage(lastFmLogo, col2_left + txtRec.Width + scaleForDisplay(12), top + 3, Math.round(lastFmLogo.Width * heightRatio), cell_height - 12,
 									0, 0, lastFmLogo.Width, lastFmLogo.Height);
+							}
+						}
+						if (showReleaseCountryFlagImage && releaseFlagImg) {
+							const heightRatio = (cell_height) / releaseFlagImg.Height;
+							if (txtRec.Width + scaleForDisplay(10) + Math.round(releaseFlagImg.Width * heightRatio) < col2_width) {
+								gr.DrawImage(releaseFlagImg, col2_left + txtRec.Width + scaleForDisplay(10), top - 3, Math.round(releaseFlagImg.Width * heightRatio), cell_height,
+									0, 0, releaseFlagImg.Width, releaseFlagImg.Height);
 							}
 						}
 						top += cell_height + 5;
@@ -869,7 +882,6 @@ function draw_ui(gr) {
 	if (ww > 600) {
         gr.SetSmoothingMode(SmoothingMode.AntiAliasGridFit);
 		if (fb.PlaybackLength > 0) {
-			gr.SetSmoothingMode(SmoothingMode.AntiAliasGridFit);
 			gr.DrawString(str.length, ft_lower, col.now_playing, 0.725 * ww, lowerBarTop, 0.25 * ww, titleMeasurements.Height, StringFormat(2, 0));
 			let width = gr.CalcTextWidth('  ' + str.length, ft_lower);
 			gr.DrawString(str.time, ft_lower_bold, col.now_playing, 0.725 * ww, lowerBarTop + heightAdjustment, 0.25 * ww - width, titleMeasurements.Height, StringFormat(2, 0));
@@ -1073,7 +1085,7 @@ function onOptionsMenu(x, y) {
 	menu.addSeparator();
 
 	menu.addToggleItem('Show artist country flags', pref, 'show_flags', () => {
-		LoadCountryFlags();
+		loadCountryFlags();
 		RepaintWindow();
 	});
 
@@ -1252,7 +1264,7 @@ function on_size() {
 		createFonts();
 		setGeometry();
 		if (fb.IsPlaying) {
-			LoadCountryFlags(); // wrong size flag gets loaded on 4k systems
+			loadCountryFlags(); // wrong size flag gets loaded on 4k systems
 		}
 		rescalePlaylist();
 		initPlaylist();
@@ -1543,7 +1555,10 @@ function on_metadb_changed(handle_list, fromhook) {
 			}
 
 			if (pref.show_flags) {
-				LoadCountryFlags();
+				loadCountryFlags();
+			}
+			if (settings.showReleaseCountryFlag) {
+				loadReleaseCountryFlag();
 			}
 		}
 	}
@@ -2413,15 +2428,27 @@ function ResizeArtwork(resetCDPosition) {
 	}
 }
 
-function LoadCountryFlags() {
+function loadFlagImage(country) {
+	const countryName = convertIsoCountryCodeToFull(country) || country;	// in case we have a 2-digit country code
+	const path = $(pref.flags_base) + (is_4k ? '64\\' : '32\\') + countryName.trim().replace(/ /g, '-') + '.png';
+	return gdi.Image(path);
+}
+
+function loadCountryFlags() {
 	while (flagImgs.length) {
 		disposeImg(flagImgs.pop());
 	}
 	getMetaValues(tf.artist_country).forEach(country => {
-		const path = $(pref.flags_base) + (is_4k ? '64\\' : '32\\') + country.trim().replace(/ /g, '-') + '.png';
-		var fImg = gdi.Image(path);
-		fImg && flagImgs.push(fImg);
+		const flagImage = loadFlagImage(country);
+		flagImage && flagImgs.push(flagImage);
 	});
+}
+
+function loadReleaseCountryFlag() {
+	if (releaseFlagImg) {
+		disposeImg(releaseFlagImg);
+	}
+	releaseFlagImg = loadFlagImage($(tf.releaseCountry));
 }
 
 function replaceFileChars(s) {
@@ -2537,7 +2564,7 @@ function fetchNewArtwork(metadb) {
 		getThemeColors(albumart);
 		ResizeArtwork(true);
 	} else {
-		aa_list = tf.imgPaths.map(path => utils.Glob($(path))).flat();
+		aa_list = globals.imgPaths.map(path => utils.Glob($(path))).flat();
 		const pattern = new RegExp('(cd|vinyl|' + settings.cdArtBasename + ')([0-9]*|[a-h])\.png', 'i');
 		const imageType = /jpg|png$/i;
 		// remove duplicates and cd/vinyl art and make sure all files are jpg or pngs
