@@ -112,8 +112,6 @@ const titleFormatSchema = new ConfigurationObjectSchema('title_format_strings', 
 		'Title formatting strings, used throughout the display. Do NOT change the key names or add new ones.');
 
 // TEXT FIELDS
-var stoppedStr1 = 'foobar2000';
-var stoppedStr2 = 'plays music';
 var stoppedTime = 'Georgia v' + currentVersion;
 
 /* My old ridiculous artist string:
@@ -182,15 +180,21 @@ const imgPathSchema = new ConfigurationObjectSchema('imgPaths', ConfigurationObj
 const settingsPref = {
 	cdArtBasename: 'cd',
 	hideCursor: false,
+	hidePanelBgWhenCollapsed: false,
 	showDebugLog: false,
 	showThemeLog: false,
+	stoppedString1: 'foobar2000',
+	stoppedString2: '$replace(%_foobar2000_version%,foobar2000 ,)',
 	locked: false,
 }
 const settingsComments = {
 	cdArtBasename: 'Do not include extension. Example: "discart", if the image provider uses that name for saving cdart and you want those filtered from showing up as albumart. Would also filter out discart1.png, etc.',
 	hideCursor: 'Hides cursor when song is playing after 10 seconds of no mouse activity',
+	hidePanelBgWhenCollapsed: 'Hide panel background when playing an album and the playlist or library view is active',
 	showDebugLog: 'Enables extra logging in the console. Probably not needed unless you encounter a problem or you\'re asked to enable it.',
 	showThemeLog: 'Logs the output of the algorithm which determines the primary theme color.',
+	stoppedString1: 'The bolded portion of text shown above the progress bar when nothing is playing',
+	stoppedString2: 'The second (non-bold) portion of text shown above the progress bar when nothing is playing',
 	locked: 'Locks theme by preventing right-clicking on the background from bringing up a menu.',
 }
 const settingsSchema = new ConfigurationObjectSchema('settings', ConfigurationObjectType.Object,

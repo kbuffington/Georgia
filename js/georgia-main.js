@@ -431,7 +431,7 @@ function draw_ui(gr) {
 			drawCdArt(gr);
 		}
 	}
-	if (fb.IsPlaying && (albumart || !cdart)) {
+	if (fb.IsPlaying && (albumart || !cdart) && ((!displayLibrary && !displayPlaylist) || !settings.hidePanelBgWhenCollapsed)) {
 		gr.SetSmoothingMode(SmoothingMode.None);
 		gr.FillSolidRect(0, albumart_size.y, albumart_size.x, albumart_size.h, col.primary); // info bg -- must be drawn after shadow
 		gr.DrawRect(-1, albumart_size.y, albumart_size.x, albumart_size.h - 1, 1, col.accent);
@@ -2026,8 +2026,8 @@ var debounced_init_playlist = _.debounce(function (playlistIndex) {
 function clearUIVariables() {
 	return {
 		artist: '',
-		tracknum: stoppedStr1,
-		title_lower: '  ' + stoppedStr2,
+		tracknum: $(settings.stoppedString1, undefined, true),
+		title_lower: '  ' + $(settings.stoppedString2, undefined, true),
 		year: '',
 		grid: [],
 		time: stoppedTime

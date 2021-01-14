@@ -12,14 +12,19 @@ function IsFolder(folder) {
 	// return "IsFolder" in utils ? utils.IsFolder(folder) : utils.FileTest(folder, "d");
 }
 
-function $(field, metadb) {
-	metadb = metadb || false;
+/**
+ *
+ * @param {string} titleFormatString Title format string to evaluate
+ * @param {FbMetadbHandle=} metadb Handle to evaluate string with
+ * @param {boolean=} force Force evaluate. Optional.
+ */
+function $(titleFormatString, metadb = undefined, force = false) {
 	var tf;
 	try {
 		if (metadb) {
-			tf = fb.TitleFormat(field).EvalWithMetadb(metadb);
+			tf = fb.TitleFormat(titleFormatString).EvalWithMetadb(metadb);
 		} else {
-			tf = fb.TitleFormat(field).Eval();
+			tf = fb.TitleFormat(titleFormatString).Eval(force);
 		}
 	} catch (e) {
 		tf = e + " (Invalid metadb!)"
