@@ -1,11 +1,12 @@
 /** @type {*} */
-var globals = new PanelProperties();
-/** @type {*} */
 var pref = new PanelProperties(); // preferences
 /** @type {*} */
 let settings = {};
+/** @type {*} */
+let globals = {};
 
-const currentVersion = '2.0.0-beta1';
+
+let configVersion = currentVersion;	// will be overwritten when loaded from config file
 let updateAvailable = false;
 let updateHyperlink;
 
@@ -23,12 +24,9 @@ const fso = new ActiveXObject('Scripting.FileSystemObject');
 /** @type {*} */
 const vb = new ActiveXObject('ScriptControl');
 
-globals.add_properties({
-	version: ['_theme_version (do not hand edit!)', 'NONE']
-});
-
 // THEME PREFERENCES/PROPERTIES EXPLANATIONS - After initial run, these values are changed in Options Menu or by Right Click >> Properties and not here!
 pref.add_properties({
+	version: ['_theme_version (do not hand edit!)', currentVersion],
 	rotation_amt: ['Art: Degrees to rotate CDart', 3], // # of degrees to rotate per track change.
 	aa_glob: ['Art: Cycle through all images', true], // true: use glob, false: use albumart reader (front only)
 	display_cdart: ['Art: Display CD art', true], // true: show CD artwork behind album artwork. This artwork is expected to be named cd.png and have transparent backgrounds (can be found at fanart.tv)
@@ -93,11 +91,13 @@ tf.edition = '[$if(%original release date%,$ifequal($year(%original release date
 tf.last_played = '[$if2(%last_played_enhanced%,%last_played%)]';
 tf.lyrics = '[$if3(%lyrics%,%lyric%,%unsyncedlyrics%,%unsynced lyrics%)]';
 tf.original_artist = '[ \'(\'%original artist%\' cover)\']';
+tf.releaseCountry = '%releasecountry%';
 tf.title = '%title%[ \'[\'%translation%\']\']';
 tf.tracknum = '[%tracknumber%.]';
 tf.vinyl_side = '%vinyl side%';
 tf.vinyl_tracknum = '%vinyl tracknumber%';
 tf.year = '[$year($if3(%original release date%,%originaldate%,%date%,%fy_upload_date%))]';
+const defaultTitleFormatStrings = _.clone(tf);
 
 const titleFormatComments = {
 	artist_country: 'Only used for displaying artist flags.',
@@ -132,8 +132,17 @@ In one line for adding to config file:
 $puts(AF,$ifgreater($meta_num(ArtistFilter),1,$puts(mArtist,$meta(ArtistFilter,0))$if($put(comma,$sub($strstr($get(mArtist),', '),1)),$puts(mArtist,$substr($get(mArtist),$add($get(comma),3),$len($get(mArtist))) $substr($get(mArtist),0,$get(comma))),)$if($get(mArtist),$if($or($stricmp($get(mArtist),'Soundtrack'),$stricmp($get(mArtist),'Various Artists')),,$get(mArtist)$if($stricmp($get(mArtist),%artist%),$puts(feat,1),)$puts(mArtist,$meta(ArtistFilter,1))$if($put(comma,$sub($strstr($get(mArtist),', '),1)),$puts(mArtist,$substr($get(mArtist),$add($get(comma),3),$len($get(mArtist))) $substr($get(mArtist),0,$get(comma))),)$if($get(mArtist),$if($or($stricmp($get(mArtist),'Soundtrack'),$stricmp($get(mArtist),'Various Artists')),,$if($get(feat), feat. ,', ')$get(mArtist)$puts(mArtist,$meta(ArtistFilter,2))$if($put(comma,$sub($strstr($get(mArtist),', '),1)),$puts(mArtist,$substr($get(mArtist),$add($get(comma),3),$len($get(mArtist))) $substr($get(mArtist),0,$get(comma))),)$if($get(mArtist),$if($or($stricmp($get(mArtist),'Soundtrack'),$stricmp($get(mArtist),'Various Artists')),,$ifequal($meta_num(ArtistFilter),3,' & ',', ')$get(mArtist)$puts(mArtist,$meta(ArtistFilter,3))$if($put(comma,$sub($strstr($get(mArtist),', '),1)),$puts(mArtist,$substr($get(mArtist),$add($get(comma),3),$len($get(mArtist))) $substr($get(mArtist),0,$get(comma))),)$if($get(mArtist),$if($or($stricmp($get(mArtist),'Soundtrack'),$stricmp($get(mArtist),'Various Artists')),,$ifequal($meta_num(ArtistFilter),4,' & ',', ')$get(mArtist)$puts(mArtist,$meta(ArtistFilter,4))$if($put(comma,$sub($strstr($get(mArtist),', '),1)),$puts(mArtist,$substr($get(mArtist),$add($get(comma),3),$len($get(mArtist))) $substr($get(mArtist),0,$get(comma))),)$if($get(mArtist),$if($or($stricmp($get(mArtist),'Soundtrack'),$stricmp($get(mArtist),'Various Artists')),,$ifequal($meta_num(ArtistFilter),5,' & ',', ')$get(mArtist))))))))))),%artist%))$ifequal($strcmp(%album artist%,%artist%),1,$get(AF),$if3($meta(artist),%composer%,%performer%,%album artist%))
 */
 
+/**
+ * @typedef {Object} MetadataGridEntry
+ * @property {string} label Text that shows in the left column of the metadata grid
+ * @property {string} val Evaluated text in the right column. If this evaluates to an empty string, the entry is not shown.
+ * @property {boolean=} age If True, appends the "(1y 10, 23d)" style text to the evaluated val. Only valid for date strings
+ * @property {string=} comment Optional comment for the .jsonc file.
+ */
+
 // Info grid visible when a song is playing.
 // NOTE: If you wish to make changes to this, edit it in your georgia-config.jsonc file and NOT here.
+/** @type {MetadataGridEntry[]} */
 let metadataGrid = [
 	{ label: 'Disc',         val: '$if('+ tf.disc_subtitle +',[Disc %discnumber% - ]'+ tf.disc_subtitle +')' },
 	{ label: 'Release Type', val: '$if($strstr(%releasetype%,Album),,[%releasetype%])' },
@@ -141,7 +150,8 @@ let metadataGrid = [
 	{ label: 'Release Date', val: '$puts(d,'+tf.date+')$if($strcmp($year($get(d)),$get(d)),,$get(d))', age: true, comment: '\'Release Date\' is shown if the date format is YYYY-MM-DD' },
 	{ label: 'Edition',      val: tf.edition },
 	{ label: 'Label',        val: '[$meta_sep(label, \u2022 )]', comment: 'The label(s) or publisher(s) that released the album.' },
-	{ label: 'Catalog #',    val: '[%catalognumber%]' },
+	{ label: 'Catalog #',    val: "[$if(%catalognumber%,%catalognumber%[ / " + tf.releaseCountry + "],)]" },
+	{ label: 'Release Country', val: '[$if(%catalognumber%,,' + tf.releaseCountry +')]', comment: 'Only shown if %catalognumber% is not present.' },
 	{ label: 'Track',        val: '$if(%tracknumber%,$num(%tracknumber%,1)$if(%totaltracks%,/$num(%totaltracks%,1))$ifgreater(%totaldiscs%,1,   CD %discnumber%/$num(%totaldiscs%,1),)' },
 	{ label: 'Genre',        val: '[$meta_sep(genre, \u2022 )]' },
 	{ label: 'Style',        val: '[$meta_sep(style, \u2022 )]' },
@@ -206,10 +216,10 @@ const config = new Configuration(configPath);
 let titleformat = {};
 if (!config.fileExists) {
 	settings = config.addConfigurationObject(settingsSchema, settingsPref, settingsComments);
-	tf = config.addConfigurationObject(titleFormatSchema, tf, titleFormatComments);
-	config.addConfigurationObject(gridSchema, metadataGrid);	// we don't assign an object here because these aren't key/value pairs and thus can't use the get/setters
+	tf = config.addConfigurationObject(titleFormatSchema, defaultTitleFormatStrings, titleFormatComments);
+	config.addConfigurationObject(gridSchema, defaultMetadataGrid);	// we don't assign an object here because these aren't key/value pairs and thus can't use the get/setters
 	config.addConfigurationObject(imgPathSchema, imgPaths);
-	console.log('writing', configPath);
+	console.log('> Writing', configPath);
 	config.writeConfiguration();
 }
 if (config.fileExists) {
@@ -219,23 +229,29 @@ if (config.fileExists) {
 	 * for the objects so that the file gets automatically written when a setting is changed.
 	 **/
 	settings = config.addConfigurationObject(settingsSchema, Object.assign(settingsPref, prefs.settings), settingsComments);
-	tf = config.addConfigurationObject(titleFormatSchema, prefs.title_format_strings, titleFormatComments);
+	tf = config.addConfigurationObject(titleFormatSchema, Object.assign(defaultTitleFormatStrings, prefs.title_format_strings), titleFormatComments);
 	prefs.metadataGrid.forEach(entry => {
 		// copy comments over to existing object so they aren't lost
-		const gridEntryDefinition = metadataGrid.find(gridDefItem => gridDefItem.label === entry.label);
+		const gridEntryDefinition = defaultMetadataGrid.find(gridDefItem => gridDefItem.label === entry.label);
 		if (gridEntryDefinition && gridEntryDefinition.comment) {
 			entry.comment = gridEntryDefinition.comment;
 		}
 	});
-	config.addConfigurationObject(gridSchema, prefs.metadataGrid);
+	config.addConfigurationObject(gridSchema, prefs.metadataGrid);	// can't Object.assign here to add new fields. Add new fields in the upgrade section of migrateCheck
 	config.addConfigurationObject(imgPathSchema, prefs.imgPaths);
-	tf.imgPaths = prefs.imgPaths;
+
+	/* Safety checks. Fix up potentially bad vals from config */
+	settings.cdArtBasename = settings.cdArtBasename && settings.cdArtBasename.trim().length ? settings.cdArtBasename.trim() : 'cd';
+
+	globals.imgPaths = prefs.imgPaths;
 	metadataGrid = prefs.metadataGrid;
+	configVersion = prefs.version;
 	// when adding new objects to the config file, add them in the version check below
 }
 
-/* Safety checks. Fix up potentially bad vals from config */
-settings.cdArtBasename = settings.cdArtBasename && settings.cdArtBasename.trim().length ? settings.cdArtBasename.trim() : 'cd';
+// do the migration check BEFORE we start adding extra crap to tf.
+// TODO: Should I move all the tf. extra properties that AREN'T in the config to the globals object? Probably maybe?
+migrateCheck(currentVersion, configVersion);
 
 /* All tf values from here below will NOT be written to the georgia-config file */
 tf.vinyl_track = '$if2(' + tf.vinyl_side + '[' + tf.vinyl_tracknum + ']. ,[%tracknumber%. ])';
@@ -269,24 +285,41 @@ pref.cdart_amount = 0.48; // show 48% of the CD image if it will fit on the scre
 
 function migrateCheck(version, storedVersion) {
 	if (version !== storedVersion) {
+		const configFile = config.readConfiguration();
+		/** @type {MetadataGridEntry[]} */
+		const grid = configFile.metadataGrid;
+
 		// this function clears default values which have changed
 		switch (storedVersion) {
 
-			case '1.9.9':	// replace with 2.0.0-beta.1
-				// after all previous versions have fallen through
-				console.log('Upgrading Georgia Theme settings');
-                globals.version = currentVersion;
+			case '2.0.0-beta1':
+				// TODO: move this update code to a function
+				const catIndex = grid.findIndex(gridEntry => gridEntry.label.toLowerCase() === 'catalog #');
+				const newCatVal = defaultMetadataGrid[defaultMetadataGrid.findIndex(e => e.label === 'Catalog #')];
+				if (catIndex >= 0) {
+					grid[catIndex] = newCatVal;
+				} else {
+					grid.splice(6, 0, newCatVal);
+				}
+				config.addConfigurationObject(gridSchema, grid);
+
+
+				// this block should appear after all previous versions have fallen through
+				console.log('> Upgrading Georgia Theme settings from', storedVersion);
+				pref.version = currentVersion;
+				const fileName = `georgia\\georgia-config-${storedVersion}.jsonc`;
+				console.log(`> Backing up Georgia Configuration file to ${fileName}`);
+				fso.CopyFile(configPath, fb.ProfilePath + fileName);
+				config.writeConfiguration();
 				window.Reload();
 
             default:
-                globals.version = currentVersion;
+				pref.version = currentVersion;
 				break;
 
 		}
 	}
 }
-
-migrateCheck(currentVersion, globals.version);
 
 let retryCount = 0;	// don't hammer if it's not working
 

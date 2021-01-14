@@ -70,9 +70,9 @@ class Configuration {
 		const obj = { definition: objectDefinition, values, comments };
 		const idx = this._configuration.findIndex(c => c.definition.name === objectDefinition.name);
 		if (idx !== -1) {
+			// replace existing object
 			this._configuration.splice(idx, 1, obj);
 		} else {
-			// replace existing object
 			this._configuration.push(obj);
 		}
 		return this.getConfigObject(objectDefinition.name);
@@ -92,12 +92,14 @@ class Configuration {
 	 * Replace the stored values for the object
 	 * @param {String} objectName The name to be used for the object in the configuration file. i.e. if the object is `grid: {}`, then objectName should be `'grid'`
 	 * @param {*} values
+	 * @param {boolean} writeConfig
 	 */
-	updateConfigObjValues(objectName, values) {
+	updateConfigObjValues(objectName, values, writeConfig = false) {
 		const configObj = this._configuration.find(c => c.definition.name === objectName);
 		Object.assign(configObj.values, values);
-		// TODO: skip writing file on conditions?
-		this.writeConfiguration();
+		if (writeConfig) {
+			this.writeConfiguration();
+		}
 	}
 
 	/**
@@ -126,8 +128,8 @@ class Configuration {
 	writeConfiguration() {
 		const p = fso.CreateTextFile(this.path, true, true);
 		p.WriteLine('/* Configuration file for Georgia. Manual changes to this file will take effect');
-		p.WriteLine('   on the next reload. To ensure changes are not lost, reload the theme immediately');
-		p.WriteLine('   after manually changing values. */');
+		p.WriteLine('   on the next reload. To ensure changes are not overwritten or lost, reload theme');
+		p.WriteLine('   immediately after manually changing values. */');
 		p.WriteLine('{');
 		p.WriteLine(`\t"version": "${currentVersion}",`)
 		this._configuration.forEach((conf, i) => {
@@ -354,7 +356,7 @@ class ThemeSettings {
 			set: function (new_value) {
 				if (this[item_id + '_internal'].get() !== new_value) {
 					this[item_id + '_internal'].set(new_value);
-					this._config.updateConfigObjValues(this.objName, { [item_id]: new_value});
+					this._config.updateConfigObjValues(this.objName, { [item_id]: new_value }, true);
 				}
 			}
 		});
