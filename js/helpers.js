@@ -418,7 +418,7 @@ function Menu(title = '') {
 			this.systemMenu = true;
 			this.menuManager = fb.CreateMainMenuManager();
 			this.menuManager.Init(name);
-			this.menuManager.BuildMenu(this.menu, 1, 200);
+			this.menuManager.BuildMenu(this.menu, 1, 1000);
 		}
 	}
 
