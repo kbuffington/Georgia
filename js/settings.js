@@ -183,8 +183,8 @@ function migrateCheck(version, storedVersion) {
 	 * @param {number} position 0-based index of place to insert new value if existing entry not found
 	 */
 	const replaceGridEntry = (grid, label, position) => {
-		const entryIdx = grid.findIndex(gridEntry => gridEntry.label.toLowerCase() === label.toLowerCase());
-		const newVal = defaultMetadataGrid[defaultMetadataGrid.findIndex(e => e.label.toLowerCase() === label.toLowerCase())];
+		const entryIdx = grid.findIndex(gridEntry => gridEntry && gridEntry.label.toLowerCase() === label.toLowerCase());
+		const newVal = defaultMetadataGrid[defaultMetadataGrid.findIndex(e => e && e.label.toLowerCase() === label.toLowerCase())];
 		if (entryIdx >= 0) {
 			grid[entryIdx] = newVal;
 		} else {
