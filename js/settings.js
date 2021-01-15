@@ -6,6 +6,7 @@ let settings = {};
 let globals = {};
 
 
+const currentVersion = '2.0.0-beta2';
 let configVersion = currentVersion;	// will be overwritten when loaded from config file
 let updateAvailable = false;
 let updateHyperlink;
@@ -175,6 +176,22 @@ pref.cdart_path = '$replace(%path%,%filename_ext%,)' + settings.cdArtBasename + 
 pref.cdart_amount = 0.48; // show 48% of the CD image if it will fit on the screen
 
 function migrateCheck(version, storedVersion) {
+	/**
+	 * Adds or Replaces value in the grid with updated string from defaults
+	 * @param {MetadataGridEntry[]} grid
+	 * @param {string} label Label of the value to add or replace
+	 * @param {number} position 0-based index of place to insert new value if existing entry not found
+	 */
+	const replaceGridEntry = (grid, label, position) => {
+		const entryIdx = grid.findIndex(gridEntry => gridEntry.label.toLowerCase() === label.toLowerCase());
+		const newVal = defaultMetadataGrid[defaultMetadataGrid.findIndex(e => e.label.toLowerCase() === label.toLowerCase())];
+		if (entryIdx >= 0) {
+			grid[entryIdx] = newVal;
+		} else {
+			grid.splice(position, 0, newVal);
+		}
+	}
+
 	if (version !== storedVersion) {
 		const configFile = config.readConfiguration();
 		/** @type {MetadataGridEntry[]} */
@@ -184,14 +201,8 @@ function migrateCheck(version, storedVersion) {
 		switch (storedVersion) {
 
 			case '2.0.0-beta1':
-				// TODO: move this update code to a function
-				const catIndex = grid.findIndex(gridEntry => gridEntry.label.toLowerCase() === 'catalog #');
-				const newCatVal = defaultMetadataGrid[defaultMetadataGrid.findIndex(e => e.label === 'Catalog #')];
-				if (catIndex >= 0) {
-					grid[catIndex] = newCatVal;
-				} else {
-					grid.splice(6, 0, newCatVal);
-				}
+				replaceGridEntry(grid, 'Catalog #', 6);
+				replaceGridEntry(grid, 'Release Country', 7);
 				config.addConfigurationObject(gridSchema, grid);
 
 
@@ -204,7 +215,7 @@ function migrateCheck(version, storedVersion) {
 				config.writeConfiguration();
 				window.Reload();
 
-            default:
+			default:
 				pref.version = currentVersion;
 				break;
 

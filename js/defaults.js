@@ -20,7 +20,7 @@ tf.edition = '[$if(%original release date%,$ifequal($year(%original release date
 tf.last_played = '[$if2(%last_played_enhanced%,%last_played%)]';
 tf.lyrics = '[$if3(%lyrics%,%lyric%,%unsyncedlyrics%,%unsynced lyrics%)]';
 tf.original_artist = '[ \'(\'%original artist%\' cover)\']';
-tf.releaseCountry = '%releasecountry%';
+tf.releaseCountry = '$replace(%releasecountry%,AF,XW)';
 tf.title = '%title%[ \'[\'%translation%\']\']';
 tf.tracknum = '[%tracknumber%.]';
 tf.vinyl_side = '%vinyl side%';
@@ -32,6 +32,7 @@ const titleFormatComments = {
 	artist_country: 'Only used for displaying artist flags.',
 	date: 'The full date stored for the track',
 	lyrics: 'Lyrics.js will check these fields in order if no local lyrics file is found.',
+	releaseCountry: 'Releases tagged from Musicbrainz with a release country of AF (Afghanistan) are almost always whole world releases that have each country listed individually, so replace with \'XW\' (Worldwide) tag.',
 	title: 'Track title shown above the progress bar',
 	vinyl_side: 'Used for determining what side a song appears on for vinyl releases - i.e. song A1 has a %vinyl side% of "A"',
 	vinyl_tracknum: 'Used for determining the track number on vinyl releases - i.e. song A1 has %vinyl tracknumber% set to "1"',

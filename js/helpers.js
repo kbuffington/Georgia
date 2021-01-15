@@ -809,6 +809,8 @@ const countryCodes = {
 	'VU': 'Vanuatu',
 	'WF': 'Wallis and Futuna',
 	'WS': 'Samoa',
+	'XE': 'European Union',	// Musicbrainz code for European releases. Council of Europe uses same flag as EU.
+	'XW': 'United Nations', // Musicbrainz code for all World releases. Uses the UN flag which is the MB standard.
 	'YE': 'Yemen',
 	'YT': 'Mayotte',
 	'ZA': 'South Africa',

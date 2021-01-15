@@ -1088,6 +1088,10 @@ function onOptionsMenu(x, y) {
 		loadCountryFlags();
 		RepaintWindow();
 	});
+	menu.addToggleItem('Show release country flags', settings, 'showReleaseCountryFlag', () => {
+		loadReleaseCountryFlag();
+		RepaintWindow();
+	});
 
 	menu.addSeparator();
 
