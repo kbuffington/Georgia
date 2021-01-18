@@ -1072,6 +1072,7 @@ function onOptionsMenu(x, y) {
 
 	const transportSpacingMenu = new Menu('Transport Button Spacing');
 	transportSpacingMenu.addRadioItems(['-2', '3px', '5px (default)', '7px', '10px', '15px', '+2'], pref.transport_buttons_spacing, [-1,3,5,7,10,15,999], (size) => {		if (size === -1) {
+		if (size === -1) {	
 			pref.transport_buttons_spacing -= 2;
 		} else if (size === 999) {
 			pref.transport_buttons_spacing += 2;
