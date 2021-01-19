@@ -46,6 +46,7 @@ pref.add_properties({
 	show_volume_button: ['Transport: Show Volume Button', false], // true: show volume button in transport controls, ignored if transport is not shown
 	show_reload_button: ['Transport: Show Reload Button', false], // true: show a button that reloads the theme when clicked. Useful for debugging only
 	transport_buttons_size: ['Transport: Button size', 32], // size in pixels of the buttons
+	transport_buttons_spacing: ['Transport: Button spacing', 5], // size in pixels of the spacing between buttons
 
 	show_timeline_tooltips: ['Show timeline tooltips', true], // true: show tooltips when hovering over the timeline that show information on plays
 
