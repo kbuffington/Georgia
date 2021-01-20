@@ -34,6 +34,7 @@ pref.add_properties({
 	art_rotate_delay: ['Art: Seconds to display each art', 30], // seconds per image
 	rotate_cdart: ['Art: Rotate CD art on new track', true], // true: rotate cdArt based on track number. i.e. rotationAmt = %tracknum% * x degrees
 	cdart_ontop: ['Art: Show CD art above front cover', false], // true: display cdArt above front cover
+	filterCdJpgsFromAlbumArt: ['Art: Filter out cd/vinyl .jpgs from showing as artwork', false],
 	labelArtOnBg: ['Art: Draw label art on background', false], // true: don't show the theme color background behind label art
 	show_flags: ['Show country flags', true], // true: show the artist country flags
 	// check_multich:		['Check for MultiChannel version', false],	// true: search paths in tf.MultiCh_paths to see if there is a multichannel version of the current album available
@@ -68,11 +69,6 @@ pref.add_properties({
 	font_size_playlist_header: ['Font Size: Playlist Header', 15],
 	lyrics_font_size: ['Font Size: Lyrics', 20],
 });
-
-// safety checks
-if (pref.art_rotate_delay < 5) {
-	pref.art_rotate_delay = 5;
-}
 
 // Lyrics variables
 // lyrics color definitions
@@ -135,6 +131,7 @@ if (config.fileExists) {
 
 	/* Safety checks. Fix up potentially bad vals from config */
 	settings.cdArtBasename = settings.cdArtBasename && settings.cdArtBasename.trim().length ? settings.cdArtBasename.trim() : 'cd';
+	settings.artworkDisplayTime = Math.min(Math.max(settings.artworkDisplayTime, 5),120);	// ensure min of 5sec and max of 120sec
 
 	globals.imgPaths = prefs.imgPaths;
 	metadataGrid = prefs.metadataGrid;

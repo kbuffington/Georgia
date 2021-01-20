@@ -508,7 +508,7 @@ function draw_ui(gr) {
 				}
 				const tracknumHeight = gr.MeasureString(str.tracknum, ft.tracknum, 0, 0, 0, 0).Height;
 				const heightAdjustment = Math.ceil((tracknumHeight - gr.MeasureString(str.title, ft.title, 0, 0, 0, 0).Height) / 2);
-				const  numLines = Math.min(2, txtRec.Lines);
+				const numLines = Math.min(2, txtRec.Lines);
 				const height = gr.CalcTextHeight(str.title, ft.title) * numLines + 3;
 
 				trackNumWidth = Math.ceil(trackNumWidth);
@@ -957,7 +957,7 @@ function onRatingMenu(x, y) {
 function onOptionsMenu(x, y) {
 	menu_down = true;
 
-	var menu = new Menu();	// helper class for creating simple menu items. See helpers.js
+	const menu = new Menu();	// helper class for creating simple menu items. See helpers.js
 	menu.addToggleItem('Check for theme updates', pref, 'checkForUpdates', () => { scheduleUpdateCheck(1000) });
 	menu.createRadioSubMenu('Use 4K mode', ['Auto-detect', 'Never', 'Always'], pref.use_4k, ['auto', 'never', 'always'], (mode) => {
 		pref.use_4k = mode;
@@ -974,38 +974,42 @@ function onOptionsMenu(x, y) {
 			RepaintWindow();
 		}
 	});
-	menu.addToggleItem('Cycle through all artwork', pref, 'aa_glob', () => {
+	menu.addToggleItem(`Cycle through all artwork (${settings.artworkDisplayTime}s delay)`, pref, 'aa_glob', () => {
 		if (!pref.aa_glob) {
 			clearTimeout(globTimer);
 			globTimer = 0;
 		} else {
-			doRotateImage();
+			displayNextImage();
 		}
 	});
-	menu.addToggleItem('Display CD art (cd.pngs)', pref, 'display_cdart', () => {
+
+	const cdArtMenu = new Menu('cdArt settings');
+	cdArtMenu.addToggleItem(`Display cdArt if found (${settings.cdArtBasename}.png, ${settings.cdArtBasename}2.png, vinylA.png, etc.)`, pref, 'display_cdart', () => {
 		if (fb.IsPlaying) fetchNewArtwork(fb.GetNowPlaying());
 		lastLeftEdge = 0; // resize labels
 		ResizeArtwork(true);
 		RepaintWindow();
 	});
-	menu.addToggleItem('Rotate CD art on track change', pref, 'rotate_cdart', () => { RepaintWindow(); }, !pref.display_cdart);
-	menu.createRadioSubMenu('CD art Rotation Amount', ['2 degrees', '3 degrees', '4 degrees', '5 degrees'], parseInt(pref.rotation_amt), [2,3,4,5], function (rot) {
+	cdArtMenu.addToggleItem('Rotate cdArt as tracks change', pref, 'rotate_cdart', () => { RepaintWindow(); }, !pref.display_cdart);
+	cdArtMenu.createRadioSubMenu('cdArt Rotation Amount', ['2 degrees', '3 degrees', '4 degrees', '5 degrees'], parseInt(pref.rotation_amt), [2,3,4,5], function (rot) {
 		pref.rotation_amt = rot;
 		CreateRotatedCDImage();
 		RepaintWindow();
 	});
-
-	menu.addItem('Display CD art above cover', pref.cdart_ontop, () => {
+	cdArtMenu.addItem('Display cdArt above cover', pref.cdart_ontop, () => {
 		pref.cdart_ontop = !pref.cdart_ontop;
 		RepaintWindow();
 	}, !pref.display_cdart);
+	cdArtMenu.addToggleItem('Filter out cd/vinyl .jpgs from artwork', pref, 'filterCdJpgsFromAlbumArt');
+	cdArtMenu.appendTo(menu);
+
 	menu.addItem('Draw label art on background', pref.labelArtOnBg, () => {
 		pref.labelArtOnBg = !pref.labelArtOnBg;
 		RepaintWindow();
 	});
 
 	menu.addSeparator();
-	var menuFontMenu = new Menu('Menu font size');
+	const menuFontMenu = new Menu('Menu font size');
 	menuFontMenu.addRadioItems(['-1', '11px', '12px (default)', '13px', '14px', '16px', '+1'], pref.menu_font_size, [-1,11,12,13,14,16,999], (size) => {
 		if (size === -1) {
 			pref.menu_font_size--;
@@ -1072,7 +1076,7 @@ function onOptionsMenu(x, y) {
 
 	const transportSpacingMenu = new Menu('Transport Button Spacing');
 	transportSpacingMenu.addRadioItems(['-2', '3px', '5px (default)', '7px', '10px', '15px', '+2'], pref.transport_buttons_spacing, [-1,3,5,7,10,15,999], (size) => {
-		if (size === -1) {	
+		if (size === -1) {
 			pref.transport_buttons_spacing -= 2;
 		} else if (size === 999) {
 			pref.transport_buttons_spacing += 2;
@@ -2096,15 +2100,15 @@ function refresh_seekbar() {
 }
 
 // TIMER Callback functions
-function doRotateImage() {
-	debugLog("Repainting in doRotateImate: " + albumArtIndex);
+function displayNextImage() {
+	debugLog("Repainting in displayNextImage: " + albumArtIndex);
 	albumArtIndex = (albumArtIndex + 1) % aa_list.length;
 	glob_image(albumArtIndex, true);
 	lastLeftEdge = 0;
 	RepaintWindow();
 	globTimer = setTimeout(() => {
-		doRotateImage();
-	}, pref.art_rotate_delay * 1000);
+		displayNextImage();
+	}, settings.artworkDisplayTime * 1000);
 }
 
 function createShadowRect(width, height) {
@@ -2584,8 +2588,9 @@ function fetchNewArtwork(metadb) {
 		ResizeArtwork(true);
 	} else {
 		aa_list = globals.imgPaths.map(path => utils.Glob($(path))).flat();
-		const pattern = new RegExp('(cd|vinyl|' + settings.cdArtBasename + ')([0-9]*|[a-h])\.png', 'i');
-		const imageType = /jpg|png$/i;
+		const filteredFileTypes = pref.filterCdJpgsFromAlbumArt ? '(png|jpg)' : 'png';
+		const pattern = new RegExp('(cd|vinyl|' + settings.cdArtBasename + ')([0-9]*|[a-h])\.' + filteredFileTypes, 'i');
+		const imageType = /jpg|png$/i;	// TODO: Add gifs?
 		// remove duplicates and cd/vinyl art and make sure all files are jpg or pngs
 		aa_list = [... new Set(aa_list)].filter(path => !pattern.test(path) && imageType.test(path));
 
@@ -2593,8 +2598,8 @@ function fetchNewArtwork(metadb) {
 			noArtwork = false;
 			if (aa_list.length > 1 && pref.aa_glob) {
 				globTimer = setTimeout(() => {
-					doRotateImage();
-				}, pref.art_rotate_delay * 1000);
+					displayNextImage();
+				}, settings.artworkDisplayTime * 1000);
 			}
 			albumArtIndex = 0;
 			glob_image(albumArtIndex, loadFromCache); // display first image
