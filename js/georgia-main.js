@@ -322,8 +322,8 @@ let displayLyrics = false;
 var tl_firstPlayedRatio = 0;
 var tl_lastPlayedRatio = 0;
 
-var current_path;
-var last_path;
+let currentFolder;
+let lastFolder;
 var lastDiscNumber;
 var lastVinylSide;
 var currentLastPlayed = '';
@@ -1238,7 +1238,7 @@ function on_init() {
 	ww = window.Width;
 	wh = window.Height;
 
-	last_path = '';
+	lastFolder = '';
 
 	last_pb = fb.PlaybackOrder;
 
@@ -1357,9 +1357,9 @@ function on_playback_new_track(metadb) {
 
 	isStreaming = metadb ? !metadb.RawPath.match(/^file\:\/\//) : false;
 	if (!isStreaming) {
-		current_path = $('%directoryname%');
+		currentFolder = $('%directoryname%');
 	} else {
-		current_path = '';
+		currentFolder = '';
 	}
 
 	SetProgressBarRefresh();
@@ -1372,7 +1372,7 @@ function on_playback_new_track(metadb) {
 	str.timeline = new Timeline(geo.timeline_h);
 
 	// Fetch new albumart
-	if ((pref.aa_glob && aa_list.length != 1) || current_path != last_path || albumart == null ||
+	if ((pref.aa_glob && aa_list.length != 1) || currentFolder != lastFolder || albumart == null ||
 		$('$if2(%discnumber%,0)') != lastDiscNumber || $('$if2(' + tf.vinyl_side + ',ZZ)') != lastVinylSide) {
 		fetchNewArtwork(metadb);
 	}
@@ -1443,7 +1443,7 @@ function on_playback_new_track(metadb) {
 		}
 	}
 
-	last_path = current_path; // for art caching purposes
+	lastFolder = currentFolder; // for art caching purposes
 	lastDiscNumber = $('$if2(%discnumber%,0)'); // for art caching purposes
 	lastVinylSide = $('$if2(' + tf.vinyl_side + ',ZZ)');
 	currentLastPlayed = $(tf.last_played);
@@ -1959,7 +1959,7 @@ function on_playback_stop(reason) {
 		str = clearUIVariables()
 		debugLog("Repainting on_playback_stop");
 		RepaintWindow();
-		last_path = '';
+		lastFolder = '';
 		lastDiscNumber = '0';
 		while (recordLabels.length) {
 			disposeImg(recordLabels.pop());
@@ -1973,7 +1973,7 @@ function on_playback_stop(reason) {
 	progressTimer && clearInterval(progressTimer);
 	if (globTimer)
 		clearTimeout(globTimer);
-	if (albumart && ((pref.aa_glob && aa_list.length != 1) || last_path == '')) {
+	if (albumart && ((pref.aa_glob && aa_list.length != 1) || lastFolder == '')) {
 		debugLog("disposing artwork");
 		albumart = null;
 		albumart_scaled = disposeImg(albumart_scaled);

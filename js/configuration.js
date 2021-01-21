@@ -131,7 +131,7 @@ class Configuration {
 		p.WriteLine('   on the next reload. To ensure changes are not overwritten or lost, reload theme');
 		p.WriteLine('   immediately after manually changing values. */');
 		p.WriteLine('{');
-		p.WriteLine(`\t"version": "${currentVersion}",`)
+		p.WriteLine(`\t"configVersion": "${currentVersion}", // used to update saved configs. You probably shouldn't manually edit this.`)
 		this._configuration.forEach((conf, i) => {
 			const container = conf.definition.container === ConfigurationObjectType.Array ? '[' : '{';
 			p.WriteLine(`\t"${conf.definition.name}": ${container}`);

@@ -98,8 +98,6 @@ $puts(AF,$ifgreater($meta_num(ArtistFilter),1,$puts(mArtist,$meta(ArtistFilter,0
 */
 
 
-
-
 const configPath = fb.ProfilePath + 'georgia\\georgia-config.jsonc';
 const config = new Configuration(configPath);
 let titleformat = {};
@@ -117,8 +115,8 @@ if (config.fileExists) {
 	 * While we've read all the values in, we still need to call addConfigurationObject to add the getters/setters
 	 * for the objects so that the file gets automatically written when a setting is changed.
 	 **/
-	settings = config.addConfigurationObject(settingsSchema, Object.assign(settingsDefaults, prefs.settings), settingsComments);
-	tf = config.addConfigurationObject(titleFormatSchema, Object.assign(defaultTitleFormatStrings, prefs.title_format_strings), titleFormatComments);
+	settings = config.addConfigurationObject(settingsSchema, Object.assign({}, settingsDefaults, prefs.settings), settingsComments);
+	tf = config.addConfigurationObject(titleFormatSchema, Object.assign({}, defaultTitleFormatStrings, prefs.title_format_strings), titleFormatComments);
 	prefs.metadataGrid.forEach(entry => {
 		// copy comments over to existing object so they aren't lost
 		const gridEntryDefinition = defaultMetadataGrid.find(gridDefItem => gridDefItem.label === entry.label);
@@ -135,7 +133,7 @@ if (config.fileExists) {
 
 	globals.imgPaths = prefs.imgPaths;
 	metadataGrid = prefs.metadataGrid;
-	configVersion = prefs.version;
+	configVersion = prefs.configVersion || prefs.version;
 	// when adding new objects to the config file, add them in the version check below
 }
 
@@ -167,10 +165,10 @@ tf.labels = [ // Array of fields to test for publisher. Add, change or re-order 
 
 // CD-ART SETTINGS
 // we expect cd-art will be in .png with transparent background, best found at fanart.tv.
-pref.vinylside_path = '$replace(%path%,%filename_ext%,)vinyl$if2(' + tf.vinyl_side + ',).png' // vinyl cdart named vinylA.png, vinylB.png, etc.
-pref.vinyl_path = '$replace(%path%,%filename_ext%,)vinyl.png' // vinyl cdart named vinylA.png, vinylB.png, etc.
-pref.cdartdisc_path = '$replace(%path%,%filename_ext%,)' + settings.cdArtBasename + '$ifgreater(%totaldiscs%,1,%discnumber%,).png'; // cdart named cd1.png, cd2.png, etc.
-pref.cdart_path = '$replace(%path%,%filename_ext%,)' + settings.cdArtBasename + '.png'; // cdart named cd.png (or whatever custom value was specified). This is the most common single disc case.
+pref.vinylside_path = '$directory_path(%path%)\\vinyl$if2(' + tf.vinyl_side + ',).png' // vinyl cdart named vinylA.png, vinylB.png, etc.
+pref.vinyl_path = '$directory_path(%path%)\\vinyl.png' // vinyl cdart named vinylA.png, vinylB.png, etc.
+pref.cdartdisc_path = '$directory_path(%path%)\\' + settings.cdArtBasename + '$ifgreater(%totaldiscs%,1,%discnumber%,).png'; // cdart named cd1.png, cd2.png, etc.
+pref.cdart_path = '$directory_path(%path%)\\' + settings.cdArtBasename + '.png'; // cdart named cd.png (or whatever custom value was specified). This is the most common single disc case.
 pref.cdart_amount = 0.48; // show 48% of the CD image if it will fit on the screen
 
 function migrateCheck(version, storedVersion) {
@@ -202,7 +200,9 @@ function migrateCheck(version, storedVersion) {
 				replaceGridEntry(grid, 'Catalog #', 6);
 				replaceGridEntry(grid, 'Release Country', 7);
 				config.addConfigurationObject(gridSchema, grid);
-
+			case '2.0.0-beta2':
+				window.SetProperty('Art: Seconds to display each art', null);
+				tf.lyrics = defaultTitleFormatStrings.lyrics;
 
 				// this block should appear after all previous versions have fallen through
 				console.log('> Upgrading Georgia Theme settings from', storedVersion);

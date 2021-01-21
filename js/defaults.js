@@ -18,7 +18,7 @@ tf.disc_subtitle = '%discsubtitle%';
 tf.disc = '$ifgreater(%totaldiscs%,1,CD %discnumber%/%totaldiscs%,)';
 tf.edition = '[$if(%original release date%,$ifequal($year(%original release date%),$year(%date%),,$year(%date%) ))$if2(%edition%,\'release\')]';
 tf.last_played = '[$if2(%last_played_enhanced%,%last_played%)]';
-tf.lyrics = '[$if3(%lyrics%,%lyric%,%unsyncedlyrics%,%unsynced lyrics%)]';
+tf.lyrics = '[$if3(%synced lyrics%,%syncedlyrics%,%lyrics%,%lyric%,%unsyncedlyrics%,%unsynced lyrics%)]';
 tf.original_artist = '[ \'(\'%original artist%\' cover)\']';
 tf.releaseCountry = '$replace(%releasecountry%,AF,XW)';
 tf.title = '%title%[ \'[\'%translation%\']\']';
@@ -26,7 +26,7 @@ tf.tracknum = '[%tracknumber%.]';
 tf.vinyl_side = '%vinyl side%';
 tf.vinyl_tracknum = '%vinyl tracknumber%';
 tf.year = '[$year($if3(%original release date%,%originaldate%,%date%,%fy_upload_date%))]';
-const defaultTitleFormatStrings = _.clone(tf);
+const defaultTitleFormatStrings = _.cloneDeep(tf);
 
 const titleFormatComments = {
 	artist_country: 'Only used for displaying artist flags.',
