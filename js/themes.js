@@ -230,6 +230,13 @@ function lightenColorVal(color, percent) {
 	return Math.min(val, 255);
 }
 
+/**
+ * Calculates the color "distance" between two colors. Currently uses the more naive color weighted
+ * calculation from https://en.wikipedia.org/wiki/Color_difference.
+ * @param {number} a The first color in numeric form (i.e. rgb(150,250,255))
+ * @param {number} b The second color in numeric form (i.e. rgb(150,250,255))
+ * @param {boolean=} log Whether to print the distance in the console. Also requires that settings.showThemeLog is true
+ */
 function colorDistance(a, b, log) {
 	const aCol = new Color(a);
 	const bCol = new Color(b);
@@ -239,8 +246,9 @@ function colorDistance(a, b, log) {
 	const deltaG = Math.pow(aCol.g - bCol.g, 2);
 	const deltaB = Math.pow(aCol.b - bCol.b, 2);
 
+	//TODO: Convert this to use "redmean" approximation from above link and then retest colorDistance checks
 	const distance = Math.sqrt(2 * deltaR + 4 * deltaG + 3 * deltaB + (rho * (deltaR - deltaB))/256);
-	if (log === true) {
+	if (log) {
 		if (settings.showThemeLog) console.log('distance from:', aCol.getRGB(), 'to:', bCol.getRGB(), '=', distance);
 	}
 	return distance;

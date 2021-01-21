@@ -157,7 +157,6 @@ g_pl_colors.row_selected = RGB(35, 35, 35);
 g_pl_colors.row_alternate = RGB(35, 35, 35);
 g_pl_colors.row_focus_selected = g_theme.colors.panel_line_selected;
 g_pl_colors.row_focus_normal = RGB(80, 80, 80);
-g_pl_colors.row_queued = RGBA(150, 150, 150, 0);
 
 var mouse_move_suppress = new qwr_utils.MouseMoveSuppress();
 var key_down_suppress = new qwr_utils.KeyModifiersSuppress();
@@ -4468,11 +4467,9 @@ class Row extends ListItem {
 		}
 
 		//---> QUEUE
-		var queue_text = '';
+		let queueText = '';
 		if (g_properties.show_queue_position && !_.isNil(this.queue_indexes)) {
-			// gr.FillSolidRect(this.x, this.y, this.w, this.h, g_pl_colors.row_queued);
-
-			queue_text = '  [' + this.queue_indexes + ']';
+			queueText = '  [' + this.queue_indexes + ']';
 		}
 
 		// We need to draw 'queue' text with title text, it will cause weird spacing if drawn separately
@@ -4505,9 +4502,9 @@ class Row extends ListItem {
 
 		//---> TITLE draw
 		{
-			var title_w = this.w - right_pad - scaleForDisplay(22);
-			var title_text_format = g_string_format.v_align_center | g_string_format.trim_ellipsis_char | g_string_format.no_wrap;
-			gr.DrawString(this.title_text + (this.title_artist_text ? '' : queue_text), title_font, title_color, cur_x, this.y, title_w, this.h, title_text_format);
+			const title_w = this.w - right_pad - scaleForDisplay(22);
+			const title_text_format = g_string_format.v_align_center | g_string_format.trim_ellipsis_char | g_string_format.no_wrap;
+			gr.DrawString(this.title_text, title_font, title_color, cur_x, this.y, title_w, this.h, title_text_format);
 			if (this.is_playing) {
 				gr.DrawString(fb.IsPaused ? g_guifx.pause : g_guifx.play, ft.guifx, title_color, cur_x + 1, this.y, title_w, this.h, title_text_format);
 			}
@@ -4522,11 +4519,27 @@ class Row extends ListItem {
 
 		//---> TITLE ARTIST draw
 		if (this.title_artist_text) {
-			var title_artist_x = cur_x;
-			var title_artist_w = this.w - (title_artist_x - this.x) - right_pad;
+			const title_artist_x = cur_x;
+			const title_artist_w = this.w - (title_artist_x - this.x) - right_pad;
 
-			var title_artist_text_format = g_string_format.v_align_center | g_string_format.trim_ellipsis_char | g_string_format.no_wrap;
-			gr.DrawString(this.title_artist_text + queue_text, title_artist_font, title_artist_color, title_artist_x, this.y, title_artist_w, this.h, title_artist_text_format);
+			const title_artist_text_format = g_string_format.v_align_center | g_string_format.trim_ellipsis_char | g_string_format.no_wrap;
+			gr.DrawString(this.title_artist_text, title_artist_font, title_artist_color, title_artist_x, this.y, title_artist_w, this.h, title_artist_text_format);
+			cur_x += Math.ceil(
+				/** @type {!number} */
+				gr.MeasureString(this.title_artist_text, title_artist_font, 0, 0, title_artist_w, this.h, title_artist_text_format).Width
+			);
+		}
+
+		if (queueText) {
+			const queueX = cur_x;
+			const queueW = this.w - (queueX - this.x) - right_pad;
+			const queueTextFormat = g_string_format.v_align_center | g_string_format.trim_ellipsis_char | g_string_format.no_wrap;
+
+			let queueColor = col.primary;
+			if (this.is_playing || colorDistance(queueColor, g_pl_colors.row_alternate) < 165) {
+				queueColor = title_color;
+			}
+			gr.DrawString(queueText, title_font, queueColor, queueX, this.y, queueW, this.h, queueTextFormat);
 		}
 		gr.SetSmoothingMode(SmoothingMode.HighQuality);
 	};
