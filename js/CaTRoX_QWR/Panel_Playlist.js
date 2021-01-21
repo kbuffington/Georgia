@@ -4194,7 +4194,6 @@ class Header extends BaseHeader {
 	}
 
 	set_w(w) {
-		// console.log('this.set_w:', w);
 		ListItem.prototype.set_w.apply(this, [w]);
 
 		this.sub_items.forEach(function (item) {
@@ -4250,7 +4249,6 @@ Header.create_headers = function (parent, x, y, w, h, prepared_rows) {
 	var header_idx = 0;
 	var headers = [];
 	while (prepared_header_rows.length) {
-		// console.log(header_idx, prepared_header_rows.length);
 		var header = new Header(parent, x, y, w, h, header_idx);
 		var processed_rows_count = header.initialize_items(prepared_rows);
 
@@ -4300,8 +4298,8 @@ class Row extends ListItem {
 		 */
 		this.parent = undefined;
 
-		/** @type {?number} */
-		this.queue_idx = undefined;
+		/** @type {?number[]} */
+		this.queue_indexes = undefined;
 		/** @type {number} */
 		this.queue_idx_count = 0;
 
@@ -4471,24 +4469,18 @@ class Row extends ListItem {
 
 		//---> QUEUE
 		var queue_text = '';
-		if (g_properties.show_queue_position && !_.isNil(this.queue_idx)) {
-			gr.FillSolidRect(this.x, this.y, this.w, this.h, g_pl_colors.row_queued);
+		if (g_properties.show_queue_position && !_.isNil(this.queue_indexes)) {
+			// gr.FillSolidRect(this.x, this.y, this.w, this.h, g_pl_colors.row_queued);
 
-			queue_text = '  [' + this.queue_idx + ']';
-			if (this.queue_idx_count > 1) {
-				queue_text += '*' + this.queue_idx_count;
-			}
+			queue_text = '  [' + this.queue_indexes + ']';
 		}
-
-		// TODO: try to fix spacing issues between title and title artist
 
 		// We need to draw 'queue' text with title text, it will cause weird spacing if drawn separately
 
 		//---> TITLE init
 		if (_.isNil(this.title_text)) {
 			// var track_num_query = '$if2(%tracknumber%,$pad_right(' + this.num_in_header + ',2,0)).';
-			// Mordred's track query
-			var track_num_query = '$if(%tracknumber%,%tracknumber%,$pad_right(' + (this.idx_in_header + 1) + ',2,0)).';
+			var track_num_query = '$if2(%tracknumber%,$pad_right(' + (this.idx_in_header + 1) + ',2,0)).';
 			if (pref.use_vinyl_nums) {
 				track_num_query = tf.vinyl_track;
 			}if (this.is_playing) {
@@ -4514,7 +4506,6 @@ class Row extends ListItem {
 		//---> TITLE draw
 		{
 			var title_w = this.w - right_pad - scaleForDisplay(22);
-
 			var title_text_format = g_string_format.v_align_center | g_string_format.trim_ellipsis_char | g_string_format.no_wrap;
 			gr.DrawString(this.title_text + (this.title_artist_text ? '' : queue_text), title_font, title_color, cur_x, this.y, title_w, this.h, title_text_format);
 			if (this.is_playing) {
@@ -5428,15 +5419,33 @@ function CollapseHandler(cnt_arg) {
 	var on_collapse_change_callback = undefined;
 }
 
-/**
- * @param {Array<Row>} rows_arg
- * @param {number} cur_playlist_idx_arg
- * @constructor
- */
-function QueueHandler(rows_arg, cur_playlist_idx_arg) {
-	this.initialize_queue = function () {
-		if (queued_rows.length) {
-			reset_queued_status();
+class QueueHandler {
+	/**
+	 * @param {Array<Row>} rows_arg
+	 * @param {number} cur_playlist_idx_arg
+	 * @constructor
+	 */
+	constructor(rows_arg, cur_playlist_idx_arg) {
+		/**
+		 * @const
+		 * @type {number}
+		 */
+		this.cur_playlist_idx = cur_playlist_idx_arg;
+		/**
+		 * @const
+		 * @type {Array<Row>}
+		 */
+		this.rows = rows_arg;
+
+		/** @type {Array<Row>} */
+		this.queued_rows = [];
+
+		this.initialize_queue();
+	}
+
+	initialize_queue() {
+		if (this.queued_rows.length) {
+			this.reset_queued_status();
 		}
 
 		var queue_contents = plman.GetPlaybackQueueContents();
@@ -5444,14 +5453,14 @@ function QueueHandler(rows_arg, cur_playlist_idx_arg) {
 			return;
 		}
 
-		queue_contents.forEach(function (queued_item, i) {
+		queue_contents.forEach((queued_item, i) => {
 			if (queued_item.PlaylistIndex !== this.cur_playlist_idx || queued_item.PlaylistItemIndex === -1) {
 				return;
 			}
 
-			var cur_queued_row = rows[queued_item.PlaylistItemIndex];
-			var has_row = _.find(queued_rows, function (queued_row) {
-				// got a crash here once when queuing a bunch of songs. Not sure if queued_row or cur_queued_row was undefined
+			var cur_queued_row = this.rows[queued_item.PlaylistItemIndex];
+			var has_row = this.queued_rows.find(queued_row => {
+				// got a crash here once when queuing a bunch of songs (before SMP refactor). Not sure if queued_row or cur_queued_row was undefined
 				return queued_row.idx === cur_queued_row.idx;
 			});
 
@@ -5462,78 +5471,64 @@ function QueueHandler(rows_arg, cur_playlist_idx_arg) {
 			}
 
 			if (!has_row) {
-				cur_queued_row.queue_idx = i + 1;
+				cur_queued_row.queue_indexes = [i + 1];
 				cur_queued_row.queue_idx_count = 1;
 			}
 			else {
+				cur_queued_row.queue_indexes.push(i + 1);
 				cur_queued_row.queue_idx_count++;
 			}
 
-			queued_rows.push(cur_queued_row);
+			this.queued_rows.push(cur_queued_row);
 		});
 	};
 
 	/**
 	 * @param {Row} row
 	 */
-	this.add_row = function (row) {
+	add_row(row) {
 		if (!row) {
 			return;
 		}
 
-		plman.AddPlaylistItemToPlaybackQueue(cur_playlist_idx, row.idx);
+		plman.AddPlaylistItemToPlaybackQueue(this.cur_playlist_idx, row.idx);
 	};
 
 	/**
 	 * @param {Row} row
 	 */
-	this.remove_row = function (row) {
+	remove_row(row) {
 		if (!row) {
 			return;
 		}
 
-		var idx = plman.FindPlaybackQueueItemIndex(row.metadb, cur_playlist_idx, row.idx);
+		var idx = plman.FindPlaybackQueueItemIndex(row.metadb, this.cur_playlist_idx, row.idx);
 		if (idx !== -1) {
 			plman.RemoveItemFromPlaybackQueue(idx);
 		}
 	};
 
-	this.flush = function () {
+	flush() {
 		plman.FlushPlaybackQueue();
 	};
 
-	this.has_items = function () {
+
+	has_items() {
 		return !!plman.GetPlaybackQueueHandles().Count;
 	};
 
-	function reset_queued_status() {
-		if (!queued_rows.length) {
-			return
+	reset_queued_status() {
+		if (!this.queued_rows.length) {
+			return;
 		}
 
-		queued_rows.forEach(function (item) {
-			item.queue_idx = undefined;
+		this.queued_rows.forEach(function (item) {
+			item.queue_indexes = undefined;
 			item.queue_idx_count = 0;
 		});
 
-		queued_rows = [];
+		this.queued_rows = [];
 	}
-
-	/**
-	 * @const
-	 * @type {number}
-	 */
-	var cur_playlist_idx = cur_playlist_idx_arg;
-	/**
-	 * @const
-	 * @type {Array<Row>}
-	 */
-	var rows = rows_arg;
-
-	/** @type {Array<Row>} */
-	var queued_rows = [];
-
-	this.initialize_queue();
 }
 
 /**
