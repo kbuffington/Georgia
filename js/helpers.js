@@ -490,11 +490,12 @@ function Menu(title = '') {
 	 * @param {*} selectedValue Value of the radio item to be checked
 	 * @param {*[]} variables Array of values which correspond to each radio entry. `selectedValue` will be checked against these values.
 	 * @param {Function} callback
+	 * @param {boolean=} [disabled=false]
 	 */
-	this.createRadioSubMenu = function(subMenuName, labels, selectedValue, variables, callback) {
+	this.createRadioSubMenu = function(subMenuName, labels, selectedValue, variables, callback, disabled = false) {
 		var subMenu = new Menu(subMenuName);
 		subMenu.addRadioItems(labels, selectedValue, variables, callback);
-		subMenu.appendTo(this);
+		subMenu.appendTo(this, disabled);
 	}
 
 	/**
@@ -516,10 +517,11 @@ function Menu(title = '') {
 
 	/**
 	 * Appends menu to a parent menu
-	 * @param {Menu} parentMenu
+	 * @param {Menu} parentMenu The Menu to append the subMenu to
+	 * @param {boolean=} [disabled=false]
 	 */
-	this.appendTo = function(parentMenu) {
-		this.menu.AppendTo(parentMenu.menu, MF_STRING, this.title);
+	this.appendTo = function(parentMenu, disabled = false) {
+		this.menu.AppendTo(parentMenu.menu, MF_STRING | (disabled ? MF_DISABLED : 0), this.title);
 	}
 
 	/**
@@ -529,8 +531,8 @@ function Menu(title = '') {
 	this.doCallback = function(idx) {
 		if (idx > menuStartIndex && Menu.callbacks[idx]) {
 			Menu.callbacks[idx](Menu.variables[idx]);
-		} else if (this.systemMenu) {
-			idx && this.menuManager.ExecuteByID(idx - 1);
+		} else if (this.systemMenu && idx) {
+			this.menuManager.ExecuteByID(idx - 1);
 			this.menuManager = null;
 		}
 		this.menu = null;

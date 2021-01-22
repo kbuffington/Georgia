@@ -29,7 +29,7 @@ const vb = new ActiveXObject('ScriptControl');
 pref.add_properties({
 	version: ['_theme_version (do not hand edit!)', currentVersion],
 	rotation_amt: ['Art: Degrees to rotate CDart', 3], // # of degrees to rotate per track change.
-	aa_glob: ['Art: Cycle through all images', true], // true: use glob, false: use albumart reader (front only)
+	cycleArt: ['Art: Cycle through all images', true], // true: use glob, false: use albumart reader (front only)
 	display_cdart: ['Art: Display CD art', true], // true: show CD artwork behind album artwork. This artwork is expected to be named cd.png and have transparent backgrounds (can be found at fanart.tv)
 	art_rotate_delay: ['Art: Seconds to display each art', 30], // seconds per image
 	rotate_cdart: ['Art: Rotate CD art on new track', true], // true: rotate cdArt based on track number. i.e. rotationAmt = %tracknum% * x degrees

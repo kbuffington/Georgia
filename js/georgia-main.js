@@ -299,9 +299,9 @@ let str = {};
 var state = {}; // panel state
 
 // TIMERS
-var progressTimer; // 40ms repaint of progress bar
-var globTimer; // Timer for rotating globs
-let hideCursorTimer; // Timer for hiding cursor
+let progressBarTimer; // 40ms repaint of progress bar
+let albumArtTimeout; // setTimeout ID for rotating album art
+let hideCursorTimeout; // setTimeout ID for hiding cursor
 
 // STATUS VARIABLES
 let ww = 0;
@@ -339,8 +339,6 @@ var menu_down = false;
 ///////// OBJECTS
 
 var art_cache = new ArtCache(10);
-var cdartPath = '';
-var album_art_path = '';
 
 var pauseBtn = new PauseButton();
 
@@ -706,7 +704,7 @@ function draw_ui(gr) {
 			}
 			if (!lastLeftEdge) { // we don't want to recalculate this every screen refresh
 				debugLog('recalculating lastLeftEdge');
-				labelShadowImg = disposeImg(labelShadowImg);
+				labelShadowImg = null;
 				labelWidth = Math.round(totalLabelWidth / labels.length);
 				labelHeight = Math.round(labels[0].Height * labelWidth / labels[0].Width); // might be recalc'd below
 				if (albumart) {
@@ -974,10 +972,10 @@ function onOptionsMenu(x, y) {
 			RepaintWindow();
 		}
 	});
-	menu.addToggleItem(`Cycle through all artwork (${settings.artworkDisplayTime}s delay)`, pref, 'aa_glob', () => {
-		if (!pref.aa_glob) {
-			clearTimeout(globTimer);
-			globTimer = 0;
+	menu.addToggleItem(`Cycle through all artwork (${settings.artworkDisplayTime}s delay)`, pref, 'cycleArt', () => {
+		if (!pref.cycleArt) {
+			clearTimeout(albumArtTimeout);
+			albumArtTimeout = 0;
 		} else {
 			displayNextImage();
 		}
@@ -990,17 +988,17 @@ function onOptionsMenu(x, y) {
 		ResizeArtwork(true);
 		RepaintWindow();
 	});
-	cdArtMenu.addToggleItem('Rotate cdArt as tracks change', pref, 'rotate_cdart', () => { RepaintWindow(); }, !pref.display_cdart);
-	cdArtMenu.createRadioSubMenu('cdArt Rotation Amount', ['2 degrees', '3 degrees', '4 degrees', '5 degrees'], parseInt(pref.rotation_amt), [2,3,4,5], function (rot) {
-		pref.rotation_amt = rot;
-		CreateRotatedCDImage();
-		RepaintWindow();
-	});
 	cdArtMenu.addItem('Display cdArt above cover', pref.cdart_ontop, () => {
 		pref.cdart_ontop = !pref.cdart_ontop;
 		RepaintWindow();
 	}, !pref.display_cdart);
 	cdArtMenu.addToggleItem('Filter out cd/vinyl .jpgs from artwork', pref, 'filterCdJpgsFromAlbumArt');
+	cdArtMenu.addToggleItem('Rotate cdArt as tracks change', pref, 'rotate_cdart', () => { RepaintWindow(); }, !pref.display_cdart);
+	cdArtMenu.createRadioSubMenu('cdArt Rotation Amount', ['2 degrees', '3 degrees', '4 degrees', '5 degrees'], parseInt(pref.rotation_amt), [2,3,4,5], function (rot) {
+		pref.rotation_amt = rot;
+		CreateRotatedCDImage();
+		RepaintWindow();
+	}, !pref.rotate_cdart);
 	cdArtMenu.appendTo(menu);
 
 	menu.addItem('Draw label art on background', pref.labelArtOnBg, () => {
@@ -1308,7 +1306,7 @@ function on_size() {
 	// we aren't creating these buttons anymore, but we still use these values for now. TODO: replace these
 	const settingsY = btns[30].y;
 
-	playlist_shadow = disposeImg(playlist_shadow);
+	playlist_shadow = null;
 	if (displayPlaylist) {
 		playlist.on_size(ww, wh);
 	} else if (displayLibrary) {
@@ -1364,15 +1362,15 @@ function on_playback_new_track(metadb) {
 
 	SetProgressBarRefresh();
 
-	if (globTimer) {
-		clearTimeout(globTimer);
-		globTimer = 0;
+	if (albumArtTimeout) {
+		clearTimeout(albumArtTimeout);
+		albumArtTimeout = 0;
 	}
 
 	str.timeline = new Timeline(geo.timeline_h);
 
 	// Fetch new albumart
-	if ((pref.aa_glob && aa_list.length != 1) || currentFolder != lastFolder || albumart == null ||
+	if ((pref.cycleArt && aa_list.length != 1) || currentFolder != lastFolder || albumart == null ||
 		$('$if2(%discnumber%,0)') != lastDiscNumber || $('$if2(' + tf.vinyl_side + ',ZZ)') != lastVinylSide) {
 		fetchNewArtwork(metadb);
 	}
@@ -1380,13 +1378,9 @@ function on_playback_new_track(metadb) {
 	CreateRotatedCDImage(); // we need to always setup the rotated image because it rotates on every track
 
 	/* code to retrieve record label logos */
-	var labelStrings = [];
-	while (recordLabels.length) {
-        disposeImg(recordLabels.pop());
-    }
-    while (recordLabelsInverted.length) {
-        disposeImg(recordLabelsInverted.pop());
-    }
+	let labelStrings = [];
+	recordLabels = [];	// will free memory from earlier loaded record label images
+	recordLabelsInverted = [];
 	for (let i = 0; i < tf.labels.length; i++) {
 		labelStrings.push(...getMetaValues(tf.labels[i], this.metadb));
 	}
@@ -1428,8 +1422,8 @@ function on_playback_new_track(metadb) {
 	];
 	tryArtistList = [... new Set(tryArtistList)];
 
-	bandLogo = disposeImg(bandLogo);
-    invertedBandLogo = disposeImg(invertedBandLogo);
+	bandLogo = null;
+    invertedBandLogo = null;
 	let path;
 	tryArtistList.some(artistString => {
 		return path = testArtistLogo(artistString);
@@ -1722,8 +1716,8 @@ function on_mouse_move(x, y, m) {
 		state.mouse_y = y;
 
 		if (settings.hideCursor) {
-			clearTimeout(hideCursorTimer);
-			hideCursorTimer = setTimeout(() => {
+			clearTimeout(hideCursorTimeout);
+			hideCursorTimeout = setTimeout(() => {
 				// if there's a menu id (i.e. a menu is down) we don't want the cursor to ever disappear
 				if (!menu_down) {
 					window.SetCursor(-1); // hide cursor
@@ -1932,13 +1926,13 @@ function on_playback_queue_changed(origin) {
 function on_playback_pause(state) {
 	refreshPlayButton();
 	if (state) { // pausing
-		if (progressTimer) clearInterval(progressTimer);
-		progressTimer = 0;
+		if (progressBarTimer) clearInterval(progressBarTimer);
+		progressBarTimer = 0;
 		window.RepaintRect(0.015 * ww, 0.12 * wh, Math.max(albumart_size.x - 0.015 * ww, 0.015 * ww), wh - geo.lower_bar_h - 0.12 * wh);
 	} else { // unpausing
-		if (progressTimer > 0) clearInterval(progressTimer); // clear to avoid multiple progressTimers which can happen depending on the playback state when theme is loaded
+		if (progressBarTimer > 0) clearInterval(progressBarTimer); // clear to avoid multiple progressTimers which can happen depending on the playback state when theme is loaded
 		debugLog("on_playback_pause: creating refresh_seekbar() interval with delay = " + t_interval);
-		progressTimer = setInterval(function () {
+		progressBarTimer = setInterval(function () {
 			refresh_seekbar();
 		}, t_interval);
 	}
@@ -1961,33 +1955,28 @@ function on_playback_stop(reason) {
 		RepaintWindow();
 		lastFolder = '';
 		lastDiscNumber = '0';
-		while (recordLabels.length) {
-			disposeImg(recordLabels.pop());
-        }
-        while (recordLabelsInverted.length) {
-            disposeImg(recordLabelsInverted.pop());
-		}
+		recordLabels = [];
+		recordLabelsInverted = [];
 		refreshPlayButton();
 		loadFromCache = false;
 	}
-	progressTimer && clearInterval(progressTimer);
-	if (globTimer)
-		clearTimeout(globTimer);
-	if (albumart && ((pref.aa_glob && aa_list.length != 1) || lastFolder == '')) {
+	progressBarTimer && clearInterval(progressBarTimer);
+	if (albumArtTimeout)
+		clearTimeout(albumArtTimeout);
+	if (albumart && ((pref.cycleArt && aa_list.length != 1) || lastFolder == '')) {
 		debugLog("disposing artwork");
 		albumart = null;
-		albumart_scaled = disposeImg(albumart_scaled);
+		albumart_scaled = null;
 	}
-    bandLogo = disposeImg(bandLogo);
-    invertedBandLogo = disposeImg(invertedBandLogo);
+    bandLogo = null;
+    invertedBandLogo = null;
 	if (displayLyrics) {
 		gLyrics.on_playback_stop(reason);
 	}
 
-	while (flagImgs.length > 0)
-		disposeImg(flagImgs.pop());
-	rotatedCD = disposeImg(rotatedCD);
-	globTimer = 0;
+	flagImgs = [];
+	rotatedCD = null;
+	albumArtTimeout = 0;
 
 	if (reason === 0) {
 		// Stop
@@ -2035,7 +2024,7 @@ function on_focus(is_focused) {
 	if (is_focused) {
 		plman.SetActivePlaylistContext(); // When the panel gets focus but not on every click.
 	} else {
-		clearTimeout(hideCursorTimer); // not sure this is required, but I think the mouse was occasionally disappearing
+		clearTimeout(hideCursorTimeout); // not sure this is required, but I think the mouse was occasionally disappearing
 	}
 }
 
@@ -2103,10 +2092,10 @@ function refresh_seekbar() {
 function displayNextImage() {
 	debugLog("Repainting in displayNextImage: " + albumArtIndex);
 	albumArtIndex = (albumArtIndex + 1) % aa_list.length;
-	glob_image(albumArtIndex, true);
+	loadImageFromAlbumArtList(albumArtIndex, true);
 	lastLeftEdge = 0;
 	RepaintWindow();
-	globTimer = setTimeout(() => {
+	albumArtTimeout = setTimeout(() => {
 		displayNextImage();
 	}, settings.artworkDisplayTime * 1000);
 }
@@ -2126,7 +2115,6 @@ function createDropShadow() {
 	let shadowProfiler = null;
 	if (timings.showDebugTiming) shadowProfiler = fb.CreateProfiler("createDropShadow");
 	if ((albumart && albumart_size.w > 0) || (cdart && pref.display_cdart && cdart_size.w > 0)) {
-		disposeImg(shadow_image);
 		if (cdart && !displayPlaylist && !displayLibrary && pref.display_cdart)
 			shadow_image = gdi.CreateImage(cdart_size.x + cdart_size.w + 2 * geo.aa_shadow, cdart_size.h + 4 + 2 * geo.aa_shadow);
 		else
@@ -2169,10 +2157,10 @@ function SetProgressBarRefresh() {
 		if (timings.showDebugTiming)
 			console.log("Progress bar will update every " + t_interval + "ms or " + 1000 / t_interval + " times per second.");
 
-		progressTimer && clearInterval(progressTimer);
-		progressTimer = null;
+		progressBarTimer && clearInterval(progressBarTimer);
+		progressBarTimer = null;
 		if (!fb.IsPaused) { // only create progressTimer if actually playing
-			progressTimer = setInterval(() => {
+			progressBarTimer = setInterval(() => {
 				refresh_seekbar();
 			}, t_interval);
 		}
@@ -2274,20 +2262,25 @@ function calcDateRatios(dontUpdateLastPlayed, currentLastPlayed) {
 	str.timeline.setPlayTimes(tl_firstPlayedRatio, tl_lastPlayedRatio, playedTimesRatios, playedTimes);
 }
 
-function glob_image(index, loadFromCache) {
-	var temp_albumart;
+/**
+ * Loads an image from the aa_list array.
+ * @param {number} index Index of aa_list signifying which image to load
+ * @param {boolean} loadFromCache Retrieve image from cache instead of reading from disc.
+ */
+function loadImageFromAlbumArtList(index, loadFromCache) {
+	let tempAlbumArt;
 	if (loadFromCache) {
-		temp_albumart = art_cache.getImage(aa_list[index]);
+		tempAlbumArt = art_cache.getImage(aa_list[index]);
 	}
-	if (temp_albumart) {
-		albumart = temp_albumart;
+	if (tempAlbumArt) {
+		albumart = tempAlbumArt;
 		if (index === 0 && newTrackFetchingArtwork) {
 			newTrackFetchingArtwork = false;
 			getThemeColors(albumart);
 		}
 	} else {
 		gdi.LoadImageAsyncV2(window.ID, aa_list[index]).then(coverImage => {
-			albumart = art_cache.encache(coverImage, album_art_path);
+			albumart = art_cache.encache(coverImage, aa_list[index]);
 			if (retrieveThemeColorsWhenLoaded && newTrackFetchingArtwork) {
 				getThemeColors(albumart);
 				retrieveThemeColorsWhenLoaded = false;
@@ -2298,7 +2291,6 @@ function glob_image(index, loadFromCache) {
 			lastLeftEdge = 0; // recalc label location
 			RepaintWindow();
 		});
-		album_art_path = aa_list[index];
 		if (index === 0) {
 			retrieveThemeColorsWhenLoaded = true;
 		}
@@ -2309,11 +2301,6 @@ function glob_image(index, loadFromCache) {
 	}
 }
 
-function disposeImg(oldImage) {
-	oldImage = null;
-	return null;
-}
-
 function disposeCDImg(cdImage) {
 	cdart_size = new ImageSize(0, 0, 0, 0);
 	cdImage = null;
@@ -2321,7 +2308,6 @@ function disposeCDImg(cdImage) {
 }
 
 function CreateRotatedCDImage() {
-	rotatedCD = disposeImg(rotatedCD);
 	if (pref.display_cdart) { // drawing cdArt rotated is slow, so first draw it rotated into the rotatedCD image, and then draw rotatedCD image unrotated in on_paint
         if (cdart && cdart_size.w > 0) { // cdart must be square so just use cdart_size.w (width)
 			rotatedCD = gdi.CreateImage(cdart_size.w, cdart_size.w);
@@ -2458,9 +2444,7 @@ function loadFlagImage(country) {
 }
 
 function loadCountryFlags() {
-	while (flagImgs.length) {
-		disposeImg(flagImgs.pop());
-	}
+	flagImgs = [];
 	getMetaValues(tf.artist_country).forEach(country => {
 		const flagImage = loadFlagImage(country);
 		flagImage && flagImgs.push(flagImage);
@@ -2468,9 +2452,6 @@ function loadCountryFlags() {
 }
 
 function loadReleaseCountryFlag() {
-	if (releaseFlagImg) {
-		disposeImg(releaseFlagImg);
-	}
 	releaseFlagImg = loadFlagImage($(tf.releaseCountry));
 }
 
@@ -2536,6 +2517,7 @@ function LoadLabelImage(publisherString) {
 
 function fetchNewArtwork(metadb) {
 	let fetchArtworkProfiler = null;
+	let cdartPath;
 	if (timings.showDebugTiming) fetchArtworkProfiler = fb.CreateProfiler('fetchNewArtwork');
 	console.log('Fetching new art'); // can remove this soon
 	aa_list = [];
@@ -2596,13 +2578,13 @@ function fetchNewArtwork(metadb) {
 
 		if (aa_list.length) {
 			noArtwork = false;
-			if (aa_list.length > 1 && pref.aa_glob) {
-				globTimer = setTimeout(() => {
+			if (aa_list.length > 1 && pref.cycleArt) {
+				albumArtTimeout = setTimeout(() => {
 					displayNextImage();
 				}, settings.artworkDisplayTime * 1000);
 			}
 			albumArtIndex = 0;
-			glob_image(albumArtIndex, loadFromCache); // display first image
+			loadImageFromAlbumArtList(albumArtIndex, loadFromCache); // display first image
 		} else if (metadb && (albumart = utils.GetAlbumArtV2(metadb))) {
 			getThemeColors(albumart);
 			ResizeArtwork(true);

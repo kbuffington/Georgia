@@ -30,7 +30,6 @@ function ArtCache(maxCacheSize) {
             if (art_cache_indexes.length > art_cache_max_size) {
                 var remove = art_cache_indexes.shift();
                 debugLog('deleting cached img:', remove)
-                disposeImg(art_cache[remove]);
                 delete art_cache[remove];
             }
         } catch (e) {
