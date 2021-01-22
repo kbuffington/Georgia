@@ -1,9 +1,26 @@
-### v2.0.0 - 2020-08-??
+### v2.0.0b3 - 2021-??-??
+ - Transport button spacing now configurable (thanks @notsigma)
+ - Allow filtering out of cd.jpgs from showing with rest of artwork
+ - Improved config version upgrades
+ - Fixed Queue'd items not showing in playlist
+ - Lots of code cleanup
+
+### v2.0.0b2 - 2021-01-15
+ - Updating config files from previous versions more robust
+ - Adding some new properties/settings
+ - Showing release country flag if the tf.releaseCountry field is set
+ - Replicated theme background on theme startup so on_paint never shows white
+ - Stopped text now shows "foobar" and version. This is configurable and you can set it back to "foobar plays music" which was the old default
+
+### v2.0.0b1 - 2021-01-06
  - foo_jscript_panel replaced with foo_spider_monkey_panel
  - Simplified script initialization (no more pasting contents of Georgia.txt into Configuration panel after initial setup time)
  - Automatically generating and reading preferences from georgia-config.jsonc
  - When using hyperlinks to search, if current playing song is in results, it will show as playing
  - Added georgia-config.jsonc file to store preferences outside foobar
+ - Updating track information in when `on_playback_dynamic_info_track` is called.
+ - Improve visibility of progress bar when art primary color is too dark (i.e. close to the background color)
+ - Theme update checks happen once a day if enabled
 
 ### v1.1.9 - 2020-07-10
  - Fix library panel not showing tracks with foo_jscript_panel 2.4.x
