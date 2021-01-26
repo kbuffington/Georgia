@@ -147,7 +147,11 @@ class Hyperlink {
 				_.runCmd('https://github.com/kbuffington/Georgia/releases');
 				break;
 			case 'date':
-				query = '"$year(%date%)" IS ' + this.text;
+				if (pref.showPlaylistFulldate) {
+					query = '"' + tf.date + '" IS ' + this.text;
+				} else {
+					query = '"$year(%date%)" IS ' + this.text;
+				}
 				break;
 			case 'artist':
 				query = `Artist HAS ${this.text} OR ARTISTFILTER HAS ${this.text}`;

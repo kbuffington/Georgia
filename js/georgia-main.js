@@ -1134,6 +1134,10 @@ function onOptionsMenu(x, y) {
 			window.Repaint();
 		});
 
+	playlistMenu.addToggleItem('Show full date in header', pref, 'showPlaylistFulldate', () => {
+		playlist.on_size(ww, wh);
+		window.Repaint();
+	});
 	var rowsMenu = new Menu('Rows');
 	rowsMenu.createRadioSubMenu('Row font size', ['-1', '11px', '12px (default)', '13px', '14px', '16px', '18px', '+1'], pref.font_size_playlist,
 		[-1, 11, 12, 13, 14, 16, 18, 999],

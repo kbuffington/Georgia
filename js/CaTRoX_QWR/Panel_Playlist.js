@@ -3722,9 +3722,8 @@ class Header extends BaseHeader {
 
 			//---> DATE
 			if (this.grouping_handler.show_date()) {
-				var date_query = tf.year;
-
-				var date_text = _.tf(date_query, this.metadb);
+				const date_query = pref.showPlaylistFulldate ? tf.date : tf.year;
+				const date_text = _.tf(date_query, this.metadb);
 				if (date_text && date_text !== '0000') {
 					var date_w = Math.ceil(gr.MeasureString(date_text, date_font, 0, 0, 0, 0).Width + 5);
 					var date_x = this.w - date_w - 5;
@@ -3965,8 +3964,7 @@ class Header extends BaseHeader {
 
 		//---> DATE
 		if (this.grouping_handler.show_date()) {
-			var date_query = tf.year;
-
+			const date_query = pref.showPlaylistFulldate ? tf.date : tf.year;
 			var date_text = _.tf(date_query, this.metadb);
 			if (date_text) {
 				var date_w = Math.ceil(gr.MeasureString(date_text, date_font, 0, 0, 0, 0).Width + 5);
@@ -4069,9 +4067,8 @@ class Header extends BaseHeader {
 		var date_font = g_pl_fonts.date;
 		var artist_font = g_pl_fonts.artist_normal;
 
-		const date_query = tf.year;
-
-		var date_text = _.tf(date_query, this.metadb);
+		const date_query = pref.showPlaylistFulldate ? tf.date : tf.year;
+		const date_text = _.tf(date_query, this.metadb);
 		if (date_text) {
 			var date_w = Math.ceil(gr.MeasureString(date_text, date_font, 0, 0, 0, 0).Width + 5);
 			var date_x = -date_w - right_edge;
