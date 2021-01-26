@@ -54,7 +54,7 @@ function LinkedList() {
      * @param {LinkedList.Iterator<T>} iterator
      */
     this.remove = function (iterator) {
-        if (!_.isInstanceOf(iterator, LinkedList.Iterator)) {
+        if (!(iterator instanceof LinkedList.Iterator)) {
             throw new InvalidTypeError(iterator, typeof iterator, 'Iterator');
         }
 
