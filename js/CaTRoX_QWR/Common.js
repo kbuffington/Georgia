@@ -4,9 +4,6 @@
 // ==/PREPROCESSOR==
 
 _.mixin({
-	isInstanceOf:         function (a, b) {
-		return (a instanceof b);
-	},
 	tf:                   function (t, metadb) {
 		if (!metadb) {
 			return '';

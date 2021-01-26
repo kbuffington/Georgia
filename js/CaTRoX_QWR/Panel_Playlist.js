@@ -665,7 +665,7 @@ class Playlist extends List {
 		}
 
 		var item = this.get_item_under_mouse(x, y);
-		if (_.isInstanceOf(item, Header)) {
+		if (item instanceof Header) {
 			if (item.on_mouse_move(x, y, m)) {
 				return true;
 			}
@@ -706,18 +706,18 @@ class Playlist extends List {
 		this.last_pressed_coord.y = y;
 
 		if (item) {
-			if ((!pref.hyperlinks_ctrl || ctrl_pressed) && _.isInstanceOf(item, Header)) {
+			if ((!pref.hyperlinks_ctrl || ctrl_pressed) && item instanceof Header) {
 				if (item.on_mouse_lbtn_down(x, y, m)) {
 					return true;    // was handled by hyperlinks
 				}
 			}
-			if (ctrl_pressed && shift_pressed && _.isInstanceOf(item, BaseHeader)) {
+			if (ctrl_pressed && shift_pressed && item instanceof BaseHeader) {
 				this.collapse_handler.toggle_collapse(item);
 				this.mouse_down = false;
 			}
 			else if (shift_pressed
-				|| (_.isInstanceOf(item, Row) && !item.is_selected()
-					|| _.isInstanceOf(item, BaseHeader) && !item.is_completely_selected())) {
+				|| (item instanceof Row && !item.is_selected()
+					|| item instanceof BaseHeader && !item.is_completely_selected())) {
 				this.selection_handler.update_selection(item, ctrl_pressed, shift_pressed);
 			}
 			else {
@@ -744,11 +744,10 @@ class Playlist extends List {
 			return true;
 		}
 
-		if (_.isInstanceOf(item, BaseHeader)) {
+		if (item instanceof BaseHeader) {
 			item.on_mouse_lbtn_dblclk(x, y, m, this.collapse_handler);
 			this.repaint();
-		}
-		else {
+		} else {
 			if (g_properties.show_rating && item.rating_trace(x, y)) {
 				item.rating_click(x, y);
 				item.repaint();
@@ -809,8 +808,8 @@ class Playlist extends List {
 			this.selection_handler.clear_selection();
 
 		}
-		else if (_.isInstanceOf(item, Row) && !item.is_selected()
-			|| _.isInstanceOf(item, BaseHeader) && !item.is_completely_selected()) {
+		else if (item instanceof Row && !item.is_selected()
+			|| item instanceof BaseHeader && !item.is_completely_selected()) {
 			this.selection_handler.update_selection(item);
 		}
 
@@ -1241,9 +1240,9 @@ class Playlist extends List {
 		/** @type {Array<Row|BaseHeader>} */
 		var items = this.items_to_draw;
 		items.forEach(function (item) {
-			if (_.isInstanceOf(item, Header)) {
-				var header =
-					/** @type {Header} */ item;
+			if (item instanceof Header) {
+				/** @type {Header} */
+				var header = item;
 				if (!header.is_art_loaded() && header.get_first_row().metadb.Compare(metadb)) {
 					header.assign_art(image);
 					header.repaint();
@@ -1291,7 +1290,7 @@ class Playlist extends List {
 
 				if (!this.focused_item) {
 					var top_item = this.items_to_draw[0];
-					this.focused_item = _.isInstanceOf(top_item, Row) ? top_item : top_item.get_first_row();
+					this.focused_item = top_item instanceof Row ? top_item : top_item.get_first_row();
 				}
 
 				var visible_item = this.cnt_helper.is_item_visible(this.focused_item) ? this.focused_item : this.cnt_helper.get_visible_parent(this.focused_item);
@@ -1322,7 +1321,7 @@ class Playlist extends List {
 
 				if (!this.focused_item) {
 					var top_item = this.items_to_draw[0];
-					this.focused_item = _.isInstanceOf(top_item, Row) ? top_item : top_item.get_first_row();
+					this.focused_item = top_item instanceof Row ? top_item : top_item.get_first_row();
 				}
 
 				var visible_item = this.cnt_helper.is_item_visible(this.focused_item) ? this.focused_item : this.cnt_helper.get_visible_parent(this.focused_item);
@@ -1343,14 +1342,14 @@ class Playlist extends List {
 
 				if (!this.focused_item) {
 					var top_item = this.items_to_draw[0];
-					this.focused_item = _.isInstanceOf(top_item, Row) ? top_item : top_item.get_first_row();
+					this.focused_item = top_item instanceof Row ? top_item : top_item.get_first_row();
 				}
 				var new_focus = this.focused_item;
 
 				// Get top uncollapsed header
 				var visible_header = this.cnt_helper.get_visible_parent(this.focused_item);
 				if (visible_header) {
-					while (_.isInstanceOf(visible_header.parent, BaseHeader) && visible_header.is_collapsed) {
+					while (visible_header.parent instanceof BaseHeader && visible_header.is_collapsed) {
 						visible_header = visible_header.parent;
 					}
 
@@ -1370,7 +1369,7 @@ class Playlist extends List {
 
 				if (!this.focused_item) {
 					var top_item = this.items_to_draw[0];
-					this.focused_item = _.isInstanceOf(top_item, Row) ? top_item : top_item.get_first_row();
+					this.focused_item = top_item instanceof Row ? top_item : top_item.get_first_row();
 				}
 				var new_focus = this.focused_item;
 
@@ -1395,7 +1394,7 @@ class Playlist extends List {
 
 				if (!this.focused_item) {
 					var top_item = this.items_to_draw[0];
-					this.focused_item = _.isInstanceOf(top_item, Row) ? top_item : top_item.get_first_row();
+					this.focused_item = top_item instanceof Row ? top_item : top_item.get_first_row();
 				}
 
 				var new_focus_item;
@@ -2229,7 +2228,7 @@ class Playlist extends List {
 
 		var is_above = y < (item.y + item.h / 2);
 
-		if (_.isInstanceOf(item, BaseHeader)) {
+		if (item instanceof BaseHeader) {
 			var first_row_in_header = item.get_first_row();
 
 			if (is_above) {
@@ -2399,7 +2398,7 @@ class Playlist extends List {
 			if (has_headers) {
 				var scroll_shift = 0;
 				var top_item = visible_to_item;
-				while (top_item.parent && _.isInstanceOf(top_item.parent, BaseHeader) && top_item === top_item.parent.sub_items[0]) {
+				while (top_item.parent && top_item.parent instanceof BaseHeader && top_item === top_item.parent.sub_items[0]) {
 					top_item = top_item.parent;
 					var header_state = this.get_item_visibility_state(top_item);
 					scroll_shift += header_state.invisible_part;
@@ -2453,10 +2452,10 @@ class Playlist extends List {
 	 */
 	get_item_draw_row_idx(target_item) {
 		var cur_row = 0;
-		var is_target_row = _.isInstanceOf(target_item, Row);
+		var is_target_row = target_item instanceof Row;
 
 		const iterate_level = (sub_items, target_item) => {
-			if (_.isInstanceOf(sub_items[0], BaseHeader)) {
+			if (sub_items[0] instanceof BaseHeader) {
 				var header_h_in_rows = Math.round(sub_items[0].h / this.row_h);
 
 				for (var i = 0; i < sub_items.length; ++i) {
@@ -2528,7 +2527,7 @@ class Playlist extends List {
 					this.scrollbar.shift_line(-1);
 
 					cur_marked_item = this.items_to_draw[0];
-					if (_.isInstanceOf(cur_marked_item, BaseHeader)) {
+					if (cur_marked_item instanceof BaseHeader) {
 						this.collapse_handler.expand(cur_marked_item);
 						if (this.collapse_handler.changed) {
 							this.scrollbar.scroll_to(g_properties.scroll_pos + cur_marked_item.get_sub_items_total_h_in_rows());
@@ -2544,7 +2543,7 @@ class Playlist extends List {
 					this.scrollbar.shift_line(1);
 
 					cur_marked_item = _.last(this.items_to_draw);
-					if (_.isInstanceOf(cur_marked_item, BaseHeader)) {
+					if (cur_marked_item instanceof BaseHeader) {
 						this.collapse_handler.expand(cur_marked_item);
 						if (this.collapse_handler.changed) {
 							this.repaint();
@@ -2629,7 +2628,7 @@ class Playlist extends List {
  */
 var debounced_get_album_art = _.debounce(function (items) {
 	_.forEach(items, (item) => {
-		if (!_.isInstanceOf(item, Header) || item.is_art_loaded()) {
+		if (!(item instanceof Header) || item.is_art_loaded()) {
 			return;
 		}
 
@@ -2744,7 +2743,7 @@ class PlaylistContent extends ListRowContent {
 		 * @return {?BaseHeader|?Row}
 		 */
 		function iterate_level(sub_items) {
-			if (_.isInstanceOf(sub_items[0], BaseHeader)) {
+			if (sub_items[0] instanceof BaseHeader) {
 				var header_h_in_rows = Math.round(sub_items[0].h / row_h);
 
 				for (var i = 0; i < sub_items.length; ++i) {
@@ -2810,7 +2809,7 @@ class PlaylistContent extends ListRowContent {
 		 * @return {boolean} true, if start_item was used
 		 */
 		function iterate_level(sub_items, start_item) {
-			var is_cur_level_header = _.isInstanceOf(sub_items[0], BaseHeader);
+			var is_cur_level_header = sub_items[0] instanceof BaseHeader;
 			var start_item_used = !start_item;
 
 			var leveled_start_item = start_item;
@@ -2820,7 +2819,7 @@ class PlaylistContent extends ListRowContent {
 
 			var start_idx = 0;
 			if (leveled_start_item) {
-				start_idx = _.isInstanceOf(leveled_start_item, Row) ? leveled_start_item.idx_in_header : leveled_start_item.idx;
+				start_idx = leveled_start_item instanceof Row ? leveled_start_item.idx_in_header : leveled_start_item.idx;
 			}
 
 			for (var i = start_idx; i < sub_items.length; ++i) {
@@ -2867,13 +2866,13 @@ function getItemType(item) {
 	if (!item) {
 		return 'Item is undefined or null'
 	}
-	else if (_.isInstanceOf(item, Header)) {
+	else if (item instanceof Header) {
 		return 'Header';
 	}
-	else if (_.isInstanceOf(item, DiscHeader)) {
+	else if (item instanceof DiscHeader) {
 		return 'DiscHeader';
 	}
-	else if (_.isInstanceOf(item, Row)) {
+	else if (item instanceof Row) {
 		return 'Row';
 	}
 	return 'Unknown Item Type'
@@ -2885,7 +2884,7 @@ function ContentNavigationHelper(cnt_arg) {
 	 * @return {?BaseHeader}
 	 */
 	this.get_visible_parent = function (item) {
-		if (!item.parent || !_.isInstanceOf(item.parent, BaseHeader)) {
+		if (!item.parent || !(item.parent instanceof BaseHeader)) {
 			return null;
 		}
 
@@ -2904,7 +2903,7 @@ function ContentNavigationHelper(cnt_arg) {
 	 * @return {boolean}
 	 */
 	this.is_item_visible = function (item) {
-		if (item.parent && _.isInstanceOf(item.parent, BaseHeader)) {
+		if (item.parent && item.parent instanceof BaseHeader) {
 			return !item.parent.is_collapsed;
 		}
 
@@ -2918,7 +2917,7 @@ function ContentNavigationHelper(cnt_arg) {
 	 * @return {boolean}
 	 */
 	this.is_item_navigateable = function (item) {
-		return _.isInstanceOf(item, Row) ? true : item.is_collapsed;
+		return item instanceof Row ? true : item.is_collapsed;
 	};
 
 	/**
@@ -2960,7 +2959,7 @@ function ContentNavigationHelper(cnt_arg) {
 		 */
 		function get_last_visible_item(item) {
 			var last_item = item;
-			while (!_.isInstanceOf(last_item, Row) && !last_item.is_collapsed) {
+			while (!(last_item instanceof Row) && !last_item.is_collapsed) {
 				last_item = _.last(last_item.sub_items);
 			}
 
@@ -2973,7 +2972,7 @@ function ContentNavigationHelper(cnt_arg) {
 		 */
 		function get_prev_item_before_header(header) {
 			if (header === header.parent.sub_items[0]) {
-				return _.isInstanceOf(header.parent, BaseHeader) ? header.parent : null;
+				return header.parent instanceof BaseHeader ? header.parent : null;
 			}
 
 			return get_last_visible_item(header.parent.sub_items[header.idx - 1]);
@@ -2999,7 +2998,7 @@ function ContentNavigationHelper(cnt_arg) {
 			return cnt.rows[item.idx - 1];
 		}
 
-		if (_.isInstanceOf(item, BaseHeader)) {
+		if (item instanceof BaseHeader) {
 			return get_prev_item_before_header(item);
 		}
 
@@ -3024,7 +3023,7 @@ function ContentNavigationHelper(cnt_arg) {
 				}
 
 				if (next_item !== _.last(next_item.parent.sub_items)) {
-					var next_item_idx = _.isInstanceOf(next_item, Row) ? next_item.idx_in_header : next_item.idx;
+					var next_item_idx = next_item instanceof Row ? next_item.idx_in_header : next_item.idx;
 					return next_item.parent.sub_items[next_item_idx + 1];
 				}
 
@@ -3042,7 +3041,7 @@ function ContentNavigationHelper(cnt_arg) {
 			return cnt.rows[item.idx + 1];
 		}
 
-		if (_.isInstanceOf(item, BaseHeader) && !item.is_collapsed) {
+		if (item instanceof BaseHeader && !item.is_collapsed) {
 			return item.sub_items[0];
 		}
 
@@ -3130,7 +3129,7 @@ class BaseHeader extends ListItem {
 		}
 
 		var item = this.sub_items[0];
-		while (item && !_.isInstanceOf(item, Row)) {
+		while (item && !(item instanceof Row)) {
 			item = item.sub_items[0];
 		}
 
@@ -3140,7 +3139,7 @@ class BaseHeader extends ListItem {
 	get_row_indexes() {
 		var row_indexes = [];
 
-		if (_.isInstanceOf(this.sub_items[0], Row)) {
+		if (this.sub_items[0] instanceof Row) {
 			this.sub_items.forEach(function (item) {
 				row_indexes.push(item.idx);
 			});
@@ -3162,7 +3161,7 @@ class BaseHeader extends ListItem {
 			return 0;
 		}
 
-		if (_.isInstanceOf(this.sub_items[0], Row)) {
+		if (this.sub_items[0] instanceof Row) {
 			return this.sub_items.length;
 		}
 
@@ -3215,7 +3214,7 @@ class BaseHeader extends ListItem {
 	get_duration() {
 		var duration_in_seconds = 0;
 
-		if (_.isInstanceOf(this.sub_items[0], Row)) {
+		if (this.sub_items[0] instanceof Row) {
 			_.forEach(this.sub_items, (item) => {
 				duration_in_seconds += item.metadb.Length;
 			});
@@ -3549,7 +3548,7 @@ class Header extends BaseHeader {
 
 		var track_count = this.sub_items.length;
 		var has_discs = false;
-		if (_.isInstanceOf(this.sub_items[0], DiscHeader)) {
+		if (this.sub_items[0] instanceof DiscHeader) {
 			track_count = 0;
 			has_discs = true;
 			_.forEach(this.sub_items, discHeader => {
@@ -4759,7 +4758,7 @@ function SelectionHandler(cnt_arg, cur_playlist_idx_arg) {
 		}
 
 		var visible_item = cnt_helper.is_item_visible(item) ? item : cnt_helper.get_visible_parent(item);
-		if (_.isInstanceOf(visible_item, BaseHeader)) {
+		if (visible_item instanceof BaseHeader) {
 			update_selection_with_header(visible_item, ctrl_pressed, shift_pressed);
 		}
 		else {
@@ -5404,7 +5403,7 @@ function CollapseHandler(cnt_arg) {
 		header.is_collapsed = is_collapsed;
 
 		var sub_items = header.sub_items;
-		if (_.isInstanceOf(sub_items[0], Row)) {
+		if (sub_items[0] instanceof Row) {
 			return changed;
 		}
 
