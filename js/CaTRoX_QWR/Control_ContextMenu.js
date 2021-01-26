@@ -74,7 +74,7 @@ class ContextMenu extends ContextBaseObject {
      * @param{ContextBaseObject} item
      */
     append(item) {
-        if (!_.isInstanceOf(item, ContextBaseObject)) {
+        if (!(item instanceof ContextBaseObject)) {
             throw new InvalidTypeError('context_item', typeof item, 'instanceof ContextBaseObject');
         }
 
@@ -111,7 +111,7 @@ class ContextMenu extends ContextBaseObject {
             throw new ArgumentError('start_idx', start_idx, 'Value is out of bounds');
         }
 
-        if (_.isInstanceOf(item, ContextSeparator)) {
+        if (item instanceof ContextSeparator) {
             throw new ArgumentError('check_idx', check_idx, 'Index points to MenuSeparator');
         }
 
