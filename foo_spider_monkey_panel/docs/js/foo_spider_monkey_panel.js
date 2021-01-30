@@ -3222,67 +3222,6 @@ function GdiGraphics() {
     this.MeasureString = function (str, font, x, y, w, h, flags) { }; // (MeasureStringInfo) [, flags]
 
     /**
-     * @constructor
-     * @hideconstructor
-     *
-     * @example
-     * include(`${fb.ComponentPath}docs\\Flags.js`);
-     * include(`${fb.ComponentPath}docs\\Helpers.js`);
-     *
-     * let sf = StringFormat(StringAlignment.Near, StringAlignment.Near);
-     * let text = utils.ReadTextFile("z:\\info.txt");
-     * let font = window.GetFontDUI(0);
-     *
-     * function on_paint(gr) {
-     *     gr.DrawString(text, font, RGB(255, 0, 0), 0, 0, window.Width, window.Height, sf);
-     *     let temp = gr.MeasureString(text, font, 0, 0, window.Width, 10000, sf);
-     *     // If we want to calculate height, we must set the height to be far larger than what
-     *     // the text could possibly be.
-     *
-     *     console.log(temp.Height); // 2761.2421875 // far larger than my panel height!
-     *     console.log(temp.Chars); // 7967
-     * }
-     */
-    function MeasureStringInfo() {
-
-        /**
-         * @type {number}
-         * @readonly
-         */
-        this.Chars; // (uint) (read)
-
-        /**
-         * @type {float}
-         * @readonly
-         */
-        this.Height; // (float) (read)
-
-        /**
-         * @type {number}
-         * @readonly
-         */
-        this.Lines; // (uint) (read)
-
-        /**
-         * @type {float}
-         * @readonly
-         */
-        this.X; // (float) (read)
-
-        /**
-         * @type {float}
-         * @readonly
-         */
-        this.Y; // (float) (read)
-
-        /**
-         * @type {float}
-         * @readonly
-         */
-        this.Width; // (float) (read)
-    }
-
-    /**
      * @param {number=} [mode=0] See Flags.js > InterpolationMode
      */
     this.SetInterpolationMode = function (mode) { }; // (void)
@@ -3296,6 +3235,67 @@ function GdiGraphics() {
      * @param {number=} [mode=0] See Flags.js > TextRenderingHint
      */
     this.SetTextRenderingHint = function (mode) { }; // (void)
+}
+
+/**
+ * @constructor
+ * @hideconstructor
+ *
+ * @example
+ * include(`${fb.ComponentPath}docs\\Flags.js`);
+ * include(`${fb.ComponentPath}docs\\Helpers.js`);
+ *
+ * let sf = StringFormat(StringAlignment.Near, StringAlignment.Near);
+ * let text = utils.ReadTextFile("z:\\info.txt");
+ * let font = window.GetFontDUI(0);
+ *
+ * function on_paint(gr) {
+ *     gr.DrawString(text, font, RGB(255, 0, 0), 0, 0, window.Width, window.Height, sf);
+ *     let temp = gr.MeasureString(text, font, 0, 0, window.Width, 10000, sf);
+ *     // If we want to calculate height, we must set the height to be far larger than what
+ *     // the text could possibly be.
+ *
+ *     console.log(temp.Height); // 2761.2421875 // far larger than my panel height!
+ *     console.log(temp.Chars); // 7967
+ * }
+ */
+function MeasureStringInfo() {
+
+    /**
+     * @type {number}
+     * @readonly
+     */
+    this.Chars; // (uint) (read)
+
+    /**
+     * @type {float}
+     * @readonly
+     */
+    this.Height; // (float) (read)
+
+    /**
+     * @type {number}
+     * @readonly
+     */
+    this.Lines; // (uint) (read)
+
+    /**
+     * @type {float}
+     * @readonly
+     */
+    this.X; // (float) (read)
+
+    /**
+     * @type {float}
+     * @readonly
+     */
+    this.Y; // (float) (read)
+
+    /**
+     * @type {float}
+     * @readonly
+     */
+    this.Width; // (float) (read)
 }
 
 /**

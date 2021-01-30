@@ -14,6 +14,7 @@ let updateHyperlink;
 const g_component_playcount = utils.CheckComponent('foo_playcount');
 const g_component_utils = utils.CheckComponent('foo_utils');
 const componentEnhancedPlaycount = utils.CheckComponent('foo_enhanced_playcount');
+const componentUiHacks = utils.CheckComponent('foo_ui_hacks');
 
 /** @type {*} */
 const doc = new ActiveXObject('htmlfile');
@@ -24,6 +25,8 @@ const WshShell = new ActiveXObject('WScript.Shell');
 const fso = new ActiveXObject('Scripting.FileSystemObject');
 /** @type {*} */
 const vb = new ActiveXObject('ScriptControl');
+/** @type {*} */
+const UIHacks = !componentUiHacks || new ActiveXObject('UIHacks');
 
 // THEME PREFERENCES/PROPERTIES EXPLANATIONS - After initial run, these values are changed in Options Menu or by Right Click >> Properties and not here!
 pref.add_properties({
@@ -54,7 +57,6 @@ pref.add_properties({
 	menu_font_size: ['Menu font size', 12],
 
 	freq_update: ['Frequent progress bar updates', true], // true: update progress bar multiple times a second. Smoother, but uses more CPU
-	hyperlinks_ctrl: ['Playlist: Hyperlinks require CTRL Key', false], // true: clicking on hyperlinks only works if CTRL key is held down
     darkMode: ['Use Dark Theme', true], // true: use a darker background
 	use_4k: ['Detect 4k', 'auto'], // auto: switch to 4k mode when window width wide enough, never: never use 4k mode, always: always use 4k mode
 	checkForUpdates: ['Check for Updates', true], // true: check github repo to determine if updates exist

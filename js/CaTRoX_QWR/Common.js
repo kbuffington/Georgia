@@ -526,10 +526,25 @@ function assert(predicate, exception_type, args) {
 	}
 }
 
+/** UIHacks enums */
+const MainMenuState = {
+	Show: 0,
+	Hide: 1,
+	Auto: 2
+};
+const FrameStyle = {
+	Default:      0,
+	SmallCaption: 1,
+	NoCaption:    2,
+	NoBorder:     3
+};
+const MoveStyle = {
+	Default: 0,
+	Middle:  1,
+	Left:    2,
+	Both:    3
+};
 
-/** @type {IUIHacks} */
-var UIHacks = null;
-// UIHacks = new ActiveXObject('UIHacks');
 
 var qwr_utils = {
 	EnableSizing:         function (m) {

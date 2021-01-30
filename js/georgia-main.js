@@ -162,12 +162,13 @@ function initColors() {
 initColors();
 
 function setGeometry() {
+	const showingMinMaxButtons = (UIHacks && UIHacks.FrameStyle) ? true : false;
 	geo.aa_shadow = scaleForDisplay(8); // size of albumart shadow
 	geo.pause_size = scaleForDisplay(150);
 	geo.prog_bar_h = scaleForDisplay(12) + (ww > 1920 ? 2 : 0); // height of progress bar
 	geo.lower_bar_h = scaleForDisplay(80); // height of song title and time + progress bar area
 	geo.top_art_spacing = scaleForDisplay(96); // space between top of theme and artwork
-	geo.top_bg_h = scaleForDisplay(160); // height of offset color background
+	geo.top_bg_h = scaleForDisplay(160 + (showingMinMaxButtons ? 12 : 0)); // height of offset color background
 	geo.timeline_h = scaleForDisplay(18); // height of timeline
 	if (!pref.show_progress_bar) {
 		geo.lower_bar_h -= geo.prog_bar_h * 2;
@@ -358,7 +359,8 @@ function draw_ui(gr) {
 
 	// Background
 	if (!albumart && noArtwork) { // we use noArtwork to prevent flashing of blue default theme
-		albumart_size.x = Math.floor(ww * 0.33); // if there's no album art info panel takes up 1/3 screen
+		albumart_size.x = Math.floor(ww / 3); // if there's no album art info panel takes up 1/3 screen
+		albumart_size.w = albumart_size.x;
 		albumart_size.y = geo.top_art_spacing;
 		albumart_size.h = wh - albumart_size.y - geo.lower_bar_h - 32;
 		if (!themeColorSet) {
@@ -380,17 +382,21 @@ function draw_ui(gr) {
 	var textLeft = Math.round(Math.min(0.015 * ww, scaleForDisplay(20)));
 	// Top bar Year, and track info
 	if (((!displayPlaylist && !displayLibrary) || (!albumart && noArtwork)) && fb.IsPlaying) {
-		var trackInfoHeight = 0;
-		var infoWidth = Math.floor(ww / 3);
+		const textRightGap = textLeft;
+		let trackInfoHeight = 0;
+		const infoWidth = ww - albumart_size.x - albumart_size.w - textRightGap;
 		if (str.trackInfo) {
 			gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
 			trackInfoHeight = gr.MeasureString(str.trackInfo, ft.track_info, 0, 0, 0, 0).Height;
-			gr.DrawString(str.trackInfo, ft.track_info, col.artist, ww - textLeft * 2 - infoWidth, geo.top_bg_h - trackInfoHeight - 15, infoWidth, trackInfoHeight, StringFormat(2));
+			gr.DrawString(str.trackInfo, ft.track_info, col.artist, ww - textRightGap - infoWidth, geo.top_bg_h - trackInfoHeight - scaleForDisplay(15), infoWidth, trackInfoHeight, StringFormat(2));
 			gr.SetTextRenderingHint(TextRenderingHint.AntiAliasGridFit);
 		}
 		if (str.year) {
-			const height = gr.MeasureString(str.year, ft.year, 0, 0, 0, 0).Height;
-			gr.DrawString(str.year, ft.year, col.artist, ww - textLeft * 2 - infoWidth, geo.top_bg_h - trackInfoHeight - height - 20, infoWidth, height, StringFormat(2));
+			/** @type {MeasureStringInfo} */
+			const measurements = gr.MeasureString(str.year, ft.year, 0, 0, 0, 0);
+			if (measurements.Width < infoWidth) {
+				gr.DrawString(str.year, ft.year, col.artist, ww - textRightGap - infoWidth, geo.top_bg_h - trackInfoHeight - measurements.Height - scaleForDisplay(20), infoWidth, measurements.Height, StringFormat(2));
+			}
 		}
 	}
 
@@ -479,6 +485,8 @@ function draw_ui(gr) {
 
 		var top = (albumart_size.y ? albumart_size.y : geo.top_art_spacing) + scaleForDisplay(15);
 		if (gridSpace > 120) {
+			/** @type {MeasureStringInfo} */
+			let txtRec;
 			if (str.title) {
 				ft.title = ft.title_lrg;
 				ft.tracknum = ft.tracknum_lrg;
@@ -545,7 +553,7 @@ function draw_ui(gr) {
 						str.album_subtitle, subtitlefont_array, 2);
 				} else {
 					var ft_album = chooseFontForWidth(gr, text_width, str.album, font_array, 2);
-					var txtRec = gr.MeasureString(str.album, ft_album, 0, 0, text_width, wh);
+					txtRec = gr.MeasureString(str.album, ft_album, 0, 0, text_width, wh);
 					var numLines = txtRec.Lines;
 					var lineHeight = txtRec.Height / numLines;
 					if (numLines > 2) {
@@ -1307,9 +1315,6 @@ function on_size() {
 	createButtonImages();
 	createButtonObjects(ww, wh);
 
-	// we aren't creating these buttons anymore, but we still use these values for now. TODO: replace these
-	const settingsY = btns[30].y;
-
 	playlist_shadow = null;
 	if (displayPlaylist) {
 		playlist.on_size(ww, wh);
@@ -1392,12 +1397,12 @@ function on_playback_new_track(metadb) {
 	for (let i = 0; i < labelStrings.length; i++) {
 		var addLabel = LoadLabelImage(labelStrings[i]);
 		if (addLabel != null) {
-            recordLabels.push(addLabel);
-            try {
-                recordLabelsInverted.push(addLabel.InvertColours());
-            } catch (e) {
-                // probably not using foo_jscript v2.3.6
-            }
+			recordLabels.push(addLabel);
+			try {
+				recordLabelsInverted.push(addLabel.InvertColours());
+			} catch (e) {
+				// probably not using foo_jscript v2.3.6
+			}
 		}
 	}
 
@@ -1497,7 +1502,7 @@ function on_metadb_changed(handle_list, fromhook) {
 			str.title_lower = '  ' + title;
 			str.original_artist = original_artist;
             str.artist = artist;
-			str.year = $('[$year($if3(%original release date%,%originaldate%,%date%,%fy_upload_date%))]');
+			str.year = $(tf.year);
 			if (str.year === '0000') {
 				str.year = '';
 			}
@@ -2611,6 +2616,7 @@ function RepaintWindow() {
 
 function createButtonObjects(ww, wh) {
 	btns = [];
+	const showingMinMaxButtons = (UIHacks && UIHacks.FrameStyle) ? true : false;
 
 	if (ww <= 0 || wh <= 0) {
 		return;
@@ -2653,23 +2659,25 @@ function createButtonObjects(ww, wh) {
 	}
 
 	//---> Caption buttons
-	// if (uiHacks && UIHacks.FrameStyle) {
+	if (showingMinMaxButtons) {
+		let hideClose;
 
-	// 	(UIHacks.FrameStyle == FrameStyle.SmallCaption && UIHacks.FullScreen != true) ? hideClose = true : hideClose = false;
+		(UIHacks.FrameStyle == FrameStyle.SmallCaption && UIHacks.FullScreen != true) ? hideClose = true : hideClose = false;
 
-	// 	var y = 5;
-	// 	var w = 22;
-	// 	var h = w;
-	// 	var p = 3;
-	// 	var x = ww - w * (hideClose ? 2 : 3) - p * (hideClose ? 1 : 2) - 8;
+		const y = 5;
+		const w = scaleForDisplay(22);
+		const h = w;
+		const p = 3;
+		const x = ww - w * (hideClose ? 2 : 3) - p * (hideClose ? 1 : 2) - 8;
 
-	// 	btns[10] = new Button(x, y, w, h, "Minimize", btnImg.Minimize);
-	// 	btns[11] = new Button(x + w + p, y, w, h, "Maximize", btnImg.Maximize);
-	// 	if (!hideClose)
-	// 		btns[12] = new Button(x + (w + p) * 2, y, w, h, "Close", btnImg.Close);
+		btns.Minimize = new Button(x, y, w, h, "Minimize", btnImg.Minimize);
+		btns.Maximize = new Button(x + w + p, y, w, h, "Maximize", btnImg.Maximize);
+		if (!hideClose) {
+			btns.Close = new Button(x + (w + p) * 2, y, w, h, "Close", btnImg.Close);
+		}
+	}
 
-	// }
-
+	/** @type {GdiBitmap[]} */
 	let img = btnImg.File;
 	let x = 5;
 	let y = 5;
@@ -2705,9 +2713,15 @@ function createButtonObjects(ww, wh) {
 	img = btnImg.Options;
 	btns[27] = new Button(x, y, img[0].Width, h, 'Options', img);
 
+
+	let buttonY = 15;
+	if (showingMinMaxButtons) {
+		buttonY = 15 + btns.Minimize.h;
+	}
+
 	img = btnImg.Settings;
-	x = ww - settingsImg.Width * 2;
-	y = 15;
+	x = ww - Math.round(Math.min(0.015 * ww, scaleForDisplay(20))) - img[0].Width;
+	y = buttonY;
 	h = img[0].Height;
 	btns[30] = new Button(x, y, img[0].Width, h, 'Settings', img, 'Foobar Settings');
 	img = btnImg.Properties;
