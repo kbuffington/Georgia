@@ -1,8 +1,10 @@
-### v2.0.0b3 - 2021-??-??
+### v2.0.0b3 - 2021-01-30
+ - Now works with foo_ui_hacks to show min/max/close buttons when applicable and moves UI elements accordingly
+ - Fixed regression with Queue'd items not showing in playlist
  - Transport button spacing now configurable (thanks @notsigma)
  - Allow filtering out of cd.jpgs from showing with rest of artwork
  - Improved config version upgrades
- - Fixed Queue'd items not showing in playlist
+ - Added option for showing full date in playlist header
  - Lots of code cleanup
 
 ### v2.0.0b2 - 2021-01-15
