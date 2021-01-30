@@ -582,38 +582,6 @@ var qwr_utils = {
 		return caller ? caller[1] : '';
 	},
 	/**
-	 * @param{Array<string>} fonts
-	 */
-	check_fonts:          function (fonts) {
-		var msg = '';
-		var failCounter = 0;
-
-		fonts.forEach(function (item) {
-			var check = utils.CheckFont(item);
-			if (!check) {
-				++failCounter;
-			}
-			msg += ('\n' + item + (check ? ': Installed.' : ': NOT INSTALLED!'));
-		});
-
-		if (failCounter) {
-			msg += '\n\nPlease install missing ' + (failCounter > 1 ? 'fonts' : 'font') + ' and restart foobar!';
-			throw new ThemeError(msg);
-		}
-	},
-	/**
-	 * @return{boolean}
-	 */
-	has_modded_jscript:   _.once(function () {
-		var ret = _.attempt(function () {
-			// Methods from modded JScript
-			qwr_utils.GetWndByHandle(666);
-			fb.IsMainMenuCommandChecked('View/Always on Top');
-		});
-
-		return !_.isError(ret);
-	}),
-	/**
 	 * @param{string} site
 	 * @param{FbMetadbHandle} metadb
 	 */
@@ -704,10 +672,6 @@ var qwr_utils = {
 	 * @return {IWindow}
 	 */
 	get_fb2k_window:      _.once(function () {
-		if (!qwr_utils.has_modded_jscript()) {
-			throw new LogicError('Can\'t use extensions with vanilla JScript')
-		}
-
 		// fb2k main window class
 		// Can't use UIHacks.MainWindowID, since it might be uninitialized during fb2k start-up
 		var ret_wnd = qwr_utils.GetWndByHandle(window.id);
@@ -725,10 +689,6 @@ var qwr_utils = {
 	 * @return {IWindow}
 	 */
 	get_top_theme_window: _.once(function () {
-		if (!qwr_utils.has_modded_jscript()) {
-			throw new LogicError('Can\'t use extensions with vanilla JScript')
-		}
-
 		var ret_wnd = qwr_utils.GetWndByHandle(window.id);
 		while (ret_wnd && ret_wnd.GetAncestor(1) && ret_wnd.GetAncestor(1).id !== qwr_utils.get_fb2k_window().id) {
 			ret_wnd = ret_wnd.GetAncestor(1);

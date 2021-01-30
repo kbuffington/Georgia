@@ -53,8 +53,6 @@ g_properties.add_properties(
 	}
 );
 
-var g_has_modded_jscript = qwr_utils.has_modded_jscript();
-
 // Fixup properties
 (function () {
 	g_properties.rows_in_header = Math.max(0, g_properties.rows_in_header);
