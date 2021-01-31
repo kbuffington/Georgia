@@ -188,6 +188,17 @@ class Configuration {
 		p.WriteLine('}');
 		p.Close();
 	}
+
+	getPath() {
+		return this.path;
+	}
+
+	resetConfiguration() {
+		fso.DeleteFile(this.path);
+		setTimeout(() => {
+			window.Reload();
+		}, 1);
+	}
 }
 
 const singleComment = Symbol('singleComment');

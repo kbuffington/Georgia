@@ -1209,6 +1209,11 @@ function onOptionsMenu(x, y) {
 	debugMenu.addToggleItem('Show reload button', pref, 'show_reload_button', () => { window.Reload(); });
 	debugMenu.appendTo(menu);
 
+	const configMenu = new Menu('Configuration File');
+	configMenu.addItem('Edit configuration file', false, () => { _.runCmd(config.getPath()); });
+	configMenu.addItem('Reset configuartion file', false, () => { config.resetConfiguration(); });
+	configMenu.appendTo(menu);
+
 	menu.addSeparator();
 
 	menu.addToggleItem('Lock right click...', settings, 'locked');
