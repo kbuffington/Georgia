@@ -1,16 +1,13 @@
 // Georgia
 //
-// Description  a fullscreen now-playing script for foo_jscript_panel
+// Description  a fullscreen theme for foo_spider_monkey_panel
 // Author 		Mordred
-// Version 		2.0.0b1
+// Version 		2.0.0
 // Dev. Started 2017-12-22
-// Last change  2020-08-31
+// Last change  2021-01-31
 // --------------------------------------------------------------------------------------
 
 // CONFIGURATION //////////////////////////////////////
-
-var themeBaseName = "Georgia"; // this is the base name of the theme, and will be used for finding some of the theme's files in the configuration folder.
-
 var ft = {}; // fonts
 
 /**
@@ -331,8 +328,6 @@ var currentLastPlayed = '';
 
 let g_tooltip;
 const tt = new _.tt_handler;
-
-let g_playtimer = null;
 
 // MENU STUFF
 var menu_down = false;
