@@ -233,7 +233,8 @@ function dateDiff(startingDate, endingDate) {
 	}
 	var startDate = new Date(new Date(startingDate).toISOString().substr(0, 10));
 	if (!endingDate) {
-		endingDate = new Date().toISOString().substr(0, 10);    // need date in YYYY-MM-DD format
+		const now = new Date().getTime() - timezoneOffset;	// subtract timezone offset because we're stripping timzone from ISOString
+		endingDate = new Date(now).toISOString().substr(0, 10);    // need date in YYYY-MM-DD format
 	}
 	var endDate = new Date(endingDate);
 	if (startDate > endDate) {
