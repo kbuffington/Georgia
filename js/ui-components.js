@@ -55,6 +55,8 @@ class ProgressBar {
 		this.progressLength = 0; // fixing jumpiness in progressBar
 		this.progressMoved = false; // playback position changed, so reset progressLength
 		this.drag = false;	// progress bar is being dragged
+		this.progressAlphaCol = undefined;
+		this.lastAccentCol = undefined;
 	}
 
 	repaint() {
@@ -97,12 +99,12 @@ class ProgressBar {
 					gr.DrawRect(this.x, this.y, this.progressLength, this.h - 1, 1, col.darkAccent);
 				}
 				if (progressStationary && fb.IsPlaying && !fb.IsPaused) {
-					if (col.accent !== last_accent_col || progressAlphaCol === undefined) {
-						var c = new Color(col.accent);
-						progressAlphaCol = rgba(c.r, c.g, c.b, 100); // fake anti-aliased edge so things look a little smoother
-						last_accent_col = col.accent;
+					if (col.accent !== this.lastAccentCol || this.progressAlphaCol === undefined) {
+						const c = new Color(col.accent);
+						this.progressAlphaCol = rgba(c.r, c.g, c.b, 128); // fake anti-aliased edge so things look a little smoother
+						this.lastAccentCol = col.accent;
 					}
-					gr.DrawLine(this.progressLength + this.x + 1, this.y, this.progressLength + this.x + 1, this.y + this.h - 1, 1, progressAlphaCol);
+					gr.DrawLine(this.progressLength + this.x + 1, this.y, this.progressLength + this.x + 1, this.y + this.h - 1, 1, this.progressAlphaCol);
 				}
 			}
 		}

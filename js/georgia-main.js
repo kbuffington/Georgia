@@ -261,8 +261,7 @@ var rotatedCD = null; // drawing cdArt rotated is slow, so first draw it rotated
 let disc_art_loading; // for on_load_image_done()
 let album_art_loading; // for on_load_image_done()
 var isStreaming = false; // is the song from a streaming source?
-var retrieveThemeColorsWhenLoaded = false; // only load theme colors on first image in aa_array
-var newTrackFetchingArtwork = false; // only load theme colors when newTrackFetchingArtwork = true
+let newTrackFetchingArtwork = false; // only load theme colors when newTrackFetchingArtwork = true
 var noArtwork = false; // only use default theme when noArtwork was found
 var themeColorSet = false; // when no artwork, don't set themeColor every redraw
 var playCountVerifiedByLastFm = false; // show Last.fm image when we %lastfm_play_count% > 0
@@ -337,9 +336,6 @@ var menu_down = false;
 var art_cache = new ArtCache(10);
 
 var pauseBtn = new PauseButton();
-
-var last_accent_col = undefined;
-var progressAlphaCol = undefined;
 
 var volume_btn;
 
@@ -1374,9 +1370,15 @@ function on_playback_new_track(metadb) {
 	str.timeline = new Timeline(geo.timeline_h);
 
 	// Fetch new albumart
-	if ((pref.cycleArt && aa_list.length != 1) || currentFolder != lastFolder || albumart == null ||
-		$('$if2(%discnumber%,0)') != lastDiscNumber || $('$if2(' + tf.vinyl_side + ',ZZ)') != lastVinylSide) {
+	if ((pref.cycleArt && albumArtIndex !== 0) || currentFolder != lastFolder || albumart == null ||
+			$('$if2(%discnumber%,0)') != lastDiscNumber || $('$if2(' + tf.vinyl_side + ',ZZ)') != lastVinylSide) {
+		console.log('>>> fetching art', aa_list.length, currentFolder != lastFolder, albumart == null)
 		fetchNewArtwork(metadb);
+	} else if (pref.cycleArt && aa_list.length > 1) {
+		// need to do this here since we're no longer always fetching when aa_list.length > 1
+		albumArtTimeout = setTimeout(() => {
+			displayNextImage();
+		}, settings.artworkDisplayTime * 1000);
 	}
 	loadFromCache = true;
 	CreateRotatedCDImage(); // we need to always setup the rotated image because it rotates on every track
@@ -1682,12 +1684,11 @@ function on_mouse_lbtn_dblclk(x, y, m) {
 	} else {
 		// re-initialize the panel
 		just_dblclicked = true;
-		if (fb.IsPlaying) {
+		if (!buttonEventHandler(x, y, m) && fb.IsPlaying) {
 			albumart = null;
 			art_cache.clear();
 			on_playback_new_track(fb.GetNowPlaying());
 		}
-		buttonEventHandler(x, y, m);
 	}
 }
 
@@ -1967,7 +1968,7 @@ function on_playback_stop(reason) {
 	progressBarTimer && clearInterval(progressBarTimer);
 	if (albumArtTimeout)
 		clearTimeout(albumArtTimeout);
-	if (albumart && ((pref.cycleArt && aa_list.length != 1) || lastFolder == '')) {
+	if (albumart && ((pref.cycleArt && albumArtIndex !== 0) || lastFolder == '')) {
 		debugLog("disposing artwork");
 		albumart = null;
 		albumart_scaled = null;
@@ -2285,9 +2286,8 @@ function loadImageFromAlbumArtList(index, loadFromCache) {
 	} else {
 		gdi.LoadImageAsyncV2(window.ID, aa_list[index]).then(coverImage => {
 			albumart = art_cache.encache(coverImage, aa_list[index]);
-			if (retrieveThemeColorsWhenLoaded && newTrackFetchingArtwork) {
+			if (newTrackFetchingArtwork) {
 				getThemeColors(albumart);
-				retrieveThemeColorsWhenLoaded = false;
 				newTrackFetchingArtwork = false;
 			}
 			ResizeArtwork(true);
@@ -2295,9 +2295,6 @@ function loadImageFromAlbumArtList(index, loadFromCache) {
 			lastLeftEdge = 0; // recalc label location
 			RepaintWindow();
 		});
-		if (index === 0) {
-			retrieveThemeColorsWhenLoaded = true;
-		}
 	}
 	ResizeArtwork(false); // recalculate image positions
 	if (cdart) {

@@ -90,6 +90,7 @@ function buttonEventHandler(x, y, m) {
 			}
 			break;
 	}
+	return thisButton !== null;
 }
 
 // =================================================== //
