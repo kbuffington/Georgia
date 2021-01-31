@@ -4,12 +4,10 @@ var _ = lodash;	// fixes type errors
 
 function IsFile(filename) {
 	return utils.FileTest(filename, 'e');
-	// return "IsFile" in utils ? utils.IsFile(filename) : utils.FileTest(filename, "e");
 }
 
 function IsFolder(folder) {
 	return utils.FileTest(folder, 'd');
-	// return "IsFolder" in utils ? utils.IsFolder(folder) : utils.FileTest(folder, "d");
 }
 
 /**
@@ -59,8 +57,10 @@ function getMetaValues(name, metadb = undefined) {
  * Use the debugLog function instead of console.log to easily hide messages that I don't want cluttering the console constantly
  * @type {function(...*):void} var_args
  */
-const debugLog = (var_args) => {
-	if (settings.showDebugLog) console.log(var_args);
+function debugLog() {
+	if (arguments.length) {
+		if (settings.showDebugLog) console.log(...arguments);
+	}
 }
 
 /**

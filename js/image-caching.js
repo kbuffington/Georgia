@@ -1,9 +1,10 @@
 function ArtCache(maxCacheSize) {
-    var art_cache_max_size = maxCacheSize;
-    var art_cache = {};
-    var art_cache_indexes = [];
-    var max_width = 1440;
-    var max_height = 872;
+    const art_cache_max_size = maxCacheSize;
+    const art_cache = {};
+    /** @type {string[]} */
+    const art_cache_indexes = [];
+    const max_width = 1440;
+    const max_height = 872;
 
     this.encache = function(img, path) {
         try {
@@ -28,8 +29,8 @@ function ArtCache(maxCacheSize) {
             }
             art_cache_indexes.push(path);
             if (art_cache_indexes.length > art_cache_max_size) {
-                var remove = art_cache_indexes.shift();
-                debugLog('deleting cached img:', remove)
+                const remove = art_cache_indexes.shift();
+                debugLog('deleting cached img:', remove);
                 delete art_cache[remove];
             }
         } catch (e) {
@@ -40,7 +41,7 @@ function ArtCache(maxCacheSize) {
 
     this.getImage = function(path) {
         if (art_cache[path]) {
-            debugLog('cache hit: ' + path);
+            debugLog('cache hit:', path);
             return art_cache[path];
         }
         return null;
