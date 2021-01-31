@@ -110,6 +110,7 @@ if (!config.fileExists) {
 	tf = config.addConfigurationObject(titleFormatSchema, defaultTitleFormatStrings, titleFormatComments);
 	config.addConfigurationObject(gridSchema, defaultMetadataGrid);	// we don't assign an object here because these aren't key/value pairs and thus can't use the get/setters
 	config.addConfigurationObject(imgPathSchema, imgPathDefaults);
+	config.addConfigurationObject(lyricFilenamesSchema, lyricFilenamesDefaults);
 	console.log('> Writing', configPath);
 	config.writeConfiguration();
 }
@@ -130,12 +131,14 @@ if (config.fileExists) {
 	});
 	config.addConfigurationObject(gridSchema, prefs.metadataGrid);	// can't Object.assign here to add new fields. Add new fields in the upgrade section of migrateCheck
 	config.addConfigurationObject(imgPathSchema, prefs.imgPaths);
+	config.addConfigurationObject(lyricFilenamesSchema, prefs.lyricFilenamePatterns || lyricFilenamesDefaults);
 
 	/* Safety checks. Fix up potentially bad vals from config */
 	settings.cdArtBasename = settings.cdArtBasename && settings.cdArtBasename.trim().length ? settings.cdArtBasename.trim() : 'cd';
 	settings.artworkDisplayTime = Math.min(Math.max(settings.artworkDisplayTime, 5),120);	// ensure min of 5sec and max of 120sec
 
 	globals.imgPaths = prefs.imgPaths;
+	globals.lyricFilenamePatterns = prefs.lyricFilenamePatterns;
 	metadataGrid = prefs.metadataGrid;
 	configVersion = prefs.configVersion || prefs.version;
 	// when adding new objects to the config file, add them in the version check below
@@ -152,14 +155,6 @@ tf.lyr_path = [ // simply add, change or re-order entries as needed
 	'$replace($replace(%path%,%filename_ext%,),\,\\)',
 	fb.ProfilePath + 'lyrics\\',
 	fb.FoobarPath + 'lyrics\\',
-];
-tf.lyr_artist = "$replace(%artist%,'/','_',':','_','\"','_')"; // we need to strip some special characters so we can't use just use tf.artist
-tf.lyr_title = "$replace(%title%,'/','_',':','_','\"','_')"; // we need to strip special characters so we can't just use tf.title
-tf.lyr_filename = [ // filenames to look for lyrics files. Both .lrc and .txt will be searched for each entry in this list
-	tf.lyr_artist + ' - ' + tf.lyr_title,
-	tf.lyr_artist + ' -' + tf.lyr_title,
-	tf.tracknum.replace('.','') + ' - ' + tf.lyr_title,
-	tf.tracknum.replace('.','') + ' - ' + tf.lyr_artist + ' - ' + tf.lyr_title,
 ];
 
 tf.labels = [ // Array of fields to test for publisher. Add, change or re-order as needed.
@@ -207,6 +202,8 @@ function migrateCheck(version, storedVersion) {
 			case '2.0.0-beta2':
 				window.SetProperty('Art: Seconds to display each art', null);
 				tf.lyrics = defaultTitleFormatStrings.lyrics;
+			case '2.0.0-beta3':
+				config.addConfigurationObject(lyricFilenamesSchema, lyricFilenamesDefaults);
 
 				// this block should appear after all previous versions have fallen through
 				console.log('> Upgrading Georgia Theme settings from', storedVersion);

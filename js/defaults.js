@@ -97,30 +97,41 @@ const imgPathSchema = new ConfigurationObjectSchema('imgPaths', ConfigurationObj
 	'The titleformatting defined paths for artwork to be displayed. The first image matched will be shown first.' +
 	' Re-arrange, add, or remove as needed. NOTE: folder delimiters must be double-slashes ("\\\\")');
 
-	const settingsDefaults = {
-		artworkDisplayTime: 30,
-		cdArtBasename: 'cd',
-		hideCursor: false,
-		hidePanelBgWhenCollapsed: false,
-		showDebugLog: false,
-		showReleaseCountryFlag: true,
-		showThemeLog: false,
-		stoppedString1: 'foobar2000',
-		stoppedString2: '$replace(%_foobar2000_version%,foobar2000 ,)',
-		locked: false,
-	}
-	const settingsComments = {
-		artworkDisplayTime: 'Number of seconds to show each image if more than one is found and "Cycle through all artwork" option is enabled. (Min: 5, Max: 120)',
-		cdArtBasename: 'Do not include extension. Example: "discart", if the image provider uses that name for saving cdart and you want those filtered from showing up as albumart. Would also filter out discart1.png, etc.',
-		hideCursor: 'Hides cursor when song is playing after 10 seconds of no mouse activity',
-		hidePanelBgWhenCollapsed: 'Hide panel background when playing an album and the playlist or library view is active',
-		showDebugLog: 'Enables extra logging in the console. Probably not needed unless you encounter a problem or you\'re asked to enable it.',
-		showReleaseCountryFlag: 'Shows the country flag for releases when the value specified in title_format_strings.releaseCountry is found',
-		showThemeLog: 'Logs the output of the algorithm which determines the primary theme color.',
-		stoppedString1: 'The bolded portion of text shown above the progress bar when nothing is playing',
-		stoppedString2: 'The second (non-bold) portion of text shown above the progress bar when nothing is playing',
-		locked: 'Locks theme by preventing right-clicking on the background from bringing up a menu.',
-	}
-	const settingsSchema = new ConfigurationObjectSchema('settings', ConfigurationObjectType.Object,
-			// will display as key/val pairs with comments attached
-			undefined, 'General settings for the theme.');
+const lyricFilenamesDefaults = [
+	'%title%',
+	'%artist% - %title%',
+	'%artist% -%title%',
+	'%tracknumber% - %title%',
+	'%tracknumber% - %artist% - %title%',
+];
+const lyricFilenamesSchema = new ConfigurationObjectSchema('lyricFilenamePatterns', ConfigurationObjectType.Array, undefined,
+	'The titleformatting defined patterns for the names of lyrics files. Do not include file extensions. Special characters ' +
+	'which are not allowed in filenames (i.e. / : " etc.) will be stripped from the filenames automatically and replaced with underscores.');
+
+const settingsDefaults = {
+	artworkDisplayTime: 30,
+	cdArtBasename: 'cd',
+	hideCursor: false,
+	hidePanelBgWhenCollapsed: false,
+	showDebugLog: false,
+	showReleaseCountryFlag: true,
+	showThemeLog: false,
+	stoppedString1: 'foobar2000',
+	stoppedString2: '$replace(%_foobar2000_version%,foobar2000 ,)',
+	locked: false,
+}
+const settingsComments = {
+	artworkDisplayTime: 'Number of seconds to show each image if more than one is found and "Cycle through all artwork" option is enabled. (Min: 5, Max: 120)',
+	cdArtBasename: 'Do not include extension. Example: "discart", if the image provider uses that name for saving cdart and you want those filtered from showing up as albumart. Would also filter out discart1.png, etc.',
+	hideCursor: 'Hides cursor when song is playing after 10 seconds of no mouse activity',
+	hidePanelBgWhenCollapsed: 'Hide panel background when playing an album and the playlist or library view is active',
+	showDebugLog: 'Enables extra logging in the console. Probably not needed unless you encounter a problem or you\'re asked to enable it.',
+	showReleaseCountryFlag: 'Shows the country flag for releases when the value specified in title_format_strings.releaseCountry is found',
+	showThemeLog: 'Logs the output of the algorithm which determines the primary theme color.',
+	stoppedString1: 'The bolded portion of text shown above the progress bar when nothing is playing',
+	stoppedString2: 'The second (non-bold) portion of text shown above the progress bar when nothing is playing',
+	locked: 'Locks theme by preventing right-clicking on the background from bringing up a menu.',
+}
+const settingsSchema = new ConfigurationObjectSchema('settings', ConfigurationObjectType.Object,
+		// will display as key/val pairs with comments attached
+		undefined, 'General settings for the theme.');

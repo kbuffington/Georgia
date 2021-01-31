@@ -182,12 +182,23 @@ class Lyrics {
 		const tfilename = [];
 		let foundLyrics = false;
 
-		for (let i=0; i < tf.lyr_path.length; i++) {
-			tpath.push(fb.TitleFormat(tf.lyr_path[i]).Eval());
+		const stripReservedChars = (filename) => {
+			return filename.replace(/\\/g, '_')
+						   .replace(/\//g, '_')
+						   .replace(/\?/g, '_')
+						   .replace(/</g, '_')
+						   .replace(/>/g, '_')
+						   .replace(/\*/g, '_')
+						   .replace(/"/g, '_')
+						   .replace(/\|/g, '_');
 		}
-		for (let i=0; i < tf.lyr_filename.length; i++) {
-			tfilename.push(fb.TitleFormat(tf.lyr_filename[i]).Eval());
-		}
+
+		tf.lyr_path.forEach(path => {
+			tpath.push($(path));
+		})
+		globals.lyricFilenamePatterns.forEach(filename => {
+			tfilename.push(stripReservedChars($(filename)));
+		});
 
 		let i = 0;
 		while (!foundLyrics && i < tpath.length) {
