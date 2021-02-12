@@ -2375,7 +2375,8 @@ function ResizeArtwork(resetCDPosition) {
 			var y = geo.top_art_spacing + Math.floor(((wh - geo.top_art_spacing - lowerSpace - scaleForDisplay(16)) / 2) - albumart_size.h / 2);
 			albumart_size.y = Math.min(y, scaleForDisplay(150) + 10);	// 150 or 300 + 10? Not sure where 160 comes from
 		} else {
-			albumart_size.y = geo.top_art_spacing; // height of menu bar + spacing + height of Artist text (32+32+32)	// top
+			const showingMinMaxButtons = (UIHacks && UIHacks.FrameStyle) ? true : false;	// add a bit of extra space because we move transport down slightly
+			albumart_size.y = geo.top_art_spacing + (showingMinMaxButtons ? scaleForDisplay(10) : 0); // height of menu bar + spacing + height of Artist text (32+32+32)
 		}
 		if (btns.playlist && albumart_size.x + albumart_size.w > btns.playlist.x - 50) {
 			albumart_size.y += 16 - pref.show_transport * 6;
@@ -2644,7 +2645,7 @@ function createButtonObjects(ww, wh) {
 				(pref.show_volume_button ? 1 : 0) +
 				(pref.show_reload_button ? 1 : 0);
 
-		const y = pref.show_transport_below ? wh - geo.lower_bar_h - scaleForDisplay(10) - buttonSize : scaleForDisplay(10);
+		const y = pref.show_transport_below ? wh - geo.lower_bar_h - scaleForDisplay(10) - buttonSize : scaleForDisplay(10) + (showingMinMaxButtons ? scaleForDisplay(5) : 0);
 		const w = buttonSize;
 		const h = w;
 		const p = scaleForDisplay(pref.transport_buttons_spacing); // space between buttons
@@ -2692,8 +2693,8 @@ function createButtonObjects(ww, wh) {
 
 	/** @type {GdiBitmap[]} */
 	let img = btnImg.File;
-	let x = 5;
-	let y = 5;
+	let x = scaleForDisplay(8);
+	let y = scaleForDisplay(6);
 	let h = img[0].Height;
 	let w = img[0].Width;
 	btns[20] = new Button(x, y, w, h, 'File', img);
