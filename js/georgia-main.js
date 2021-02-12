@@ -171,47 +171,43 @@ function setGeometry() {
 		geo.lower_bar_h -= geo.prog_bar_h * 2;
 	}
 
+	const basePath = `${paths.iconsBase}${settings.iconSet}/`;
 	if (is_4k) {
-		settingsImg = gdi.Image(pref.setting_4k_img); // settings image
-		propertiesImg = gdi.Image(pref.prop_4k_img); // properties image
-		ratingsImg = gdi.Image(pref.rating_4k_img); // rating image
-		playlistImg = gdi.Image(pref.list_4k_img); // playlist image
-		libraryImg = gdi.Image(pref.library_4k_img); // library image
-		lyricsImg = gdi.Image(pref.lyrics_4k_img); // lyrics image
+		settingsImg = gdi.Image(`${basePath}64/${paths.settingsIcon}`);
+		propertiesImg = gdi.Image(`${basePath}64/${paths.propertiesIcon}`);
+		ratingsImg = gdi.Image(`${basePath}64/${paths.ratingIcon}`);
+		playlistImg = gdi.Image(`${basePath}64/${paths.playlistIcon}`);
+		libraryImg = gdi.Image(`${basePath}64/${paths.libraryIcon}`);
+		lyricsImg = gdi.Image(`${basePath}64/${paths.lyricsIcon}`);
 	} else {
-		settingsImg = gdi.Image(pref.settng_img); // settings image
-		propertiesImg = gdi.Image(pref.prop_img); // properties image
-		ratingsImg = gdi.Image(pref.rating_img); // rating image
-		playlistImg = gdi.Image(pref.list_img); // playlist image
-		libraryImg = gdi.Image(pref.library_img); // library image
-		lyricsImg = gdi.Image(pref.lyrics_img); // lyrics image
+		settingsImg = gdi.Image(`${basePath}32/${paths.settingsIcon}`);
+		propertiesImg = gdi.Image(`${basePath}32/${paths.propertiesIcon}`);
+		ratingsImg = gdi.Image(`${basePath}32/${paths.ratingIcon}`);
+		playlistImg = gdi.Image(`${basePath}32/${paths.playlistIcon}`);
+		libraryImg = gdi.Image(`${basePath}32/${paths.libraryIcon}`);
+		lyricsImg = gdi.Image(`${basePath}32/${paths.lyricsIcon}`);
 	}
 }
 
 var playedTimesRatios = [];
 
 // PATHS
-pref.settng_img = fb.ProfilePath + 'georgia/images/settings.png';
-pref.prop_img = fb.ProfilePath + 'georgia/images/properties.png';
-pref.list_img = fb.ProfilePath + 'georgia/images/playlist.png';
-pref.library_img = fb.ProfilePath + 'georgia/images/library.png';
-pref.lyrics_img = fb.ProfilePath + 'georgia/images/lyrics.png';
-pref.rating_img = fb.ProfilePath + 'georgia/images/star.png';
+const paths = {};
+paths.iconsBase = fb.ProfilePath + 'georgia\\images\\icons\\';
 
-pref.setting_4k_img = fb.ProfilePath + 'georgia/images/4k/settings.png';
-pref.prop_4k_img = fb.ProfilePath + 'georgia/images/4k/properties.png';
-pref.list_4k_img = fb.ProfilePath + 'georgia/images/4k/playlist.png';
-pref.library_4k_img = fb.ProfilePath + 'georgia/images/4k/library.png';
-pref.lyrics_4k_img = fb.ProfilePath + 'georgia/images/4k/lyrics.png';
-pref.rating_4k_img = fb.ProfilePath + 'georgia/images/4k/star.png';
+paths.settingsIcon = 'settings.png';
+paths.propertiesIcon = 'properties.png';
+paths.playlistIcon = 'playlist.png';
+paths.libraryIcon = 'library.png';
+paths.lyricsIcon = 'lyrics.png';
+paths.ratingIcon = 'star.png';
 
-pref.last_fm_img = fb.ProfilePath + 'georgia/images/last-fm-red-36.png';
-pref.last_fmw_img = fb.ProfilePath + 'georgia/images/last-fm-36.png';
-pref.label_base = fb.ProfilePath + 'images/recordlabel/'; // location of the record label logos for the bottom right corner
-pref.logo_hq = fb.ProfilePath + 'images/artistlogos/'; // location of High-Qualiy band logos for the bottom left corner
-pref.logo_color = fb.ProfilePath + 'images/artistlogos color/';
-pref.codec_base = fb.ProfilePath + 'images/codec logos/';
-pref.flags_base = fb.ProfilePath + 'images/flags/'; // location of artist country flags
+paths.lastFmImageRed = fb.ProfilePath + 'georgia/images/last-fm-red-36.png';
+paths.lastFmImageWhite = fb.ProfilePath + 'georgia/images/last-fm-36.png';
+paths.labelsBase = fb.ProfilePath + 'images/recordlabel/'; // location of the record label logos for the bottom right corner
+paths.artistlogos = fb.ProfilePath + 'images/artistlogos/'; // location of High-Qualiy band logos for the bottom left corner
+paths.artistlogosColor = fb.ProfilePath + 'images/artistlogos color/';
+paths.flagsBase = fb.ProfilePath + 'images/flags/'; // location of artist country flags
 
 // MOUSE WHEEL SEEKING SPEED
 pref.mouse_wheel_seek_speed = 5; // seconds per wheel step
@@ -250,8 +246,8 @@ var ratingsImg = null; // rating image
 var playlistImg = null; // playlist image
 var libraryImg = null; // library image
 var lyricsImg = null; // lyrics image
-var lastFmImg = gdi.Image(pref.last_fm_img); // Last.fm logo image
-var lastFmWhiteImg = gdi.Image(pref.last_fmw_img); // white Last.fm logo image
+var lastFmImg = gdi.Image(paths.lastFmImageRed); // Last.fm logo image
+var lastFmWhiteImg = gdi.Image(paths.lastFmImageWhite); // white Last.fm logo image
 var shadow_image = null; // shadow behind the artwork + discart
 var labelShadowImg = null; // shadow behind labels
 var playlist_shadow = null; // shadow behind the playlist
@@ -971,6 +967,27 @@ function onOptionsMenu(x, y) {
 			RepaintWindow();
 		}
 	});
+	const iconsFolder = fso.GetFolder(paths.iconsBase);
+	const iconSets = [];
+
+	for (let f of iconsFolder.SubFolders) {
+		const path = f.toString();
+		iconSets.push(path.replace(paths.iconsBase, ''));
+	}
+
+	// TODO: Remove once the above code is proven to work
+	// let folcol = new Enumerator(iconsFolder.SubFolders)
+	// for (; !folcol.atEnd(); folcol.moveNext()) {
+	// 	const path = folcol.item().toString();
+	// 	iconSets.push(path.replace(paths.iconsBase, ''));
+    // }
+	menu.createRadioSubMenu('Menu icons set', iconSets, settings.iconSet, iconSets, (setName) => {
+		settings.iconSet = setName;
+		setGeometry();
+		createButtonImages();
+		createButtonObjects(ww, wh);
+		RepaintWindow();
+	});
 	menu.addToggleItem(`Cycle through all artwork (${settings.artworkDisplayTime}s delay)`, pref, 'cycleArt', () => {
 		if (!pref.cycleArt) {
 			clearTimeout(albumArtTimeout);
@@ -993,7 +1010,7 @@ function onOptionsMenu(x, y) {
 	}, !pref.display_cdart);
 	cdArtMenu.addToggleItem('Filter out cd/vinyl .jpgs from artwork', pref, 'filterCdJpgsFromAlbumArt');
 	cdArtMenu.addToggleItem('Rotate cdArt as tracks change', pref, 'rotate_cdart', () => { RepaintWindow(); }, !pref.display_cdart);
-	cdArtMenu.createRadioSubMenu('cdArt Rotation Amount', ['2 degrees', '3 degrees', '4 degrees', '5 degrees'], parseInt(pref.rotation_amt), [2,3,4,5], function (rot) {
+	cdArtMenu.createRadioSubMenu('cdArt Rotation Amount', ['2 degrees', '3 degrees', '4 degrees', '5 degrees'], parseInt(pref.rotation_amt), [2,3,4,5], (rot) => {
 		pref.rotation_amt = rot;
 		CreateRotatedCDImage();
 		RepaintWindow();
@@ -1377,7 +1394,6 @@ function on_playback_new_track(metadb) {
 	// Fetch new albumart
 	if ((pref.cycleArt && albumArtIndex !== 0) || currentFolder != lastFolder || albumart == null ||
 			$('$if2(%discnumber%,0)') != lastDiscNumber || $('$if2(' + tf.vinyl_side + ',ZZ)') != lastVinylSide) {
-		console.log('>>> fetching art', aa_list.length, currentFolder != lastFolder, albumart == null)
 		fetchNewArtwork(metadb);
 	} else if (pref.cycleArt && aa_list.length > 1) {
 		// need to do this here since we're no longer always fetching when aa_list.length > 1
@@ -1421,8 +1437,8 @@ function on_playback_new_track(metadb) {
 			return false;
 		};
 
-		return testBandLogoPath(pref.logo_hq, artistStr) || // try 800x310 white
-			testBandLogoPath(pref.logo_color, artistStr); // try 800x310 color
+		return testBandLogoPath(paths.artistlogos, artistStr) || // try 800x310 white
+			testBandLogoPath(paths.artistlogosColor, artistStr); // try 800x310 color
 	}
 
 	/* code to retrieve band logo */
@@ -2445,7 +2461,7 @@ function ResizeArtwork(resetCDPosition) {
 
 function loadFlagImage(country) {
 	const countryName = convertIsoCountryCodeToFull(country) || country;	// in case we have a 2-digit country code
-	const path = $(pref.flags_base) + (is_4k ? '64\\' : '32\\') + countryName.trim().replace(/ /g, '-') + '.png';
+	const path = $(paths.flagsBase) + (is_4k ? '64\\' : '32\\') + countryName.trim().replace(/ /g, '-') + '.png';
 	return gdi.Image(path);
 }
 
@@ -2480,7 +2496,7 @@ function LoadLabelImage(publisherString) {
 	if (labelStr) {
 		/* First check for record label folder */
 		const lastSrchYear = d.getFullYear();
-		let dir = pref.label_base; // also used below
+		let dir = paths.labelsBase; // also used below
 		if (IsFolder(dir + labelStr) ||
 			IsFolder(dir + (labelStr = labelStr.replace(/ Records$/, '')
                     .replace(/ Recordings$/, '')
@@ -2905,9 +2921,8 @@ function createButtonImages() {
 			},
 		};
 	} catch (e) {
-		var str = pref.lyrics_img;
 		console.log('**********************************');
-		console.log('ATTENTION: Buttons could not be created, most likely because the images were not found in "' + str.substring(0, str.lastIndexOf('/')) + '"');
+		console.log('ATTENTION: Buttons could not be created, most likely because the icon images were not found in "' + paths.iconsBasePath + settings.iconSet + '"');
 		console.log('Make sure you installed the theme correctly to ' + fb.ProfilePath + '.');
 		console.log('**********************************');
 	}

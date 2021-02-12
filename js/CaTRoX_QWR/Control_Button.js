@@ -335,9 +335,9 @@ function onMainMenu(x, y, name) {
 			var statusMenu = new Menu('Georgia Theme Status');
 
 			statusMenu.addItem('All fonts installed', fontsInstalled, undefined, true);
-			statusMenu.addItem('Artist logos found', IsFile(pref.logo_hq + 'Metallica.png'), undefined, true);
-			statusMenu.addItem('Record label logos found', IsFile(pref.label_base + 'Republic.png'), undefined, true);
-			statusMenu.addItem('Flag images found', IsFile(pref.flags_base + (is_4k ? '64\\' : '32\\') + 'United-States.png'), undefined, true);
+			statusMenu.addItem('Artist logos found', IsFile(paths.artistlogos + 'Metallica.png'), undefined, true);
+			statusMenu.addItem('Record label logos found', IsFile(paths.labelsBase + 'Republic.png'), undefined, true);
+			statusMenu.addItem('Flag images found', IsFile(paths.flagsBase + (is_4k ? '64\\' : '32\\') + 'United-States.png'), undefined, true);
 			statusMenu.addItem('foo_enhanced_playcount installed', componentEnhancedPlaycount, function() { _.runCmd('https://www.foobar2000.org/components/view/foo_enhanced_playcount') });
 
 			statusMenu.appendTo(menu);
