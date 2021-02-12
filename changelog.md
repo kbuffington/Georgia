@@ -1,3 +1,10 @@
+### v2.0.0b4 - 2021-??-??
+Rolls up all changes from the betas below plus
+ - Lyrics filename patterns can be specified in the config file
+ - Config file can be edited/reset from the settings menu
+ - Artwork is no longer reloaded/parsed unnecessarily when changing tracks quickly (prevents flashes of wrong theme color)
+ - Added new icon set (and menu option to select) based on icons created by @Zephyr0ck
+
 ### v2.0.0b3 - 2021-01-30
  - Now works with foo_ui_hacks to show min/max/close buttons when applicable and moves UI elements accordingly
  - Fixed regression with Queue'd items not showing in playlist

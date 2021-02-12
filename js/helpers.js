@@ -3,11 +3,11 @@ const lodash = _.noConflict();
 var _ = lodash;	// fixes type errors
 
 function IsFile(filename) {
-	return utils.FileTest(filename, 'e');
+	return utils.IsFile(filename);
 }
 
 function IsFolder(folder) {
-	return utils.FileTest(folder, 'd');
+	return utils.IsDirectory(folder);
 }
 
 /**
