@@ -340,6 +340,9 @@ on_init();
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**
+ * @param {GdiGraphics} gr
+ */
 function draw_ui(gr) {
 	gr.SetTextRenderingHint(TextRenderingHint.AntiAliasGridFit);
 	gr.SetSmoothingMode(SmoothingMode.None);
