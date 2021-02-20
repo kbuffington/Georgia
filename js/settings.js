@@ -6,7 +6,7 @@ let settings = {};
 let globals = {};
 
 
-const currentVersion = '2.0.0-beta3';
+const currentVersion = '2.0.0-beta4';
 let configVersion = currentVersion;	// will be overwritten when loaded from config file
 let updateAvailable = false;
 let updateHyperlink;

@@ -19,13 +19,32 @@ I run the theme in Columns UI with a super simple setup using the JScript Panel,
 
 ##### Step-by-step guide (please follow closely)
 
-**NOTE**: These instructions are outdated for the current 2.0.0 betas. They will be updated before the official release. Please follow the instructions in the release notes if installing a beta.
+###### 2.0.0+ install instructions
+**NOTE**: These instructions are for the current 2.0.0 betas. If you are installing a version prior to 2.0.0 see below.
 
 1. Close foobar
 2. Download this theme from the [releases page](https://github.com/kbuffington/Georgia/releases).
 3. Extract it into a folder named `georgia` to your foobar profile folder. On a non-portable installation this will typically be `C:\Users\<USERNAME>\AppData\Roaming\foobar2000`.
 4. Open up the `\georgia\fonts` folder and install all fonts located there. If you miss this step things will look terrible. **Note**: If you are using Windows XP or Vista, also install the fonts from `\georgia\fonts\windows-system-fonts` otherwise skip these.
-5. *(Optional Step)*  Download any of the image packs you like and place them in a folder called `images` in your foobar profile folder. See below for image pack locations.
+5. *(Optional Step)*  Download any of the image packs you like and place them in a folder called `images` in your foobar profile folder (**Not** in the `\georgia` folder). See below for image pack locations.
+6. If you don't have a version of foo_spider_monkey_panel 1.4 or greater installed already, grab the latest version [here](https://github.com/TheQwertiest/foo_spider_monkey_panel/releases).
+7. *(Optional Step)* This theme also makes heavy use of [the foo_enhanced_playcount](https://www.foobar2000.org/components/view/foo_enhanced_playcount) component. I recommend installing that as well, otherwise the timeline will not be as interesting. You'll probably also want [foo_playcount](https://www.foobar2000.org/components/view/foo_playcount) if you don't have that one yet.
+8. Now add Spider Monkey Panel to a new theme. If you're using CUI I recommend the setup I'm [using](https://imgur.com/nJ71Vn1) but feel free to configure it how you want. Typically it will look best if the panel takes up the majority of foobar. Close foobar's properties.
+9. Now right click on the Spider Monkey panel and select Configure. In the dialog that opens up select "File" under Script Source and then click the three dots and browse and select the `georgia-theme.js` file. It should look something like this. Hit OK and if you followed the instructions, the theme should have loaded working properly. If it didn't, check the console for more information.
+10. If the theme loaded, the last step is to verify that all optional items are installed correctly. Go to the Help => Georgia Theme Status submenu.
+
+If everything is loaded correctly, that menu should look like this:
+![theme status menu](https://user-images.githubusercontent.com/2282004/80932111-8a5ffc80-8d83-11ea-80f2-8951069b1638.png)
+
+If something is unchecked, either you chose not to install it, or it's probably in the wrong location.
+
+###### 1.x install instructions
+
+1. Close foobar
+2. Download this theme from the [releases page](https://github.com/kbuffington/Georgia/releases).
+3. Extract it into a folder named `georgia` to your foobar profile folder. On a non-portable installation this will typically be `C:\Users\<USERNAME>\AppData\Roaming\foobar2000`.
+4. Open up the `\georgia\fonts` folder and install all fonts located there. If you miss this step things will look terrible. **Note**: If you are using Windows XP or Vista, also install the fonts from `\georgia\fonts\windows-system-fonts` otherwise skip these.
+5. *(Optional Step)*  Download any of the image packs you like and place them in a folder called `images` in your foobar profile folder (**Not** in the `\georgia` folder). See below for image pack locations.
 6. If you don't have foo_jscript_panel installed already, grab the latest version [here](https://github.com/kbuffington/foo_jscript_panel/releases) or the Georgia [releases page](https://github.com/kbuffington/Georgia/releases).
 7. *(Optional Step)* This theme also makes heavy use of [the foo_enhanced_playcount](https://www.foobar2000.org/components/view/foo_enhanced_playcount) component. I recommend installing that as well, otherwise the timeline will not be as interesting. You'll probably also want [foo_playcount](https://www.foobar2000.org/components/view/foo_playcount) if you don't have that one yet.
 8. Now add JScript Panel to a new theme. If you're using CUI I recommend the setup I'm [using](https://imgur.com/nJ71Vn1) but feel free to configure it how you want. Typically it will look best if the panel takes up the majority of foobar. Close foobar's properties.
@@ -36,6 +55,7 @@ If everything is loaded correctly it should look like this:
 ![theme status menu](https://user-images.githubusercontent.com/2282004/80932111-8a5ffc80-8d83-11ea-80f2-8951069b1638.png)
 
 If something is unchecked, either you chose not to install it, or it's probably in the wrong location.
+
 
 ### Theme Highlights and Secrets
 
