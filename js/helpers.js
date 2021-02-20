@@ -44,8 +44,10 @@ function getMetaValues(name, metadb = undefined) {
 		vals.push($(`$meta(${searchName},${i})`, metadb));
 	}
 	if (!vals.length) {
-		const unsplit = $(name, metadb);
-		if (unsplit !== name) {
+		// this is a fallback in case the `name` property is a complex tf field and meta_num evaluates to 0.
+		// In that case we want to evaluate the entire field, after wrapping in brackets and split on commas.
+		const unsplit = $(`[${name}]`, metadb);
+		if (unsplit.length) {
 			vals = unsplit.split(', ');
 		}
 	}
