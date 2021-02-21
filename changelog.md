@@ -1,4 +1,4 @@
-### v2.0.0b4 - 2021-02-19
+### v2.0.0b4 - 2021-02-21
 Rolls up all changes from the betas below plus
  - Lyrics filename patterns can be specified in the config file
  - Config file can be edited/reset from the settings menu

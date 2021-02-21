@@ -137,7 +137,6 @@ class Button {
 
 	set enable(val) {
 		this.enabled = val;
-		console.log(this.id, '>>>', val)
 		if (!val) {
 			this.changeState(ButtonState.Default);
 		} else {
