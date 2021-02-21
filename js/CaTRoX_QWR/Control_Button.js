@@ -1,11 +1,22 @@
 
-var oldButton, downButton;
+/** @type {Button} */
+let oldButton;
+/** @type {Button} */
+let downButton;
 var buttonTimer = null;
 var mainMenuOpen = false;
 
 var lastOverButton = null;
 
-var activatedBtns = [];
+/** @type {Button[]} */
+let activatedBtns = [];
+
+const ButtonState = {
+	Default: 0,
+	Hovered: 1,
+	Down: 2,	// happens on click
+	Enabled: 3
+}
 
 function buttonEventHandler(x, y, m) {
 
@@ -33,10 +44,10 @@ function buttonEventHandler(x, y, m) {
 			if (downButton) return;
 
 			if (oldButton && oldButton != thisButton) {
-				oldButton.changeState(0);
+				oldButton.changeState(oldButton.enabled ? ButtonState.Enabled : ButtonState.Default);
 			}
 			if (thisButton && thisButton != oldButton) {
-				thisButton.changeState(1);
+				thisButton.changeState(ButtonState.Hovered);
 			}
 
 			if (lastOverButton) {
@@ -52,7 +63,7 @@ function buttonEventHandler(x, y, m) {
 
 		case 'on_mouse_lbtn_dblclk':
 			if (thisButton) {
-				thisButton.changeState(2);
+				thisButton.changeState(ButtonState.Down);
 				downButton = thisButton;
 				downButton.onDblClick();
 			}
@@ -60,7 +71,7 @@ function buttonEventHandler(x, y, m) {
 
 		case 'on_mouse_lbtn_down':
 			if (thisButton) {
-				thisButton.changeState(2);
+				thisButton.changeState(ButtonState.Down);
 				downButton = thisButton;
 			}
 			break;
@@ -73,7 +84,12 @@ function buttonEventHandler(x, y, m) {
 					thisButton = undefined;
 					mainMenuOpen = false;
 				}
-				thisButton ? thisButton.changeState(1) : downButton.changeState(0);
+				if (thisButton) {
+					thisButton.changeState(thisButton.enabled ? ButtonState.Enabled : ButtonState.Hovered);
+				} else {
+					downButton.changeState(downButton.enabled ? ButtonState.Enabled : ButtonState.Default);
+				}
+				// thisButton ? thisButton.changeState(ButtonState.Hovered) : downButton.changeState(ButtonState.Default);
 
 				downButton = undefined;
 			}
@@ -85,7 +101,7 @@ function buttonEventHandler(x, y, m) {
 
 			for (var i in btns) {
 				if (btns[i].state != 0) {
-					btns[i].changeState(0);
+					btns[i].changeState(ButtonState.Default);
 				}
 			}
 			break;
@@ -112,10 +128,21 @@ class Button {
 		this.state = 0;
 		this.hoverAlpha = 0;
 		this.downAlpha = 0;
+		this.enabled = false;
 	}
 
 	mouseInThis(x, y) {
 		return (this.x <= x) && (x <= this.x + this.w) && (this.y <= y) && (y <= this.y + this.h);
+	}
+
+	set enable(val) {
+		this.enabled = val;
+		console.log(this.id, '>>>', val)
+		if (!val) {
+			this.changeState(ButtonState.Default);
+		} else {
+			this.changeState(ButtonState.Enabled);
+		}
 	}
 
 	repaint() {
@@ -254,12 +281,14 @@ function btnActionHandler(btn) {
 			break;
 		case 'Lyrics':
 			displayLyrics = !displayLyrics;
+			btn.enable = displayLyrics;
 			if ((fb.IsPlaying || fb.IsPaused) && albumart_scaled) {
 				if (displayLyrics) {
 					initLyrics();
 				}
 				window.RepaintRect(albumart_size.x, albumart_size.y, albumart_size.w, albumart_size.h);
 			}
+			btn.repaint();
 			break;
 		case 'ShowLibrary':
 			displayLibrary = !displayLibrary;
@@ -272,6 +301,8 @@ function btnActionHandler(btn) {
 			} else {
 				ResizeArtwork(false);
 			}
+			btn.enable = displayLibrary;
+			btns.playlist.enable = false;
 			window.Repaint();
 			break;
 		case 'Playlist':
@@ -284,6 +315,8 @@ function btnActionHandler(btn) {
 			} else {
 				ResizeArtwork(false);
 			}
+			btn.enable = displayPlaylist;
+			btns.library.enable = false;
 			window.Repaint();
 			break;
 	}

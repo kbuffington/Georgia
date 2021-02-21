@@ -830,8 +830,9 @@ function draw_ui(gr) {
 
 		if (img) { // TODO: fix
 			gr.DrawImage(img[0], x, y, w, h, 0, 0, w, h, 0, 255); // normal
-			gr.DrawImage(img[1], x, y, w, h, 0, 0, w, h, 0, btns[i].hoverAlpha);
-			gr.DrawImage(img[2], x, y, w, h, 0, 0, w, h, 0, btns[i].downAlpha);
+			btns[i].hoverAlpha && gr.DrawImage(img[1], x, y, w, h, 0, 0, w, h, 0, btns[i].hoverAlpha);
+			btns[i].downAlpha && gr.DrawImage(img[2], x, y, w, h, 0, 0, w, h, 0, btns[i].downAlpha);
+			btns[i].enabled && img[3] && gr.DrawImage(img[3], x, y, w, h, 0, 0, w, h, 0, 255);
 		}
 	}
 
@@ -1136,7 +1137,7 @@ function onOptionsMenu(x, y) {
 		playlist.on_size(ww, wh);
 		window.Repaint();
 	};
-	playlistMenu.addToggleItem('Display playlist on startup', pref, 'start_Playlist');
+	playlistMenu.addToggleItem('Display playlist on startup', pref, 'startPlaylist');
 	playlistMenu.addToggleItem('Show group header', g_properties, 'show_header', playlistCallback);
 	playlistMenu.addToggleItem('Use compact group header', g_properties, 'use_compact_header', playlistCallback, !g_properties.show_header);
 	playlistMenu.createRadioSubMenu('Header font size', ['-1', '14px', '15px (default)', '16px', '18px', '20px', '22px', '+1'], pref.font_size_playlist_header,
@@ -1282,7 +1283,7 @@ function on_init() {
 		when the panel has focus and a dedicated playlist viewer doesn't. */
 	plman.SetActivePlaylistContext(); // once on startup
 
-	if (pref.start_Playlist) {
+	if (pref.startPlaylist) {
 		displayPlaylist = false;
 		setTimeout(() => {
 			if (btns && btns.playlist) {
@@ -2749,7 +2750,7 @@ function createButtonObjects(ww, wh) {
 	btns[32] = new Button(x, y, img[0].Width, h, 'Rating', img, 'Rate Song');
 	img = btnImg.Lyrics;
 	x -= (img[0].Width + 10);
-	btns[33] = new Button(x, y, img[0].Width, h, 'Lyrics', img, 'Display Lyrics');
+	btns.lyrics = new Button(x, y, img[0].Width, h, 'Lyrics', img, 'Display Lyrics');
 	img = btnImg.ShowLibrary;
 	x -= (img[0].Width + 10);
 	btns.library = new Button(x, y, img[0].Width, h, 'ShowLibrary', img, 'Show Library');
@@ -2826,23 +2827,23 @@ function createButtonImages() {
 				h: transportCircleSize
 			},
 			Minimize: {
-				ico: "0",
+				ico: '0',
 				font: ft.Marlett,
-				type: "caption",
+				type: 'window',
 				w: 22,
 				h: 22
 			},
 			Maximize: {
-				ico: "2",
+				ico: '2',
 				font: ft.Marlett,
-				type: "caption",
+				type: 'window',
 				w: 22,
 				h: 22
 			},
 			Close: {
-				ico: "r",
+				ico: 'r',
 				font: ft.Marlett,
-				type: "caption",
+				type: 'window',
 				w: 22,
 				h: 22
 			},
@@ -2961,9 +2962,11 @@ function createButtonImages() {
 			h += 10;
 		}
 
-		var stateImages = []; //0=normal, 1=hover, 2=down;
-		for (let s = 0; s <= 2; s++) {
-
+		var stateImages = []; // 0=ButtonState.Default, 1=hover, 2=down, 3=Enabled;
+		for (let s = 0; s <= 3; s++) {
+			if (s === 3 && btns[i].type !== 'image') {
+				break;
+			}
 			var img = gdi.CreateImage(w, h);
 			const g = img.GetGraphics();
 			g.SetSmoothingMode(SmoothingMode.AntiAlias);
@@ -2979,32 +2982,38 @@ function createButtonImages() {
 
 			var menuTextColor = RGB(140, 142, 144);
 			var menuRectColor = RGB(120, 122, 124);
-			var captionIcoColor = RGB(140, 142, 144);
+			let minMaxIcoColor = RGB(140, 142, 144);
 			var transportIconColor = transportButtonColor;
 			var transportEllipseColor = transportOutlineColor;
 			var iconAlpha = 140;
 
-			if (s == 1) {	// hover
-				menuTextColor = RGB(180, 182, 184);
-				menuRectColor = RGB(160, 162, 164);
-				captionIcoColor = RGB(190, 192, 194);
-				transportIconColor = useDarkTransport ? shadeColor(transportButtonColor, 40) : tintColor(transportButtonColor, 30);
-				transportEllipseColor = useDarkTransport ? shadeColor(transportOutlineColor, 35) : tintColor(transportOutlineColor, 35);
-				iconAlpha = 215;
-			} else if (s == 2) {	// down
-				menuTextColor = RGB(180, 182, 184);
-				menuRectColor = RGB(160, 162, 164);
-				captionIcoColor = RGB(100, 102, 104);
-				transportIconColor = useDarkTransport ? tintColor(transportButtonColor, 15) : shadeColor(transportButtonColor, 20);
-				transportEllipseColor = useDarkTransport ? tintColor(transportOutlineColor, 15) : shadeColor(transportOutlineColor, 20);
-				iconAlpha = 190;
+			switch (s) {
+				case ButtonState.Hovered:
+					menuTextColor = RGB(180, 182, 184);
+					menuRectColor = RGB(160, 162, 164);
+					minMaxIcoColor = RGB(190, 192, 194);
+					transportIconColor = useDarkTransport ? shadeColor(transportButtonColor, 40) : tintColor(transportButtonColor, 30);
+					transportEllipseColor = useDarkTransport ? shadeColor(transportOutlineColor, 35) : tintColor(transportOutlineColor, 35);
+					iconAlpha = 215;
+					break;
+				case ButtonState.Down:
+					menuTextColor = RGB(180, 182, 184);
+					menuRectColor = RGB(160, 162, 164);
+					minMaxIcoColor = RGB(100, 102, 104);
+					transportIconColor = useDarkTransport ? tintColor(transportButtonColor, 15) : shadeColor(transportButtonColor, 20);
+					transportEllipseColor = useDarkTransport ? tintColor(transportOutlineColor, 15) : shadeColor(transportOutlineColor, 20);
+					iconAlpha = 190;
+					break;
+				case ButtonState.Enabled:
+					iconAlpha = 250;
+					break;
 			}
 
 			if (btns[i].type == 'menu') {
 				s && g.DrawRoundRect(Math.floor(lw / 2), Math.floor(lw / 2), w - lw, h - lw, 3, 3, 1, menuRectColor);
 				g.DrawString(btns[i].ico, btns[i].font, menuTextColor, 0, 0, w, h - 1, StringFormat(1, 1));
-			} else if (btns[i].type == 'caption') {
-				g.DrawString(btns[i].ico, btns[i].font, captionIcoColor, 0, 0, w, h, StringFormat(1, 1));
+			} else if (btns[i].type == 'window') {	// min/max/close controls for UIHacks
+				g.DrawString(btns[i].ico, btns[i].font, minMaxIcoColor, 0, 0, w, h, StringFormat(1, 1));
 			} else if (btns[i].type == 'transport') {
 				g.DrawEllipse(Math.floor(lw / 2) + 1, Math.floor(lw / 2) + 1, w - lw - 2, h - lw - 2, lw, transportEllipseColor);
 				g.DrawString(btns[i].ico, btns[i].font, transportIconColor, 1, (i == 'Stop' || i == 'Reload') ? 0 : 1, w, h, StringFormat(1, 1));

@@ -42,7 +42,7 @@ pref.add_properties({
 	show_flags: ['Show country flags', true], // true: show the artist country flags
 	// check_multich:		['Check for MultiChannel version', false],	// true: search paths in tf.MultiCh_paths to see if there is a multichannel version of the current album available
 	use_vinyl_nums: ['Use vinyl style numbering (e.g. A1)', true], // true: if the tags specified in tf.vinyl_side and tf.vinyl_tracknum are set, then we'll show vinyl style track numbers (i.e. "B2." instead of "04.")
-	start_Playlist: ['Display playlist on startup', false], // true: show the playlist window when the theme starts up
+	startPlaylist: ['Display playlist on startup', false], // true: show the playlist window when the theme starts up
 	show_progress_bar: ['Show Progress Bar', true], // true: show progress bar, otherwise hide it (useful is using another panel for this)
 	show_transport: ['Transport: Show transport controls', true], // true: show the play/pause/next/prev/random buttons at the top of the screen
 	show_transport_below: ['Transport: Show transport below art', false],
