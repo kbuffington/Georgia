@@ -148,9 +148,6 @@ g_pl_colors.line_selected = g_theme.colors.panel_line_selected;
 g_pl_colors.title_selected = RGB(170, 172, 174);
 g_pl_colors.title_playing = RGB(255, 255, 255);
 g_pl_colors.title_normal = g_theme.colors.panel_text_normal;
-g_pl_colors.count_normal = RGB(120, 122, 124);
-g_pl_colors.count_selected = g_pl_colors.title_selected;
-g_pl_colors.count_playing = g_pl_colors.title_playing;
 g_pl_colors.row_selected = RGB(35, 35, 35);
 g_pl_colors.row_alternate = RGB(35, 35, 35);
 g_pl_colors.row_focus_selected = g_theme.colors.panel_line_selected;
@@ -4346,7 +4343,6 @@ class Row extends ListItem {
 
 		var title_font = g_pl_fonts.title_normal;
 		var title_color = g_pl_colors.title_normal;
-		var count_color = g_pl_colors.count_normal;
 		var title_artist_font = g_pl_fonts.title_selected;
 		var title_artist_color = g_pl_colors.title_selected;
 
@@ -4363,20 +4359,23 @@ class Row extends ListItem {
 
 			title_color = g_pl_colors.title_selected;
 			title_font = g_pl_fonts.title_selected;
-			count_color = g_pl_colors.count_selected;
 
 			title_artist_color = g_pl_colors.title_normal;
 		}
 
-		if (this.is_playing) {// Might override 'selected' fonts
+		if (this.is_playing) { // Might override 'selected' fonts
 			title_color = g_pl_colors.title_playing;
 			title_font = g_pl_fonts.title_playing;
-			count_color = g_pl_colors.count_playing;
 
 			const bg_color = this.is_selected() ? col.accent : col.darkAccent;
 			gr.FillSolidRect(this.x, this.y, this.w, this.h, bg_color);
-			if (colorDistance(bg_color, title_artist_color) < 150) {
+			if (colorDistance(bg_color, title_artist_color) < 195) {
 				title_artist_color = title_color;
+			}
+			const brightBackground = (new Color(bg_color).brightness) > 151;
+			if (brightBackground) {
+				title_color = rgb(16,16,16);
+				title_artist_color = rgb(0,0,0);
 			}
 			gr.FillSolidRect(this.x, this.y, scaleForDisplay(2), this.h, col.accent);
 		}
@@ -4453,7 +4452,7 @@ class Row extends ListItem {
 				);
 				var count_x = this.x + this.w - count_w - right_pad;
 
-				gr.DrawString(this.count_text, g_pl_fonts.playcount, count_color, count_x, this.y, count_w, this.h, g_string_format.align_center);
+				gr.DrawString(this.count_text, g_pl_fonts.playcount, title_color, count_x, this.y, count_w, this.h, g_string_format.align_center);
 				testRect && gr.DrawRect(count_x, this.y - 1, count_w, this.h, 1, RGBA(155, 155, 255, 250));
 
 				right_pad += count_w;
@@ -4466,11 +4465,8 @@ class Row extends ListItem {
 			queueText = '  [' + this.queue_indexes + ']';
 		}
 
-		// We need to draw 'queue' text with title text, it will cause weird spacing if drawn separately
-
 		//---> TITLE init
 		if (_.isNil(this.title_text)) {
-			// var track_num_query = '$if2(%tracknumber%,$pad_right(' + this.num_in_header + ',2,0)).';
 			var track_num_query = '$if2(%tracknumber%,$pad_right(' + (this.idx_in_header + 1) + ',2,0)).';
 			if (pref.use_vinyl_nums) {
 				track_num_query = tf.vinyl_track;

@@ -309,7 +309,7 @@ g_theme.colors.panel_back = RGB(30, 30, 30);
 g_theme.colors.panel_front = RGB(40, 40, 40);
 g_theme.colors.panel_line = RGB(55, 55, 55);
 g_theme.colors.panel_line_selected = g_theme.colors.panel_line;
-g_theme.colors.panel_text_normal = RGB(125, 127, 129);
+g_theme.colors.panel_text_normal = RGB(135, 137, 139);
 
 /** @enum{number} */
 const g_string_format = {
