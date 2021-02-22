@@ -6,7 +6,13 @@ function ArtCache(maxCacheSize) {
     const max_width = 1440;
     const max_height = 872;
 
-    this.encache = function(img, path) {
+    /**
+     * Adds a rescaled image to the cache under string `location` and returns the cached image.
+     * @param {GdiBitmap} img
+     * @param {string} location
+     * @return {GdiBitmap}
+     */
+    this.encache = function(img, location) {
         try {
             var h = img.Height;
             var w = img.Width;
@@ -20,29 +26,34 @@ function ArtCache(maxCacheSize) {
                 h = Math.min(h / scale_factor);
                 w = Math.min(w / scale_factor);
             }
-            art_cache[path] = img.Resize(w, h);
+            art_cache[location] = img.Resize(w, h);
             img = null;
-            var pathIdx = art_cache_indexes.indexOf(path);
+            var pathIdx = art_cache_indexes.indexOf(location);
             if (pathIdx !== -1) {
                 // remove from middle of cache and put on end
                 art_cache_indexes.splice(pathIdx, 1);
             }
-            art_cache_indexes.push(path);
+            art_cache_indexes.push(location);
             if (art_cache_indexes.length > art_cache_max_size) {
                 const remove = art_cache_indexes.shift();
                 debugLog('deleting cached img:', remove);
                 delete art_cache[remove];
             }
         } catch (e) {
-            console.log('<Error: Image could not be properly parsed: ' + path + '>');
+            console.log('<Error: Image could not be properly parsed: ' + location + '>');
         }
-        return art_cache[path] || img;
+        return art_cache[location] || img;
     }
 
-    this.getImage = function(path) {
-        if (art_cache[path]) {
-            debugLog('cache hit:', path);
-            return art_cache[path];
+    /**
+     * Get image at the cached location
+     * @param {string} location
+     * @return {GdiBitmap}
+     */
+    this.getImage = function(location) {
+        if (art_cache[location]) {
+            debugLog('cache hit:', location);
+            return art_cache[location];
         }
         return null;
     }

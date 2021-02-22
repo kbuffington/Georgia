@@ -329,7 +329,7 @@ var menu_down = false;
 
 ///////// OBJECTS
 
-var art_cache = new ArtCache(10);
+var art_cache = new ArtCache(15);
 
 var pauseBtn = new PauseButton();
 
@@ -1460,11 +1460,15 @@ function on_playback_new_track(metadb) {
 		return path = testArtistLogo(artistString);
 	});
 	if (path) {
-		bandLogo = gdi.Image(path);
-		try {
-			invertedBandLogo = bandLogo.InvertColours();
-		} catch (e) {
-			invertedBandLogo = undefined;
+		bandLogo = art_cache.getImage(path);
+		if (!bandLogo) {
+			const logo = gdi.Image(path);
+			bandLogo = art_cache.encache(logo, path);
+			invertedBandLogo = art_cache.encache(logo.InvertColours(), `${path}-inv`);
+		}
+		invertedBandLogo = art_cache.getImage(`${path}-inv`);
+		if (!invertedBandLogo) {
+			invertedBandLogo = art_cache.encache(bandLogo.InvertColours(), `${path}-inv`);
 		}
 	}
 
