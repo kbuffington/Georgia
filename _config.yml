@@ -1,5 +1,5 @@
-# readme_index:
-#   enabled: false
+readme_index:
+  enabled: false
 
 remote_theme: pmarsceill/just-the-docs
 
@@ -8,7 +8,7 @@ description: A dynamically generated fanart style theme for foobar2000.
 # baseurl: "/georgia"
 # url: "https://kbuffington.github.io"
 
-# permalink: pretty
+permalink: pretty
 
 
 # collections_dir: collections
@@ -18,10 +18,10 @@ description: A dynamically generated fanart style theme for foobar2000.
 #   - showcase_user
 #   - showcase_theme
 
-# aux_links:
-#   "View on GitHub":
-#     - "//github.com/kbuffington/georgia"
+aux_links:
+  "View on GitHub":
+    - "//github.com/kbuffington/georgia"
 
-# color_scheme: "dark"
+color_scheme: "dark"
 
-# footer_content: "Copyright &copy; 2018-2021"
+footer_content: "Copyright &copy; 2018-2021"
