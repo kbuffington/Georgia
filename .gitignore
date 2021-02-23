@@ -1,0 +1,4 @@
+*.sublime-*
+*.code-workspace
+*.jsonc
+*.fcl
