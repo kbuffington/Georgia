@@ -1,12 +1,10 @@
-### Installation Instructions
+## Installation Instructions
 
 Unlike most themes I don't include an .fcl with mine. This makes getting setup *slightly* more work for you, but ensures that you can use it however you want. It works with both DUI and CUI, and all it really requires is a single [JScript Panel](https://github.com/kbuffington/foo_jscript_panel/releases) version 2.1.1 or greater (tested up through 2.3.5).
 
 I run the theme in Columns UI with a super simple setup using the JScript Panel, an auto-hiding vertical splitter, and two filter panels. You can see my setup [here](https://imgur.com/nJ71Vn1). Currently there's no library search mechanism built in, so unless you use foo_http_control (which I also recommend for HTPC use!), choosing what to play will be limited to your current playlists.
 
-##### Step-by-step guide (please follow closely)
-
-**NOTE**: These instructions are for the current 2.0.0 betas. If you are installing a version prior to 2.0.0 see below.
+### Step-by-step guide (please follow closely)
 
 1. Close foobar
 2. Download this theme from the [releases page](https://github.com/kbuffington/Georgia/releases).
@@ -32,4 +30,4 @@ These packs will all need to be extracted to a folder called `images` which you 
 * **[Artist Logos](https://github.com/kbuffington/georgia-image-packs/raw/master/artistlogos.zip)**: Extract to `.../AppData/Roaming/foobar2000/images/`
 * **[Flags](https://github.com/kbuffington/georgia-image-packs/raw/master/flags.zip)**: Extract to `.../AppData/Roaming/foobar2000/images/`
 
-###### NOTE: If installing to a portable install the images folder should be put at the root level. i.e. if foobar is at `c:\foobar\` then install the image packs to `c:\foobar\images`.
+##### NOTE: If installing to a portable install the images folder should be put at the root level. i.e. if foobar is at `c:\foobar\` then install the image packs to `c:\foobar\images`.
