@@ -2,3 +2,4 @@
 *.code-workspace
 *.jsonc
 *.fcl
+jsconfig.json
