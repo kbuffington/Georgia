@@ -2,10 +2,11 @@ readme_index:
   enabled: false
 
 remote_theme: pmarsceill/just-the-docs
+color_scheme: "dark"
 
 title: Georgia
 description: A dynamically generated fanart style theme for foobar2000.
-# baseurl: "/georgia"
+baseurl: "/georgia"
 # url: "https://kbuffington.github.io"
 
 permalink: pretty
@@ -22,6 +23,5 @@ aux_links:
   "View on GitHub":
     - "//github.com/kbuffington/georgia"
 
-color_scheme: "dark"
 
 footer_content: "Copyright &copy; 2018-2021"
