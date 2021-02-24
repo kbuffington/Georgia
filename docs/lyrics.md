@@ -7,15 +7,17 @@ nav_order: 7
 
 *Note:* Georgia can only display lyrics. It _cannot_ retrieve or save them in any way. If you need a component to download lyrics I recommend the Lyric Show Panel 3 (foo_uie_lyrics3) component.
 
-Georgia can display lyrics that have been saved to your disk, or that have been written to tag fields in your files. The entire lyrics display engine was re-written from scratch in v2.0.0. It is faster than the 1.x version, has more features, and is considerably less buggy.
+Georgia can display lyrics that have been saved to your disk, or that have been written to tag fields in your files. The entire lyrics display engine was re-written from scratch in v2.0. It is faster than the 1.x version, has more features, requires half the lines of code as the old version and is considerably less buggy.
 
 ### Lyrics File types
 
-Georgia can handle both `.lrc` or `.txt` files containing lyrics. `.lrc` files typically contain time-stamped lyrics and `.txt` files typically do not, but the theme doesn't care. It will read in the lyrics file it finds, and process it the same regardless of file type.
+Georgia can handle both `.lrc` or `.txt` files containing lyrics. `.lrc` files typically contain time-stamped lyrics and `.txt` files typically do not, but the theme doesn't care. It will read in the first lyrics file it finds, and process it the same regardless of file type. Be aware that if a file is matched but does not contain valid lyrics Georgia will also not care and will just display whatever contents it finds.
 
 ### Synced Lyrics
 
-Synced lyrics (whether in a .lrc file or not) will display with current line highlighting. Seeking through the file will cause the active line to instantly adjust.
+Synced lyrics (whether in a .lrc file or not) will display with current line highlighting. Seeking through the file will cause the "active" line to instantly update.
+
+![Rainbow - Stargazer lyrics](https://user-images.githubusercontent.com/2282004/109073568-2b75c600-76bc-11eb-9d08-cbc013f5c7e6.png)
 
 ### Where does Georgia look for Lyrics?
 

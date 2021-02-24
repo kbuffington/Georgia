@@ -15,6 +15,6 @@ There are a number of components which Georgia either relies on for certain aspe
 
 The following are components which you can choose to install, but are not required.
 
-- foo_uihacks - UIHacks allows you to disable certain aspects of foobar itself (title bars for one) but may cause instability or break other components. _Typically_ safe to use, but install at your own risk. Download it [here](https://github.com/kbuffington/Georgia/releases/download/2.0.0-beta3/foo_ui_hacks.2013-02-19.fb2k-component).
+- foo_uihacks - UIHacks allows you to disable certain aspects of foobar itself (title bars for one) but may cause instability or break other components. It is _typically_ safe to use, but install at your own risk. Download it [here](https://github.com/kbuffington/Georgia/releases/download/2.0.0-beta3/foo_ui_hacks.2013-02-19.fb2k-component).
 - [Columns UI](https://yuo.be/columns-ui) by musicmusic - An alternative to the Default UI. I use this in my personal setup, but it is not required.
-- [foo_jesus](https://www.foobar2000.org/components/view/foo_jesus) by Yrkha - Autosave and backup your configuration, playlists and metadb files. Everyone should have this installed in case something gets corrupted in your foobar install.
+- [foo_jesus](https://www.foobar2000.org/components/view/foo_jesus) by Yrkha - Auto-save and backup your configuration, playlists and metadb files. Everyone should have this installed in case something gets corrupted in your foobar install.
