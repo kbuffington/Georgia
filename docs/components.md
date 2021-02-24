@@ -9,7 +9,7 @@ There are a number of components which Georgia either relies on for certain aspe
 
 - [foo_playcount](https://www.foobar2000.org/components/view/foo_playcount) - This is probably already installed in your fb2k, but if not you should get it.
 - [foo_enhanced_playcount](https://www.foobar2000.org/components/view/foo_enhanced_playcount) - A component I wrote to extend functionality that foo_playcount does not provide, including retrieving last.fm scrobbles. Not required, but if detected, Georgia takes advantage of much of the functionality it provides.
-- [foo_musicbrainz](https://www.foobar2000.org/components/view/foo_musicbrainz) by Dremora, mark2k3, and myself - Georgia doesn't rely on this tagger, but the tag field's it writes to are the defaults that Georgia uses. I'm the current maintainer of this project and will be extending it's features to better support fields that Georgia supports.
+- [foo_musicbrainz](https://www.foobar2000.org/components/view/foo_musicbrainz) by Dremora, mark2k3, and myself - Georgia doesn't rely on this tagger, but the tag fields it writes to are the defaults that Georgia uses. I'm the current maintainer of this project and will be extending its features to better support fields that Georgia supports.
 
 ## Optional Components
 
