@@ -4,8 +4,14 @@ title: Configuration File
 nav_order: 3
 ---
 ## Configuration File
-
+{: .no_toc }
 Since version 2.0, Georgia has included a configuration file named `georgia-config.jsonc`. This file contains various configuration settings for the theme which can be edited to change the appearance and functionality.
+
+## Table of contents
+{: .no_toc .text-delta }
+
+* TOC
+{:toc}
 
 ### Editing
 

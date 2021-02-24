@@ -39,7 +39,7 @@ Gallery of images [here](https://imgur.com/a/TtjUS) with explanation of some of 
 
 ### Help
 
-The official discussion thread for this theme is located at [Hydrogen Audio](https://hydrogenaud.io/index.php/topic,116190.0.html]), and that's a great place to go for questions and other support issues. Support can also commonly be found in the [foobar subreddit](https://reddit.com/r/foobar2000). If you discover a bug, please open an issue on github if you can. That makes things easier to track.
+The official discussion thread for this theme is located at [Hydrogen Audio](https://hydrogenaud.io/index.php/topic,116190.0.html), and that's a great place to go for questions and other support issues. Support can also commonly be found in the [foobar subreddit](https://reddit.com/r/foobar2000). If you discover a bug, please open an issue on github if you can. That makes things easier to track.
 
 ### Thanks
 
