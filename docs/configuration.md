@@ -1,6 +1,7 @@
 ---
 layout: default
 title: Configuration File
+has_children: true
 nav_order: 3
 ---
 ## Configuration File
