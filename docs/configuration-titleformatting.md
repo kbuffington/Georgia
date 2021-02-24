@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Title-Formatting Strings
-parent: Configuration
+parent: Configuration File
 nav_order: 1
 ---
 ## Title-Formatting Strings
