@@ -4,7 +4,7 @@ title: Artwork
 has_children: false
 nav_order: 3
 ---
-## Artwork
+# Artwork
 {: .no_toc }
 
 Georgia was designed from the ground up to display big/beautiful artwork front and center. It also makes copious use of "fanart" wherever possible including the display of cd/vinyl art, band logos, label/publisher logos, country flags, and more. Because of this, there are numerous options governing the display of the various kinds of artwork and images available.
@@ -19,7 +19,7 @@ Georgia was designed from the ground up to display big/beautiful artwork front a
 
 All album art, cd/vinylArt and band logos are cached by Georgia so that it does not need to continually read from disk. Images are loaded by the theme, scaled down to a manageable size (to increase speed and lower disk usage) and then the handle to the original image is free'd at which point you could overwrite/replace/delete the original file. This means that external changes to displayed images will not be reflected in the theme without reloading it through the right click menu, or by double-clicking anywhere on the panel background (not a button, image or either the playlist or library).
 
-### Album Art
+## Album Art
 
 Album art is searched based on the file patterns specified in the `imgPaths` section of the [config file](configuration.html#configuration-sections). The first matched image will be the one displayed. If the "Cycle through all artwork" entry in the options menu is selected, every 30 seconds (by default) the artwork will change to the next file matched.
 
@@ -27,7 +27,7 @@ The primary theme color is calculated from the first artwork found and does not 
 
 If you have Cycle Through All Artwork enabled, it will first show folder.jpg and then every 30 seconds switch to the next artwork in the folder. It can also display cdArt and vinylArt as well. These images are NOT automatically downloaded,
 
-### cdArt
+## cdArt
 
 ![Plains of the Purple Buffalo](https://user-images.githubusercontent.com/2282004/109050573-28b8a800-769f-11eb-9346-7ee484d4eb27.png)
 
@@ -35,13 +35,13 @@ Georgia can display cdArt if it is found in the same or parent folder as the cur
 
 Be aware that cdArt is *NOT* downloaded automatically for you. They can be obtained from [fanart.tv](https://fanart.tv), and this theme follows the standards that site uses. I recommend using [AlbumArtDownloader](https://sourceforge.net/projects/album-art/) for saving this artwork.
 
-### vinylArt
+## vinylArt
 
 ![Palms](https://user-images.githubusercontent.com/2282004/109051524-3de20680-76a0-11eb-9ad1-2f4df93a0980.png)
 
 vinylArt functions exactly the same as cdArt above, and you can easily save any of your vinylArt as `cd.png` if you want and the theme doesn't care. The only benefit is if you have enabled the "Use vinyl style numbering if available" setting in the Options menu. If that is enabled and your songs are tagged with a %vinyl side% value then you can use `vinylA.png`, `vinylB.png`, etc., to specify which image to show for each song.
 
-### Image Packs
+## Image Packs
 
 Image packs enable the display of artist logos, label/publisher logos, and country flags for both artists and releases. Display of these images is of course contigent on having already downloaded the image packs, as well as having the appropriate tags in your tracks which match a logo.
 
@@ -49,20 +49,21 @@ Image packs can be found in [this repo](https://github.com/kbuffington/georgia-i
 
 ![image packs](https://user-images.githubusercontent.com/2282004/109053092-f492b680-76a1-11eb-807f-8cb973df24a7.png)
 
-As you can see, the `\images` folder is next to the `\georgia` folder, and _*NOT*_ inside it.
+As you can see, the `\images` folder is next to the `\georgia` folder, and _**NOT**_ inside it.
 
 ##### NOTE: If installing to a portable install the images folder should be put at the root level. i.e. if foobar is at `c:\foobar\` then install the image packs to `c:\foobar\images`.
+{: .no_toc }
 
 You can download each of the individual packs below, or you can star the [georgia-image-packs](https://github.com/kbuffington/georgia-image-packs) repo, and only download the update packs. I try and release updated images every 2-3 months. When installing an update pack just overwrite any duplicate images as they are new or improved logos.
 
-#### Artist Logos
+### Artist Logos
 {: .no_toc }
 
 * **[Artist Logos](https://github.com/kbuffington/georgia-image-packs/raw/master/artistlogos.zip)**: Extract to `%appdata%\Roaming\foobar2000\images\`
 
-Artist logos are searched for using the %album artist% of the currently playing song. Since %album artist% is a meta field that essentially evaluates to `$if2(%album artist%,%artist%)` it will typically use the `ARTIST` field. If these are multi-value fields, the logo displayed will be the first logo found. So if you have a track where `ARTIST` is "Jessie J; Nicki Minaj; Ariana Grande;", and no `Jessie J.png` is found, then the `Nicki Minaj.png` logo will be displayed, even if `Ariana Grande.png` exists.
+Artist logos are searched for using the %album artist% of the currently playing song. Since %album artist% is a meta field that typically evaluates to `$if2(%album artist%,%artist%)` it will usually use the `ARTIST` field. If `ARTIST` or `ALBUM ARTIST` are multi-value fields, the logo displayed will be the first logo found. So if you have a track where `ARTIST` is "Jessie J; Nicki Minaj; Ariana Grande;", and no `Jessie J.png` is found, then the `Nicki Minaj.png` logo will be displayed, even if `Ariana Grande.png` exists.
 
-#### Label/Publisher Logos
+### Label/Publisher Logos
 {: .no_toc }
 
 * **[Record Labels](https://github.com/kbuffington/georgia-image-packs/raw/master/recordlabel.zip)**: Extract to `%appdata%\Roaming\foobar2000\images\`
@@ -79,7 +80,7 @@ For some record labels (130 and counting!), date based logos are available. For 
 ![Roadrunner 1999](https://user-images.githubusercontent.com/2282004/109065874-daf96b00-76b1-11eb-868b-4d312c0f9453.png)
 ![Roadrunner 2020](https://user-images.githubusercontent.com/2282004/109066049-198f2580-76b2-11eb-8b8b-64deef1552f6.png)
 
-#### Artist Country and Release Country flags
+### Artist Country and Release Country flags
 {: .no_toc }
 
 * **[Flags](https://github.com/kbuffington/georgia-image-packs/raw/master/flags.zip)**: Extract to `%appdata%\Roaming\foobar2000\images\`
