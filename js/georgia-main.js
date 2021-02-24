@@ -971,27 +971,25 @@ function onOptionsMenu(x, y) {
 			RepaintWindow();
 		}
 	});
-	const iconsFolder = fso.GetFolder(paths.iconsBase);
-	const iconSets = [];
+	try {
+		const iconsFolder = fso.GetFolder(paths.iconsBase);
+		const iconSets = [];
 
-	for (let f of iconsFolder.SubFolders) {
-		const path = f.toString();
-		iconSets.push(path.replace(paths.iconsBase, ''));
+		for (let f of iconsFolder.SubFolders) {
+			const path = f.toString();
+			iconSets.push(path.replace(paths.iconsBase, ''));
+		}
+
+		menu.createRadioSubMenu('Menu icons set', iconSets, settings.iconSet, iconSets, (setName) => {
+			settings.iconSet = setName;
+			setGeometry();
+			createButtonImages();
+			createButtonObjects(ww, wh);
+			RepaintWindow();
+		});
+	} catch (e) {
+		console.log('Could not GetFolder at', paths.iconsBase);
 	}
-
-	// TODO: Remove once the above code is proven to work
-	// let folcol = new Enumerator(iconsFolder.SubFolders)
-	// for (; !folcol.atEnd(); folcol.moveNext()) {
-	// 	const path = folcol.item().toString();
-	// 	iconSets.push(path.replace(paths.iconsBase, ''));
-    // }
-	menu.createRadioSubMenu('Menu icons set', iconSets, settings.iconSet, iconSets, (setName) => {
-		settings.iconSet = setName;
-		setGeometry();
-		createButtonImages();
-		createButtonObjects(ww, wh);
-		RepaintWindow();
-	});
 	menu.addToggleItem(`Cycle through all artwork (${settings.artworkDisplayTime}s delay)`, pref, 'cycleArt', () => {
 		if (!pref.cycleArt) {
 			clearTimeout(albumArtTimeout);
