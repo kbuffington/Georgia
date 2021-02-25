@@ -29,7 +29,7 @@ While most of the visual aspects of the playlist can be controlled by the Playli
 
 ### Playlist Grouping
 
-The playlist grouping can be altered by selecting a different selection from the Right-click >> Playlist Grouping menu. Six presets are defined for you, and more can be added, or defaults set by selecting "Manage Presets". This will open up a new dialog:
+The playlist grouping and group headers can be changed by choosing a different selection from the Right-click >> Playlist Grouping menu. Six presets are pre-defined for you, and more can be added, or defaults set by selecting "Manage Presets". This will open up a new dialog:
 
 ![Manage Presets Dialog](https://user-images.githubusercontent.com/2282004/109113416-da88c080-7701-11eb-85fd-5941488e827d.png)
 
@@ -38,7 +38,7 @@ From this dialog, grouping presets can be added, removed, or rearranged. If you 
 When editing a grouping preset there are 7 different values that can be set:
 
 - Preset Name - The name shown only in the list box to the left
-- Grouping Query - How to adjacent tracks in the playlist should be separated into groups. This does no sorting and will not change the order of tracks in the playlist, just adds group headers in between them. If the Grouping query is "%album artist% %album% %discnumber%" and "Show Disc Header" is enabled, a new group will be created for each track that does not have the same value for "%album artist% %album%" (when show CD# is checked %discnumber% and %discsubtitle% are deleted from the grouping query as disc headers will be added).
+- Grouping Query - How adjacent tracks in the playlist will be separated into groups. This does no sorting and will not change the order of tracks in the playlist, just adds group headers in between them. If the Grouping query is "%album artist% %album% %discnumber%" and "Show Disc Header" is enabled, a new group will be created for each track that does not have the same value for "%album artist% %album%" (when show CD# is checked %discnumber% and %discsubtitle% are deleted from the grouping query as disc headers will be added).
     - Example 1: Grouping query of "%album artist% %album% %discnumber%" and [multiple releases are combined under one group header](https://user-images.githubusercontent.com/2282004/109112491-63066180-7700-11eb-8b27-b8078f0b20b0.png).
     - Example 2: Disabling "Show Disc Header" so that %discnumber% is evaluated in the grouping query. Creates multiple group headers, [one for each disc]((https://user-images.githubusercontent.com/2282004/109112800-d27c5100-7700-11eb-908f-59f99ce0b78b.png)).
     - Example 3: Grouping query of "%album artist% %album% %discnumber% %edition% %codec%". Each version of the release gets [a single group header](https://user-images.githubusercontent.com/2282004/109112918-05264980-7701-11eb-823a-a9a3c3096210.png) and discs within a release get individual disc headers.
@@ -54,4 +54,4 @@ Many methods of creating playlists or sending files to existing playlist, includ
 
 ### Weblinks
 
-This allows you to automatically search Google, Wikipedia and other sites for information about the currently selected song's artist or album. If you don't use these links, the entire group can be disabled in the Playlist Settings menu.
+These menu entries allow you to automatically search Google, Wikipedia and other sites for information about the currently selected song's artist or album. If you don't use these links, the entire weblinks sub-menu can be hidden from the Playlist Settings menu.
