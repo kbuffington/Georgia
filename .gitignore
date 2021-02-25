@@ -1,6 +1,7 @@
 *.sublime-workspace
 *.sublime-project
 *.code-workspace
+/.vscode/*
 
 *.fcl
 georgia-main.backup.js
