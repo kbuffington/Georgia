@@ -6287,7 +6287,7 @@ GroupingHandler.Settings = function () {
 		}
 
 		if (!g_properties.default_group_name || !_.isString(g_properties.default_group_name)) {
-			g_properties.default_group_name = 'artist_album_disc';
+			g_properties.default_group_name = 'artist_album_disc_edition';
 		}
 	}
 
