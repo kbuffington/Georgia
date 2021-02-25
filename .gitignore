@@ -3,3 +3,5 @@
 *.jsonc
 *.fcl
 jsconfig.json
+
+.vscode/*
