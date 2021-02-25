@@ -9,6 +9,10 @@ nav_order: 7
 
 Georgia can display lyrics that have been saved to your disk, or that have been written to tag fields in your files. The entire lyrics display engine was re-written from scratch in v2.0. It is faster than the 1.x version, has more features, requires half the lines of code as the old version and is considerably less buggy.
 
+To enable lyrics display, click on the lyrics icon in the upper right.
+
+![lyrics icon](https://user-images.githubusercontent.com/2282004/109089826-85d05000-76d7-11eb-8dac-e7973999720f.png)
+
 ### Lyrics File types
 
 Georgia can handle both `.lrc` or `.txt` files containing lyrics. `.lrc` files typically contain time-stamped lyrics and `.txt` files typically do not, but the theme doesn't care. It will read in the first lyrics file it finds, and process it the same regardless of file type. Be aware that if a file is matched but does not contain valid lyrics Georgia will also not care and will just display whatever contents it finds.
