@@ -14,7 +14,7 @@ When you've never played a song before, and there are no last.fm scrobbles of it
 
 ![image](https://user-images.githubusercontent.com/2282004/109265545-55b6a900-77cc-11eb-9147-246009e59879.png)
 
-Each of the three colored sections corresponds to a different point in the song lifecycle. The very left edge of the timeline is when the song was added to your library, and so the darkest color block is the time before the song was first played. The middle section is the time between first played and last played. And the final section is the time between last played and the today's date.
+Each of the three colored sections corresponds to a different point in the song's lifecycle. The very left edge of the timeline is when the song was added to your library, and so the darkest color block is the time before the song was first played. The middle section is the time between first played and last played. And the final section is the time between last played and the today's date.
 
 Every play that the component knows about will be drawn with a white semi-transparent vertical line. If you don't have foo_enhanced_playcount installed, you will never see more than two lines; one for first played, and one for last played:
 
@@ -29,3 +29,7 @@ Because the play markers are transparent and have some thickness the lines will 
 ![image](https://user-images.githubusercontent.com/2282004/109266850-3a4c9d80-77ce-11eb-97fb-e5cdbce45806.png)
 
 ![image](https://user-images.githubusercontent.com/2282004/109266982-767ffe00-77ce-11eb-9f01-b865e5d68cb0.png)
+
+You can mouse over the bars, and the time-played marks to see information about how long a song was unplayed in your library, or when exactly that tick mark corresponds to. Here you can see that my daughter and I were listening to a lot of AC/DC before she went to bed in 2020:
+
+![mouseover](https://user-images.githubusercontent.com/2282004/109267446-34a38780-77cf-11eb-8f0a-d2d108cbfe5b.png)
