@@ -16,8 +16,17 @@ There are plenty of other great taggers out there, but all of them will differ f
 
 ### Georgia Uses a Different Field Name than My Files Do!
 
-TODO: Discuss editing config file to change title formatting strings
+No problem! Don't update all your tags (unless you really want to)! Because of the amount of information and metadata displayed, Georgia was designed to make it easy for users to be able to change the field names that it looks up. You'll need to [open up](https://user-images.githubusercontent.com/2282004/109262772-bf808400-77c7-11eb-897f-5abfcb09e897.png) the [config file](configuration.html), and go to the `title_format_strings` section. Find the property you want to update, and just change the value.
 
-### Metadata Fields
+##### Example
+Let's say you tag your vinyl files using `%vinylside%`, `%vinyltrack%` and so Georgia never displays vinyl-style track notations. In the config file find this section:
 
-See [Title-Formatting fields](configuration-titleformatting.html) for a detailed list of every Title-Formatting string property Georgia uses, where they are used, and what tag name that property corresponds to by default.
+![vinyl_side](https://user-images.githubusercontent.com/2282004/109263183-70871e80-77c8-11eb-8f4a-a79035ef2eab.png)
+
+...and then edit it to use the fields you use:
+
+![vinyl updated](https://user-images.githubusercontent.com/2282004/109263247-91e80a80-77c8-11eb-9b9f-f7133e49ceb6.png)
+
+Save `georgia-config.jsonc` and then reload the theme (right-click on the panel background). You should now see your corrected fields showing up. Georgia only reads the config file once at startup, so any changes made in the file are not reflected until a reload occurs.
+
+See the [Title-Formatting fields](configuration-titleformatting.html) page for a detailed list of every Title-formatting string property that Georgia uses, what that property is used for or means, and when and where in the UI that property can be seen.
