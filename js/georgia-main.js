@@ -980,7 +980,7 @@ function onOptionsMenu(x, y) {
 			iconSets.push(path.replace(paths.iconsBase, ''));
 		}
 
-		menu.createRadioSubMenu('Menu icons set', iconSets, settings.iconSet, iconSets, (setName) => {
+		menu.createRadioSubMenu('Function icons set', iconSets, settings.iconSet, iconSets, (setName) => {
 			settings.iconSet = setName;
 			setGeometry();
 			createButtonImages();
