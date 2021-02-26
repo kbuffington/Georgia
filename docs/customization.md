@@ -2,7 +2,7 @@
 layout: default
 title: Customizing Georgia
 has_children: true
-nav_order: 4
+nav_order: 6
 ---
 # Customizing Georgia's Look and Feel
 

@@ -2,7 +2,7 @@
 layout: default
 title: Tagging Files
 has_children: false
-nav_order: 5
+nav_order: 8
 ---
 ## Tagging Your Files
 
@@ -23,7 +23,7 @@ Let's say you tag your vinyl files using `%vinylside%`, `%vinyltrack%` and so Ge
 
 ![vinyl_side](https://user-images.githubusercontent.com/2282004/109263183-70871e80-77c8-11eb-8f4a-a79035ef2eab.png)
 
-...and then edit it to use the fields you use:
+...and then edit those strings to reflect the fields tagged in your files:
 
 ![vinyl updated](https://user-images.githubusercontent.com/2282004/109263247-91e80a80-77c8-11eb-9b9f-f7133e49ceb6.png)
 
