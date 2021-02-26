@@ -46,14 +46,6 @@ My goal was to create a modern, minimalist theme that rewarded heavily tagged li
 
 I demoed it to the masses, got a ton of encouragement and feedback and began adding features and options that people wanted. What had started out as a pretty way to display artwork on my TV while I listened to music had become a full featured theme suitable for most any use case.
 
-### Theme Highlights and Secrets
-
-* The theme is vinyl friendly! If the "Use Vinyl Style Numbering if Available" option is checked, the theme will look for `%vinyl side%` and `%vinyl tracknumber%` fields (configurable in the properties page!) and if it finds them you your track numbers will look like "A1" and "B4" instead of "01". Also sometimes fanart.tv has vinylArt available for albums. You can save those files as `vinyl.png` or `vinylA.png`, `vinylB.png` and the correct images will be used.
-* Theme includes a "timeline" bar between the Title and Album Name which is a graphical representation of the songs lifetime in your library. If you're using foo_playcount and foo_enhanced_playcount the timeline bar it will look something like [this](https://imgur.com/2tChYuD). The left edge is when the song was first added to your library and the right edge is the current moment in time. The darker bar on the left is the time between added and first played, and the light bar on the right is time between last_played and today. If you have foo_enhanced_playcount, every song play in it's database will be reflected as a vertical line. If you play the song multiple times on the same day (and all plays map to the same pixel) that line will get darker.
-* Check out the options menu. It will allow you to easily change many visual settings, and configure certain theme settings. These options will be updated frequently as the theme is developed.
-* And lots more...
-
-
 ### Help
 
 The official discussion thread for this theme is located at [Hydrogen Audio](https://hydrogenaud.io/index.php/topic,116190.0.html), and that's a great place to go for questions and other support issues. Support can also commonly be found in the [foobar subreddit](https://reddit.com/r/foobar2000). If you discover a bug, please open an issue on github if you can. That makes things easier to track.
