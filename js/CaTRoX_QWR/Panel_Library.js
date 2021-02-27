@@ -2057,12 +2057,14 @@ function LibraryTree() {
 					sel_w = Math.min(item_w + ui.sel * 2, ui.x + sbar.tree_w - sel_x - 1);
 					if (libraryProps.fullLine) sel_w = ui.x + sbar.tree_w - sel_x;
 					if (!tt.Text || m_i != i && tt.Text) {
-						bgColor = col.primary ? col.primary : ui.backcolsel;
+						bgColor = col.primary;
 						gr.FillSolidRect(sel_x, item_y, sel_w, ui.row_h, bgColor);
 						gr.DrawRect(sel_x, item_y, sel_w, ui.row_h, 1, col.lightAccent);
 					}
 				}
-
+			}
+			for (i = start_row; i < last_row; i++) {
+				const item = this.tree[i];
 				item_y = Math.round(ui.y + ui.row_h * i + p.s_h - sbar.delta);
 				nm = item.name + item.count;
 				item_x = Math.round(ui.x + ui.pad * item.tr + ui.margin);
@@ -2079,6 +2081,7 @@ function LibraryTree() {
 					gr.FillSolidRect(item_x + ui.l_s2, y2, ui.l_s3, nodeLineWidth, ui.linecol);
 				}
 				item_x += ui.icon_w;
+				let bgColor;
 				if (!tt.Text) {
 					if (m_i == i) {	// hovered
 						sel_x = item_x - ui.sel;
