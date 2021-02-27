@@ -13,3 +13,4 @@
 * Allow some default theme colors to be specified in configuration file
 * ~Add on_playback_dynamic_info_track updates for streams~ (implemented in 2.0.0)
 * Redo button code to something a little more sane
+* Rewrite Library search/selection code to improve contrast on partial selected text (and maybe allow right click copy/paste?)
