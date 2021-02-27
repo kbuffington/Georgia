@@ -1299,6 +1299,9 @@ function on_init() {
 	}
 	setGeometry();
 	progressBar = new ProgressBar(ww, wh);
+	setTheme(blueTheme.colors);
+	themeColorSet = true;
+
 	if (fb.IsPlaying && fb.GetNowPlaying()) {
 		on_playback_new_track(fb.GetNowPlaying());
 	}
