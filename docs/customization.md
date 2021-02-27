@@ -2,7 +2,6 @@
 layout: default
 title: Customizing Georgia
 has_children: true
-toc: false
 nav_order: 6
 ---
 # Customizing Georgia's Look and Feel
@@ -27,7 +26,7 @@ If you don't like either of the icon sets, you can easily create your own by add
 
 ![Track Info](https://user-images.githubusercontent.com/2282004/109397956-3d937680-78ff-11eb-98d0-87efade61c1a.png)
 
-You have partial control over the display of track information in the upper right corner. The first info "group" displays information about the codec and codec profile and is not currently configurable. Everything after the first "|" can be modified.
+You have partial control over the display of track information in the upper right corner. The first info "group" displays information about the codec and codec profile and is not currently configurable. Everything after the first "`|`" can be modified.
 
 The rest of the trackInfo line is specified in `settings.extraTrackInfo`. By default it shows the bitrate and sample rate (if they are not 16/44.1) and then displays replay gain info if it's present. Say you wanted to replace ReplayGain with LUFS, you could update the `settings.extraTrackInfo` to be:
 
@@ -35,7 +34,7 @@ The rest of the trackInfo line is specified in `settings.extraTrackInfo`. By def
 
 ![LUFS](https://user-images.githubusercontent.com/2282004/109398070-f659b580-78ff-11eb-9019-cdc64aeb3215.png)
 
-When editing the track info, you should separate different "groups" of information with a "|" because the theme will crop out sections when there is not enough room to display without running under the cdArt or albumArt:
+When editing the track info, you should separate different "groups" of information with a "`|`" because the theme will crop out sections when there is not enough room to display without running under the cdArt or albumArt:
 
 ![image](https://user-images.githubusercontent.com/2282004/109398111-3d47ab00-7900-11eb-98e5-c9277cbce44d.png)
 
@@ -43,7 +42,3 @@ When editing the track info, you should separate different "groups" of informati
 
 
 ## Customizing other areas of Georgia
-
-- [Transport Controls](customization-transport.html)
-- [Playlist](customization-playlist.html)
-- [Library](customization-library.html)
