@@ -24,7 +24,7 @@ async function includeFiles(fileList) {
             await loadAsyncFile(basePath + fileList[i]);
         }
     } else {
-        fileList.forEach(filePath => include(basePath + filePath));
+        fileList.forEach(filePath => include(filePath));
     }
 }
 
