@@ -85,7 +85,6 @@ function userinterface() {
 	this.b1 = 0x04ffffff;
 	this.b2 = 0x04000000;
 	this.backcol = "";
-	this.backcol_h; // = "";
 	this.backcolsel; // = "";
 	// this.backcoltrans = "";
 	this.bg = false;
@@ -106,25 +105,22 @@ function userinterface() {
 	this.expand =  "";
 	this.ct = false;
 	this.dui = window.InstanceType;
-	this.fill = 0;
-	this.font;
-	this.icon_font;
+	this.font = undefined;
+	this.icon_font = undefined;
 	this.icon_pad = -2; //window.GetProperty(" Node: Custom Icon: Vertical Padding", -2);
 	this.icon_w = 17;
 	this.iconcol_c = "";
 	this.iconcol_e;
 	this.iconcol_h = "";
 	this.imgBg = window.GetProperty("SYSTEM.Image Background", false);
-	this.j_font;
+	this.j_font = undefined;
 	this.l_s1 = 4;
 	this.l_s2 = 6;
 	this.l_s3 = 7;
 	this.l_width = scaleForDisplay(1);
 	this.linecol = "";
-	this.pen = 1;
-	this.pen_c = 0x55888888;
 	this.row_h = 20;
-	this.s_font;
+	this.s_font = undefined;
 	this.s_linecol = 0;
 	this.searchcol = "";
 	this.sel = 3;
@@ -274,7 +270,6 @@ function userinterface() {
 
 	this.get_colors = function() {
 		this.backcol = g_theme.colors.pss_back;
-		// this.backcol_h = set_custom_col(window.GetProperty("_Custom.Colour Background Highlight", ""), 1);
 		// this.backcolsel = set_custom_col(window.GetProperty("_Custom.Colour Background Selected", ""), 1);
 		this.countscol;
 		this.linecol = g_pl_colors.title_selected & 0x80ffffff;
@@ -311,11 +306,8 @@ function userinterface() {
 		const textColHover = rgb(220, 220, 220);
 		if (this.textcol === "") this.textcol = textCol;
 		this.textcol_h = textColHover;
-		this.backcol_h = 0x1E30AFED;
 		// if (s_linecol == 1 && window.IsTransparent && !this.dui) s_linecol = 0;
 		// if (this.searchcol === "") this.searchcol = s_col < 3 ? this.textcol : this.textcol_h;
-		// if (!this.dui && this.textselcol === "") this.textselcol = window.GetColourCUI(1); // : this.textcol;
-		// if (this.textselcol === "") this.textselcol = get_textselcol(this.backcolsel, false); // : this.textcol;
 		// blend = get_blend(this.backcol == 0 ? 0xff000000 : this.backcol, !s_col || s_col == 2 ? this.textcol : this.textcol_h, 0.75);
         // if (this.txt_box === "")
         //     this.txt_box = s_col < 2 ? get_blend(!s_col ? this.textcol : this.textcol_h, this.backcol == 0 ? 0xff000000 : this.backcol, !s_col ? 0.65 : 0.7) : s_col == 2 ? this.textcol : this.textcol_h;
@@ -1428,7 +1420,12 @@ function library_manager() {
 		if (!full_list.Count) {this.empty = "Nothing to show\n\nConfigure Media Library first\n\nFile>Preferences>Media library"; this.root = []; library_tree.tree = []; library_tree.line_l = 0; sbar.set_rows(0); p.tree_paint();}
 	}
 }
-// var lib_manager = new library_manager();
+
+const ObjType = {
+	Node: 0,
+	Item: 1,
+	NoObj: 2
+};
 
 function LibraryTree() {
 
@@ -2020,24 +2017,25 @@ function LibraryTree() {
 				}
 			}
 			for (var i = start_row; i < last_row; i++) {
-				var depth = this.tree[i].tr;
-				if (this.tree[i].top) {
+				const item = this.tree[i];
+				const depth = item.tr;
+				if (item.top) {
 					depthRows[depth] = i;
 				}
-				if (this.tree[i].bot || i === last_row - 1) {
+				if (item.bot || i === last_row - 1) {
 					// if this is the bottom of the branches nodes, draw the line
 					// if it is the last visible row in the tree, draw all lines, if they haven't been drawn previously
 					for (var drawDepth = (i === last_row - 1 ? 0 : depth); drawDepth <= depth; drawDepth++) {
 						if (depthRows[drawDepth] !== undefined) {
 							const line_row_start = depthRows[drawDepth];
-							const line_row_end = i + (this.tree[i].bot && drawDepth === depth ? .5 : 1);
+							const line_row_end = i + (item.bot && drawDepth === depth ? .5 : 1);
 							var l_x = (ui.x + Math.round(ui.pad * drawDepth + ui.margin) + Math.floor(ui.node_sz / 2));
 							var l_y = Math.round(ui.y + ui.row_h * line_row_start + p.s_h - sbar.delta);
 							var lineHeight = Math.ceil(ui.row_h * (line_row_end - line_row_start)) + 1;
 							gr.FillSolidRect(l_x, l_y, lineWidth, lineHeight, ui.linecol);
 						}
 					}
-					if (this.tree[i].bot) {
+					if (item.bot) {
 						depthRows[depth] = undefined;
 					}
 				}
@@ -2050,21 +2048,21 @@ function LibraryTree() {
 						gr.FillSolidRect(ui.x, item_y, sbar.stripe_w, ui.row_h, ui.b2);
 				}
 				// item selected
-				if (this.tree[i].sel && (ui.backcolsel !== 0 || col.primary !== 0)) {
-					nm = this.tree[i].name + this.tree[i].count;
-					item_x = Math.round(ui.pad * this.tree[i].tr + ui.margin) + ui.icon_w;
+				let bgColor = ui.backcolsel;
+				if (item.sel && (ui.backcolsel !== 0 || col.primary !== 0)) {
+					nm = item.name + item.count;
+					item_x = Math.round(ui.pad * item.tr + ui.margin) + ui.icon_w;
 					item_w = gr.CalcTextWidth(nm, ui.font);
 					sel_x = ui.x + item_x - ui.sel;
 					sel_w = Math.min(item_w + ui.sel * 2, ui.x + sbar.tree_w - sel_x - 1);
 					if (libraryProps.fullLine) sel_w = ui.x + sbar.tree_w - sel_x;
 					if (!tt.Text || m_i != i && tt.Text) {
-						gr.FillSolidRect(sel_x, item_y, sel_w, ui.row_h, col.primary ? col.primary : ui.backcolsel);
+						bgColor = col.primary ? col.primary : ui.backcolsel;
+						gr.FillSolidRect(sel_x, item_y, sel_w, ui.row_h, bgColor);
 						gr.DrawRect(sel_x, item_y, sel_w, ui.row_h, 1, col.lightAccent);
 					}
 				}
-			}
-			for (i = start_row; i < last_row; i++) {
-				var item = this.tree[i];
+
 				item_y = Math.round(ui.y + ui.row_h * i + p.s_h - sbar.delta);
 				nm = item.name + item.count;
 				item_x = Math.round(ui.x + ui.pad * item.tr + ui.margin);
@@ -2082,13 +2080,13 @@ function LibraryTree() {
 				}
 				item_x += ui.icon_w;
 				if (!tt.Text) {
-					if (m_i == i) {
+					if (m_i == i) {	// hovered
 						sel_x = item_x - ui.sel;
-						sel_w = Math.min(item_w + ui.sel * 2, sbar.tree_w - sel_x - 1);
+						sel_w = Math.min(item_w + ui.sel * 2, ui.x + sbar.tree_w - sel_x - 1);
 						if (libraryProps.fullLine)
 							sel_w = ui.x + sbar.tree_w - sel_x;
-						var bg_col = col.primary ? shadeColor(col.primary, 10) : ui.backcol_h;
-						gr.FillSolidRect(sel_x, item_y, sel_w, ui.row_h, bg_col);
+						bgColor = shadeColor(col.primary, 10);
+						gr.FillSolidRect(sel_x, item_y, sel_w, ui.row_h, bgColor);
 						gr.DrawRect(sel_x, item_y, sel_w, ui.row_h, 1, col.lightAccent);
 					}
 				}
@@ -2097,13 +2095,10 @@ function LibraryTree() {
 				}
 				item.w = item_w;
 				var txt_c = item.sel ? ui.textselcol : m_i == i ? ui.textcol_h : ui.textcol;
-				if (!ui.countscol) {
-					gr.GdiDrawText(nm, ui.font, txt_c, item_x, item_y, ui.x + sbar.tree_w - item_x - ui.sel, ui.row_h, p.lc);
-				} else {
-					var name_w = gr.CalcTextWidth(item.name, ui.font);
-					gr.GdiDrawText(item.name, ui.font, txt_c, item_x, item_y, sbar.tree_w - item_x - ui.sel, ui.row_h, p.lc);
-					gr.GdiDrawText(item.count, ui.font, ui.countscol, item_x + name_w, item_y, sbar.tree_w - item_x - ui.sel - name_w, ui.row_h, p.lc);
+				if (new Color(bgColor).brightness > 200) {
+					txt_c = m_i == i ? rgb(0,0,0) : rgb(48,48,48);
 				}
+				gr.GdiDrawText(nm, ui.font, txt_c, item_x, item_y, ui.x + sbar.tree_w - item_x - ui.sel, ui.row_h, p.lc);
 				if (timings.showDrawTiming) {
 					libraryProfiler.Print();
 				}
@@ -2125,10 +2120,6 @@ function LibraryTree() {
 		else this.tracking(item.item, true);
 	}
 
-	var NODE = 0;
-	var ITEM = 1;
-	var NoObj = 2;
-
 	this.lbtn_dn = function(x, y) {
 		lbtn_dn = false;
 		sent = false;
@@ -2138,10 +2129,10 @@ function LibraryTree() {
 		if (ix >= this.tree.length || ix < 0)
 			return this.get_selection(-1);
 		var item = this.tree[ix],
-			clickedOn = x < Math.round(ui.pad * item.tr) + ui.icon_w + ui.margin + ui.x ? NODE : this.check_ix(item, x, y, false) ? ITEM : NoObj,
+			clickedOn = x < Math.round(ui.pad * item.tr) + ui.icon_w + ui.margin + ui.x ? ObjType.Node : this.check_ix(item, x, y, false) ? ObjType.Item : ObjType.NoObj,
 			expanded = item.child.length > 0;
 		switch (clickedOn) {
-			case NODE:
+			case ObjType.Node:
 				if (expanded) {
 					this.clear_child(item);
 					// if (!ix && this.tree.length == 1) {
@@ -2167,7 +2158,7 @@ function LibraryTree() {
 					sbar.check_scroll(ix * ui.row_h);
 				this.check_row(x, y);
 				break;
-			case ITEM:
+			case ObjType.Item:
 				last_pressed_coord.x = x - ui.x;
 				last_pressed_coord.y = y - ui.y;
 				lbtn_dn = true;
@@ -2188,8 +2179,8 @@ function LibraryTree() {
 		if (ix >= this.tree.length || ix < 0)
 			return this.get_selection(-1);
 		var item = this.tree[ix],
-			clickedOn = x < Math.round(ui.pad * item.tr) + ui.icon_w + ui.margin ? NODE : this.check_ix(item, x, y, false) ? ITEM : NoObj;
-		if (clickedOn !== ITEM) return;
+			clickedOn = x < Math.round(ui.pad * item.tr) + ui.icon_w + ui.margin ? ObjType.Node : this.check_ix(item, x, y, false) ? ObjType.Item : ObjType.NoObj;
+		if (clickedOn !== ObjType.Item) return;
 		if (v.k(ALT) && libraryProps.autoFill) {
 			return this.add(x, y, alt_lbtn_pl);
 		}
@@ -2371,55 +2362,65 @@ function LibraryTree() {
 function searchLibrary() {
 	// p.s_x and p.s_y are already adjusted for start position
 	var cx = 0,
-		f = 0,
+		selEnd = 0,
+		selStart = 0,
 		expand_limit = 350, //Math.min(Math.max(window.GetProperty("ADV.Limit Search Results Auto Expand: 10-1000", 350), 10), 1000),
 		i = 0,
 		lbtn_dn = false,
 		lg = [],
 		log = [],
-		offset = 0,
-		s = 0,
+		offsetChars = 0,	// the number of characters to skip when drawing search string (due to not enough room for entire string)
 		shift = false,
 		shift_x = 0,
 		txt_w = 0,
 		cursor_width = scaleForDisplay(1);
-	var calc_text = function () {var im = gdi.CreateImage(1, 1), g = im.GetGraphics(); txt_w = g.CalcTextWidth(p.s_txt.substr(offset), ui.font); im.ReleaseGraphics(g); }
+	var calc_text = function () {var im = gdi.CreateImage(1, 1), g = im.GetGraphics(); txt_w = g.CalcTextWidth(p.s_txt.substr(offsetChars), ui.font); im.ReleaseGraphics(g); }
 	var drawcursor = function (gr) {
-		if (p.s_search && p.s_cursor && s == f && cx >= offset) {
+		if (p.s_search && p.s_cursor && selStart == selEnd && cx >= offsetChars) {
 			var x1 = p.s_x + get_cursor_x(cx);
 			gr.DrawLine(x1, p.s_y + p.s_sp * 0.1, x1, p.s_y + p.s_sp * 0.85, cursor_width, ui.textcol);
 		}
 	}
+	/**
+	 * Draws selection background
+	 * @param {GdiGraphics} gr
+	 * @return {number} bgColor drawn
+	 */
 	var drawsel = function(gr) {
-		if (s == f) return;
+		if (selStart == selEnd) return;
 		var cursor_y = Math.round(p.s_sp / 2 + ui.y);
 		var clamp = p.s_x + p.s_w2;
-        var selcol = col.primary ? col.primary : ui.backcolsel;
-        if (colorDistance(selcol, rgb(255,255,255))) {
-            selcol = col.darkAccent;
-        }
-		gr.DrawLine(Math.min(p.s_x + get_cursor_x(s), clamp), cursor_y, Math.min(p.s_x + get_cursor_x(f), clamp), cursor_y, ui.row_h - 3, selcol);
+		var selcol = col.primary;
+		gr.DrawLine(Math.min(p.s_x + get_cursor_x(selStart), clamp), cursor_y, Math.min(p.s_x + get_cursor_x(selEnd), clamp), cursor_y, ui.row_h - 3, selcol);
+		return selcol;
 	}
-	var get_cursor_pos = function (x) {var im = gdi.CreateImage(1, 1), g = im.GetGraphics(), nx = x - p.s_x, pos = 0; for (i = offset; i < p.s_txt.length; i++) {pos += g.CalcTextWidth(p.s_txt.substr(i,1), ui.font); if (pos >= nx + 3) break;} im.ReleaseGraphics(g); return i;}
+	var get_cursor_pos = function (x) {var im = gdi.CreateImage(1, 1), g = im.GetGraphics(), nx = x - p.s_x, pos = 0; for (i = offsetChars; i < p.s_txt.length; i++) {pos += g.CalcTextWidth(p.s_txt.substr(i,1), ui.font); if (pos >= nx + 3) break;} im.ReleaseGraphics(g); return i;}
 	var get_cursor_x = function (pos) {
 		var im = gdi.CreateImage(1, 1),
 		g = im.GetGraphics(),
 		x = 0;
-		if (pos >= offset) x = g.CalcTextWidth(p.s_txt.substr(offset, pos - offset), ui.font);
+		if (pos >= offsetChars) x = g.CalcTextWidth(p.s_txt.substr(offsetChars, pos - offsetChars), ui.font);
 		im.ReleaseGraphics(g);
 		return x;
 	}
-	var get_offset = function (gr) {var t = gr.CalcTextWidth(p.s_txt.substr(offset, cx - offset), ui.font); var j = 0; while (t >= p.s_w2 && j < 500) {j++; offset++; t = gr.CalcTextWidth(p.s_txt.substr(offset, cx - offset), ui.font);}}
+	var get_offset = function (gr) {
+		var t = gr.CalcTextWidth(p.s_txt.substr(offsetChars, cx - offsetChars), ui.font);
+		var j = 0;
+		while (t >= p.s_w2 && j < 500) {
+			j++; offsetChars++;
+			t = gr.CalcTextWidth(p.s_txt.substr(offsetChars, cx - offsetChars), ui.font);
+		}
+	}
 	var record = function() {lg.push(p.s_txt); log = []; if (lg.length > 30) lg.shift();}
 	this.clear = function() {
-		lib_manager.time.Reset(); library_tree.subCounts.search = {}; offset = s = f = cx = 0; p.s_cursor = false; p.s_search = false; p.s_txt = "";
+		lib_manager.time.Reset(); library_tree.subCounts.search = {}; offsetChars = selStart = selEnd = cx = 0; p.s_cursor = false; p.s_search = false; p.s_txt = "";
 		p.search_paint(); timer.reset(timer.search_cursor, timer.search_cursori); lib_manager.rootNodes();
 		// if (p.pn_h_auto && p.pn_h == p.pn_h_min && library_tree.tree[0]) library_tree.clear_child(library_tree.tree[0]);
 	}
 	this.on_key_up = function(vkey) {if (!p.s_search) return; if (vkey == v.shift) {shift = false; shift_x = cx;}}
-	this.lbtn_up = function(x, y) {if (s != f) timer.reset(timer.search_cursor, timer.search_cursori); lbtn_dn = false;}
-	this.move = function(x, y) {if (y > p.s_h || !lbtn_dn) return; var t = get_cursor_pos(x), t_x = get_cursor_x(t); calc_text(); if(t < s) {if (t < f) {if (t_x < p.s_x) if(offset > 0) offset--;} else if (t > f) {if (t_x + p.s_x > p.s_x + p.s_w2) {var l = (txt_w > p.s_w2) ? txt_w - p.s_w2 : 0; if(l > 0) offset++;}} f = t;} else if (t > s) {if(t_x + p.s_x > p.s_x + p.s_w2) {var l = (txt_w > p.s_w2) ? txt_w - p.s_w2 : 0; if(l > 0) offset++;} f = t;} cx = t; p.search_paint();}
-	this.rbtn_up = function(x, y) {men.search_menu(x, y, s, f, doc.parentWindow.clipboardData.getData('text') ? true : false)}
+	this.lbtn_up = function(x, y) {if (selStart != selEnd) timer.reset(timer.search_cursor, timer.search_cursori); lbtn_dn = false;}
+	this.move = function(x, y) {if (y > p.s_h || !lbtn_dn) return; var t = get_cursor_pos(x), t_x = get_cursor_x(t); calc_text(); if(t < selStart) {if (t < selEnd) {if (t_x < p.s_x) if(offsetChars > 0) offsetChars--;} else if (t > selEnd) {if (t_x + p.s_x > p.s_x + p.s_w2) {var l = (txt_w > p.s_w2) ? txt_w - p.s_w2 : 0; if(l > 0) offsetChars++;}} selEnd = t;} else if (t > selStart) {if(t_x + p.s_x > p.s_x + p.s_w2) {var l = (txt_w > p.s_w2) ? txt_w - p.s_w2 : 0; if(l > 0) offsetChars++;} selEnd = t;} cx = t; p.search_paint();}
+	this.rbtn_up = function(x, y) {men.search_menu(x, y, selStart, selEnd, doc.parentWindow.clipboardData.getData('text') ? true : false)}
 	// this.search_auto_expand = window.GetProperty(" Search Results Auto Expand", false);
 
 	this.lbtn_dn = function(x, y) {
@@ -2427,16 +2428,16 @@ function searchLibrary() {
 		p.search_paint();
 		lbtn_dn = p.s_search = (y < p.s_y + p.s_h && x >= p.s_x && x < p.s_x + p.s_w2);
 		if (!lbtn_dn) {
-			offset = s = f = cx = 0;
+			offsetChars = selStart = selEnd = cx = 0;
 			timer.reset(timer.search_cursor, timer.search_cursori);
 			return;
 		} else {
 			if (shift) {
-				s = cx;
-				f = cx = get_cursor_pos(x);
+				selStart = cx;
+				selEnd = cx = get_cursor_pos(x);
 			} else {
 				cx = get_cursor_pos(x);
-				s = f = cx;
+				selStart = selEnd = cx;
 			}
 			if (!hadFocus) {
 				this.searchFocus();
@@ -2481,34 +2482,34 @@ function searchLibrary() {
 			case v.redo: lg.push(p.s_txt); if (lg.length > 30) lg.shift(); if (log.length > 0) {p.s_txt = log.pop() + ""; cx++} break;
 			case v.undo: log.push(p.s_txt); if (log.length > 30) lg.shift(); if (lg.length > 0) p.s_txt = lg.pop() + ""; break;
 			case v.selAll:
-				s = 0; f = p.s_txt.length;
+				selStart = 0; selEnd = p.s_txt.length;
 				break;
-			case v.copy: if (s != f) doc.parentWindow.clipboardData.setData('text', p.s_txt.substring(s, f)); break; case v.cut: if (s != f) doc.parentWindow.clipboardData.setData('text', p.s_txt.substring(s, f));
+			case v.copy: if (selStart != selEnd) doc.parentWindow.clipboardData.setData('text', p.s_txt.substring(selStart, selEnd)); break; case v.cut: if (selStart != selEnd) doc.parentWindow.clipboardData.setData('text', p.s_txt.substring(selStart, selEnd));
 			case v.back:
 				record();
-				if (s == f) {if (cx > 0) {p.s_txt = p.s_txt.substr(0, cx - 1) + p.s_txt.substr(cx, p.s_txt.length - cx); if (offset > 0) offset--; cx--;}}
-				else {if (f - s == p.s_txt.length) {p.s_txt = ""; cx = 0;} else {if (s > 0) {var st = s, en = f; s = Math.min(st, en); f = Math.max(st, en); p.s_txt = p.s_txt.substring(0, s) + p.s_txt.substring(f, p.s_txt.length); cx = s;} else {p.s_txt = p.s_txt.substring(f, p.s_txt.length); cx = s;}}}
-				calc_text(); offset = offset >= f - s ? offset - f + s : 0; s = cx; f = s; break;
+				if (selStart == selEnd) {if (cx > 0) {p.s_txt = p.s_txt.substr(0, cx - 1) + p.s_txt.substr(cx, p.s_txt.length - cx); if (offsetChars > 0) offsetChars--; cx--;}}
+				else {if (selEnd - selStart == p.s_txt.length) {p.s_txt = ""; cx = 0;} else {if (selStart > 0) {var st = selStart, en = selEnd; selStart = Math.min(st, en); selEnd = Math.max(st, en); p.s_txt = p.s_txt.substring(0, selStart) + p.s_txt.substring(selEnd, p.s_txt.length); cx = selStart;} else {p.s_txt = p.s_txt.substring(selEnd, p.s_txt.length); cx = selStart;}}}
+				calc_text(); offsetChars = offsetChars >= selEnd - selStart ? offsetChars - selEnd + selStart : 0; selStart = cx; selEnd = selStart; break;
 			case "delete":
 				record();
-				if (s == f) {if (cx < p.s_txt.length) {p.s_txt = p.s_txt.substr(0, cx) + p.s_txt.substr(cx + 1, p.s_txt.length - cx - 1);}}
-				else {if (f - s == p.s_txt.length) {p.s_txt = ""; cx = 0;} else {if (s > 0) {var st = s, en = f; s = Math.min(st, en); f = Math.max(st, en); p.s_txt = p.s_txt.substring(0, s) + p.s_txt.substring(f, p.s_txt.length); cx = s;} else {p.s_txt = p.s_txt.substring(f, p.s_txt.length); cx = s;}}}
-				calc_text(); offset = offset >= f - s ? offset - f + s : 0; s = cx; f = s; break;
+				if (selStart == selEnd) {if (cx < p.s_txt.length) {p.s_txt = p.s_txt.substr(0, cx) + p.s_txt.substr(cx + 1, p.s_txt.length - cx - 1);}}
+				else {if (selEnd - selStart == p.s_txt.length) {p.s_txt = ""; cx = 0;} else {if (selStart > 0) {var st = selStart, en = selEnd; selStart = Math.min(st, en); selEnd = Math.max(st, en); p.s_txt = p.s_txt.substring(0, selStart) + p.s_txt.substring(selEnd, p.s_txt.length); cx = selStart;} else {p.s_txt = p.s_txt.substring(selEnd, p.s_txt.length); cx = selStart;}}}
+				calc_text(); offsetChars = offsetChars >= selEnd - selStart ? offsetChars - selEnd + selStart : 0; selStart = cx; selEnd = selStart; break;
 			case v.paste:
 				text = doc.parentWindow.clipboardData.getData('text');
 				// fall through
 			default:
 				record();
-				if (s == f) {
-					p.s_txt = p.s_txt.substring(0, cx) + text + p.s_txt.substring(cx); cx += text.length; f = s = cx;
+				if (selStart == selEnd) {
+					p.s_txt = p.s_txt.substring(0, cx) + text + p.s_txt.substring(cx); cx += text.length; selEnd = selStart = cx;
 				}
-				else if (f > s) {
-					p.s_txt = p.s_txt.substring(0, s) + text + p.s_txt.substring(f); calc_text(); offset = offset >= f - s ? offset - f + s : 0; cx = s + text.length;
-					s = cx; f = s;
+				else if (selEnd > selStart) {
+					p.s_txt = p.s_txt.substring(0, selStart) + text + p.s_txt.substring(selEnd); calc_text(); offsetChars = offsetChars >= selEnd - selStart ? offsetChars - selEnd + selStart : 0; cx = selStart + text.length;
+					selStart = cx; selEnd = selStart;
 				}
 				else {
-					p.s_txt = p.s_txt.substring(s) + text + p.s_txt.substring(0, f); calc_text(); offset = offset < f - s ? offset - f + s : 0; cx = f + text.length;
-					s = cx; f = s;
+					p.s_txt = p.s_txt.substring(selStart) + text + p.s_txt.substring(0, selEnd); calc_text(); offsetChars = offsetChars < selEnd - selStart ? offsetChars - selEnd + selStart : 0; cx = selEnd + text.length;
+					selStart = cx; selEnd = selStart;
 				}
 				break;
 		}
@@ -2544,9 +2545,9 @@ function searchLibrary() {
 			case v.left:
 			case v.right:
 				if (vkey == v.left) {
-					if (offset > 0) {
-						if (cx <= offset) {
-							offset--;
+					if (offsetChars > 0) {
+						if (cx <= offsetChars) {
+							offsetChars--;
 							cx--;
 						} else {
 							cx--;
@@ -2554,14 +2555,14 @@ function searchLibrary() {
 					} else if (cx > 0) {
 						cx--;
 					}
-					s = f = cx;
+					selStart = selEnd = cx;
 				}
 				if (vkey == v.right && cx < p.s_txt.length)
 					cx++;
-				s = f = cx;
+				selStart = selEnd = cx;
 				if (shift) {
-					s = Math.min(cx, shift_x);
-					f = Math.max(cx, shift_x);
+					selStart = Math.min(cx, shift_x);
+					selEnd = Math.max(cx, shift_x);
 				}
 				p.s_cursor = true;
 				timer.reset(timer.search_cursor, timer.search_cursori);
@@ -2571,7 +2572,7 @@ function searchLibrary() {
 				break;
 			case v.home:
 			case v.end:
-				if (vkey == v.home) offset = s = f = cx = 0; else s = f = cx = p.s_txt.length; p.s_cursor = true; timer.reset(timer.search_cursor, timer.search_cursori); timer.search_cursor = setInterval(function() {p.s_cursor = !p.s_cursor; p.search_paint();}, 530);
+				if (vkey == v.home) offsetChars = selStart = selEnd = cx = 0; else selStart = selEnd = cx = p.s_txt.length; p.s_cursor = true; timer.reset(timer.search_cursor, timer.search_cursori); timer.search_cursor = setInterval(function() {p.s_cursor = !p.s_cursor; p.search_paint();}, 530);
 				break;
 			case v.shift:
 				shift = true;
@@ -2586,21 +2587,23 @@ function searchLibrary() {
 
 	this.draw = function(gr) {
 		try {
-			s = Math.min(Math.max(s, 0), p.s_txt.length);
-			f = Math.min(Math.max(f, 0), p.s_txt.length);
+			selStart = Math.min(Math.max(selStart, 0), p.s_txt.length);
+			selEnd = Math.min(Math.max(selEnd, 0), p.s_txt.length);
 			cx = Math.min(Math.max(cx, 0), p.s_txt.length);
-			if (ui.fill) gr.FillSolidRect(ui.x, ui.y + 1, ui.w, ui.row_h - 4, 0x60000000);
-			if (ui.pen == 1) gr.DrawLine(ui.x + ui.margin, ui.y + p.s_sp, ui.x + p.s_w1, ui.y + p.s_sp, ui.l_width, ui.s_linecol);
-			if (ui.pen == 2) gr.DrawRoundRect(ui.x, ui.y + 2, ui.w - 1, ui.row_h - 4, 4, 4, 1, ui.pen_c);
+			// divider line
+			gr.DrawLine(ui.x + ui.margin, ui.y + p.s_sp, ui.x + p.s_w1, ui.y + p.s_sp, ui.l_width, ui.s_linecol);
 			if (p.s_txt) {
-				f = (f < p.s_txt.length) ? f : p.s_txt.length;
-				drawsel(gr);
+				const selColor = drawsel(gr);
 				get_offset(gr);
 				var txt_col = ui.searchcol;
-				if (s === 0 && f === p.s_txt.length) {
-					txt_col = ui.textselcol;
+				if (selStart === 0 && selEnd === p.s_txt.length) {
+					if (new Color(selColor).brightness > 195) {
+						txt_col = rgb(0,0,0);
+					} else {
+						txt_col = ui.textselcol;
+					}
 				}
-				gr.GdiDrawText(p.s_txt.substr(offset), ui.font, txt_col, p.s_x, p.s_y, p.s_w2, p.s_sp, p.l);
+				gr.GdiDrawText(p.s_txt.substr(offsetChars), ui.font, txt_col, p.s_x, p.s_y, p.s_w2, p.s_sp, p.l);
 			} else {
 				gr.GdiDrawText('Search', ui.s_font, ui.txt_box, p.s_x, p.s_y, p.s_w2, p.s_sp, p.l);
 			}
