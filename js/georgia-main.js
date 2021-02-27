@@ -102,6 +102,7 @@ function createFonts() {
 	ft.artist_med = font(fontBold, 36, 0);
 	ft.artist_sml = font(fontBold, 30, 0);
 	ft.track_info = font(fontThin, 18, 0);
+	ft.track_info_sml = font(fontThin, 16, 0);
 	ft.grd_key_lrg = font(fontRegular, 24, 0); // used instead of ft.grd_key if ww > 1280
 	ft.grd_val_lrg = font(fontLight, 24, 0); // used instead of ft.grd_val if ww > 1280
 	ft.grd_key_med = font(fontRegular, 20, 0);
@@ -377,9 +378,35 @@ function draw_ui(gr) {
 		const infoWidth = ww - albumart_size.x - albumart_size.w - textRightGap;
 		if (str.trackInfo) {
 			gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
-			trackInfoHeight = gr.MeasureString(str.trackInfo, ft.track_info, 0, 0, 0, 0).Height;
-			gr.DrawString(str.trackInfo, ft.track_info, col.artist, ww - textRightGap - infoWidth, geo.top_bg_h - trackInfoHeight - scaleForDisplay(15), infoWidth, trackInfoHeight, StringFormat(2));
-			gr.SetTextRenderingHint(TextRenderingHint.AntiAliasGridFit);
+			let infoLeft = ww - textRightGap - infoWidth;
+			if (rotatedCD && pref.display_cdart) {
+				const infoY = geo.top_bg_h - scaleForDisplay(15);
+				const radius = cdart_size.h / 2;
+				const angle = Math.asin((cdart_size.y + radius - infoY) / radius);
+				const cdRight = cdart_size.x + radius + radius * Math.cos(angle);
+				// gr.DrawLine(cdRight, geo.top_bg_h - trackInfoHeight - scaleForDisplay(15), cdRight, geo.top_bg_h - scaleForDisplay(15), 2, rgb(255,0,0));
+				infoLeft = Math.ceil(Math.max(ww - textRightGap - infoWidth, cdRight));
+			}
+			const maxInfoWidth = ww - infoLeft - textRightGap + 1;
+
+			let drawnInfo = str.trackInfo;
+			let infoFont = ft.track_info;
+			let infoSize = gr.MeasureString(drawnInfo, infoFont, 0, 0, 0, 0);
+			if (infoSize.Width > maxInfoWidth) {
+				infoFont = ft.track_info_sml;
+				infoSize = gr.MeasureString(drawnInfo, infoFont, 0, 0, 0, 0);
+			}
+			while (infoSize.Width > maxInfoWidth && drawnInfo.length > 0) {
+				const array = drawnInfo.split(' | ');
+				array.pop();
+				drawnInfo = array.join(' | ');
+				infoSize = gr.MeasureString(drawnInfo, infoFont, 0, 0, 0, 0);
+			}
+			if (drawnInfo.length) {
+				trackInfoHeight = infoSize.Height + 1;
+				gr.DrawString(drawnInfo, infoFont, col.artist, infoLeft, geo.top_bg_h - trackInfoHeight - scaleForDisplay(15), maxInfoWidth, trackInfoHeight, StringFormat(2));
+				gr.SetTextRenderingHint(TextRenderingHint.AntiAliasGridFit);
+			}
 		}
 		if (str.year) {
 			/** @type {MeasureStringInfo} */
@@ -1547,7 +1574,7 @@ function on_metadb_changed(handle_list, fromhook) {
 				if ($("$info(codec_profile)") == "CBR") codec = codec + "-" + $("%bitrate%") + " kbps";
 				else codec = codec + "-" + $("$info(codec_profile)");
 			}
-			str.trackInfo = $(codec + '[ | %replaygain_album_gain%]');
+			str.trackInfo = $(codec + settings.extraTrackInfo);
 			// TODO: Add LUFS option?
 			// str.trackInfo += $('$if(%replaygain_track_gain%, | LUFS $puts(l,$sub(-1800,$replace(%replaygain_track_gain%,.,)))$div($get(l),100).$right($get(l),2) dB,)');
 
