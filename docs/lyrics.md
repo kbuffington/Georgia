@@ -9,13 +9,13 @@ nav_order: 9
 
 Georgia can display lyrics that have been saved to your disk, or that have been written to tag fields in your files. The entire lyrics display engine was re-written from scratch in v2.0. It is faster than the 1.x version, has more features, requires half the lines of code as the old version and is considerably less buggy.
 
-To enable lyrics display, click on the lyrics icon in the upper right.
+To enable the lyrics view, click on the lyrics icon in the upper right.
 
 ![lyrics icon](https://user-images.githubusercontent.com/2282004/109089826-85d05000-76d7-11eb-8dac-e7973999720f.png)
 
 ### Lyrics File types
 
-Georgia can handle both `.lrc` or `.txt` files containing lyrics. `.lrc` files typically contain time-stamped lyrics and `.txt` files typically do not, but the theme doesn't care. It will read in the first lyrics file it finds, and process it the same regardless of file type. Be aware that if a file is matched but does not contain valid lyrics Georgia will also not care and will just display whatever contents it finds.
+Georgia can handle both `.lrc` or `.txt` files containing lyrics. `.lrc` files typically contain time-stamped lyrics and `.txt` files typically do not, but the theme doesn't care. It will read in the first lyrics file it finds, and process it the same regardless of file type. Be aware that if a file is matched but does not contain valid lyrics, Georgia will also not care and will just display whatever contents it finds.
 
 ### Synced Lyrics
 
@@ -46,4 +46,4 @@ If a file matching one of the patterns is found, all further file tests will sto
 
 #### Example
 
-You are listening to Enter Sandman by Metallica. The file contains no lyrics tags. The folder the song is in will first be searched for a file matching one of the `lyricFilenamePatterns`. If none are found it will moves to `%appdata%\local\roaming\foobar2000\lyrics`. This folder contains a file called `Metallica - Enter Sandman.txt`. This file will be loaded by Georgia and it's contents are displayed and searching will stop. If you have a file called `Metallica - Enter Sandman.lrc` inside `C:\Program Files (x86)\foobar2000\lyrics` it will not be found.
+You are listening to Enter Sandman by Metallica. The file contains no lyrics tags. The folder the song is in will first be searched for a file matching one of the `lyricFilenamePatterns`. If none are found it will net check `%appdata%\local\roaming\foobar2000\lyrics` which is next in the list. This folder contains a file called `Metallica - Enter Sandman.txt`. This file will be loaded by Georgia and its contents displayed and searching will stop. If you have a file called `Metallica - Enter Sandman.lrc` inside `C:\Program Files (x86)\foobar2000\lyrics` it will not be loaded.
