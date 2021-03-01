@@ -4,6 +4,8 @@ var pref = new PanelProperties(); // preferences
 let settings = {};
 /** @type {*} */
 let globals = {};
+/** @type {*} */
+let transport = {};
 
 
 const currentVersion = '2.0.0';
@@ -44,11 +46,6 @@ pref.add_properties({
 	use_vinyl_nums: ['Use vinyl style numbering (e.g. A1)', true], // true: if the tags specified in tf.vinyl_side and tf.vinyl_tracknum are set, then we'll show vinyl style track numbers (i.e. "B2." instead of "04.")
 	startPlaylist: ['Display playlist on startup', false], // true: show the playlist window when the theme starts up
 	show_progress_bar: ['Show Progress Bar', true], // true: show progress bar, otherwise hide it (useful is using another panel for this)
-	show_transport: ['Transport: Show transport controls', true], // true: show the play/pause/next/prev/random buttons at the top of the screen
-	show_transport_below: ['Transport: Show transport below art', false],
-	show_random_button: ['Transport: Show Random Button', true], // true: show random button in transport controls, ignored if transport not shown
-	show_volume_button: ['Transport: Show Volume Button', false], // true: show volume button in transport controls, ignored if transport is not shown
-	show_reload_button: ['Transport: Show Reload Button', false], // true: show a button that reloads the theme when clicked. Useful for debugging only
 	transport_buttons_size: ['Transport: Button size', 32], // size in pixels of the buttons
 	transport_buttons_spacing: ['Transport: Button spacing', 5], // size in pixels of the spacing between buttons
 
@@ -114,6 +111,7 @@ if (!config.fileExists) {
 	config.addConfigurationObject(gridSchema, defaultMetadataGrid);	// we don't assign an object here because these aren't key/value pairs and thus can't use the get/setters
 	config.addConfigurationObject(imgPathSchema, imgPathDefaults);
 	config.addConfigurationObject(lyricFilenamesSchema, lyricFilenamesDefaults);
+	config.addConfigurationObject(transportSchema, transportDefaults);
 	console.log('> Writing', configPath);
 	config.writeConfiguration();
 }
@@ -124,6 +122,7 @@ if (config.fileExists) {
 	 * for the objects so that the file gets automatically written when a setting is changed.
 	 **/
 	settings = config.addConfigurationObject(settingsSchema, Object.assign({}, settingsDefaults, prefs.settings), settingsComments);
+	transport = config.addConfigurationObject(transportSchema, Object.assign({}, transportDefaults, prefs.transport), transportComments);
 	tf = config.addConfigurationObject(titleFormatSchema, Object.assign({}, defaultTitleFormatStrings, prefs.title_format_strings), titleFormatComments);
 	prefs.metadataGrid.forEach(entry => {
 		// copy comments over to existing object so they aren't lost
@@ -209,6 +208,7 @@ function migrateCheck(version, storedVersion) {
 				config.addConfigurationObject(lyricFilenamesSchema, lyricFilenamesDefaults);
 			case '2.0.0-beta4':
 				settings.extraTrackInfo = settingsDefaults.extraTrackInfo;
+				config.addConfigurationObject(transportSchema, transportDefaults);
 
 				// this block should appear after all previous versions have fallen through
 				console.log('> Upgrading Georgia Theme settings from', storedVersion);

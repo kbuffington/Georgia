@@ -139,3 +139,21 @@ const settingsComments = {
 const settingsSchema = new ConfigurationObjectSchema('settings', ConfigurationObjectType.Object,
 		// will display as key/val pairs with comments attached
 		undefined, 'General settings for the theme.');
+
+const transportDefaults = {
+	displayBelowArtwork: false,
+	enableTransportControls: true,
+	showRandom: true,
+	showVolume: true,
+	showReload: false,
+}
+
+const transportComments = {
+	displayBelowArtwork: 'Should the transport controls be placed below the artwork. Disabled by default.',
+	enableTransportControls: 'Should transport controls be displayed. If false, all other transport settings are ignored.',
+	showRandom: 'Show the randomize button',
+	showVolume: 'Show the volume control',
+	showReload: 'Show the reload theme button',
+}
+
+const transportSchema = new ConfigurationObjectSchema('transport', ConfigurationObjectType.Object, undefined, 'Transport controls settings');

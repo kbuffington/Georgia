@@ -946,7 +946,7 @@ function on_paint(gr) {
 	let onPaintProfiler = null;
 	if (timings.showDrawTiming) onPaintProfiler = fb.CreateProfiler("on_paint");
 	draw_ui(gr);
-	if (pref.show_volume_button) {
+	if (transport.showVolume) {
 		volume_btn.on_paint(gr);
 	}
 
@@ -1069,13 +1069,13 @@ function onOptionsMenu(x, y) {
 	menuFontMenu.appendTo(menu);
 
 	var transportMenu = new Menu('Transport controls');
-	transportMenu.addToggleItem('Show transport controls', pref, 'show_transport', () => {
+	transportMenu.addToggleItem('Show transport controls', transport, 'enableTransportControls', () => {
 		createButtonImages();
 		createButtonObjects(ww, wh);
 		ResizeArtwork(true);
 		RepaintWindow();
 	});
-	transportMenu.addToggleItem('Show transport below art', pref, 'show_transport_below', () => {
+	transportMenu.addToggleItem('Show transport below art', transport, 'displayBelowArtwork', () => {
 		createButtonImages();
 		createButtonObjects(ww, wh);
 		ResizeArtwork(true);
@@ -1086,16 +1086,19 @@ function onOptionsMenu(x, y) {
 			setLibrarySize();
 		}
 		RepaintWindow();
-	}, !pref.show_transport);
-	transportMenu.addToggleItem('Show random button', pref, 'show_random_button', () => {
+	}, !transport.enableTransportControls);
+	transportMenu.addToggleItem('Show random button', transport, 'showRandom', () => {
 		createButtonObjects(ww, wh);
 		RepaintWindow();
-	}, !pref.show_transport);
-	transportMenu.addToggleItem('Show volume control', pref, 'show_volume_button', () => {
+	}, !transport.enableTransportControls);
+	transportMenu.addToggleItem('Show volume control', transport, 'showVolume', () => {
 		createButtonObjects(ww, wh);
 		RepaintWindow();
-	}, !pref.show_transport);
-	transportMenu.addToggleItem('Show reload button', pref, 'show_reload_button', () => { window.Reload(); }, !pref.show_transport);
+	}, !transport.enableTransportControls);
+	transportMenu.addToggleItem('Show reload button', transport, 'showReload', () => {
+		createButtonObjects(ww, wh);
+		RepaintWindow();
+	}, !transport.enableTransportControls);
 	transportMenu.appendTo(menu);
 
 	const transportSizeMenu = new Menu('Transport Button Size');
@@ -1110,7 +1113,7 @@ function onOptionsMenu(x, y) {
 		ft.guifx = gdi.Font(fontGuiFx, scaleForDisplay(Math.floor(pref.transport_buttons_size / 2)), 0);
 		createButtonImages();
 		createButtonObjects(ww, wh);
-		if (pref.show_transport_below) {
+		if (transport.displayBelowArtwork) {
 			ResizeArtwork(true);
 		}
 		RepaintWindow();
@@ -1804,14 +1807,14 @@ function on_mouse_move(x, y, m) {
         } else if (str.timeline && str.timeline.mouseInThis(x, y)) {
 			str.timeline.on_mouse_move(x, y, m);
 		}
-		if (pref.show_volume_button && volume_btn) {
+		if (transport.showVolume && volume_btn) {
 			volume_btn.on_mouse_move(x, y, m);
 		}
 	}
 }
 
 function on_mouse_wheel(delta) {
-	if (pref.show_volume_button) {
+	if (transport.showVolume) {
 		if (volume_btn.on_mouse_wheel(delta)) return;
 	}
 	if (state.mouse_y > wh - geo.lower_bar_h) {
@@ -1834,7 +1837,7 @@ function on_mouse_wheel(delta) {
 
 function on_mouse_leave() {
 
-	if (pref.show_volume_button) {
+	if (transport.showVolume) {
 		volume_btn.on_mouse_leave();
 	}
 	if (displayPlaylist) {
@@ -2379,7 +2382,7 @@ function CreateRotatedCDImage() {
 }
 
 function calcLowerSpace() {
-	return pref.show_transport_below ? geo.lower_bar_h + scaleForDisplay(pref.transport_buttons_size + 10) : geo.lower_bar_h + scaleForDisplay(16);
+	return transport.displayBelowArtwork ? geo.lower_bar_h + scaleForDisplay(pref.transport_buttons_size + 10) : geo.lower_bar_h + scaleForDisplay(16);
 }
 
 function ResizeArtwork(resetCDPosition) {
@@ -2415,7 +2418,7 @@ function ResizeArtwork(resetCDPosition) {
 			albumart_size.y = geo.top_art_spacing + (showingMinMaxButtons ? scaleForDisplay(10) : 0); // height of menu bar + spacing + height of Artist text (32+32+32)
 		}
 		if (btns.playlist && albumart_size.x + albumart_size.w > btns.playlist.x - 50) {
-			albumart_size.y += 16 - pref.show_transport * 6;
+			albumart_size.y += 16 - transport.enableTransportControls * 6;
 		}
 
 		if (albumart_scaled) {
@@ -2676,12 +2679,12 @@ function createButtonObjects(ww, wh) {
 
 	var buttonSize = scaleForDisplay(pref.transport_buttons_size);
 	//---> Transport buttons
-	if (pref.show_transport) {
-		let count = 4 + (pref.show_random_button ? 1 : 0) +
-				(pref.show_volume_button ? 1 : 0) +
-				(pref.show_reload_button ? 1 : 0);
+	if (transport.enableTransportControls) {
+		let count = 4 + (transport.showRandom ? 1 : 0) +
+				(transport.showVolume ? 1 : 0) +
+				(transport.showReload ? 1 : 0);
 
-		const y = pref.show_transport_below ? wh - geo.lower_bar_h - scaleForDisplay(10) - buttonSize : scaleForDisplay(10) + (showingMinMaxButtons ? scaleForDisplay(5) : 0);
+		const y = transport.displayBelowArtwork ? wh - geo.lower_bar_h - scaleForDisplay(10) - buttonSize : scaleForDisplay(10) + (showingMinMaxButtons ? scaleForDisplay(5) : 0);
 		const w = buttonSize;
 		const h = w;
 		const p = scaleForDisplay(pref.transport_buttons_spacing); // space between buttons
@@ -2696,14 +2699,14 @@ function createButtonObjects(ww, wh) {
 		btns.prev = new Button(calcX(++count), y, w, h, 'Previous', btnImg.Previous, 'Previous');
 		btns.play = new Button(calcX(++count), y, w, h, 'Play/Pause', !fb.IsPlaying || fb.IsPaused ? btnImg.Play : btnImg.Pause, 'Play');
 		btns.next = new Button(calcX(++count), y, w, h, 'Next', btnImg.Next, 'Next');
-		if (pref.show_random_button) {
+		if (transport.showRandom) {
 			btns.random = new Button(calcX(++count), y, w, h, 'Playback/Random', btnImg.PlaybackRandom, 'Randomize Playlist');
 		}
-		if (pref.show_volume_button) {
+		if (transport.showVolume) {
 			btns.volume = new Button(calcX(++count), y, w, h, 'Volume', btnImg.ShowVolume);
 			volume_btn.set_position(btns.volume.x, y, w);
 		}
-		if (pref.show_reload_button) {
+		if (transport.showReload) {
 			btns.reload = new Button(calcX(++count), y, w, h, 'Reload', btnImg.Reload, 'Reload');
 		}
 	}
@@ -3008,7 +3011,7 @@ function createButtonImages() {
                 g.SetTextRenderingHint(TextRenderingHint.AntiAlias)
             }
 
-			var useDarkTransport = !pref.darkMode && pref.show_transport_below;
+			var useDarkTransport = !pref.darkMode && transport.displayBelowArtwork;
 			var transportButtonColor = useDarkTransport ? rgb(110, 112, 114) : rgb(150, 152, 154);
 			var transportOutlineColor = useDarkTransport ? rgb(100, 100, 100) : rgb(120, 120, 120);
 
