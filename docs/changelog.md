@@ -5,4 +5,4 @@ nav_exclude: false
 nav_order: 25
 ---
 
-{% include CHANGELOG.md %}
+{% include changelog.md %}
