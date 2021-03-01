@@ -15,12 +15,25 @@ nav_order: 3
 
 ## Changing font/icon sizes in the Library
 
-Font sizing in the library works differently than it does anywhere else in the UI. Thanks to WilB's amazing work, elements of the library can be independently sized by holding down CTRL+ALT and then scrolling the mouse up or down.
+Font sizing in the library works differently than it does anywhere else in the UI. Thanks to WilB's amazing work, elements of the library can be independently sized by holding down CTRL+ALT and then scrolling up or down.
 
 There are three different elements of the Library that can be independently sized:
 - Text rows (also sizes the search text at the top)
 - The expand/collapse icons -- to size these you must hold down CTRL+ALT and scroll while the mouse is over the icons in the first column only
 - The Filter text in the upper right corner
+
+If you have completely screwed up the zooming, you can reset things to their defaults by clicking on Options >> Library Settings menu >> Reset library zoom.
+
+## Library Views
+
+You can change the way the Library groups search results by changing the library view. Right click anywhere on the background of the Library panel (not on a search result) and you'll get the View menu:
+
+![view by year](https://user-images.githubusercontent.com/2282004/109463669-091cd900-7a2b-11eb-8d43-6419182fbb8b.png){: width="600px"}
+
+Selecting a different view will change how the results are presented to you:
+
+![View by album](https://user-images.githubusercontent.com/2282004/109463862-5600af80-7a2b-11eb-9784-a0c0f7a5c141.png){: width="600px"}
+
 
 ## Library Settings menu
 
@@ -39,6 +52,8 @@ This alters the selection method to not just be the bounds of the text, but the 
 This can enable or disable a root node for the tree:
 
 ![root node](https://user-images.githubusercontent.com/2282004/109461681-243a1980-7a28-11eb-8939-aa50b58e2655.png){: width="400px"}
+
+"All Music" or the name of the View by selection (i.e. "View by Album Artist") are possible options.
 
 #### Show tracks
 
