@@ -2081,7 +2081,7 @@ function LibraryTree() {
 					gr.FillSolidRect(item_x + ui.l_s2, y2, ui.l_s3, nodeLineWidth, ui.linecol);
 				}
 				item_x += ui.icon_w;
-				let bgColor;
+				let bgColor = item.sel ? col.primary : undefined;
 				if (!tt.Text) {
 					if (m_i == i) {	// hovered
 						sel_x = item_x - ui.sel;
@@ -2098,7 +2098,7 @@ function LibraryTree() {
 				}
 				item.w = item_w;
 				var txt_c = item.sel ? ui.textselcol : m_i == i ? ui.textcol_h : ui.textcol;
-				if (new Color(bgColor).brightness > 200) {
+				if (new Color(bgColor).brightness > 180) {
 					txt_c = m_i == i ? rgb(0,0,0) : rgb(48,48,48);
 				}
 				gr.GdiDrawText(nm, ui.font, txt_c, item_x, item_y, ui.x + sbar.tree_w - item_x - ui.sel, ui.row_h, p.lc);
@@ -2600,7 +2600,7 @@ function searchLibrary() {
 				get_offset(gr);
 				var txt_col = ui.searchcol;
 				if (selStart === 0 && selEnd === p.s_txt.length) {
-					if (new Color(selColor).brightness > 195) {
+					if (new Color(selColor).brightness > 180) {
 						txt_col = rgb(0,0,0);
 					} else {
 						txt_col = ui.textselcol;
