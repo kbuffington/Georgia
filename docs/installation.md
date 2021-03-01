@@ -24,7 +24,7 @@ Unlike most themes I don't include an .fcl with mine. This makes getting setup *
 6. If you don't have a version of foo_spider_monkey_panel 1.4 or greater installed already, grab the latest version [here](https://github.com/TheQwertiest/foo_spider_monkey_panel/releases).
 7. *(Optional Step)* This theme also makes heavy use of [the foo_enhanced_playcount](https://www.foobar2000.org/components/view/foo_enhanced_playcount) component. I recommend installing that as well, otherwise the timeline will not be as interesting. You'll probably also want [foo_playcount](https://www.foobar2000.org/components/view/foo_playcount) if you don't have that installed yet.
 8. Now add a Spider Monkey Panel to a new theme. If you're using Columns UI I recommend the simplest possible layout with just a [single FSM panel](https://user-images.githubusercontent.com/2282004/109398664-d2986e80-7903-11eb-8d90-4bc7eaf91420.png)
-, but you can obviously get a little [fancier](https://user-images.githubusercontent.com/2282004/109398568-4a19ce00-7903-11eb-93f0-ce1b03043d7c.png) if you want. Typically it will look best if the panel takes up the majority of foobar. Close foobar's properties.
+, but you can obviously get a little [fancier](https://user-images.githubusercontent.com/2282004/109398568-4a19ce00-7903-11eb-93f0-ce1b03043d7c.png) if you want. Typically it will look best if the panel takes up the majority of foobar. Close foobar's properties. If you're having trouble on this step, see the [video walkthrough](installation.html#installation-video-walkthrough) below.
 9. Now right click on the Spider Monkey panel and select Configure. In the dialog that opens up select "File" under Script Source and then click the three dots and browse and select the `georgia-theme.js` file. It should look something like [this](https://i.imgur.com/qzq5AAF.png). Hit OK and if you followed the instructions, the theme should have loaded working properly. If it didn't, check the console for more information.
 10. If the theme loaded, the last step is to verify that all optional items are installed correctly. Go to the Help => Georgia Theme Status submenu.
 
@@ -33,7 +33,7 @@ If everything is loaded correctly, that menu should look like this:
 
 If something is unchecked, either you chose not to install it, or it's probably in the wrong location.
 
-### Installation Walkthrough
+### Installation Video Walkthrough
 
 <iframe width="560" height="315"
     src="https://www.youtube.com/embed/i7B1mT4iTUw"
