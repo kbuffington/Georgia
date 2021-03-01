@@ -70,15 +70,15 @@ Artist logos are searched for using the %album artist% of the currently playing 
 
 Due to id3v2.3 standards, most music players will write "Publisher" fields to a TPUB frame which is not a multi-value frame. Because of this foo_musicbrainz and many other taggers will write these values to a `TXXX:LABEL` frame which does allow multiple values. Georgia typically assumes that `%label%` will be used whenever we wish to list the labels for a song. However, when showing Label logos the theme queries both `%publisher%` and `%label%` values, removes all duplicates, and then displays any it can find images for:
 
-![labels](https://user-images.githubusercontent.com/2282004/109057481-66b9ca00-76a7-11eb-8e31-80afa42ef4bf.png)
+![labels](https://user-images.githubusercontent.com/2282004/109057481-66b9ca00-76a7-11eb-8e31-80afa42ef4bf.png){: width="500px"}
 
 In the `\images\recordlabel` folder, the images are almost always stripped of " Records, " Music", and " Recordings" from the end of their file names. So the image "Atlantic.png" will match files tagged with either "Atlantic", or "Atlantic Records".
 
 For some record labels (130 and counting!), date based logos are available. For those labels, a different logo is shown based upon when the album was released. For an album released by Roadrunner Records back in 1983, the logo will be different than one released in 1999 or today.
 
-![Roadrunner 1983](https://user-images.githubusercontent.com/2282004/109065840-cb7a2200-76b1-11eb-8590-1e5750a9c3a2.png)
-![Roadrunner 1999](https://user-images.githubusercontent.com/2282004/109065874-daf96b00-76b1-11eb-868b-4d312c0f9453.png)
-![Roadrunner 2020](https://user-images.githubusercontent.com/2282004/109066049-198f2580-76b2-11eb-8b8b-64deef1552f6.png)
+![Roadrunner 1983](https://user-images.githubusercontent.com/2282004/109065840-cb7a2200-76b1-11eb-8590-1e5750a9c3a2.png){: width="330px"}
+![Roadrunner 1999](https://user-images.githubusercontent.com/2282004/109065874-daf96b00-76b1-11eb-868b-4d312c0f9453.png){: width="320px"}
+![Roadrunner 2020](https://user-images.githubusercontent.com/2282004/109066049-198f2580-76b2-11eb-8b8b-64deef1552f6.png){: width="320px"}
 
 ### Artist Country and Release Country flags
 {: .no_toc }
@@ -87,6 +87,6 @@ For some record labels (130 and counting!), date based logos are available. For 
 
 By default, country flags will be displayed for files tagged with `%artistcountry%` and/or `%releasecountry%`. These tags can be updated by changing the values of `title_format_strings.artist_country` and `title_format_strings.releaseCountry` in the config file. If you have set artistcountry to be a multi-value field in foobar, multiple flags can be displayed:
 
-![Slice the Cake flags](https://user-images.githubusercontent.com/2282004/109066344-8dc9c900-76b2-11eb-84a8-57c2dc6e5d7f.png)
+![Slice the Cake flags](https://user-images.githubusercontent.com/2282004/109066344-8dc9c900-76b2-11eb-84a8-57c2dc6e5d7f.png){: width="403px"}
 
 Countries can be specified using either a full string ("United States", "United Kingdom") or with the [ISO-3166 Alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) 2-digit character code ("US", "UK"). Some less common countries might be difficult for users to get the exact string match for (e.g. "Saint Kitts and Nevis") and the Alpha-2 code might be preferable ("KN"), especially if it is not being displayed in the theme.

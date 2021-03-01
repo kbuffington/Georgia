@@ -20,7 +20,7 @@ Unlike most themes I don't include an .fcl with mine. This makes getting setup *
 2. Download this theme from the [releases page](https://github.com/kbuffington/Georgia/releases).
 3. Extract it into a folder named `georgia` to your foobar profile folder. On a non-portable installation this will typically be `C:\Users\<USERNAME>\AppData\Roaming\foobar2000`.
 4. Open up the `\georgia\fonts` folder and install all fonts located there. If you miss this step things will look terrible. **Note**: If you are using Windows XP or Vista, also install the fonts from `\georgia\fonts\windows-system-fonts` otherwise skip these.
-5. *(Optional Step)*  Download any of the image packs you like and place them in a folder called `images` in your foobar profile folder (**Not** in the `\georgia` folder). See below for image pack locations.
+5. *(Optional Step)*  Download any of the image packs you like and place them in a folder called `images` in your foobar profile folder (**Not** in the `\georgia` folder). See below for image pack locations. ![image packs](https://user-images.githubusercontent.com/2282004/109053092-f492b680-76a1-11eb-807f-8cb973df24a7.png)
 6. If you don't have a version of foo_spider_monkey_panel 1.4 or greater installed already, grab the latest version [here](https://github.com/TheQwertiest/foo_spider_monkey_panel/releases).
 7. *(Optional Step)* This theme also makes heavy use of [the foo_enhanced_playcount](https://www.foobar2000.org/components/view/foo_enhanced_playcount) component. I recommend installing that as well, otherwise the timeline will not be as interesting. You'll probably also want [foo_playcount](https://www.foobar2000.org/components/view/foo_playcount) if you don't have that installed yet.
 8. Now add a Spider Monkey Panel to a new theme. If you're using Columns UI I recommend the simplest possible layout with just a [single FSM panel](https://user-images.githubusercontent.com/2282004/109398664-d2986e80-7903-11eb-8d90-4bc7eaf91420.png)
@@ -29,13 +29,13 @@ Unlike most themes I don't include an .fcl with mine. This makes getting setup *
 10. If the theme loaded, the last step is to verify that all optional items are installed correctly. Go to the Help => Georgia Theme Status submenu.
 
 If everything is loaded correctly, that menu should look like this:
-![theme status menu](https://user-images.githubusercontent.com/2282004/80932111-8a5ffc80-8d83-11ea-80f2-8951069b1638.png)
+![theme status menu](https://user-images.githubusercontent.com/2282004/80932111-8a5ffc80-8d83-11ea-80f2-8951069b1638.png){: width="559px"}
 
 If something is unchecked, either you chose not to install it, or it's probably in the wrong location.
 
 ### Installation Video Walkthrough
 
-<iframe width="620" height="400"
+<iframe width="650" height="410"
     src="https://www.youtube.com/embed/i7B1mT4iTUw"
     frameborder="0"
     allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"

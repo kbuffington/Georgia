@@ -8,11 +8,11 @@ nav_order: 1
 
 The transport controls are the row of buttons at the top (or bottom!) of the theme.
 
-![Transport Controls](https://user-images.githubusercontent.com/2282004/109108891-fab48180-76f9-11eb-9651-3189dcb94b34.png)
+![Transport Controls](https://user-images.githubusercontent.com/2282004/109108891-fab48180-76f9-11eb-9651-3189dcb94b34.png){: width="400px"}
 
 Stop, Previous, Play, and Next are always shown. The Randomize, Volume, and Reload Theme buttons can only be toggled on or off in the Options >> Transport controls menu:
 
-![image](https://user-images.githubusercontent.com/2282004/109109095-5252ed00-76fa-11eb-9ca6-097a4401c14c.png)
+![image](https://user-images.githubusercontent.com/2282004/109109095-5252ed00-76fa-11eb-9ca6-097a4401c14c.png){: width="541px"}
 
 The Transport button size and spacing can be adjusted in the Transport controls menu if they are too big or too small for your liking.
 

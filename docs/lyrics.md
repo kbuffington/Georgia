@@ -11,7 +11,7 @@ Georgia can display lyrics that have been saved to your disk, or that have been 
 
 To enable the lyrics view, click on the lyrics icon in the upper right.
 
-![lyrics icon](https://user-images.githubusercontent.com/2282004/109089826-85d05000-76d7-11eb-8dac-e7973999720f.png)
+![lyrics icon](https://user-images.githubusercontent.com/2282004/109089826-85d05000-76d7-11eb-8dac-e7973999720f.png){: width="380px"}
 
 ### Lyrics File types
 
@@ -21,7 +21,7 @@ Georgia can handle both `.lrc` or `.txt` files containing lyrics. `.lrc` files t
 
 Synced lyrics (whether in a .lrc file or not) will display with current line highlighting, similar to something you might see when doing karaoke. Seeking through the file will cause the "active" line to instantly update. If the .lrc file is out of sync with the actual song being played (i.e. lines appear a second or two before or after the line is sung) there's is _currently_ no way to adjust this, although it's on my Todo list.
 
-![Rainbow - Stargazer lyrics](https://user-images.githubusercontent.com/2282004/109073568-2b75c600-76bc-11eb-9d08-cbc013f5c7e6.png)
+![Rainbow - Stargazer lyrics](https://user-images.githubusercontent.com/2282004/109073568-2b75c600-76bc-11eb-9d08-cbc013f5c7e6.png){: width="650px"}
 
 ### Where does Georgia look for Lyrics?
 

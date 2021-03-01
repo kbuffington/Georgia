@@ -17,7 +17,7 @@ nav_order: 2
 
 There is an extensive list of options that can be enabled and disabled in the Options >> Playlist Settings menu:
 
-![Playlist settings menu](https://user-images.githubusercontent.com/2282004/109109623-3f8ce800-76fb-11eb-9745-1e7e4608f3dd.png)
+![Playlist settings menu](https://user-images.githubusercontent.com/2282004/109109623-3f8ce800-76fb-11eb-9745-1e7e4608f3dd.png){: width="614px"}
 
 Sizes for the playlist can be adjusted if headers/rows are too big or too small, if you prefer compact headers, and more.
 
@@ -25,13 +25,13 @@ Sizes for the playlist can be adjusted if headers/rows are too big or too small,
 
 While most of the visual aspects of the playlist can be controlled by the Playlist Settings menu, many options related to functionality of the Playlist are only available within the right-click context menu.
 
-![right-click context menu](https://user-images.githubusercontent.com/2282004/109110187-3fd9b300-76fc-11eb-9254-64ac167b86d2.png)
+![right-click context menu](https://user-images.githubusercontent.com/2282004/109110187-3fd9b300-76fc-11eb-9254-64ac167b86d2.png){: width="700px"}
 
 ### Playlist Grouping
 
 The playlist grouping and group headers can be changed by choosing a different selection from the Right-click >> Playlist Grouping menu. Six presets are pre-defined for you, and more can be added, or defaults set by selecting "Manage Presets". This will open up a new dialog:
 
-![Manage Presets Dialog](https://user-images.githubusercontent.com/2282004/109113416-da88c080-7701-11eb-85fd-5941488e827d.png)
+![Manage Presets Dialog](https://user-images.githubusercontent.com/2282004/109113416-da88c080-7701-11eb-85fd-5941488e827d.png){: width="700px"}
 
 From this dialog, grouping presets can be added, removed, or rearranged. If you find a preset you want to always use, click "Set as Default".
 

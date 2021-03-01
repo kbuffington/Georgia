@@ -6,7 +6,7 @@ nav_order: 4
 ---
 # The Timeline
 
-![Timeline](https://user-images.githubusercontent.com/2282004/109264415-931a3700-77ca-11eb-97eb-a4fd35b28857.png)
+![Timeline](https://user-images.githubusercontent.com/2282004/109264415-931a3700-77ca-11eb-97eb-a4fd35b28857.png){: width="473px"}
 
 The Timeline is the 12px high, three-tone bar that appears between the song and album title. It is intended to be a visual representation of a song's lifecycle in your library. Its exact appearance will be different for every song, and whether you have the [foo_enhanced_playcount](https://www.foobar2000.org/components/view/foo_enhanced_playcount) component installed. I built the timeline component (and wrote foo_enhanced_playcount to supply it with data) because for me, music is often indelibly linked with the time and place in which I listened to it. I wanted a way to go back and be able to say that "yes, I really did listen to that song seven times on that road trip," or "I don't think I've listened to that song since we got home from the hospital."
 
