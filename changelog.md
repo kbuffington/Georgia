@@ -1,5 +1,11 @@
-### v2.0.0b4 - 2021-02-21
+### v2.0.0 - 2021-03-??
 Rolls up all changes from the betas below plus
+ - Transport control settings added to config file
+ - Fixed display issues with Playlist >> Group Presets manager
+ - Now caching artist logos
+ - Improved readability/contrast of text in playlist/library when light/bright artwork is displayed
+
+### v2.0.0b4 - 2021-02-21
  - Lyrics filename patterns can be specified in the config file
  - Config file can be edited/reset from the settings menu
  - Artwork is no longer reloaded/parsed unnecessarily when changing tracks quickly (prevents flashes of wrong theme color)
