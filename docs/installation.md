@@ -51,3 +51,4 @@ These packs will all need to be extracted to a folder called `images` which you 
 * **[Flags](https://github.com/kbuffington/georgia-image-packs/raw/master/flags.zip)**: Extract to `.../AppData/Roaming/foobar2000/images/`
 
 ##### NOTE: If installing to a portable install the images folder should be put at the root level. i.e. if foobar is at `c:\foobar\` then install the image packs to `c:\foobar\images`.
+{: .no_toc }
