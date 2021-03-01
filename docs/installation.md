@@ -35,7 +35,7 @@ If something is unchecked, either you chose not to install it, or it's probably 
 
 ### Installation Video Walkthrough
 
-<iframe width="580" height="340"
+<iframe width="620" height="400"
     src="https://www.youtube.com/embed/i7B1mT4iTUw"
     frameborder="0"
     allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
