@@ -259,7 +259,8 @@ let disc_art_loading; // for on_load_image_done()
 let album_art_loading; // for on_load_image_done()
 var isStreaming = false; // is the song from a streaming source?
 let newTrackFetchingArtwork = false; // only load theme colors when newTrackFetchingArtwork = true
-var noArtwork = false; // only use default theme when noArtwork was found
+let noArtwork = false; // only use default theme when noArtwork was found
+let embeddedArt = false; // when artwork displayed is embedded and not loaded from a file
 var themeColorSet = false; // when no artwork, don't set themeColor every redraw
 var playCountVerifiedByLastFm = false; // show Last.fm image when we %lastfm_play_count% > 0
 var art_off_center = false; // if true, album art has been shifted 40 pixels to the right
@@ -1427,7 +1428,7 @@ function on_playback_new_track(metadb) {
 	str.timeline = new Timeline(geo.timeline_h);
 
 	// Fetch new albumart
-	if ((pref.cycleArt && albumArtIndex !== 0) || currentFolder != lastFolder || albumart == null ||
+	if ((pref.cycleArt && albumArtIndex !== 0) || embeddedArt || currentFolder != lastFolder || albumart == null ||
 			$('$if2(%discnumber%,0)') != lastDiscNumber || $('$if2(' + tf.vinyl_side + ',ZZ)') != lastVinylSide) {
 		fetchNewArtwork(metadb);
 	} else if (pref.cycleArt && aa_list.length > 1) {
@@ -2640,6 +2641,7 @@ function fetchNewArtwork(metadb) {
 
 		if (aa_list.length) {
 			noArtwork = false;
+			embeddedArt = false;
 			if (aa_list.length > 1 && pref.cycleArt) {
 				albumArtTimeout = setTimeout(() => {
 					displayNextImage();
@@ -2650,6 +2652,7 @@ function fetchNewArtwork(metadb) {
 		} else if (metadb && (albumart = utils.GetAlbumArtV2(metadb))) {
 			getThemeColors(albumart);
 			ResizeArtwork(true);
+			embeddedArt = true;
 		} else {
 			noArtwork = true;
 			albumart = null;
