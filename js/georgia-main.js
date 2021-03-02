@@ -234,7 +234,7 @@ let btnImg = undefined;
 // Artwork
 var albumart = null; // albumart image
 let albumart_size = new ImageSize(0, 0, 0, 0); // position (big image)
-var cdart = null; // cdart image
+let cdart = null; // cdart image
 let cdart_size = new ImageSize(0, 0, 0, 0); // cdart position (offset from albumart_size)
 var albumart_scaled = null; // pre-scaled album art to speed up drawing considerably
 var recordLabels = []; // array of record label images
@@ -380,7 +380,7 @@ function draw_ui(gr) {
 		if (str.trackInfo) {
 			gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
 			let infoLeft = ww - textRightGap - infoWidth;
-			if (rotatedCD && pref.display_cdart) {
+			if (cdart && pref.display_cdart) {
 				const infoY = geo.top_bg_h - scaleForDisplay(15);
 				const radius = cdart_size.h / 2;
 				const angle = Math.asin((cdart_size.y + radius - infoY) / radius);
@@ -404,7 +404,7 @@ function draw_ui(gr) {
 				infoSize = gr.MeasureString(drawnInfo, infoFont, 0, 0, 0, 0);
 			}
 			if (drawnInfo.length) {
-				trackInfoHeight = infoSize.Height + 1;
+				trackInfoHeight = Math.ceil(infoSize.Height + 1);
 				gr.DrawString(drawnInfo, infoFont, col.artist, infoLeft, geo.top_bg_h - trackInfoHeight - scaleForDisplay(15), maxInfoWidth, trackInfoHeight, StringFormat(2));
 				gr.SetTextRenderingHint(TextRenderingHint.AntiAliasGridFit);
 			}
