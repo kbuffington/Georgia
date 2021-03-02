@@ -1413,7 +1413,7 @@ function on_playback_new_track(metadb) {
 
 	isStreaming = metadb ? !metadb.RawPath.match(/^file\:\/\//) : false;
 	if (!isStreaming) {
-		currentFolder = $('%directoryname%');
+		currentFolder = metadb.RawPath.substring(0, metadb.RawPath.lastIndexOf("\\"));
 	} else {
 		currentFolder = '';
 	}
