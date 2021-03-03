@@ -1,7 +1,8 @@
 # Changelog
 
 #### Table of Contents
-- [v2.0.0](#v200---Unreleased)
+- [v2.0.1](#v200---2020-03-02)
+- [v2.0.0](#v200---2020-03-01)
 - [v1.1.9](#v119---2020-07-10)
 - [v1.1.8](#v118---2020-05-09)
 - [v1.1.7](#v117---2020-04-11)
@@ -16,7 +17,13 @@
 - [v1.0.0](#v100---2018-11-03)
 
 
-## v2.0.0 - Unreleased
+## v2.0.1 - 2020-03-02
+### Fixed
+ - Potential crash when switching from album with cdArt to one without
+ - Artwork not updating when leaf directory had the same name even if full paths were different
+ - Volume bar fill not being visible in some color combinations
+
+## v2.0.0 - 2020-03-01
 ### Changes
  - foo_jscript_panel replaced with foo_spider_monkey_panel
  - Lyrics code completely rewritten -- now faster, less buggy, and requires half the code.
