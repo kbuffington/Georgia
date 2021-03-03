@@ -1401,7 +1401,10 @@ function on_playback_dynamic_info_track() {
 	}
 }
 
-// new track
+/**
+ * Handle new track playing
+ * @param {FbMetadbHandle} metadb
+ */
 function on_playback_new_track(metadb) {
 	let newTrackProfiler = null;
 	debugLog('in on_playback_new_track()');
@@ -1413,7 +1416,7 @@ function on_playback_new_track(metadb) {
 
 	isStreaming = metadb ? !metadb.RawPath.match(/^file\:\/\//) : false;
 	if (!isStreaming) {
-		currentFolder = $('%directoryname%');
+		currentFolder = metadb.Path.substring(0, metadb.Path.lastIndexOf('\\'));
 	} else {
 		currentFolder = '';
 	}
@@ -1428,7 +1431,7 @@ function on_playback_new_track(metadb) {
 	str.timeline = new Timeline(geo.timeline_h);
 
 	// Fetch new albumart
-	if ((pref.cycleArt && albumArtIndex !== 0) || embeddedArt || currentFolder != lastFolder || albumart == null ||
+	if ((pref.cycleArt && albumArtIndex !== 0) || embeddedArt || currentFolder !== lastFolder || albumart == null ||
 			$('$if2(%discnumber%,0)') != lastDiscNumber || $('$if2(' + tf.vinyl_side + ',ZZ)') != lastVinylSide) {
 		fetchNewArtwork(metadb);
 	} else if (pref.cycleArt && aa_list.length > 1) {
