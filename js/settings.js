@@ -8,7 +8,7 @@ let globals = {};
 let transport = {};
 
 
-const currentVersion = '2.0.0';
+const currentVersion = '2.0.1';
 let configVersion = currentVersion;	// will be overwritten when loaded from config file
 let updateAvailable = false;
 let updateHyperlink;
@@ -218,6 +218,8 @@ function migrateCheck(version, storedVersion) {
 				fso.CopyFile(configPath, fb.ProfilePath + fileName);
 				config.writeConfiguration();
 				window.Reload();
+
+			case '2.0.0':
 
 			default:
 				pref.version = currentVersion;
