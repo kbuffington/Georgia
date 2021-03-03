@@ -95,9 +95,7 @@ class ProgressBar {
 					}
 				}
 				gr.FillSolidRect(this.x, this.y, this.progressLength, this.h, fillColor);
-				if (pref.darkMode) {
-					gr.DrawRect(this.x, this.y, this.progressLength, this.h - 1, 1, col.darkAccent);
-				}
+				gr.DrawRect(this.x, this.y, this.progressLength, this.h - 1, 1, col.darkAccent);
 				if (progressStationary && fb.IsPlaying && !fb.IsPaused) {
 					if (col.accent !== this.lastAccentCol || this.progressAlphaCol === undefined) {
 						const c = new Color(col.accent);

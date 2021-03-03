@@ -150,8 +150,14 @@ function VolumeBtn() {
                 var fillHeight = volume_bar.pos('h');
                 var lineThickness = scaleForDisplay(1);
 
+	            let fillColor = col.primary;
                 gr.FillSolidRect(x, y + p, w, h, col.bg);
-                gr.FillSolidRect(x, y + p + h - fillHeight, w, fillHeight, col.primary);
+                if (colorDistance(col.primary, col.progress_bar) < 105 && pref.darkMode) {
+                    fillColor = rgb(255,255,255);
+                } else if (colorDistance(col.primary, col.bg) < 105) {
+                    fillColor = col.darkAccent;
+				}
+                gr.FillSolidRect(x, y + p + h - fillHeight, w, fillHeight, fillColor);
                 gr.DrawRect(x, y + p, w, h - lineThickness, lineThickness, col.progress_bar);
             }
         }
