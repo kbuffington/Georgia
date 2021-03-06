@@ -136,98 +136,134 @@ _.mixin({
     }
 });
 
-function VolumeBtn() {
-    this.on_paint = function (gr) {
+class VolumeBtn {
 
-            // VolBar
-            if (show_volume_bar) {
-                var p = 3;
-                var x = volume_bar.x,
-                    y = volume_bar.y,
-                    w = volume_bar.w,
-                    h = volume_bar.h;
+    constructor() {
+        this.x = 0;
+        this.y = 0;
+        this.w = 0;
+        this.h = 0;
 
-                var fillHeight = volume_bar.pos('h');
-                var lineThickness = scaleForDisplay(1);
+        /**
+         * @const
+         * @type {number}
+         */
 
-	            let fillColor = col.primary;
-                gr.FillSolidRect(x, y + p, w, h, col.bg);
-                if (colorDistance(col.primary, col.progress_bar) < 105 && pref.darkMode) {
-                    fillColor = rgb(255,255,255);
-                } else if (colorDistance(col.primary, col.bg) < 105) {
-                    fillColor = col.darkAccent;
-				}
-                gr.FillSolidRect(x, y + p + h - fillHeight, w, fillHeight, fillColor);
-                gr.DrawRect(x, y + p, w, h - lineThickness, lineThickness, col.progress_bar);
+        this.volume_bar_w = scaleForDisplay(28);
+        this.trace_pad = Math.min(this.volume_bar_w / 2);
+        this.volume_bar_h = scaleForDisplay(180);
+        /**
+         * @const
+         * @type {number}
+         */
+        this.playback_h = 30;
+
+        // Const after init
+        this.volume_bar_x = 0;
+
+        // Runtime state
+        this.mouse_in_panel = false;
+        this.show_volume_bar = false;
+
+        // Objects
+        this.volume_bar = undefined;
+
+        this.initialize();
+    }
+
+    on_paint(gr) {
+        // VolBar
+        if (this.show_volume_bar) {
+            var p = 3;
+            var x = this.volume_bar.x,
+                y = this.volume_bar.y,
+                w = this.volume_bar.w,
+                h = this.volume_bar.h;
+
+            var fillHeight = this.volume_bar.pos('h');
+            var lineThickness = scaleForDisplay(1);
+
+            let fillColor = col.primary;
+            gr.FillSolidRect(x, y + p, w, h, col.bg);
+            if (colorDistance(col.primary, col.progress_bar) < 105 && pref.darkMode) {
+                fillColor = rgb(255,255,255);
+            } else if (colorDistance(col.primary, col.bg) < 105) {
+                fillColor = col.darkAccent;
             }
+            gr.FillSolidRect(x, y + p + h - fillHeight, w, fillHeight, fillColor);
+            gr.DrawRect(x, y + p, w, h - lineThickness, lineThickness, col.progress_bar);
         }
+    }
 
 
-    this.on_size = function () {
+    on_size() {
         this.w = window.Width;
         this.h = window.Height;
 
-        const playback_y = this.h - playback_h;
-        const volume_bar_y = playback_y + Math.floor(playback_h / 2 - volume_bar_w / 2 - 10);
-        volume_bar = new _.volume(volume_bar_x, volume_bar_y, Math.min(this.w - volume_bar_x - 4, volume_bar_h), volume_bar_w);
+        const playback_y = this.h - this.playback_h;
+        const volume_bar_y = playback_y + Math.floor(this.playback_h / 2 - this.volume_bar_w / 2 - 10);
+        this.volume_bar = new _.volume(this.volume_bar_x, volume_bar_y, Math.min(this.w - this.volume_bar_x - 4, this.volume_bar_h), this.volume_bar_w);
 
     };
 
-    this.set_position = function (x, y, btnWidth) {
+    set_position(x, y, btnWidth) {
         this.w = window.Width;
         this.h = window.Height;
         var center = Math.floor(btnWidth / 2);
 
-        volume_bar_x = x;
+        this.volume_bar_x = x;
         const volume_bar_y = y;
-        volume_bar = new _.volume(volume_bar_x + center - volume_bar_w / 2, volume_bar_y + center, volume_bar_w, Math.min(this.h - volume_bar_y - 4, volume_bar_h));
+        this.volume_bar = new _.volume(this.volume_bar_x + center - this.volume_bar_w / 2, volume_bar_y + center, this.volume_bar_w, Math.min(this.h - volume_bar_y - 4, this.volume_bar_h));
     }
 
-    this.on_mouse_move = function (x, y, m) {
+    on_mouse_move(x, y, m) {
         qwr_utils.DisableSizing(m);
 
-        if (volume_bar.drag) {
-            volume_bar.move(x, y);
+        if (this.volume_bar.drag) {
+            this.volume_bar.move(x, y);
             return;
         }
 
-        if (show_volume_bar && volume_bar.trace(x, y)) {
-            mouse_in_panel = true;
+        if (this.show_volume_bar && this.volume_bar.trace(x, y)) {
+            this.mouse_in_panel = true;
         } else {
-            mouse_in_panel = false;
+            this.mouse_in_panel = false;
         }
 
-        if (show_volume_bar) {
-            if (x > volume_bar.x - trace_pad && x < volume_bar.x + volume_bar.w + trace_pad && y >= volume_bar.y - trace_pad - 3 && y < volume_bar.y + volume_bar.h + trace_pad) {
-                volume_bar.move(x, y);
+        if (this.show_volume_bar) {
+            if (x > this.volume_bar.x - this.trace_pad &&
+                x < this.volume_bar.x + this.volume_bar.w + this.trace_pad &&
+                y >= this.volume_bar.y - this.trace_pad - 3 &&
+                y < this.volume_bar.y + this.volume_bar.h + this.trace_pad) {
+                this.volume_bar.move(x, y);
             }
             else {
                 this.showVolumeBar(false);
-                volume_bar.show_tt = false;
-                volume_bar.repaint();
+                this.volume_bar.show_tt = false;
+                this.volume_bar.repaint();
             }
         }
 
     };
 
-    this.on_mouse_lbtn_down = function (x, y, m) {
-        if (show_volume_bar) {
-            return volume_bar.lbtn_down(x, y);
+    on_mouse_lbtn_down(x, y, m) {
+        if (this.show_volume_bar) {
+            return this.volume_bar.lbtn_down(x, y);
         }
         return false;
     };
 
-    this.on_mouse_lbtn_up = function (x, y, m) {
+    on_mouse_lbtn_up(x, y, m) {
         qwr_utils.EnableSizing(m);
 
-        if (show_volume_bar) {
-            return volume_bar.lbtn_up(x, y);
+        if (this.show_volume_bar) {
+            return this.volume_bar.lbtn_up(x, y);
         }
     };
 
-    this.on_mouse_wheel = function (delta) {
-        if (mouse_in_panel) {
-            if (!show_volume_bar || !volume_bar.wheel(delta)) {
+    on_mouse_wheel(delta) {
+        if (this.mouse_in_panel) {
+            if (!this.show_volume_bar || !this.volume_bar.wheel(delta)) {
                 if (delta > 0) {
                     fb.VolumeUp();
                 }
@@ -240,69 +276,35 @@ function VolumeBtn() {
         return false;
     };
 
-    this.on_mouse_leave = function () {
-        if (volume_bar.drag) {
+    on_mouse_leave() {
+        if (this.volume_bar.drag) {
             return;
         }
 
-        if (mouse_in_panel) {
-            mouse_in_panel = false;
+        if (this.mouse_in_panel) {
+            this.mouse_in_panel = false;
         }
 
-        if (show_volume_bar) {
+        if (this.show_volume_bar) {
             this.showVolumeBar(false);
-            volume_bar.repaint();
+            this.volume_bar.repaint();
         }
     };
 
-    this.on_volume_change = function (val) {
-        if (show_volume_bar) {
-            volume_bar.volume_change();
+    on_volume_change(val) {
+        if (this.show_volume_bar) {
+            this.volume_bar.volume_change();
         }
     };
 
-    this.showVolumeBar = function (show) {
-        show_volume_bar = show;
-        volume_bar.repaint();
+    showVolumeBar(show) {
+        this.show_volume_bar = show;
+        this.volume_bar.repaint();
     }
 
-    function initialize() {
+    initialize() {
         if (!window.IsVisible) {
-            that.on_size(1, 1);
+            this.on_size();
         }
     }
-
-    this.x = 0;
-    this.y = 0;
-    this.w = 0;
-    this.h = 0;
-
-    var that = this;
-
-    /**
-     * @const
-     * @type {number}
-     */
-
-    var volume_bar_w = scaleForDisplay(28);
-    var trace_pad = Math.min(volume_bar_w / 2);
-    var volume_bar_h = scaleForDisplay(180);
-    /**
-     * @const
-     * @type {number}
-     */
-    var playback_h = 30;
-
-    // Const after init
-    var volume_bar_x = 0;
-
-    // Runtime state
-    var mouse_in_panel = false;
-    var show_volume_bar = false;
-
-    // Objects
-    var volume_bar = undefined;
-
-    initialize();
-
 }
