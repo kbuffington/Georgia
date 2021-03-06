@@ -1807,7 +1807,7 @@ function on_mouse_move(x, y, m) {
         } else if (str.timeline && str.timeline.mouseInThis(x, y)) {
 			str.timeline.on_mouse_move(x, y, m);
 		}
-		if (transport.showVolume && volume_btn) {
+		if (transport.enableTransportControls && transport.showVolume && volume_btn) {
 			volume_btn.on_mouse_move(x, y, m);
 		}
 	}

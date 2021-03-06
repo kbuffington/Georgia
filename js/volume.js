@@ -264,7 +264,7 @@ class VolumeBtn {
     }
 
     on_mouse_leave() {
-        if (this.volume_bar.drag) {
+        if (!this.volume_bar || this.volume_bar.drag) {
             return;
         }
 
