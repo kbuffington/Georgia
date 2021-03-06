@@ -584,8 +584,13 @@ function checkFor4k(w, h) {
 	}
 }
 
-function scaleForDisplay(number) {
-	return is_4k ? number * 2 : number;
+/**
+ * Scales the value based on 4k mode or not. TODO: Use _.scale() instead of is_4k.
+ * @param {number} val
+ * @return {number}
+ */
+function scaleForDisplay(val) {
+	return is_4k ? val * 2 : val;
 }
 
 const countryCodes = {
@@ -905,7 +910,7 @@ _.tt_handler.tt_timer = new function () {
 			}
 
 			if (!tooltip_timer) {
-				tooltip_timer = setTimeout(function() {
+				tooltip_timer = setTimeout(() => {
 					_.tt(text);
 					tooltip_timer = null;
 				}, 300);

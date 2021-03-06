@@ -323,6 +323,7 @@ var lastDiscNumber;
 var lastVinylSide;
 var currentLastPlayed = '';
 
+/** @type {FbTooltip} */
 let g_tooltip;
 const tt = new _.tt_handler;
 
@@ -1273,11 +1274,6 @@ function onOptionsMenu(x, y) {
 	menu.doCallback(idx);
 
 	menu_down = false;
-}
-
-function on_mouse_leave() {
-	trace_call && console.log(qwr_utils.function_name());
-	playlist.on_mouse_leave();
 }
 
 
@@ -2710,7 +2706,7 @@ function createButtonObjects(ww, wh) {
 		}
 		if (transport.showVolume) {
 			btns.volume = new Button(calcX(++count), y, w, h, 'Volume', btnImg.ShowVolume);
-			volume_btn.set_position(btns.volume.x, y, w);
+			volume_btn.setPosition(btns.volume.x, y, w);
 		}
 		if (transport.showReload) {
 			btns.reload = new Button(calcX(++count), y, w, h, 'Reload', btnImg.Reload, 'Reload');

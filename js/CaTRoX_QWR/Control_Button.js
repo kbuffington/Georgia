@@ -6,7 +6,8 @@ let downButton;
 var buttonTimer = null;
 var mainMenuOpen = false;
 
-var lastOverButton = null;
+/** @type {Button} */
+let lastOverButton = null;
 
 /** @type {Button[]} */
 let activatedBtns = [];
@@ -25,7 +26,8 @@ function buttonEventHandler(x, y, m) {
 
 	var c = qwr_utils.caller();
 
-	var thisButton = null;
+	/** @type {Button} */
+	let thisButton = null;
 
 	for (var i in btns) {
 		if (typeof btns[i] === 'object' && btns[i].mouseInThis(x, y)) {
@@ -53,7 +55,7 @@ function buttonEventHandler(x, y, m) {
 			if (lastOverButton) {
 				if (lastOverButton.tooltip) {
 					tt.showDelayed(lastOverButton.tooltip);
-				} else if (lastOverButton.id === 'Volume') {
+				} else if (lastOverButton.id === 'Volume' && !volume_btn.show_volume_bar) {
 					tt.showDelayed(fb.Volume.toFixed(2) + ' dB');
 				}
 			}
@@ -207,7 +209,7 @@ function btnActionHandler(btn) {
 			}
 			break;
 		case 'Volume':
-			volume_btn.showVolumeBar(true);
+			volume_btn.toggleVolumeBar();
 			break;
 		case 'Reload':
 			window.Reload();
