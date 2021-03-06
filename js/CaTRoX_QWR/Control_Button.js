@@ -391,7 +391,7 @@ function onMainMenu(x, y, name) {
 // =================================================== //
 
 function refreshPlayButton() {
-	if (pref.show_transport) {
+	if (transport.enableTransportControls) {
 		btns.play.img = !fb.IsPlaying || fb.IsPaused ? btnImg.Play : btnImg.Pause;
 		btns.play.repaint();
 	}
