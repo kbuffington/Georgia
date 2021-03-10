@@ -258,9 +258,13 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
         this.stop_shift_timer();
     };
 
+    this.scroll_to_start = function () {
+        this.smooth_scroll_to(0);
+    }
+
     this.shift_line = function (direction) {
         var newScroll = this.nearestScroll(direction);
-        this.scroll_to(newScroll);
+        this.smooth_scroll_to(newScroll);
     };
 
     this.shift_page = function (direction) {
@@ -357,11 +361,11 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
     /**
      * Scrolls to desired row over 400ms. Can be called repeatedly (during wheel or holding down arrows)
      * to update desired position.
-     * @param {number} new_position row position to scroll to
+     * @param {number} newPosition row position to scroll to
      * @returns
      */
-    this.smooth_scroll_to = function(new_position) {
-        const end = Math.max(0, Math.min(new_position, this.scrollable_lines));
+    this.smooth_scroll_to = function(newPosition) {
+        const end = Math.max(0, Math.min(newPosition, this.scrollable_lines));
         if (end === this.scroll) {
             return;
         }
@@ -377,12 +381,14 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
             }
             animationProgress += 8; // slow things down slightly from 10
             let newVal = start + easeOut(animationProgress/100) * (end - start);
-            // console.log(`${start} + easeOut(${animationProgress}/100) * (${end} - ${start}) = `, newVal)
-            if ((direction === 1 && newVal > new_position) ||
-                (direction === -1 && newVal < new_position)) {
-                newVal = new_position;
+            if ((Math.abs(newPosition - newVal) < 0.1) ||
+                (direction === 1 && newVal > newPosition) ||
+                (direction === -1 && newVal < newPosition)) {
+                newVal = newPosition;
                 animationProgress = 100;    // clear interval
             }
+            newVal = Math.round(newVal * 100)/100;
+            // console.log(`${start} + easeOut(${animationProgress}/100) * (${end} - ${start}) = `, newVal)
             this.scroll_to(newVal, false);
             if (animationProgress >= 100) {
                 clearInterval(smoothScrollTimer);
@@ -422,7 +428,7 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
 
     // private:
     var throttled_scroll_to = _.throttle(() => {
-        this.scroll_to((throttled_scroll_y - this.btn_h) / this.drag_distance_per_row);
+        this.smooth_scroll_to((throttled_scroll_y - this.btn_h) / this.drag_distance_per_row);
     }, 1000 / 60);
 
     function create_scrollbar_images() {
