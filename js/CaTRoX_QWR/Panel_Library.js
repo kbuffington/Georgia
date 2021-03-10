@@ -2950,8 +2950,7 @@ function menu_object() {
 			n = ["Send to Current Playlist", "Insert in Current Playlist", "Add to Current Playlist", "Copy", "Collapse All", "Expand"];
 		for (i = 0; i < 6; i++) {
 			this.NewMenuItem(idx, "Playlist", i + 1);
-			Menu.AppendMenuItem(i < 3 && !plman.IsPlaylistLocked(plman.ActivePlaylist) || i == 3 || i == 4 ? MF_STRING : MF_GRAYED, idx, n[i]);
-			// Menu.AppendMenuItem(i < 3 && !plman.IsPlaylistLocked(plman.ActivePlaylist) || i == 3 || i == 4 || i == 5 ? MF_STRING : MF_GRAYED, idx, n[i]);
+			Menu.AppendMenuItem(i < 3 && !plman.IsPlaylistLocked(plman.ActivePlaylist) || i == 3 || i == 4 || i == 5 ? MF_STRING : MF_GRAYED, idx, n[i]);
 			if (i == 3) Menu.AppendMenuItem(MF_SEPARATOR, 0, 0);
 			idx++;
 		}
