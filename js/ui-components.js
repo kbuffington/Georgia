@@ -215,7 +215,7 @@ class Timeline {
             }
             for (let i = 0; i < this.playedTimesPercents.length; i++) {
                 const x = Math.floor(this.drawWidth * this.playedTimesPercents[i]) + this.extraLeftSpace;
-                if (!isNaN(x) && x <= this.h) {
+                if (!isNaN(x) && x <= this.w) {
 			        gr.DrawLine(x, this.y, x, this.y + this.h, this.lineWidth, this.playCol);
                 } else {
                     // console.log('Played Times Error! ratio: ' + this.playedTimesPercents[i], 'x: ' + x);
