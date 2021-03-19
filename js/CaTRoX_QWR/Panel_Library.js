@@ -732,6 +732,7 @@ function panel_operations() {
 	// 	js_stnd = window.GetProperty("ADV.Scrollbar Height Always Full", true);
 	// js_stnd = !js_stnd ? 2 : 0;
 
+	// TODO: Move this to config file, create object with properties for each entry and include optional custom sort
 	var view_ppt = [
 		window.GetProperty(prefix + "View 01: Name // Pattern", "View by Artist // %artist%|%album%|[[%discnumber%.]%tracknumber%. ][%track artist% - ]%title%"),
 		window.GetProperty(prefix + "View 02: Name // Pattern", "View by Album Artist // %album artist%|%album%|[[%discnumber%.]%tracknumber%. ][%track artist% - ]%title%"),
@@ -830,7 +831,18 @@ function panel_operations() {
 		// window.MaxHeight = window.MinHeight = this.pn_h;
 		// window.SetProperty("SYSTEM.Height", this.pn_h);
 	// }
-	this.sort = function(li) {switch (this.view_by) {case this.folder_view: li.OrderByRelativePath(); break; default: var tfo = fb.TitleFormat(this.grp_sort); li.OrderByFormat(tfo, 1); break;}}
+	this.sort = function(li) {
+		switch (this.view_by) {
+			case this.folder_view:
+				li.OrderByRelativePath();
+				break;
+			default:
+				// var tfo = fb.TitleFormat(this.grp_sort);
+				var tfo = fb.TitleFormat(settings.defaultSortString);	// TOOD: Add custom sort to object in settings
+				li.OrderByFormat(tfo, 1);
+				break;
+			}
+		}
 	var paint_y = Math.floor(libraryProps.searchMode || !libraryProps.showScrollbar ? this.s_h : 0);
 	this.tree_paint = function() {window.RepaintRect(ui.x, ui.y + paint_y, ui.w, ui.h - paint_y + 1);}
 	this.view_by = window.GetProperty("SYSTEM.View By", 1);
@@ -861,7 +873,7 @@ function panel_operations() {
 		this.multi_process = false;
 		this.multi_swap = false;
 		this.filter_by = filter;
-		this.mv_sort = "";
+		// this.mv_sort = "";
 		this.view = "";
 		this.view_by = view;
 		for (i = 0; i < view_ppt.length; i++) {
@@ -883,14 +895,15 @@ function panel_operations() {
 		while (i--) if (!this.filt[i] || this.filt[i].name == "" || this.filt[i].type == "") this.filt.splice(i, 1);
 		this.grp[this.grp.length] = {name: def_ppt.split("//")[0].trim(), type: ""}
 		this.folder_view = this.grp.length - 1; this.filter_by = Math.min(this.filter_by, this.filt.length - 1); this.view_by = Math.min(this.view_by, this.grp.length - 1);
-		if (this.grp[this.view_by].type.indexOf("%<") != -1)
+		if (this.grp[this.view_by].type.indexOf("%<") != -1) {
 			this.multi_process = true;
+		}
 		if (this.view_by != this.folder_view) {
 			if (this.multi_process) {
 				if (this.grp[this.view_by].type.indexOf("$swapbranchprefix{%<") != -1) {
 					this.multi_swap = true;
 				}
-				this.mv_sort = fb.TitleFormat((this.grp[this.view_by].type.indexOf("album artist") != -1 || this.grp[this.view_by].type.indexOf("%artist%") == -1 && this.grp[this.view_by].type.indexOf("%<artist>%") == -1 && this.grp[this.view_by].type.indexOf("$meta(artist") == -1 ? "%album artist%" : "%artist%") + "|%album%|[[%discnumber%.]%tracknumber%. ][%track artist% - ]%title%");
+				// this.mv_sort = fb.TitleFormat((this.grp[this.view_by].type.indexOf("album artist") != -1 || this.grp[this.view_by].type.indexOf("%artist%") == -1 && this.grp[this.view_by].type.indexOf("%<artist>%") == -1 && this.grp[this.view_by].type.indexOf("$meta(artist") == -1 ? "%album artist%" : "%artist%") + "|%album%|[[%discnumber%.]%tracknumber%. ][%track artist% - ]%title%");
 			}
 			this.grp_split = this.grp[this.view_by].type.replace(/^\s+/, "").split("|");
 			for (i = 0; i < this.grp_split.length; i++) {
@@ -1461,9 +1474,10 @@ function LibraryTree() {
 	// 	searchFocusIX = parseFloat(hotKeys[7]),
 	// 	searchClearIX = parseFloat(hotKeys[9]);
 	// var custom_sort = window.GetProperty(" Playlist: Custom Sort", "");
-	if (libraryProps.playlistCustomSort) {
-		var tf_customSort = fb.TitleFormat(libraryProps.playlistCustomSort);
-	}
+	// if (libraryProps.playlistCustomSort) {
+	// 	var tf_customSort = fb.TitleFormat(libraryProps.playlistCustomSort);
+	// }
+	const tf_customSort = fb.TitleFormat(settings.defaultSortString);	// TODO: Do we still need this?
 	// var libraryProps.doubleClickAction = window.GetProperty(" Text Double-Click: ExplorerStyle-0 Play-1 Send-2", 1);
 	// var lib_playlist = window.GetProperty(" Playlist", "Library View");
 	// libraryProps.autoFill = window.GetProperty(" Playlist: AutoFill", true);
@@ -1840,7 +1854,7 @@ function LibraryTree() {
 	this.tracking = function(list, type) {
 		if (type) {handles = fb.CreateHandleList(); try {for (var i = 0; i < list.length; i++) handles.Add(p.list[list[i]]);} catch (e) {}}
 		else handles = list.Clone();
-		if (libraryProps.playlistCustomSort) handles.OrderByFormat(tf_customSort, 1);
+		handles.OrderByFormat(tf_customSort, 1);
 		selection_holder.SetSelection(handles);
 	}
 
@@ -1857,8 +1871,8 @@ function LibraryTree() {
 			for (i = 0; i < list.length; i++)
 				items.Add(p.list[list[i]]);
 		} else items = list.Clone();
-		if (p.multi_process && !libraryProps.playlistCustomSort) items.OrderByFormat(p.mv_sort, 1);
-		if (libraryProps.playlistCustomSort) items.OrderByFormat(tf_customSort, 1);
+		// if (p.multi_process && !libraryProps.playlistCustomSort) items.OrderByFormat(p.mv_sort, 1);
+		// if (libraryProps.playlistCustomSort) items.OrderByFormat(tf_customSort, 1);
 		handles = items.Clone();
 		selection_holder.SetSelection(handles);
 		if (fb.IsPlaying && !add && fb.GetNowPlaying()) {
@@ -2922,18 +2936,18 @@ function menu_object() {
 	var box = function(n) {return n != null ? 'Unescape("' + encodeURIComponent(n + "") + '")' : "Empty";}
 	var InputBox = function(prompt, title, msg) { vb.Language = "VBScript"; var tmp = vb.eval('InputBox(' + [box(prompt), box(title), box(msg)].join(",") + ')'); if (typeof tmp == "undefined") return; if (tmp.length == 254) fb.ShowPopupMessage("Your entry is too long and will be truncated.\n\nEntries are limited to 254 characters.", "Library Tree"); return tmp.trim();}
 	var proceed = function(length) {var ns = InputBox("Create m-TAGS in selected music folders\n\nProceed?\n\nm-TAGS creator settings apply", "Create m-TAGS in Selected Folders", "Create " + length + " m-TAGS" + (length ? "" : ": NO FOLDERS SELECTED")); if (!ns) return false; return true;}
-	this.ConfigTypeMenu = function (Menu, StartIndex) {
-		var Index = StartIndex,
-			n = ["Panel Properties"];
-		if (p.syncType) n.push("Refresh");
-		if (v.k(SHIFT)) n.push("Configure...");
-		for (var i = 0; i < n.length; i++) {
-			this.NewMenuItem(Index, "Config", i + 1);
-			Menu.AppendMenuItem(MF_STRING, Index, n[i]);
-			Index++;
-		}
-		return Index;
-	}
+	// this.ConfigTypeMenu = function (Menu, StartIndex) {
+	// 	var Index = StartIndex,
+	// 		n = ["Panel Properties"];
+	// 	if (p.syncType) n.push("Refresh");
+	// 	if (v.k(SHIFT)) n.push("Configure...");
+	// 	for (var i = 0; i < n.length; i++) {
+	// 		this.NewMenuItem(Index, "Config", i + 1);
+	// 		Menu.AppendMenuItem(MF_STRING, Index, n[i]);
+	// 		Index++;
+	// 	}
+	// 	return Index;
+	// }
 	this.OptionsTypeMenu = function (Menu, StartIndex) {
 		var Index = StartIndex;
 		for (i = 0; i < p.menu.length; i++) {
@@ -3030,7 +3044,7 @@ function menu_object() {
 			menu = window.CreatePopupMenu(),
 			OptionsMenu = window.CreatePopupMenu(),
 			PlaylistMenu = window.CreatePopupMenu(),
-			ThemeMenu = window.CreatePopupMenu(),
+			// ThemeMenu = window.CreatePopupMenu(),
 			show_context = false;
 		var ix = library_tree.get_ix(x, y, true, false),
 			item = library_tree.tree[ix],
@@ -3073,7 +3087,7 @@ function menu_object() {
 			Index = this.OptionsTypeMenu(OptionsMenu, Index);
 			OptionsMenu.AppendTo(menu, MF_STRING, "Options");
 			// Index = this.ThemeTypeMenu(ThemeMenu, Index); ThemeMenu.AppendTo(OptionsMenu, MF_STRING, "Theme"); OptionsMenu.AppendMenuSeparator();
-			Index = this.ConfigTypeMenu(OptionsMenu, Index);
+			// Index = this.ConfigTypeMenu(OptionsMenu, Index);
 			menu.AppendMenuSeparator();
 			var items = library_tree.getHandles();
 			Context.InitContext(items);
@@ -3083,7 +3097,7 @@ function menu_object() {
 			// Index = this.ThemeTypeMenu(ThemeMenu, Index);
 			// ThemeMenu.AppendTo(menu, MF_STRING, "Theme");
 			// menu.AppendMenuSeparator();
-			Index = this.ConfigTypeMenu(menu, Index);
+			// Index = this.ConfigTypeMenu(menu, Index);
 
 		}
 		idx = menu.TrackPopupMenu(x, y);
@@ -3124,14 +3138,14 @@ function menu_object() {
 					lib_manager.rootNodes();
 					// if (p.pn_h_auto && p.pn_h == p.pn_h_min && library_tree.tree[0]) library_tree.clear_child(library_tree.tree[0]);
 					break;
-				case "Theme": if (i < 6) ui.blurChange(i); else window.Reload(); break;
-				case "Config":
-					switch (i) {
-						case 1: window.ShowProperties(); break;
-						case 2: p.syncType ? lib_manager.treeState(false, 2) : window.ShowConfigure(); break;
-						case 3: if (p.syncType) window.ShowConfigure(); break;
-					}
-					break;
+				// case "Theme": if (i < 6) ui.blurChange(i); else window.Reload(); break;
+				// case "Config":
+				// 	switch (i) {
+				// 		case 1: window.ShowProperties(); break;
+				// 		case 2: p.syncType ? lib_manager.treeState(false, 2) : window.ShowConfigure(); break;
+				// 		case 3: if (p.syncType) window.ShowConfigure(); break;
+				// 	}
+				// 	break;
 			}
 		}
 		if (idx >= 5000 && idx <= 5800) {show_context && Context.ExecuteByID(idx - 5000);}

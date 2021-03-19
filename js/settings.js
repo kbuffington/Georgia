@@ -210,6 +210,10 @@ function migrateCheck(version, storedVersion) {
 				settings.extraTrackInfo = settingsDefaults.extraTrackInfo;
 				config.addConfigurationObject(transportSchema, transportDefaults);
 
+			case '2.0.0':
+			case '2.0.1':
+				settings.defaultSortString = settingsDefaults.defaultSortString;
+
 				// this block should appear after all previous versions have fallen through
 				console.log('> Upgrading Georgia Theme settings from', storedVersion);
 				pref.version = currentVersion;
@@ -219,7 +223,6 @@ function migrateCheck(version, storedVersion) {
 				config.writeConfiguration();
 				window.Reload();
 
-			case '2.0.0':
 
 			default:
 				pref.version = currentVersion;
