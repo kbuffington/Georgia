@@ -252,6 +252,7 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
         this.parts_lbtn_up(x, y);
         if (this.b_is_dragging) {
             this.b_is_dragging = false;
+            this.desiredWheelScroll = undefined;
         }
         this.initial_drag_y = 0;
 
@@ -392,7 +393,6 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
             this.scroll_to(newVal, false);
             if (animationProgress >= 100) {
                 clearInterval(smoothScrollTimer);
-                this.desiredScrollPosition = undefined;
             }
         }
         timerVal = setInterval(() => {
