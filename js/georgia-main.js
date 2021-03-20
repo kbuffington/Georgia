@@ -1427,7 +1427,7 @@ function on_playback_new_track(metadb) {
 	str.timeline = new Timeline(geo.timeline_h);
 
 	// Fetch new albumart
-	if ((pref.cycleArt && albumArtIndex !== 0) || embeddedArt || currentFolder !== lastFolder || albumart == null ||
+	if ((pref.cycleArt && albumArtIndex !== 0) || isStreaming || embeddedArt || currentFolder !== lastFolder || albumart == null ||
 			$('$if2(%discnumber%,0)') != lastDiscNumber || $('$if2(' + tf.vinyl_side + ',ZZ)') != lastVinylSide) {
 		fetchNewArtwork(metadb);
 	} else if (pref.cycleArt && aa_list.length > 1) {
