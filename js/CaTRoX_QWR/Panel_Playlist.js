@@ -1459,13 +1459,13 @@ class Playlist extends List {
 		key_handler.register_key_action(VK_HOME,
 			(modifiers) => {
 				this.selection_handler.update_selection(this.cnt.rows[0], undefined, modifiers.shift);
-				this.repaint();
+				this.scrollbar.scroll_to_start();
 			});
 
 		key_handler.register_key_action(VK_END,
 			(modifiers) => {
 				this.selection_handler.update_selection(_.last(this.cnt.rows), undefined, modifiers.shift);
-				this.repaint();
+				this.scrollbar.scroll_to_end();
 			});
 
 		key_handler.register_key_action(VK_DELETE,

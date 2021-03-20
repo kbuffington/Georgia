@@ -16,3 +16,4 @@
 * Rewrite Library search/selection code to improve contrast on partial selected text (and maybe allow right click copy/paste?)
 * Lyrics long-press menu with Enable/Disable, Edit, maybe adjust timestamps for lrcs?
 * Auto downloading of cdArt?
+* Playlist View settings should be moved to config file, creating an object with name, filter, and optional custom sort parameter See [here](https://github.com/kbuffington/Georgia/issues/85).

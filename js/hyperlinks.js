@@ -134,7 +134,7 @@ class Hyperlink {
 				}
 				plman.InsertPlaylistItems(pl, 0, handle_list);
 				// TODO: sort order should be in georgia-preferences.json
-				plman.SortByFormat(pl, '$if2(%artist sort order%,%album artist%) $if3(%album sort order%,%original release date%,%date%) %album% %edition% %codec% %discnumber% %tracknumber%');
+				plman.SortByFormat(pl, settings.defaultSortString);
 				plman.ActivePlaylist = pl;
 				return true;
 			}

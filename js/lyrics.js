@@ -183,7 +183,8 @@ class Lyrics {
 		let foundLyrics = false;
 
 		const stripReservedChars = (filename) => {
-			return filename.replace(/\\/g, '_')
+			return filename.replace(/:/g, '_')
+						   .replace(/\\/g, '_')
 						   .replace(/\//g, '_')
 						   .replace(/\?/g, '_')
 						   .replace(/</g, '_')

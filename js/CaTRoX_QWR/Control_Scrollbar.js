@@ -3,48 +3,11 @@
 // @author 'TheQwertiest'
 // ==/PREPROCESSOR==
 
-g_script_list.push('Control_Scrollbar.js');
-
 g_properties.add_properties(
     {
         wheel_scroll_page: ['user.scrollbar.wheel_whole_page', false]
     }
 );
-
-// // SCROLLBAR
-// // SCROLLBARPARTS
-// SBP_ARROWBTN = 1;
-// SBP_THUMBBTNHORZ = 2;
-// SBP_THUMBBTNVERT = 3;
-// SBP_LOWERTRACKHORZ = 4;
-// SBP_UPPERTRACKHORZ = 5;
-// SBP_LOWERTRACKVERT = 6;
-// SBP_UPPERTRACKVERT = 7;
-// SBP_GRIPPERHORZ = 8;
-// SBP_GRIPPERVERT = 9;
-// SBP_SIZEBOX = 10;
-
-// // ARROWBTNSTATES
-// ABS_UPNORMAL = 1;
-// ABS_UPHOT = 2;
-// ABS_UPPRESSED = 3;
-// ABS_UPDISABLED = 4;
-// ABS_DOWNNORMAL = 5;
-// ABS_DOWNHOT = 6;
-// ABS_DOWNPRESSED = 7;
-// ABS_DOWNDISABLED = 8;
-// ABS_LEFTNORMAL = 9;
-// ABS_LEFTHOT = 10;
-// ABS_LEFTPRESSED = 11;
-// ABS_LEFTDISABLED = 12;
-// ABS_RIGHTNORMAL = 13;
-// ABS_RIGHTHOT = 14;
-// ABS_RIGHTPRESSED = 15;
-// ABS_RIGHTDISABLED = 16;
-// ABS_UPHOVER = 17;
-// ABS_DOWNHOVER = 18;
-// ABS_LEFTHOVER = 19;
-// ABS_RIGHTHOVER = 20;
 
 /** @constructor */
 function ScrollBar(x, y, w, h, row_h, fn_redraw) {
@@ -126,15 +89,21 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
         };
     };
 
+    /** @type {number} */ this.desiredScrollPosition = undefined;
+    /** @type {number} */ this.lastScrollPosition = undefined;
     this.wheel = function (wheel_direction) {
         var direction = -wheel_direction;
 
         if (this.wheel_scroll_page) {
             this.shift_page(direction);
-        }
-        else {
+        } else {
             var newScroll = this.nearestScroll(direction);
-            this.scroll_to(newScroll + direction * 2);
+            if (this.desiredWheelScroll === undefined) {
+                this.desiredWheelScroll = newScroll + direction * 2;
+            } else {
+                this.desiredWheelScroll += (direction * 2);
+            }
+            this.smooth_scroll_to(this.desiredWheelScroll);
         }
     };
 
@@ -283,29 +252,38 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
         this.parts_lbtn_up(x, y);
         if (this.b_is_dragging) {
             this.b_is_dragging = false;
+            this.desiredWheelScroll = undefined;
         }
         this.initial_drag_y = 0;
 
         this.stop_shift_timer();
     };
 
+    this.scroll_to_start = function () {
+        this.smooth_scroll_to(0);
+    }
+
     this.shift_line = function (direction) {
         var newScroll = this.nearestScroll(direction);
-        this.scroll_to(newScroll);
+        this.smooth_scroll_to(newScroll);
     };
 
     this.shift_page = function (direction) {
         var newScroll = this.nearestScroll(direction);
-        this.scroll_to(newScroll + direction * Math.floor(Math.max(this.rows_drawn - 1, 1)));
+        this.smooth_scroll_to(newScroll + direction * Math.floor(Math.max(this.rows_drawn - 1, 1)));
     };
 
     this.scroll_to_end = function () {
-        this.scroll_to(this.scrollable_lines);
+        this.smooth_scroll_to(this.scrollable_lines);
     };
 
-    this.start_shift_timer = function (shift) {
+    /**
+     * This method inserts a delay (8x45ms) when holding the mouse btn down before scrolling starts,
+     * after the first scroll event happens.
+     * @param {number} shift_amount number of rows to shift
+     */
+    this.start_shift_timer = function (shift_amount) {
         if (_.isNil(timer_shift)) {
-            var shift_amount = shift;
             timer_shift_count = 0;
             timer_shift = setInterval(() => {
                 if (this.thumb_y <= this.btn_h || this.thumb_y + this.thumb_h >= this.h - this.btn_h) {
@@ -313,22 +291,26 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
                     return;
                 }
                 if (timer_stop_y !== -1) {
-                    var new_thumb_y = this.btn_h + (this.scroll + shift) * this.scrollbar_travel / this.scrollable_lines;
+                    var new_thumb_y = this.btn_h + (this.scroll + shift_amount) * this.scrollbar_travel / this.scrollable_lines;
 
-                    if ((shift > 0 && new_thumb_y >= timer_stop_y)
-                        || (shift < 0 && new_thumb_y + this.thumb_h <= timer_stop_y)) {
+                    if ((shift_amount > 0 && new_thumb_y >= timer_stop_y)
+                        || (shift_amount < 0 && new_thumb_y + this.thumb_h <= timer_stop_y)) {
                         this.stop_shift_timer();
                         return;
                     }
                 }
 
                 if (timer_shift_count > 8) {
-                    this.scroll_to(this.scroll + shift_amount);
-                }
-                else {
+                    if (this.desiredScrollPosition === undefined) {
+                        this.desiredScrollPosition = this.scroll + shift_amount;
+                    } else {
+                        this.desiredScrollPosition += shift_amount;
+                    }
+                    this.smooth_scroll_to(this.desiredScrollPosition);
+                } else {
                     timer_shift_count++;
                 }
-            }, 40);
+            }, 45);
         }
     };
 
@@ -364,9 +346,61 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
     };
 
     // TODO: remove after compatibility fixes
-    this.check_scroll = function (new_scroll, set_scroll_only) {
-        this.scroll_to(new_scroll, set_scroll_only);
-    };
+    // this.check_scroll = function (new_scroll, set_scroll_only) {
+    //     this.scroll_to(new_scroll, set_scroll_only);
+    // };
+
+    /**
+     * @param {number} x represents the absolute progress of the animation in the bounds of 0 (beginning of the animation) and 1 (end of animation).
+     * @returns {number}
+     */
+    const easeOut = (x) => {
+        return 1 - Math.pow(1 - x, 3);  // easeOutCubic
+    }
+
+    let smoothScrollTimer = null;
+    /**
+     * Scrolls to desired row over 400ms. Can be called repeatedly (during wheel or holding down arrows)
+     * to update desired position.
+     * @param {number} newPosition row position to scroll to
+     * @returns
+     */
+    this.smooth_scroll_to = function(newPosition) {
+        const end = Math.max(0, Math.min(newPosition, this.scrollable_lines));
+        if (end === this.scroll) {
+            return;
+        }
+        clearInterval(smoothScrollTimer);
+        const start = this.scroll;
+        const direction = start - end > 0 ? -1 : 1;
+        let animationProgress = 0;  // Percent of animation completion: 0 (start) - 100 (end). Use 100 scale to avoid .009999 issues
+        let timerVal;   // local copy of the interval timer because we can have waiting interval callbacks that have fired, but not been executed, and thus can't be clear'd
+        const scrollFunc = (timerVal) => {
+            if (timerVal !== smoothScrollTimer) {
+                clearInterval(timerVal);
+                return; // this timer was canceled
+            }
+            animationProgress += 8; // slow things down slightly from 10
+            let newVal = start + easeOut(animationProgress/100) * (end - start);
+            if ((Math.abs(newPosition - newVal) < 0.1) ||
+                (direction === 1 && newVal > newPosition) ||
+                (direction === -1 && newVal < newPosition)) {
+                newVal = newPosition;
+                animationProgress = 100;    // clear interval
+            }
+            newVal = Math.round(newVal * 100)/100;
+            // console.log(`${start} + easeOut(${animationProgress}/100) * (${end} - ${start}) = `, newVal)
+            this.scroll_to(newVal, false);
+            if (animationProgress >= 100) {
+                clearInterval(smoothScrollTimer);
+            }
+        }
+        timerVal = setInterval(() => {
+            scrollFunc(timerVal);
+        }, 40);
+        smoothScrollTimer = timerVal;
+        scrollFunc(timerVal);   // want to immediately start scroll
+    }
 
     this.scroll_to = function (new_position, scroll_wo_redraw = false) {
         var s = Math.max(0, Math.min(new_position, this.scrollable_lines));
@@ -394,7 +428,7 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
 
     // private:
     var throttled_scroll_to = _.throttle(() => {
-        this.scroll_to((throttled_scroll_y - this.btn_h) / this.drag_distance_per_row);
+        this.smooth_scroll_to((throttled_scroll_y - this.btn_h) / this.drag_distance_per_row);
     }, 1000 / 60);
 
     function create_scrollbar_images() {

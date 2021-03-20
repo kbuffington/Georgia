@@ -111,6 +111,7 @@ const lyricFilenamesSchema = new ConfigurationObjectSchema('lyricFilenamePattern
 const settingsDefaults = {
 	artworkDisplayTime: 30,
 	cdArtBasename: 'cd',
+	defaultSortString: '$if2(%artist sort order%,%album artist%) $if3(%album sort order%,%original release date%,%date%) %album% %edition% %codec% %discnumber% %tracknumber%',
 	extraTrackInfo: '$ifequal(%samplerate%,44100,, |$ifgreater($info(bitspersample),16, $info(bitspersample)bit,) $div(%samplerate%,1000).$left($right(%samplerate%,3),1)kHz)[ | $replace(%replaygain_album_gain%, dB,dB)]',
 	playListExtraTrackInfo: false,
 	hideCursor: false,
@@ -126,6 +127,7 @@ const settingsDefaults = {
 const settingsComments = {
 	artworkDisplayTime: 'Number of seconds to show each image if more than one is found and "Cycle through all artwork" option is enabled. (Min: 5, Max: 120)',
 	cdArtBasename: 'Do not include extension. Example: "discart", if the image provider uses that name for saving cdart and you want those filtered from showing up as albumart. Would also filter out discart1.png, etc.',
+	defaultSortString: 'Default sort playlists generated from Library selections or clicking on playlist Hyperlinks',
 	extraTrackInfo: 'Portion of the trackInfo in the upper right, directly under the year. Only part of the info string is customizable',
 	playListExtraTrackInfo: "Always show the codec sample and bitrate in all album descriptions on the Playlist.",
 	hideCursor: 'Hides cursor when song is playing after 10 seconds of no mouse activity',
