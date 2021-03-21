@@ -2280,7 +2280,10 @@ function calcDateRatios(dontUpdateLastPlayed, currentLastPlayed) {
 		playedTimes.push(last_played);
 	}
 
-	if (added && first_played) {
+	if (first_played) {
+		if (!added) {
+			added = first_played;
+		}
 		const age = calcAge(added);
 
 		tl_firstPlayedRatio = calcAgeRatio(first_played, age);
