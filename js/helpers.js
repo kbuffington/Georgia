@@ -308,11 +308,17 @@ function updateTimezoneOffset() {
 	timezoneOffset = temp.getTimezoneOffset() * 60 * 1000;
 }
 
+/**
+ * foobar time strings are already in local time, so converting them to date objects treats
+ * them as UTC time, and again adjusts to local time, and the timezone offset is applied twice.
+ * Therefore we need to add it back in here.
+ * @param {string} dateTimeStr
+ * @returns {number} time value in ms
+ */
 function toTime(dateTimeStr) {
-	/* foobar time strings are already in local time, so converting them to date objects treats
-	 * them as UTC time, and again adjusts to local time, and the timezone offset is applied twice.
-	 * Therefore we need to add it back in here.
-	 */
+	if (dateTimeStr === 'N/A') {
+		return undefined;
+	}
 	return new Date(toDatetime(dateTimeStr)).getTime() + timezoneOffset;
 }
 
