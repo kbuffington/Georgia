@@ -3510,7 +3510,7 @@ class Header extends BaseHeader {
 	getGroupInfoString(is_radio, hasGenreTags) {
 		var bitspersample = _.tf('$Info(bitspersample)', this.metadb);
 		var samplerate = _.tf('$Info(samplerate)', this.metadb);
-		var sample = ((bitspersample > 16 || samplerate > 44100) ? _.tf(' [$Info(bitspersample)bit/]', this.metadb) + samplerate / 1000 + 'khz' : '');
+		var sample = ((bitspersample > 16 || samplerate > 44100 || settings.playListExtraTrackInfo ) ? _.tf(' [$Info(bitspersample)bit/]', this.metadb) + samplerate / 1000 + 'khz' : '');
 		var codec = _.tf('$ext(%path%)', this.metadb);
 
 		if (codec == "dca (dts coherent acoustics)") {
