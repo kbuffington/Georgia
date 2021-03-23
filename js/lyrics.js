@@ -216,9 +216,18 @@ class Lyrics {
 			rawLyrics = utils.ReadTextFile(this.fileName, 65001).split('\n');
 		} else {
 			const embeddedLyrics = $(tf.lyrics);
-			// when loading embedded lyrics sometimes FB returns a "." initially. Don't display this.
-			if (embeddedLyrics.length && embeddedLyrics !== '.') {
-				rawLyrics = embeddedLyrics.split('\n');
+			if (embeddedLyrics.length) {
+				if (embeddedLyrics === '.') {
+					rawLyrics = [
+						'Lyrics cannot be displayed.',
+						'For %LYRICS% or %UNSYNCED LYRICS% to always display properly, you must edit LargeFieldsConfig.txt and comment out or remove those specific entries under "fieldSpam"'
+					];
+				} else {
+					rawLyrics = embeddedLyrics.split('\n');
+					if (rawLyrics.length === 1) {
+						rawLyrics = embeddedLyrics.split('\r');
+					}
+				}
 			}
 		}
 		if (rawLyrics.length) {
