@@ -216,7 +216,6 @@ function migrateCheck(version, storedVersion) {
 
 				// this block should appear after all previous versions have fallen through
 				console.log('> Upgrading Georgia Theme settings from', storedVersion);
-				pref.version = currentVersion;
 				const fileName = `georgia\\georgia-config-${storedVersion}.jsonc`;
 				console.log(`> Backing up Georgia Configuration file to ${fileName}`);
 				fso.CopyFile(configPath, fb.ProfilePath + fileName);
@@ -225,11 +224,11 @@ function migrateCheck(version, storedVersion) {
 
 
 			default:
-				pref.version = currentVersion;
 				break;
 
 		}
 	}
+	pref.version = currentVersion;	// always update the version panel property
 }
 
 let retryCount = 0;	// don't hammer if it's not working

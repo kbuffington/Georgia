@@ -1,5 +1,5 @@
-const panelVersion = window.GetProperty('_theme_version (do not hand edit!)', '2.0.0');
-window.DefinePanel('Georgia', {author: 'Mordred', version: panelVersion, features: {drag_n_drop: true} });
+const panelVersion = window.GetProperty('_theme_version (do not hand edit!)', '2.0.2');
+window.DefineScript('Georgia', {author: 'Mordred', version: panelVersion, features: {drag_n_drop: true} });
 
 const basePath = fb.ProfilePath + 'georgia\\';
 
