@@ -133,7 +133,6 @@ class Hyperlink {
 					plman.ClearPlaylist(pl);
 				}
 				plman.InsertPlaylistItems(pl, 0, handle_list);
-				// TODO: sort order should be in georgia-preferences.json
 				plman.SortByFormat(pl, settings.defaultSortString);
 				plman.ActivePlaylist = pl;
 				return true;

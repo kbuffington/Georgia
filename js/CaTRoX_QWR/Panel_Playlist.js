@@ -598,6 +598,15 @@ class Playlist extends List {
 		 * @type {ContentNavigationHelper}
 		 */
 		this.cnt_helper = this.cnt.helper;
+
+		this.debounced_initialize_and_repaint_list = _.debounce((refocus) => {
+			// debouncing this because when swapping out playlist content, initialize_and_repaint_list will be called
+			// three times, once for each add/remove/changed callback
+			this.initialize_and_repaint_list(refocus);
+		}, 10, {
+			leading:  false,
+			trailing: true
+		});
 	}
 	//<editor-fold desc="Callback Implementation">
 	on_paint(gr) {
@@ -1131,7 +1140,7 @@ class Playlist extends List {
 			return;
 		}
 
-		this.initialize_and_repaint_list();
+		this.debounced_initialize_and_repaint_list();
 	}
 
 	on_playlist_items_reordered(playlist_idx) {
@@ -1139,7 +1148,7 @@ class Playlist extends List {
 			return;
 		}
 
-		this.initialize_and_repaint_list(true);
+		this.debounced_initialize_and_repaint_list(true);
 	}
 
 	on_playlist_items_removed(playlist_idx) {
@@ -1147,7 +1156,7 @@ class Playlist extends List {
 			return;
 		}
 
-		this.initialize_and_repaint_list();
+		this.debounced_initialize_and_repaint_list();
 	}
 
 	on_playlist_items_selection_change() {
