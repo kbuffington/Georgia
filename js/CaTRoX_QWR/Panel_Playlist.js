@@ -3708,6 +3708,7 @@ class Header extends BaseHeader {
 
 					left_pad += art_box_x + art_box_w;
 					this.hyperlinks.artist && this.hyperlinks.artist.set_xOffset(left_pad);
+					this.hyperlinks.album && this.hyperlinks.album.set_xOffset(left_pad);
 					var i = 0;
 					var offset = 0;
 					while (this.hyperlinks['genre' + i]) {
