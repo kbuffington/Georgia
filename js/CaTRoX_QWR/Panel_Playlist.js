@@ -1616,6 +1616,7 @@ class Playlist extends List {
 
 		Header.grouping_handler.set_active_playlist(plman.GetPlaylistName(this.cur_playlist_idx));
 		this.cnt.sub_items = this.create_headers(this.cnt.rows, rows_metadb);
+		getHeaderArtwork(this.cnt.sub_items.slice(0, 10));	// preload first 10 artworks
 
 		trace_initialize_list_performance && console.log('Headers initialized in ' + profiler_part.Time + 'ms');
 
@@ -2622,24 +2623,44 @@ class Playlist extends List {
  * @type {function}
  */
 var debounced_get_album_art = _.debounce(function (items) {
-	_.forEach(items, (item) => {
-		if (!(item instanceof Header) || item.is_art_loaded()) {
-			return;
-		}
-
-		var metadb = item.get_first_row().metadb;
-		var cached_art = Header.art_cache.get_image_for_meta(metadb);
-		if (cached_art) {
-			item.assign_art(cached_art);
-		}
-		else {
-			utils.GetAlbumArtAsync(window.ID, metadb, g_album_art_id.front);
-		}
-	});
+	getHeaderArtwork(items);
 }, 500, {
 	leading:  false,
 	trailing: true
 });
+
+/** @type {FbMetadbHandle[]} */
+let loadingArtList = []
+
+/**
+ * Loads artwork given a list of headers items. Typically called in a debounce.
+ * @param {Header[]|Row[]} items
+ */
+function getHeaderArtwork(items) {
+	items.forEach(item => {
+		if (!(item instanceof Header) || item.is_art_loaded()) {
+			return;
+		}
+
+		const metadb = item.get_first_row().metadb;
+		var cached_art = Header.art_cache.get_image_for_meta(metadb);
+		if (cached_art) {
+			item.assign_art(cached_art);
+		} else {
+			// TODO Once this has been better tested, remove on_get_album_art_done callback from this file, and probably georgia-main.js as well
+			// utils.GetAlbumArtAsync(window.ID, metadb, g_album_art_id.front);
+			if (!loadingArtList.find(handle => handle === metadb)) {
+				utils.GetAlbumArtAsyncV2(window.ID, metadb, g_album_art_id.front).then((artResult) => {
+					loadingArtList = loadingArtList.filter(handle => handle === metadb);
+					if (!item.is_art_loaded()) {
+						item.assign_art(artResult.image);
+						item.repaint();
+					}
+				});
+			}
+		}
+	});
+}
 
 /**
  * @param {Array<Header>} items
@@ -3626,10 +3647,8 @@ class Header extends BaseHeader {
 				var p = scaleForDisplay(6);  // from art below
 				if (this.has_selected_items()) {
 					grClip.FillSolidRect(0, p, scaleForDisplay(8), this.h - p * 2, col.accent);
-					// grClip.FillGradRect(5, p, this.w / 2, this.h - p * 2, 180, g_pl_colors.row_selected, col.accent);
 				} else {
 					grClip.FillSolidRect(0, p, scaleForDisplay(8), this.h - p * 2, col.darkAccent);
-					// grClip.FillGradRect(5, p, this.w / 2, this.h - p * 2, 180, g_pl_colors.background, col.darkAccent);
 				}
 			}
 
@@ -4308,7 +4327,7 @@ class Row extends ListItem {
 		 */
 		this.cur_playlist_idx = cur_playlist_idx_arg;
 
-		var that = this;
+		// var that = this;
 		/**
 		 * @type {number}
 		 */
