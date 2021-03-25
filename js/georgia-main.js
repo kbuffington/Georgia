@@ -331,7 +331,7 @@ let g_tooltip;
 const tt = new _.tt_handler;
 
 // MENU STUFF
-var menu_down = false;
+let menu_down = false;
 
 ///////// OBJECTS
 

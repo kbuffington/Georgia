@@ -2999,10 +2999,11 @@ function menu_object() {
 
 	this.button = function(x, y) {
 		var menu = window.CreatePopupMenu(),
-			idx,
-			Index = 1;
-		Index = this.FilterMenu(menu, Index);
+			idx;
+		const Index = this.FilterMenu(menu, 1);
+		menu_down = true;
 		idx = menu.TrackPopupMenu(x, y);
+		menu_down = false;
 		if (idx >= 1 && idx <= Index) {i = MenuMap[idx].value; library_tree.subCounts.filter = {}; library_tree.subCounts.search = {};
 			switch (i) {
 				case p.f_menu.length + 1: p.reset = !p.reset; if (p.reset) {p.search_paint(); lib_manager.treeState(true, 2);} window.SetProperty("SYSTEM.Reset Tree", p.reset); break;
@@ -3023,8 +3024,11 @@ function menu_object() {
 	}
 
 	this.search_menu = function(x, y, s, f, paste) {
-		var menu = window.CreatePopupMenu(), idx, Index = 1;
-		Index = this.search(menu, Index, s, f, paste); idx = menu.TrackPopupMenu(x, y);
+		var menu = window.CreatePopupMenu(), idx;
+		const Index = this.search(menu, 1, s, f, paste);
+		menu_down = true;
+		idx = menu.TrackPopupMenu(x, y);
+		menu_down = false;
 		if (idx >= 1 && idx <= Index) {
 			i = MenuMap[idx].value;
 			switch (i) {
@@ -3100,7 +3104,9 @@ function menu_object() {
 			// Index = this.ConfigTypeMenu(menu, Index);
 
 		}
+		menu_down = true;
 		idx = menu.TrackPopupMenu(x, y);
+		menu_down = false;
 		if (idx >= 1 && idx <= Index) {
 			i = MenuMap[idx].value;
 			switch (MenuMap[idx].type) {
