@@ -229,33 +229,40 @@ function drawMultipleLines(gr, availableWidth, left, top, color, text1, fontList
 	return linesDrawn * lineHeight;
 }
 
+/**
+ * Returns the diff between a start and end date in the form of "2y 3m 24d". Order of the two dates does not matter.
+ * @param {string} startingDate
+ * @param {string=} endingDate if no endingDate is supplied, use current time
+ * @returns {string}
+ */
 function dateDiff(startingDate, endingDate) {
-	var hasStartDay = (startingDate.length > 7) ? true : false;
+	if (!startingDate) return '';
+	const hasStartDay = (startingDate.length > 7) ? true : false;
 	if (!hasStartDay) {
 		startingDate = startingDate + '-02';    // avoid timezone issues
 	}
-	var startDate = new Date(new Date(startingDate).toISOString().substr(0, 10));
+	let startDate = new Date(new Date(startingDate).toISOString().substr(0, 10));
 	if (!endingDate) {
 		const now = new Date().getTime() - timezoneOffset;	// subtract timezone offset because we're stripping timzone from ISOString
 		endingDate = new Date(now).toISOString().substr(0, 10);    // need date in YYYY-MM-DD format
 	}
-	var endDate = new Date(endingDate);
+	let endDate = new Date(endingDate);
 	if (startDate > endDate) {
-		var swap = startDate;
+		const swap = startDate;
 		startDate = endDate;
 		endDate = swap;
 	}
-	var startYear = startDate.getFullYear();
-	var february = (startYear % 4 === 0 && startYear % 100 !== 0) || startYear % 400 === 0 ? 29 : 28;
-	var daysInMonth = [31, february, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+	const startYear = startDate.getFullYear();
+	const februaryDays = (startYear % 4 === 0 && startYear % 100 !== 0) || startYear % 400 === 0 ? 29 : 28;
+	const daysInMonth = [31, februaryDays, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
-	var yearDiff = endDate.getFullYear() - startYear;
-	var monthDiff = endDate.getMonth() - startDate.getMonth();
+	let yearDiff = endDate.getFullYear() - startYear;
+	let monthDiff = endDate.getMonth() - startDate.getMonth();
+	let dayDiff = 0;
 	if (monthDiff < 0) {
 		yearDiff--;
 		monthDiff += 12;
 	}
-	var dayDiff = 0;
 	if (hasStartDay) {
 		dayDiff = endDate.getDate() - startDate.getDate();
 		if (dayDiff < 0) {

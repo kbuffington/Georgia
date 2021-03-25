@@ -1,151 +1,151 @@
 class PauseButton {
-	constructor() {
-		this.xCenter = 0;
-		this.yCenter = 0;
-		this.top = 0;
-		this.left = 0;
-	}
+    constructor() {
+        this.xCenter = 0;
+        this.yCenter = 0;
+        this.top = 0;
+        this.left = 0;
+    }
 
-	/**
-	 * Set the coordinates of the center point of the pause button
-	 * @param {number} xCenter The x-coordinate of the center of the pause button
-	 * @param {number} yCenter The y-coordinate of the center of the pause button
-	 */
-	setCoords(xCenter, yCenter) {
-		this.xCenter = xCenter;
-		this.yCenter = yCenter;
-		this.top = Math.round(this.yCenter - geo.pause_size / 2);
-		this.left = Math.round(this.xCenter - geo.pause_size / 2);
-	};
+    /**
+     * Set the coordinates of the center point of the pause button
+     * @param {number} xCenter The x-coordinate of the center of the pause button
+     * @param {number} yCenter The y-coordinate of the center of the pause button
+     */
+    setCoords(xCenter, yCenter) {
+        this.xCenter = xCenter;
+        this.yCenter = yCenter;
+        this.top = Math.round(this.yCenter - geo.pause_size / 2);
+        this.left = Math.round(this.xCenter - geo.pause_size / 2);
+    };
 
-	draw(gr) {
-		var pauseBorderWidth = scaleForDisplay(2);
-		var halfBorderWidth = Math.floor(pauseBorderWidth / 2);
+    draw(gr) {
+        var pauseBorderWidth = scaleForDisplay(2);
+        var halfBorderWidth = Math.floor(pauseBorderWidth / 2);
 
-		gr.FillRoundRect(this.left, this.top, geo.pause_size, geo.pause_size,
-			0.1 * geo.pause_size, 0.1 * geo.pause_size, rgba(0, 0, 0, 150));
-		gr.DrawRoundRect(this.left + halfBorderWidth, this.top + halfBorderWidth, geo.pause_size - pauseBorderWidth, geo.pause_size - pauseBorderWidth,
-			0.1 * geo.pause_size, 0.1 * geo.pause_size, pauseBorderWidth, rgba(128, 128, 128, 60));
-		gr.FillRoundRect(this.left + 0.26 * geo.pause_size, this.top + 0.25 * geo.pause_size,
-			0.12 * geo.pause_size, 0.5 * geo.pause_size, 2, 2, rgba(255, 255, 255, 160));
-		gr.FillRoundRect(this.left + 0.62 * geo.pause_size, this.top + 0.25 * geo.pause_size,
-			0.12 * geo.pause_size, 0.5 * geo.pause_size, 2, 2, rgba(255, 255, 255, 160));
-	};
+        gr.FillRoundRect(this.left, this.top, geo.pause_size, geo.pause_size,
+            0.1 * geo.pause_size, 0.1 * geo.pause_size, rgba(0, 0, 0, 150));
+        gr.DrawRoundRect(this.left + halfBorderWidth, this.top + halfBorderWidth, geo.pause_size - pauseBorderWidth, geo.pause_size - pauseBorderWidth,
+            0.1 * geo.pause_size, 0.1 * geo.pause_size, pauseBorderWidth, rgba(128, 128, 128, 60));
+        gr.FillRoundRect(this.left + 0.26 * geo.pause_size, this.top + 0.25 * geo.pause_size,
+            0.12 * geo.pause_size, 0.5 * geo.pause_size, 2, 2, rgba(255, 255, 255, 160));
+        gr.FillRoundRect(this.left + 0.62 * geo.pause_size, this.top + 0.25 * geo.pause_size,
+            0.12 * geo.pause_size, 0.5 * geo.pause_size, 2, 2, rgba(255, 255, 255, 160));
+    };
 
-	repaint() {
-		window.RepaintRect(this.left - 1, this.top - 1, geo.pause_size + 2, geo.pause_size + 2);
-	};
+    repaint() {
+        window.RepaintRect(this.left - 1, this.top - 1, geo.pause_size + 2, geo.pause_size + 2);
+    };
 
-	mouseInThis(x, y) {
-		// console.log(x, y, this.top, x >= this.left, y >= this.top, x < this.left + geo.pause_size + 1, y <= this.top + geo.pause_size + 1)
-		return (x >= this.left && y >= this.top && x < this.left + geo.pause_size + 1 && y <= this.top + geo.pause_size + 1);
-	};
+    mouseInThis(x, y) {
+        // console.log(x, y, this.top, x >= this.left, y >= this.top, x < this.left + geo.pause_size + 1, y <= this.top + geo.pause_size + 1)
+        return (x >= this.left && y >= this.top && x < this.left + geo.pause_size + 1 && y <= this.top + geo.pause_size + 1);
+    };
 }
 
 class ProgressBar {
-	/**
-	 * @param {number} ww window width
-	 * @param {number} wh window height
-	 */
-	constructor(ww, wh) {
-		this.x = Math.round(0.025 * ww);
-		this.y = 0;
-		this.w = Math.round(0.95 * ww);
-		this.h = geo.prog_bar_h;
-		this.progressLength = 0; // fixing jumpiness in progressBar
-		this.progressMoved = false; // playback position changed, so reset progressLength
-		this.drag = false;	// progress bar is being dragged
-		this.progressAlphaCol = undefined;
-		this.lastAccentCol = undefined;
-	}
+    /**
+     * @param {number} ww window width
+     * @param {number} wh window height
+     */
+    constructor(ww, wh) {
+        this.x = Math.round(0.025 * ww);
+        this.y = 0;
+        this.w = Math.round(0.95 * ww);
+        this.h = geo.prog_bar_h;
+        this.progressLength = 0; // fixing jumpiness in progressBar
+        this.progressMoved = false; // playback position changed, so reset progressLength
+        this.drag = false;	// progress bar is being dragged
+        this.progressAlphaCol = undefined;
+        this.lastAccentCol = undefined;
+    }
 
-	repaint() {
-		window.RepaintRect(this.x, this.y, this.w, this.h);
-	}
+    repaint() {
+        window.RepaintRect(this.x, this.y, this.w, this.h);
+    }
 
-	setY(y) {
-		this.y = y;
-	}
+    setY(y) {
+        this.y = y;
+    }
 
-	/**
-	 * @param {GdiGraphics} gr
-	 */
-	draw(gr) {
-		if (pref.show_progress_bar) {
-			gr.SetSmoothingMode(SmoothingMode.None); // disable smoothing
-			gr.FillSolidRect(this.x, this.y, this.w, this.h, col.progress_bar);
+    /**
+     * @param {GdiGraphics} gr
+     */
+    draw(gr) {
+        if (pref.show_progress_bar) {
+            gr.SetSmoothingMode(SmoothingMode.None); // disable smoothing
+            gr.FillSolidRect(this.x, this.y, this.w, this.h, col.progress_bar);
 
-			if (fb.PlaybackLength) {
-				let progressStationary = false;
-				let fillColor = col.primary;
-				/* in some cases the progress bar would move backwards at the end of a song while buffering/streaming was occurring.
-					This created strange looking jitter so now the progress bar can only increase unless the user seeked in the track. */
-				if (this.progressMoved || Math.floor(this.w * (fb.PlaybackTime / fb.PlaybackLength)) > this.progressLength) {
-					this.progressLength = Math.floor(this.w * (fb.PlaybackTime / fb.PlaybackLength));
-				} else {
-					progressStationary = true;
-				}
-				this.progressMoved = false;
+            if (fb.PlaybackLength) {
+                let progressStationary = false;
+                let fillColor = col.primary;
+                /* in some cases the progress bar would move backwards at the end of a song while buffering/streaming was occurring.
+                    This created strange looking jitter so now the progress bar can only increase unless the user seeked in the track. */
+                if (this.progressMoved || Math.floor(this.w * (fb.PlaybackTime / fb.PlaybackLength)) > this.progressLength) {
+                    this.progressLength = Math.floor(this.w * (fb.PlaybackTime / fb.PlaybackLength));
+                } else {
+                    progressStationary = true;
+                }
+                this.progressMoved = false;
 
-				if (colorDistance(col.primary, col.progress_bar) < 100) {
-					if (pref.darkMode) {
-						fillColor = rgb(255,255,255);
-					} else {
-						fillColor = col.darkAccent;
-					}
-				}
-				gr.FillSolidRect(this.x, this.y, this.progressLength, this.h, fillColor);
-				gr.DrawRect(this.x, this.y, this.progressLength, this.h - 1, 1, col.darkAccent);
-				if (progressStationary && fb.IsPlaying && !fb.IsPaused) {
-					if (col.accent !== this.lastAccentCol || this.progressAlphaCol === undefined) {
-						const c = new Color(col.accent);
-						this.progressAlphaCol = rgba(c.r, c.g, c.b, 128); // fake anti-aliased edge so things look a little smoother
-						this.lastAccentCol = col.accent;
-					}
-					gr.DrawLine(this.progressLength + this.x + 1, this.y, this.progressLength + this.x + 1, this.y + this.h - 1, 1, this.progressAlphaCol);
-				}
-			}
-		}
-	}
+                if (colorDistance(col.primary, col.progress_bar) < 100) {
+                    if (pref.darkMode) {
+                        fillColor = rgb(255,255,255);
+                    } else {
+                        fillColor = col.darkAccent;
+                    }
+                }
+                gr.FillSolidRect(this.x, this.y, this.progressLength, this.h, fillColor);
+                gr.DrawRect(this.x, this.y, this.progressLength, this.h - 1, 1, col.darkAccent);
+                if (progressStationary && fb.IsPlaying && !fb.IsPaused) {
+                    if (col.accent !== this.lastAccentCol || this.progressAlphaCol === undefined) {
+                        const c = new Color(col.accent);
+                        this.progressAlphaCol = rgba(c.r, c.g, c.b, 128); // fake anti-aliased edge so things look a little smoother
+                        this.lastAccentCol = col.accent;
+                    }
+                    gr.DrawLine(this.progressLength + this.x + 1, this.y, this.progressLength + this.x + 1, this.y + this.h - 1, 1, this.progressAlphaCol);
+                }
+            }
+        }
+    }
 
-	on_size(windowWidth, windowHeight) {
-		this.x = windowWidth ? 0.025 * windowWidth : 0;
-		this.y = 0;
-		this.w = 0.95 * windowWidth;
-		this.h = geo.prog_bar_h;
-	}
+    on_size(windowWidth, windowHeight) {
+        this.x = windowWidth ? 0.025 * windowWidth : 0;
+        this.y = 0;
+        this.w = 0.95 * windowWidth;
+        this.h = geo.prog_bar_h;
+    }
 
-	on_mouse_lbtn_down(x, y) {
-		this.drag = true;
-	}
+    on_mouse_lbtn_down(x, y) {
+        this.drag = true;
+    }
 
-	on_mouse_lbtn_up(x, y) {
-		this.drag = false;
-		if (this.mouseInThis(x, y)) {
-			this.setPlaybackTime(x);
-		}
-	}
+    on_mouse_lbtn_up(x, y) {
+        this.drag = false;
+        if (this.mouseInThis(x, y)) {
+            this.setPlaybackTime(x);
+        }
+    }
 
-	on_mouse_move(x, y) {
-		if (this.drag) {
-			this.setPlaybackTime(x);
-		}
-	}
+    on_mouse_move(x, y) {
+        if (this.drag) {
+            this.setPlaybackTime(x);
+        }
+    }
 
-	mouseInThis(x, y) {
-		return (x >= this.x && y >= this.y && x < this.x + this.w && y <= this.y + this.h);
-	}
+    mouseInThis(x, y) {
+        return (x >= this.x && y >= this.y && x < this.x + this.w && y <= this.y + this.h);
+    }
 
-	/** @private
-	 * @param {number} x
-	 */
-	setPlaybackTime(x) {
-		let v = (x - this.x) / this.w;
-		v = (v < 0) ? 0 : (v < 1) ? v : 1;
-		if (fb.PlaybackTime !== v * fb.PlaybackLength) {
-			fb.PlaybackTime = v * fb.PlaybackLength;
-		}
-	}
+    /** @private
+     * @param {number} x
+     */
+    setPlaybackTime(x) {
+        let v = (x - this.x) / this.w;
+        v = (v < 0) ? 0 : (v < 1) ? v : 1;
+        if (fb.PlaybackTime !== v * fb.PlaybackLength) {
+            fb.PlaybackTime = v * fb.PlaybackLength;
+        }
+    }
 }
 
 class Timeline {
@@ -216,7 +216,7 @@ class Timeline {
             for (let i = 0; i < this.playedTimesPercents.length; i++) {
                 const x = Math.floor(this.drawWidth * this.playedTimesPercents[i]) + this.extraLeftSpace;
                 if (!isNaN(x) && x <= this.w) {
-			        gr.DrawLine(x, this.y, x, this.y + this.h, this.lineWidth, this.playCol);
+                    gr.DrawLine(x, this.y, x, this.y + this.h, this.lineWidth, this.playCol);
                 } else {
                     // console.log('Played Times Error! ratio: ' + this.playedTimesPercents[i], 'x: ' + x);
                 }
@@ -251,7 +251,8 @@ class Timeline {
                     // the list is sorted so we can abort early
                     if (!tooltip.length) {
                         if (i === 0) {
-                            tooltip = 'First played after ' + dateDiff($date('%added%'), this.playedTimes[0]);
+                            const added = dateDiff($date('[%added%]'), this.playedTimes[0]);
+                            tooltip = added ? `First played after ${added}` : '';
                         } else {
                             tooltip = 'No plays for ' + dateDiff(new Date(this.playedTimes[i - 1]).toISOString(), this.playedTimes[i]);
                         }
