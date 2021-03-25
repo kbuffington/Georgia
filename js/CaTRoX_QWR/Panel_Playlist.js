@@ -2639,7 +2639,7 @@ var debounced_get_album_art = _.debounce(function (items) {
 });
 
 /** @type {FbMetadbHandle[]} */
-let loadingArtList = []
+let loadingArtList = [];	// list of handles that we are loading artwork for.
 
 /**
  * Loads artwork given a list of headers items. Typically called in a debounce.
@@ -2659,8 +2659,9 @@ function getHeaderArtwork(items) {
 			// TODO Once this has been better tested, remove on_get_album_art_done callback from this file, and probably georgia-main.js as well
 			// utils.GetAlbumArtAsync(window.ID, metadb, g_album_art_id.front);
 			if (!loadingArtList.find(handle => handle === metadb)) {
+				loadingArtList.push(metadb);
 				utils.GetAlbumArtAsyncV2(window.ID, metadb, g_album_art_id.front).then((artResult) => {
-					loadingArtList = loadingArtList.filter(handle => handle === metadb);
+					loadingArtList = loadingArtList.filter(handle => handle !== metadb);
 					if (!item.is_art_loaded()) {
 						item.assign_art(artResult.image);
 						item.repaint();
