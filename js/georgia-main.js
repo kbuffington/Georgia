@@ -235,6 +235,8 @@ let btnImg = undefined;
 var albumart = null; // albumart image
 let albumart_size = new ImageSize(0, 0, 0, 0); // position (big image)
 let cdart = null; // cdart image
+/** @type {GdiBitmap[]} */
+let cdartArray = [];
 let cdart_size = new ImageSize(0, 0, 0, 0); // cdart position (offset from albumart_size)
 var albumart_scaled = null; // pre-scaled album art to speed up drawing considerably
 var recordLabels = []; // array of record label images
@@ -297,6 +299,7 @@ var state = {}; // panel state
 let progressBarTimer; // 40ms repaint of progress bar
 let albumArtTimeout; // setTimeout ID for rotating album art
 let hideCursorTimeout; // setTimeout ID for hiding cursor
+let cdartRotationTimer;
 
 // STATUS VARIABLES
 let ww = 0;
@@ -935,11 +938,30 @@ function draw_ui(gr) {
     gr.SetSmoothingMode(SmoothingMode.AntiAliasGridFit);
 }
 
+let rotatedCdIndex = 0;
+const maxRotatedCdImages = 72;
+function setupRotationTimer() {
+	clearInterval(cdartRotationTimer);
+	if (pref.display_cdart && cdart && fb.IsPlaying && !fb.IsPaused && pref.spinCdart) {
+		cdartRotationTimer = setInterval(() => {
+			rotatedCdIndex++;
+			rotatedCdIndex %= maxRotatedCdImages;
+			if (!cdartArray[rotatedCdIndex] && cdart && cdart_size.w) {
+				console.log('creating cdImg:', rotatedCdIndex, ' with rotation:', 360/maxRotatedCdImages * rotatedCdIndex, 'degrees');
+				cdartArray[rotatedCdIndex] = rotateImg(cdart, cdart_size.w, cdart_size.h, 360/maxRotatedCdImages * rotatedCdIndex)
+			}
+			const cdLeftEdge = pref.cdart_ontop ? cdart_size.x : albumart_size.x + albumart_size.w; // the first line of cdImage that will be drawn
+			window.RepaintRect(cdLeftEdge, cdart_size.y, cdart_size.w - (cdLeftEdge - cdart_size.x), cdart_size.h);
+		}, 200);
+	}
+}
+
 function drawCdArt(gr) {
 	if (pref.display_cdart && cdart_size.y >= albumart_size.y && cdart_size.h <= albumart_size.h) {
 		let drawCdProfiler = null;
 		if (timings.showExtraDrawTiming) drawCdProfiler = fb.CreateProfiler('cdart');
-		gr.DrawImage(rotatedCD, cdart_size.x, cdart_size.y, cdart_size.w, cdart_size.h, 0, 0, rotatedCD.Width, rotatedCD.Height, 0);
+		const cdImg = cdartArray[rotatedCdIndex] || rotatedCD;
+		gr.DrawImage(cdImg, cdart_size.x, cdart_size.y, cdart_size.w, cdart_size.h, 0, 0, cdImg.Width, cdImg.Height, 0);
 		if (timings.showExtraDrawTiming) drawCdProfiler.Print();
 	}
 }
@@ -1040,12 +1062,20 @@ function onOptionsMenu(x, y) {
 		RepaintWindow();
 	}, !pref.display_cdart);
 	cdArtMenu.addToggleItem('Filter out cd/vinyl .jpgs from artwork', pref, 'filterCdJpgsFromAlbumArt');
-	cdArtMenu.addToggleItem('Rotate cdArt as tracks change', pref, 'rotate_cdart', () => { RepaintWindow(); }, !pref.display_cdart);
+	cdArtMenu.addToggleItem('Spin cdArt while songs play', pref, 'spinCdart', () => {
+		if (pref.spinCdart) {
+			setupRotationTimer();
+		} else {
+			clearInterval(cdartRotationTimer);
+			cdartArray = [];
+		}
+	});
+	cdArtMenu.addToggleItem('Rotate cdArt as tracks change', pref, 'rotate_cdart', () => { RepaintWindow(); }, !pref.display_cdart || pref.spinCdart);
 	cdArtMenu.createRadioSubMenu('cdArt Rotation Amount', ['2 degrees', '3 degrees', '4 degrees', '5 degrees'], parseInt(pref.rotation_amt), [2,3,4,5], (rot) => {
 		pref.rotation_amt = rot;
 		CreateRotatedCDImage();
 		RepaintWindow();
-	}, !pref.rotate_cdart);
+	}, !pref.rotate_cdart || pref.spinCdart);
 	cdArtMenu.appendTo(menu);
 
 	menu.addItem('Draw label art on background', pref.labelArtOnBg, () => {
@@ -1617,11 +1647,12 @@ function on_metadb_changed(handle_list, fromhook) {
 				playCountVerifiedByLastFm = false;
 			}
 
+			const lastPlayed = $(tf.last_played);
 			if (str.timeline) {	// TODO: figure out why this is null for foo_input_spotify
 				str.timeline.setColors(col.tl_added, col.tl_played, col.tl_unplayed);
+				// no need to call calcDateRatios if str.timeline is undefined
+				calcDateRatios($date(currentLastPlayed) !== $date(lastPlayed), currentLastPlayed); // last_played has probably changed and we want to update the date bar
 			}
-			const lastPlayed = $(tf.last_played);
-			calcDateRatios($date(currentLastPlayed) !== $date(lastPlayed), currentLastPlayed); // last_played has probably changed and we want to update the date bar
 			if (lastPlayed.length) {
 				const today = dateToYMD(new Date());
 				if (!currentLastPlayed.length || $date(lastPlayed) !== today) {
@@ -1747,6 +1778,8 @@ function on_mouse_lbtn_dblclk(x, y, m) {
 		if (!buttonEventHandler(x, y, m) && fb.IsPlaying) {
 			albumart = null;
 			art_cache.clear();
+			cdartArray = [];
+			cdart = null;
 			on_playback_new_track(fb.GetNowPlaying());
 		}
 	}
@@ -1988,27 +2021,29 @@ function on_playback_queue_changed(origin) {
 }
 
 
-function on_playback_pause(state) {
+function on_playback_pause(pausing) {
 	refreshPlayButton();
-	if (state) { // pausing
-		if (progressBarTimer) clearInterval(progressBarTimer);
+	if (pausing) {
+		clearInterval(progressBarTimer);
+		clearInterval(cdartRotationTimer);
 		progressBarTimer = 0;
 		window.RepaintRect(0.015 * ww, 0.12 * wh, Math.max(albumart_size.x - 0.015 * ww, 0.015 * ww), wh - geo.lower_bar_h - 0.12 * wh);
 	} else { // unpausing
 		if (progressBarTimer > 0) clearInterval(progressBarTimer); // clear to avoid multiple progressTimers which can happen depending on the playback state when theme is loaded
 		debugLog("on_playback_pause: creating refresh_seekbar() interval with delay = " + t_interval);
-		progressBarTimer = setInterval(function () {
+		progressBarTimer = setInterval(() => {
 			refresh_seekbar();
 		}, t_interval);
+		cdart && pref.spinCdart && setupRotationTimer();
 	}
 
 	pauseBtn.repaint();
 	if (albumart && displayLyrics) { // if we are displaying lyrics we need to refresh all the lyrics to avoid tearing at the edges of the pause button
-		gLyrics.on_playback_pause(state);
+		gLyrics.on_playback_pause(pausing);
 	}
 
 	if (displayPlaylist) {
-		playlist.on_playback_pause(state);
+		playlist.on_playback_pause(pausing);
 	}
 }
 
@@ -2016,7 +2051,7 @@ function on_playback_stop(reason) {
 	if (reason !== 2) { // 2 = starting_another
 		// clear all variables and repaint
 		str = clearUIVariables()
-		debugLog("Repainting on_playback_stop");
+		debugLog(`Repainting on_playback_stop:`, reason);
 		RepaintWindow();
 		lastFolder = '';
 		lastDiscNumber = '0';
@@ -2043,9 +2078,10 @@ function on_playback_stop(reason) {
 	rotatedCD = null;
 	albumArtTimeout = 0;
 
-	if (reason === 0) {
-		// Stop
+	if (reason === 0 || reason === 1) {	// Stop or end of playlist
 		cdart = disposeCDImg(cdart);
+		clearInterval(cdartRotationTimer);
+		cdartArray = [];	// clear Images
 		window.Repaint();
 	}
 	if (displayPlaylist) {
@@ -2371,15 +2407,34 @@ function disposeCDImg(cdImage) {
 	return null;
 }
 
+/**
+ * Creates a rotated image
+ * @param {GdiBitmap} img The source image
+ * @param {number} w Width of image
+ * @param {number} h Height of image
+ * @param {number} degrees
+ */
+function rotateImg(img, w, h, degrees) {
+	/** @type {GdiBitmap} */ let rotatedImg;
+	if (degrees === 0) {
+		rotatedImg = img.Clone(0, 0, img.Width, img.Height);
+	} else {
+		rotatedImg = gdi.CreateImage(w, h);
+		const gotGraphics = rotatedImg.GetGraphics();
+		gotGraphics.DrawImage(img, 0, 0, w, h, 0, 0, img.Width, img.Height, degrees);
+		rotatedImg.ReleaseGraphics(gotGraphics);
+	}
+	return rotatedImg;
+}
+
+// TODO: Once spinning art is done, scrap this and the rotation amount crap and just use indexes into the cdartArray when needed
+// IDEA: Smooth rotation to new position?
 function CreateRotatedCDImage() {
 	if (pref.display_cdart) { // drawing cdArt rotated is slow, so first draw it rotated into the rotatedCD image, and then draw rotatedCD image unrotated in on_paint
-        if (cdart && cdart_size.w > 0) { // cdart must be square so just use cdart_size.w (width)
-			rotatedCD = gdi.CreateImage(cdart_size.w, cdart_size.w);
-			const rotCDimg = rotatedCD.GetGraphics();
+		if (cdart && cdart_size.w > 0) { // cdart must be square so just use cdart_size.w (width)
 			let trackNum = parseInt(fb.TitleFormat('$num($if(' + tf.vinyl_tracknum + ',$sub($mul(' + tf.vinyl_tracknum + ',2),1),$if2(%tracknumber%,1)),1)').Eval()) - 1;
 			if (!pref.rotate_cdart || trackNum != trackNum) trackNum = 0; // avoid NaN issues when changing tracks rapidly
-			rotCDimg.DrawImage(cdart, 0, 0, cdart_size.w, cdart_size.h, 0, 0, cdart.Width, cdart.Height, trackNum * pref.rotation_amt, 255);
-			rotatedCD.ReleaseGraphics(rotCDimg);
+			rotatedCD = rotateImg(cdart, cdart_size.w, cdart_size.h, trackNum * pref.rotation_amt);
 		}
 	}
 }
@@ -2612,12 +2667,20 @@ function fetchNewArtwork(metadb) {
 				cdart = temp_cdart;
 				ResizeArtwork(true);
 				CreateRotatedCDImage();
+				if (pref.spinCdart) {
+					cdartArray = [];	// clear last image
+					setupRotationTimer();
+				}
 			} else {
 				gdi.LoadImageAsyncV2(window.ID, cdartPath).then(cdImage => {
 					disposeCDImg(cdart); // delay disposal so we don't get flashing
 					cdart = art_cache.encache(cdImage, cdartPath);
 					ResizeArtwork(true);
 					CreateRotatedCDImage();
+					if (pref.spinCdart) {
+						cdartArray = [];	// clear last image
+						setupRotationTimer();
+					}
 					lastLeftEdge = 0; // recalc label location
 					RepaintWindow();
 				});

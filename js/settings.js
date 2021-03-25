@@ -39,6 +39,7 @@ pref.add_properties({
 	art_rotate_delay: ['Art: Seconds to display each art', 30], // seconds per image
 	rotate_cdart: ['Art: Rotate CD art on new track', true], // true: rotate cdArt based on track number. i.e. rotationAmt = %tracknum% * x degrees
 	cdart_ontop: ['Art: Show CD art above front cover', false], // true: display cdArt above front cover
+	spinCdart: ['Art: Spin CD art', false], // true: cdArt will spin while the song plays
 	filterCdJpgsFromAlbumArt: ['Art: Filter out cd/vinyl .jpgs from showing as artwork', false],
 	labelArtOnBg: ['Art: Draw label art on background', false], // true: don't show the theme color background behind label art
 	show_flags: ['Show country flags', true], // true: show the artist country flags
