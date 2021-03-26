@@ -1062,7 +1062,7 @@ function onOptionsMenu(x, y) {
 		RepaintWindow();
 	}, !pref.display_cdart);
 	cdArtMenu.addToggleItem('Filter out cd/vinyl .jpgs from artwork', pref, 'filterCdJpgsFromAlbumArt');
-	cdArtMenu.addToggleItem('Spin cdArt while songs play', pref, 'spinCdart', () => {
+	cdArtMenu.addToggleItem('Spin cdArt while songs play (increases memory and CPU)', pref, 'spinCdart', () => {
 		if (pref.spinCdart) {
 			setupRotationTimer();
 		} else {
@@ -1292,7 +1292,7 @@ function onOptionsMenu(x, y) {
 
 	const configMenu = new Menu('Configuration File');
 	configMenu.addItem('Edit configuration file', false, () => { _.runCmd(config.getPath()); });
-	configMenu.addItem('Reset configuartion file', false, () => { config.resetConfiguration(); });
+	configMenu.addItem('Reset configuration file', false, () => { config.resetConfiguration(); });
 	configMenu.appendTo(menu);
 
 	menu.addSeparator();
