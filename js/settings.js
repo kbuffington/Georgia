@@ -162,7 +162,8 @@ tf.lyr_path = [ // simply add, change or re-order entries as needed
 
 tf.labels = [ // Array of fields to test for publisher. Add, change or re-order as needed.
 	'label', // DO NOT put %s around the field names because we are using $meta() calls
-	'publisher'
+	'publisher',
+	'discogs_label'
 ];
 
 // CD-ART SETTINGS
@@ -199,9 +200,6 @@ function migrateCheck(version, storedVersion) {
 		switch (storedVersion) {
 
 			case '2.0.0-beta1':
-				replaceGridEntry(grid, 'Catalog #', 6);
-				replaceGridEntry(grid, 'Release Country', 7);
-				config.addConfigurationObject(gridSchema, grid);
 			case '2.0.0-beta2':
 				window.SetProperty('Art: Seconds to display each art', null);
 				tf.lyrics = defaultTitleFormatStrings.lyrics;
@@ -214,6 +212,11 @@ function migrateCheck(version, storedVersion) {
 			case '2.0.0':
 			case '2.0.1':
 				settings.defaultSortString = settingsDefaults.defaultSortString;
+				tf.releaseCountry = defaultTitleFormatStrings.releaseCountry;
+				replaceGridEntry(grid, 'Label', 5);
+				replaceGridEntry(grid, 'Catalog #', 6);
+				replaceGridEntry(grid, 'Release Country', 7);
+				config.addConfigurationObject(gridSchema, grid);
 
 				// this block should appear after all previous versions have fallen through
 				console.log('> Upgrading Georgia Theme settings from', storedVersion);

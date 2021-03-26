@@ -20,7 +20,7 @@ tf.edition = '[$if(%original release date%,$ifequal($year(%original release date
 tf.last_played = '[$if2(%last_played_enhanced%,%last_played%)]';
 tf.lyrics = '[$if3(%synced lyrics%,%syncedlyrics%,%lyrics%,%lyric%,%unsyncedlyrics%,%unsynced lyrics%)]';
 tf.original_artist = '[ \'(\'%original artist%\' cover)\']';
-tf.releaseCountry = '$replace(%releasecountry%,AF,XW)';
+tf.releaseCountry = '$replace($if3(%releasecountry%,%discogs_country%),AF,XW)';
 tf.title = '%title%[ \'[\'%translation%\']\']';
 tf.tracknum = '[%tracknumber%.]';
 tf.vinyl_side = '%vinyl side%';
@@ -58,9 +58,9 @@ let metadataGrid = [
 	{ label: 'Year',           val: '$puts(d,'+tf.date+')$if($strcmp($year($get(d)),$get(d)),$get(d),)', comment: '\'Year\' is shown if the date format is YYYY' },
 	{ label: 'Release Date',   val: '$puts(d,'+tf.date+')$if($strcmp($year($get(d)),$get(d)),,$get(d))', age: true, comment: '\'Release Date\' is shown if the date format is YYYY-MM-DD' },
 	{ label: 'Edition',        val: tf.edition },
-	{ label: 'Label',          val: '[$meta_sep(label, \u2022 )]', comment: 'The label(s) or publisher(s) that released the album.' },
-	{ label: 'Catalog #',      val: `[$if(%catalognumber%,%catalognumber%[ / ${tf.releaseCountry}],)]` },
-	{ label: 'Release Country',val: '[$if(%catalognumber%,,$replace(' + tf.releaseCountry +',XW,))]', comment: 'Only shown if %catalognumber% is not present. If release country is entire world (\'XW\') value is hidden.' },
+	{ label: 'Label',          val: '[$if($meta(label),$meta_sep(label, \u2022 ),$if3(%publisher%,%discogs_label%))]', comment: 'The label(s) or publisher(s) that released the album.' },
+	{ label: 'Catalog #',      val: `$puts(cn,$if3(%catalognumber%,%discogs_catalog%))[$if($get(cn),$get(cn)[ / ${tf.releaseCountry}],)]` },
+	{ label: 'Release Country',val: `$puts(cn,$if3(%catalognumber%,%discogs_catalog%))[$if($get(cn),,$replace(${tf.releaseCountry},XW,))]`, comment: 'Only shown if %catalognumber% or %discogs_catalog% is not present. If release country is entire world (\'XW\') value is hidden.' },
 	{ label: 'Track',          val: '$if(%tracknumber%,$num(%tracknumber%,1)$if(%totaltracks%,/$num(%totaltracks%,1))$ifgreater(%totaldiscs%,1,   CD %discnumber%/$num(%totaldiscs%,1),)' },
 	{ label: 'Genre',          val: '[$meta_sep(genre, \u2022 )]' },
 	{ label: 'Style',          val: '[$meta_sep(style, \u2022 )]' },
