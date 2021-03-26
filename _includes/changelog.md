@@ -38,6 +38,7 @@
  - "Expand" was always disabled in the Library right click menu
  - Lyrics could not be loaded for songs or artists with a `:` in the title.
  - Play/Pause transport button was not being updated when a song started/stopped
+
 ## v2.0.1 - 2020-03-02
 ### Fixed
  - Potential crash when switching from album with cdArt to one without
