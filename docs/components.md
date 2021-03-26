@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Recommended Components
-nav_order: 10
+nav_order: 15
 ---
 ## Recommended Components
 

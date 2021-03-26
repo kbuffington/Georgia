@@ -35,7 +35,7 @@ Because the config file is in the JSONC format, comments are interspersed throug
 
 ### Upgrades
 
-Whenever you reload Georgia, the theme will check its' hardcoded version with the `configVersion` saved in `georgia-config.jsonc`. If `georgia-config.jsonc` is an older version, the configuration file will be upgraded, and any new or updated properties will be added to the configuration file. This *might* mean that in some rare occasions, a value you have edited might be overwritten with a new default. This will be done sparingly and I will attempt to notify users when it happens. 99% of the time, any existing properties will be left completely untouched.
+Whenever you reload Georgia, the theme will check its hardcoded version with the `configVersion` saved in `georgia-config.jsonc`. If `georgia-config.jsonc` is an older version, the configuration file will be upgraded, and any new or updated properties will be added to the configuration file. This *might* mean that in some rare occasions, a value you have edited might be overwritten with a new default. This will be done sparingly and I will attempt to notify users when it happens. 99% of the time, any existing properties will be left completely untouched.
 
 During upgrades, the old version of the configuration file will be backed up to a new file containing the version of georgia which wrote it. For example, upgrading from 2.0.0 to 2.1.0 will create a `georgia-config-2.0.0.jsonc`. You can use these backups in case something goes wrong and you need to downgrade the version of Georgia, or so that you have a copy of your setting for any properties that might get reset to new defaults during the upgrade.
 
