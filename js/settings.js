@@ -8,7 +8,7 @@ let globals = {};
 let transport = {};
 
 
-const currentVersion = '2.0.1';
+const currentVersion = '2.0.2';
 let configVersion = currentVersion;	// will be overwritten when loaded from config file
 let updateAvailable = false;
 let updateHyperlink;
