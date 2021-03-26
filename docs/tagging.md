@@ -12,7 +12,7 @@ Georgia looks and functions best when you tag your files liberally with lots of 
 
 I personally recommend the [foo_musicbrainz](https://www.foobar2000.org/components/view/foo_musicbrainz) tagger component as it is integrated with foobar2000, and the default tag field names are the same ones this theme has configured by default. Also, I'm the maintainer of foo_musicbrainz, and future updates to that component will be reflected in Georgia as well. Synergy!
 
-There are plenty of other great taggers out there, but all of them will differ from the field names used in Georgia in minor/major ways. Fortunately you don't need to give up your favorite tagger or alter your workflow as you can easily edit the fields used throughout Georgia in the [config file](configuration.html).
+There are plenty of other great taggers out there, but all of them will differ from the field names used in Georgia in minor/major ways. Fortunately you don't need to give up your favorite tagger or alter your workflow as you can easily edit the fields used throughout Georgia in the [config file](configuration.html). As of version 2.0.2, Georgia also has limited support for some default fields populated by foo_discogs.
 
 ### Georgia Uses a Different Field Name than My Files Do!
 
