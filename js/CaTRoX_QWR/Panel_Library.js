@@ -2607,8 +2607,15 @@ function QuickSearch() {
 }
 // var jS = new j_Search();
 
-function LibraryPanel() {
-	this.on_paint = function (gr) {
+class LibraryPanel {
+	constructor() {
+		this.x = -1; // not set
+		this.y = -1; // not set
+		this.w = -1; // not set
+		this.h = -1; // not set
+	}
+
+	on_paint(gr) {
 		ui.draw(gr);
 		lib_manager.checkTree();
 		if (libraryProps.searchMode) sL.draw(gr);
@@ -2618,7 +2625,7 @@ function LibraryPanel() {
 		quickSearch.draw(gr);
 	}
 
-	this.on_size = function (x, y, width, height) {
+	on_size(x, y, width, height) {
         this.x = x;
         this.y = y;
         this.w = width;
@@ -2629,21 +2636,13 @@ function LibraryPanel() {
 		ui.h = height;
 		ui.margin = scaleForDisplay(10);
 		if (!ui.w || !ui.h) return;
-		// ui.blurReset();
 		ui.get_font();
 		p.on_size();
 		library_tree.create_tooltip();
 		if (libraryProps.searchMode || libraryProps.showScrollbar) but.refresh(true);
 		quickSearch.on_size();
     }
-
-    this.x;
-    this.y;
-    this.w;
-    this.h;
 }
-
-// var libraryPanel = new LibraryPanel();
 
 function button_manager() {
 	// arrow_symb = 0;
@@ -3107,38 +3106,44 @@ class Timers {
 	}
 }
 
-function LibraryCallbacks() {
-	this.on_char = function(code) {
+class LibraryCallbacks {
+	constructor () {
+		/** @type {FbMetadbHandleList} */
+		this.cached_handles = new FbMetadbHandleList();
+	}
+
+	on_char(code) {
 		library_tree.on_char(code);
 		quickSearch.on_char(code);
 		if (!libraryProps.searchMode) return;
 		sL.on_char(code);
 	}
-	this.on_focus = function(is_focused) {if (!is_focused) {timer.reset(timer.search_cursor); p.s_cursor = false; p.search_paint();} library_tree.on_focus(is_focused);}
+	on_focus(is_focused) {if (!is_focused) {timer.reset(timer.search_cursor); p.s_cursor = false; p.search_paint();} library_tree.on_focus(is_focused);}
 	// this.on_get_album_art_done = function(handle, art_id, image, image_path) {ui.get_album_art_done(image, image_path);}
-	this.on_metadb_changed = function(handle_list, fromhook) {
-		// console.log('here');
-		// if (!ui.blur && !ui.imgBg || ui.block()) return;
-		// ui.on_playback_new_track();
-		lib_manager.treeState(false, 2, handle_list, 1);
+	on_metadb_changed(handle_list, fromhook) {
+		if (displayLibrary) {
+			lib_manager.treeState(false, 2, handle_list, 1);
+		} else {
+			// TODO: cache list of updated handles, and then call on_metadb_changed with that list once library is visible again
+		}
 	}
-	this.on_item_focus_change = function() {if (fb.IsPlaying || !ui.blur && !ui.imgBg) return; if (ui.block()) ui.get = true; else {ui.get = false; ui.focus_changed(250);}}
-	this.on_key_down = function(vkey) {
+	on_item_focus_change() {if (fb.IsPlaying || !ui.blur && !ui.imgBg) return; if (ui.block()) ui.get = true; else {ui.get = false; ui.focus_changed(250);}}
+	on_key_down(vkey) {
 		library_tree.on_key_down(vkey);
 		if (!libraryProps.searchMode) return;
 		sL.on_key_down(vkey);
 	}
-	this.on_key_up = function(vkey) { if (!libraryProps.searchMode) return; sL.on_key_up(vkey); }
-	this.on_library_items_added = function(handle_list) {if (p.syncType) return; lib_manager.treeState(false, 2, handle_list, 0);}
-	this.on_library_items_removed = function(handle_list) {if (p.syncType) return; lib_manager.treeState(false, 2, handle_list, 2);}
-	this.on_library_items_changed = function(handle_list) {if (p.syncType) return; lib_manager.treeState(false, 2, handle_list, 1);}
-	this.on_mouse_lbtn_dblclk = function(x, y, m) {
+	on_key_up(vkey) { if (!libraryProps.searchMode) return; sL.on_key_up(vkey); }
+	on_library_items_added(handle_list) {if (p.syncType) return; lib_manager.treeState(false, 2, handle_list, 0);}
+	on_library_items_removed(handle_list) {if (p.syncType) return; lib_manager.treeState(false, 2, handle_list, 2);}
+	on_library_items_changed(handle_list) {if (p.syncType) return; lib_manager.treeState(false, 2, handle_list, 1);}
+	on_mouse_lbtn_dblclk(x, y, m) {
         but.lbtn_dn(x, y);
         library_tree.lbtn_dblclk(x, y);
         if (libraryProps.searchMode)
             sL.on_mouse_lbtn_dblclk(x, y, m);
     }
-	this.on_mouse_lbtn_down = function(x, y) {
+	on_mouse_lbtn_down(x, y) {
 		if (libraryProps.searchMode || libraryProps.showScrollbar) {
 			but.lbtn_dn(x, y);
 		}
@@ -3148,27 +3153,27 @@ function LibraryCallbacks() {
 		library_tree.lbtn_dn(x, y);
 		sbar.lbtn_dn(x, y);
 	}
-	this.on_mouse_lbtn_up = function(x, y) {library_tree.lbtn_up(x, y); if (libraryProps.searchMode) {sL.lbtn_up(); but.lbtn_up(x, y);} sbar.lbtn_up(x, y);}
-	this.on_mouse_leave = function() {if (libraryProps.searchMode || libraryProps.showScrollbar) but.leave(); sbar.leave(); library_tree.leave();}
-	this.on_mouse_mbtn_up = function(x, y) {library_tree.mbtn_up(x, y);}
-	this.on_mouse_move = function(x, y, m) {if (p.m_x == x && p.m_y == y) return; if (libraryProps.searchMode || libraryProps.showScrollbar) but.move(x, y); if (libraryProps.searchMode) sL.move(x, y); library_tree.move(x, y); library_tree.dragDrop(x, y); sbar.move(x, y); p.m_x = x; p.m_y = y;}
-	this.on_mouse_rbtn_up = function(x, y) {if (y < p.s_h && x > p.s_x && x < p.s_x + p.s_w2) {if (libraryProps.searchMode) sL.rbtn_up(x, y); return true;} else {men.rbtn_up(x, y); return true;}}
-	this.on_mouse_wheel = function(step) {
+	on_mouse_lbtn_up(x, y) {library_tree.lbtn_up(x, y); if (libraryProps.searchMode) {sL.lbtn_up(); but.lbtn_up(x, y);} sbar.lbtn_up(x, y);}
+	on_mouse_leave() {if (libraryProps.searchMode || libraryProps.showScrollbar) but.leave(); sbar.leave(); library_tree.leave();}
+	on_mouse_mbtn_up(x, y) {library_tree.mbtn_up(x, y);}
+	on_mouse_move(x, y, m) {if (p.m_x == x && p.m_y == y) return; if (libraryProps.searchMode || libraryProps.showScrollbar) but.move(x, y); if (libraryProps.searchMode) sL.move(x, y); library_tree.move(x, y); library_tree.dragDrop(x, y); sbar.move(x, y); p.m_x = x; p.m_y = y;}
+	on_mouse_rbtn_up(x, y) {if (y < p.s_h && x > p.s_x && x < p.s_x + p.s_w2) {if (libraryProps.searchMode) sL.rbtn_up(x, y); return true;} else {men.rbtn_up(x, y); return true;}}
+	on_mouse_wheel(step) {
         if (!v.k(CTRL_ALT)) {
             sbar.wheel(step, false);
         } else {
             ui.wheel(step);
         }
     }
-	this.on_notify_data = function(name, info) {switch (name) {case "!!.tags update": lib_manager.treeState(false, 2); break;}}
-	this.on_playback_new_track = function(handle) {ui.on_playback_new_track(handle);}
-	this.on_playback_stop = function(reason) {if (reason == 2) return; on_item_focus_change();}
-	this.on_playlist_items_added = function(pn) {if (pn == plman.ActivePlaylist) ui.upd_handle_list = true; on_item_focus_change();}
-	this.on_playlist_items_removed = function(pn) {if (pn == plman.ActivePlaylist) ui.upd_handle_list = true; on_item_focus_change();}
-	this.on_playlist_items_reordered = function(pn) {if (pn == plman.ActivePlaylist) ui.upd_handle_list = true;}
-	this.on_playlist_switch = function() {on_item_focus_change();}
-	this.on_script_unload = function() {but.on_script_unload();}
-	this.mouse_in_this = function (x, y) {
+	on_notify_data(name, info) {switch (name) {case "!!.tags update": lib_manager.treeState(false, 2); break;}}
+	on_playback_new_track(handle) {ui.on_playback_new_track(handle);}
+	on_playback_stop(reason) {if (reason == 2) return; on_item_focus_change();}
+	on_playlist_items_added(pn) {if (pn == plman.ActivePlaylist) ui.upd_handle_list = true; on_item_focus_change();}
+	on_playlist_items_removed(pn) {if (pn == plman.ActivePlaylist) ui.upd_handle_list = true; on_item_focus_change();}
+	on_playlist_items_reordered(pn) {if (pn == plman.ActivePlaylist) ui.upd_handle_list = true;}
+	on_playlist_switch() {on_item_focus_change();}
+	on_script_unload() {but.on_script_unload();}
+	mouse_in_this (x, y) {
 		return (x >= ui.x && x < ui.x + ui.w &&
 				y >= ui.y && y < ui.y + ui.h);
 	}
@@ -3220,7 +3225,8 @@ function initLibraryPanel() {
 
 		libraryInitialized = true;
 	} else {
-		timer.lib();
+		// safely refresh in case changes happened while library was not visible
+		// lib_manager.treeState(false, 2);
 	}
 }
 
