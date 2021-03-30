@@ -1560,7 +1560,7 @@ function on_playback_new_track(metadb) {
 
 // tag content changed
 function on_metadb_changed(handle_list, fromhook) {
-	console.log('on_metadb_changed()');
+	console.log(`on_metadb_changed(): ${handle_list ? handle_list.Count : '0'} handles, fromhook: ${fromhook}`);
 	if (fb.IsPlaying) {
 		var nowPlayingUpdated = !handle_list; // if we don't have a handle_list we called this manually from on_playback_new_track
 		var metadb = fb.GetNowPlaying();
@@ -1676,9 +1676,13 @@ function on_metadb_changed(handle_list, fromhook) {
 			}
 		}
 	}
-	if (displayPlaylist) {
-		trace_call && console.log(qwr_utils.function_name());
-		playlist.on_metadb_changed(handle_list, fromhook);
+	if (handle_list) {	// not called manually from on_playback_new_track
+		if (displayPlaylist) {
+			trace_call && console.log(qwr_utils.function_name());
+			playlist.on_metadb_changed(handle_list, fromhook);
+		} else if (displayLibrary) {
+			library.on_metadb_changed(handle_list, fromhook);
+		}
 	}
 	RepaintWindow();
 }

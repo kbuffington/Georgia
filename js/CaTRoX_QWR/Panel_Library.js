@@ -509,16 +509,17 @@ function userinterface() {
 	this.create_images();
 	this.draw = function (gr) {
 		try {
-			if (this.bg)
+			if (this.bg) {
 				gr.FillSolidRect(this.x, this.y, this.w, this.h, this.backcol);
-			if (!this.blur && !this.imgBg)
-				return;
-			this.get_img_fallback();
+			}
+			// if (!this.blur && !this.imgBg)
+			// 	return;
+			// this.get_img_fallback();
 			// if (blurImg)
 			// 	gr.DrawImage(blurImg, this.x, this.y, this.w, this.h, 0, 0, blurImg.Width, blurImg.Height);
 		} catch (e) {}
 	}
-	this.focus_changed = function(ms) {k++; if (k == 1) {this.on_playback_new_track(); timer.reset(timer.focus, timer.focusi); timer.focus = setTimeout(function() {k = 0; timer.focus = false;}, ms); return;} timer.reset(timer.focus, timer.focusi); timer.focus = setTimeout(function() {ui.on_playback_new_track(); k = 0; timer.focus = false;}, ms);}
+	this.focus_changed = function(ms) {k++; if (k == 1) {this.on_playback_new_track(); timer.reset(timer.focus); timer.focus = setTimeout(function() {k = 0; timer.focus = false;}, ms); return;} timer.reset(timer.focus); timer.focus = setTimeout(function() {ui.on_playback_new_track(); k = 0; timer.focus = false;}, ms);}
 	// this.get_album_art_done = function (image, image_path) {
 	// 	console.log('library.get_album_art_done');
 	// 	if (image_path_o == image_path && blurImg && image) {
@@ -535,24 +536,24 @@ function userinterface() {
 	// 	}
 	// 	this.blur_img(image);
 	// }
-	this.get_img_fallback = function () {
-		if (sbar.draw_timer || !this.get) return;
-		this.grab_f_img();
-		this.get = false;
-	}
-	this.grab_f_img = function (handle) {
-		if (!handle) handle = this.handle();
-		if (handle)
-		return utils.GetAlbumArtAsync(window.ID, handle, 0);
-		if (fb.IsPlaying)
-			return;
-		const image = stub(1);
-		if (!image) {
-			// blurImg = false;
-			return;
-		}
-		this.blur_img(image);
-	}
+	// this.get_img_fallback = function () {
+	// 	if (sbar.draw_timer || !this.get) return;
+	// 	this.grab_f_img();
+	// 	this.get = false;
+	// }
+	// this.grab_f_img = function (handle) {
+	// 	if (!handle) handle = this.handle();
+	// 	if (handle)
+	// 	return utils.GetAlbumArtAsync(window.ID, handle, 0);
+	// 	if (fb.IsPlaying)
+	// 		return;
+	// 	const image = stub(1);
+	// 	if (!image) {
+	// 		// blurImg = false;
+	// 		return;
+	// 	}
+	// 	this.blur_img(image);
+	// }
 
 	var handle_list = fb.CreateHandleList();
 	this.upd_handle_list = true;
@@ -569,14 +570,14 @@ function userinterface() {
 	}
 
 	this.on_playback_new_track = function (handle) {
-		console.log('library.on_playback_new_track');
-		if (!this.blur && !this.imgBg) return;
-		if (this.block()) {
-			this.get = true;
-		} else {
-			this.grab_f_img(handle);
-			this.get = false;
-		}
+		// console.log('library.on_playback_new_track');
+		// if (!this.blur && !this.imgBg) return;
+		// if (this.block()) {
+		// 	this.get = true;
+		// } else {
+		// 	this.grab_f_img(handle);
+		// 	this.get = false;
+		// }
 	}
 	var stub = function (n) {
 		// image_path_o = n ? "noitem" : "stub";
@@ -1071,8 +1072,7 @@ function library_manager() {
 		max = p.list.Count,
 		index = Math.floor((min + max) / 2);
 		while (max > min) {
-			// var tmp = fb.CreateHandleList(item);
-			var tmp = fb.FbMetadbHandleList(item);	// cannot get this method to ever be called, not sure if this is what is intended
+			const tmp = new FbMetadbHandleList(item);
 			tmp.Add(p.list[index]);
 			p.sort(tmp);
 			if (item.Compare(tmp[0])) max = index;
@@ -1081,7 +1081,7 @@ function library_manager() {
 		}
 		return index;
 	}
-	this.checkTree = function() {if (!this.upd && !(this.init && libraryProps.rememberTree)) return; this.init = false; timer.reset(timer.update, timer.updatei); this.time.Reset(); library_tree.subCounts =  {"standard": {}, "search": {}, "filter": {}}; this.rootNodes(this.upd == 2 ? 2 : 1, this.process); this.upd = 0;}
+	this.checkTree = function() {if (!this.upd && !(this.init && libraryProps.rememberTree)) return; this.init = false; timer.reset(timer.update); this.time.Reset(); library_tree.subCounts =  {"standard": {}, "search": {}, "filter": {}}; this.rootNodes(this.upd == 2 ? 2 : 1, this.process); this.upd = 0;}
 	this.removed_f = function(handle_list) {var j = handle_list.Count; while (j--) {var i = this.list.Find(handle_list[j]); if (i != -1) {this.list.RemoveById(i); node.splice(i, 1);}}}
 	this.removed_s = function(handle_list) {var j = handle_list.Count; while (j--) {var i = p.list.Find(handle_list[j]); if (i != -1) {p.list.RemoveById(i); node_s.splice(i, 1);}}}
 	var sort = function (a, b) {return a.toString().replace(/^\?/,"").replace(/(\d+)/g, function (n) {return ('0000' + n).slice(-5)}).localeCompare(b.toString().replace(/^\?/,"").replace(/(\d+)/g, function (n) {return ('0000' + n).slice(-5)}));}
@@ -1117,9 +1117,9 @@ function library_manager() {
 			if (!b || b && !p.reset && libraryProps.rememberTree) {window.SetProperty("SYSTEM.Remember.Search Text", p.s_txt); if (state == 1) return;}
 		} catch (e) {}
 		if (!handle_list) {
-			this.get_library(); this.rootNodes(1, this.process);
-		}
-		else {
+			this.get_library();
+			this.rootNodes(1, this.process);
+		} else {
 			switch (n) {
 				case 0:
 					this.added(handle_list);
@@ -1137,14 +1137,32 @@ function library_manager() {
 							items_b = tfo.EvalWithMetadbs(handle_list);
 							for (var j = 0; j < handle_list.Count; j++) {
 								var h = this.list.Find(handle_list[j]);
-								if (h != -1) {if (!arraysIdentical(node[h], items_b[j].split("|"))) {this.removed(handle_list); this.added(handle_list); if (ui.w < 1 || !window.IsVisible) this.upd = 2; else timer.lib_update(); upd_done = true; break;}}
+								if (h != -1) {
+									if (!arraysIdentical(node[h], items_b[j].split("|"))) {
+										this.removed(handle_list);
+										this.added(handle_list);
+										if (ui.w < 1 || !window.IsVisible) this.upd = 2;
+										else timer.lib_update();
+										upd_done = true;
+										break;
+									}
+								}
 							}
 							break;
 						case 1:
 							items_b = handle_list.GetLibraryRelativePaths();
                             for (var j = 0; j < handle_list.Count; j++) {
                                 var h = this.list.Find(handle_list[j]);
-                                if (h != -1) {if (!arraysIdentical(node[h], items_b[j].split("\\"))) {this.removed(handle_list); this.added(handle_list); if (ui.w < 1 || !window.IsVisible) this.upd = 2; else timer.lib_update(); upd_done = true; break;}};
+                                if (h != -1) {
+									if (!arraysIdentical(node[h], items_b[j].split("\\"))) {
+										this.removed(handle_list);
+										this.added(handle_list);
+										if (ui.w < 1 || !window.IsVisible) this.upd = 2;
+										else timer.lib_update();
+										upd_done = true;
+										break;
+									}
+								};
                             }
                             break;
 					}
@@ -1320,7 +1338,6 @@ function library_manager() {
         switch (true) {
 			case handle_list.Count < 100:
 				var lis = fb.CreateHandleList();
-				console.log('blah');
 				if (p.filter_by > 0 && p.s_show > 1) {try {lis = fb.GetQueryItems(handle_list, p.filt[p.filter_by].type);} catch (e) {}} else lis = handle_list; p.sort(lis);
 				this.binaryInsert(p.view_by == p.folder_view, lis, this.list, node);
 				if (this.list.Count) this.empty = "";
@@ -2431,11 +2448,11 @@ function searchLibrary() {
 	var record = function() {lg.push(p.s_txt); log = []; if (lg.length > 30) lg.shift();}
 	this.clear = function() {
 		lib_manager.time.Reset(); library_tree.subCounts.search = {}; offsetChars = selStart = selEnd = cx = 0; p.s_cursor = false; p.s_search = false; p.s_txt = "";
-		p.search_paint(); timer.reset(timer.search_cursor, timer.search_cursori); lib_manager.rootNodes();
+		p.search_paint(); timer.reset(timer.search_cursor); lib_manager.rootNodes();
 		// if (p.pn_h_auto && p.pn_h == p.pn_h_min && library_tree.tree[0]) library_tree.clear_child(library_tree.tree[0]);
 	}
 	this.on_key_up = function(vkey) {if (!p.s_search) return; if (vkey == v.shift) {shift = false; shift_x = cx;}}
-	this.lbtn_up = function(x, y) {if (selStart != selEnd) timer.reset(timer.search_cursor, timer.search_cursori); lbtn_dn = false;}
+	this.lbtn_up = function(x, y) {if (selStart != selEnd) timer.reset(timer.search_cursor); lbtn_dn = false;}
 	this.move = function(x, y) {if (y > p.s_h || !lbtn_dn) return; var t = get_cursor_pos(x), t_x = get_cursor_x(t); calc_text(); if(t < selStart) {if (t < selEnd) {if (t_x < p.s_x) if(offsetChars > 0) offsetChars--;} else if (t > selEnd) {if (t_x + p.s_x > p.s_x + p.s_w2) {var l = (txt_w > p.s_w2) ? txt_w - p.s_w2 : 0; if(l > 0) offsetChars++;}} selEnd = t;} else if (t > selStart) {if(t_x + p.s_x > p.s_x + p.s_w2) {var l = (txt_w > p.s_w2) ? txt_w - p.s_w2 : 0; if(l > 0) offsetChars++;} selEnd = t;} cx = t; p.search_paint();}
 	this.rbtn_up = function(x, y) {men.search_menu(x, y, selStart, selEnd, doc.parentWindow.clipboardData.getData('text') ? true : false)}
 	// this.search_auto_expand = window.GetProperty(" Search Results Auto Expand", false);
@@ -2446,7 +2463,7 @@ function searchLibrary() {
 		lbtn_dn = p.s_search = (y < p.s_y + p.s_h && x >= p.s_x && x < p.s_x + p.s_w2);
 		if (!lbtn_dn) {
 			offsetChars = selStart = selEnd = cx = 0;
-			timer.reset(timer.search_cursor, timer.search_cursori);
+			timer.reset(timer.search_cursor);
 			return;
 		} else {
 			if (shift) {
@@ -2472,7 +2489,7 @@ function searchLibrary() {
 	}
 
 	this.reset_cursor_timer = function () {
-		timer.reset(timer.search_cursor, timer.search_cursori);
+		timer.reset(timer.search_cursor);
 		p.s_cursor = true;
 		timer.search_cursor = setInterval(function() {
 			p.s_cursor = !p.s_cursor;
@@ -2532,7 +2549,7 @@ function searchLibrary() {
 		}
 		if (code == v.copy || code == v.selAll) return;
 		if (!timer.search_cursor) timer.search_cursor = setInterval(function() {p.s_cursor = !p.s_cursor; p.search_paint();}, 530);
-		p.search_paint(); lib_manager.upd_search = true; timer.reset(timer.search, timer.searchi);
+		p.search_paint(); lib_manager.upd_search = true; timer.reset(timer.search);
 		timer.search = setTimeout(function() {
 			lib_manager.time.Reset(); library_tree.subCounts.search = {};
 			lib_manager.treeState(false, libraryProps.rememberTree);
@@ -2582,14 +2599,14 @@ function searchLibrary() {
 					selEnd = Math.max(cx, shift_x);
 				}
 				p.s_cursor = true;
-				timer.reset(timer.search_cursor, timer.search_cursori);
+				timer.reset(timer.search_cursor);
 				timer.search_cursor = setInterval(function() {
 					p.s_cursor = !p.s_cursor; p.search_paint();
 				}, 530);
 				break;
 			case v.home:
 			case v.end:
-				if (vkey == v.home) offsetChars = selStart = selEnd = cx = 0; else selStart = selEnd = cx = p.s_txt.length; p.s_cursor = true; timer.reset(timer.search_cursor, timer.search_cursori); timer.search_cursor = setInterval(function() {p.s_cursor = !p.s_cursor; p.search_paint();}, 530);
+				if (vkey == v.home) offsetChars = selStart = selEnd = cx = 0; else selStart = selEnd = cx = p.s_txt.length; p.s_cursor = true; timer.reset(timer.search_cursor); timer.search_cursor = setInterval(function() {p.s_cursor = !p.s_cursor; p.search_paint();}, 530);
 				break;
 			case v.shift:
 				shift = true;
@@ -2664,7 +2681,7 @@ function QuickSearch() {
 				return;
 			library_tree.sel_items = []; jump_search = true;
 			window.RepaintRect(ui.x, j_y, ui.w, j_h + 1);
-			timer.reset(timer.jsearch, timer.jsearchi);
+			timer.reset(timer.jsearch);
 			timer.jsearch = setTimeout(function () {
 				for (i = 0; i < library_tree.tree.length; i++) {
 					if (library_tree.tree[i].name != p.baseName && library_tree.tree[i].name.substring(0, jSearch.length).toLowerCase() == jSearch.toLowerCase()) {
@@ -2685,7 +2702,7 @@ function QuickSearch() {
 				timer.jsearch = false;
 			}, 500);
 
-			timer.reset(timer.clear_jsearch, timer.clear_jsearchi);
+			timer.reset(timer.clear_jsearch);
 			timer.clear_jsearch = setTimeout(function () {
 				if (found && libraryProps.autoFill)
 					library_tree.load(library_tree.sel_items, true, false, false, library_tree.gen_pl, false); jSearch = "";
@@ -3160,16 +3177,54 @@ function menu_object() {
 }
 // var men = new menu_object();
 
-function timers() {
-	var timer_arr = ["clear_jsearch", "focus", "jsearch", "search", "search_cursor", "tt", "update"];
-	for (var i = 0; i < timer_arr.length; i++) {this[timer_arr[i]] = false; this[timer_arr[i] + "i"] = i;}
-	this.reset = function(timer, n) {if (timer) clearTimeout(timer); this[timer_arr[n]] = false;}
-	this.lib = function() {setTimeout(function() {if ((ui.w < 1 || !window.IsVisible) && libraryProps.rememberTree) lib_manager.init = true; lib_manager.get_library(); lib_manager.rootNodes(libraryProps.rememberTree ? 1 : 0, lib_manager.process);}, 5);}
-	this.tooltip = function() {this.reset(this.tt, this.tti); this.tt = setTimeout(function() {library_tree.deActivate_tooltip(); timer.tt = false;}, 5000);}
-	this.lib_update = function() {this.reset(this.update, this.updatei); this.update = setTimeout(function() {lib_manager.time.Reset(); library_tree.subCounts =  {"standard": {}, "search": {}, "filter": {}}; lib_manager.rootNodes(2, lib_manager.process); timer.update = false;}, 500);}
+/**
+ * Class which defines a bunch of timers for intervals and timeouts, and also includes some
+ * predefined timer callbacks for some reason.
+ */
+class Timers {
+	constructor () {
+		this.clear_jsearch = undefined;
+		this.focus = undefined;
+		this.jsearch = undefined;
+		this.search = undefined;
+		this.search_cursor = undefined;
+		this.tt = undefined;
+		this.update = undefined;
+	}
+
+	reset(timer) {
+		clearTimeout(timer);	// can always call clearTimeout even on bogus non-timer input
+	}
+
+	lib() {
+		setTimeout(() => {
+			if ((ui.w < 1 || !window.IsVisible) && libraryProps.rememberTree)
+				lib_manager.init = true;
+			lib_manager.get_library();
+			lib_manager.rootNodes(libraryProps.rememberTree ? 1 : 0, lib_manager.process);
+		}, 5);
+	}
+
+	tooltip() {
+		clearTimeout(this.tt);
+		this.tt = setTimeout(() => {
+			library_tree.deActivate_tooltip();
+		}, 5000);
+	}
+
+	lib_update() {
+		clearTimeout(this.update);
+		this.update = setTimeout(() => {
+			lib_manager.time.Reset();
+			library_tree.subCounts = {
+				standard: {},
+				search: {},
+				filter: {}
+			};
+			lib_manager.rootNodes(2, lib_manager.process);
+		}, 500);
+	}
 }
-// var timer = new timers();
-// timer.lib();
 
 function LibraryCallbacks() {
 	this.on_char = function(code) {
@@ -3178,9 +3233,14 @@ function LibraryCallbacks() {
 		if (!libraryProps.searchMode) return;
 		sL.on_char(code);
 	}
-	this.on_focus = function(is_focused) {if (!is_focused) {timer.reset(timer.search_cursor, timer.search_cursori); p.s_cursor = false; p.search_paint();} library_tree.on_focus(is_focused);}
+	this.on_focus = function(is_focused) {if (!is_focused) {timer.reset(timer.search_cursor); p.s_cursor = false; p.search_paint();} library_tree.on_focus(is_focused);}
 	// this.on_get_album_art_done = function(handle, art_id, image, image_path) {ui.get_album_art_done(image, image_path);}
-	this.on_metadb_changed = function() {if (!ui.blur && !ui.imgBg || ui.block()) return; ui.on_playback_new_track();}
+	this.on_metadb_changed = function(handle_list, fromhook) {
+		// console.log('here');
+		// if (!ui.blur && !ui.imgBg || ui.block()) return;
+		// ui.on_playback_new_track();
+		lib_manager.treeState(false, 2, handle_list, 1);
+	}
 	this.on_item_focus_change = function() {if (fb.IsPlaying || !ui.blur && !ui.imgBg) return; if (ui.block()) ui.get = true; else {ui.get = false; ui.focus_changed(250);}}
 	this.on_key_down = function(vkey) {
 		library_tree.on_key_down(vkey);
@@ -3234,8 +3294,30 @@ function LibraryCallbacks() {
 }
 // var library = new LibraryCallbacks();
 
+/** @type {userinterface} */
+let ui;
+/** @type {scrollbar} */
+let sbar;
+/** @type {panel_operations} */
+let p;
+/** @type {v_keys} */
+let v;
+/** @type {library_manager} */
+let lib_manager;
+/** @type {LibraryTree} */
+let library_tree;
+/** @type {searchLibrary} */
+let sL;
+/** @type {QuickSearch} */
+let quickSearch;
+let libraryPanel;
+let but;
+let men;
+/** @type {Timers} */
+let timer;
+let library;
+
 var libraryInitialized = false;
-var ui, sbar, p, v, lib_manager, library_tree, sL, quickSearch, libraryPanel, but, men, timer, library;
 function initLibraryPanel() {
 	if (!libraryInitialized) {
 		ui = new userinterface();
@@ -3251,11 +3333,13 @@ function initLibraryPanel() {
 		libraryPanel = new LibraryPanel();
 		but = new button_manager();
 		men = new menu_object();
-		timer = new timers();
+		timer = new Timers();
 		timer.lib();
 		library = new LibraryCallbacks();
 
 		libraryInitialized = true;
+	} else {
+		timer.lib();
 	}
 }
 
