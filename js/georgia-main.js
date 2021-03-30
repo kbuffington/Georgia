@@ -2701,7 +2701,7 @@ function fetchNewArtwork(metadb) {
 		getThemeColors(albumart);
 		ResizeArtwork(true);
 	} else {
-		aa_list = globals.imgPaths.map(path => utils.Glob($(path))).flat();
+		aa_list = globals.imgPaths.map(path => utils.Glob($(path), FileAttributes.Directory | FileAttributes.Hidden)).flat();
 		const filteredFileTypes = pref.filterCdJpgsFromAlbumArt ? '(png|jpg)' : 'png';
 		const pattern = new RegExp('(cd|vinyl|' + settings.cdArtBasename + ')([0-9]*|[a-h])\.' + filteredFileTypes, 'i');
 		const imageType = /jpg|png$/i;	// TODO: Add gifs?
