@@ -59,7 +59,6 @@ function userinterface() {
 	}
 	this.scale = dpi < 121 ? 1 : dpi / 120;
 	this.zoomUpd = window.GetProperty("SYSTEM.Zoom Update", false);
-	// var blurImg = false,
 		// custom_col = window.GetProperty("_CUSTOM COLOURS/FONTS: USE", false),
 		// cust_icon_font = window.GetProperty("_Custom.Font Icon [Node] (Name,Style[0or1])", "Segoe UI Symbol,0"),
 	var k = 0,
@@ -402,83 +401,6 @@ function userinterface() {
 	}
 
 	this.block = function() {return this.w <= 10 || this.h <= 10 || !window.IsVisible;}
-	// this.blur_img = function(image) {
-	// 	console.log('this.blur_img');
-	// 	if (!this.w || !this.h)
-	// 		return;
-	// 	var blurImg = gdi.CreateImage(this.w, this.h),
-	// 		gb = blurImg.GetGraphics();
-	//     if (!this.blur && autoFill || this.blur && blurAutofill) {
-	// 		var s1 = image.Width / this.w, s2 = image.Height / this.h;
-	// 		if (!this.blur && autoFill && Math.abs(s1 / s2 - 1) < 0.05) {
-	// 			var imgx = 0,imgy = 0, imgw = image.Width, imgh = image.Height;
-	// 		} else {
-	// 			if (s1 > s2) {
-	// 				var imgw = Math.round(this.w * s2), imgh = image.Height, imgx = Math.round((image.Width - imgw) / 2), imgy = 0;
-	// 			} else {
-	// 				var imgw = image.Width, imgh = Math.round(this.h * s1), imgx = 0, imgy = Math.round((image.Height - imgh) / 8);
-	// 			}
-	// 		}
-	// 	}
-	//     if (this.blur) {
-	// 		gb.SetInterpolationMode(0);
-	// 		if (blurAutofill)
-	// 			image = image.Clone(imgx, imgy, imgw, imgh);
-	// 		if (this.blur_blend) {
-	// 			var iSmall = image.Resize(this.w * this.blurLevel / 100, this.h * this.blurLevel / 100, 2),
-	// 				iFull = iSmall.resize(this.w, this.h, 2),
-	// 				offset = 90 - this.blurLevel;
-	// 			// gb.DrawImage(iFull, 0 - offset, 0 - offset, this.w + offset * 2, this.h + offset * 2, 0, 0, iFull.Width, iFull.Height, 0, 63 * ui.blurAlpha);
-	// 			console.log(this.x - offset, this.y - offset, this.w + offset * 2, this.h + offset * 2, ' - ', iFull.Width, iFull.Height, 63 * ui.blurAlpha);
-	// 			gb.DrawImage(iFull, this.x - offset, this.y - offset, this.w + offset * 2, this.h + offset * 2, 0, 0, iFull.Width, iFull.Height, 0, 63 * ui.blurAlpha);
-	// 		} else {
-	// 			gb.DrawImage(image, this.x, this.y, this.w, this.h, 0, 0, image.Width, image.Height); if (this.blurLevel > 1) blurImg.StackBlur(this.blurLevel);
-	// 			var colorScheme_array = blurImg.GetColourScheme(1),
-	// 				light_cover = get_textselcol(colorScheme_array[0], true) == 50 ? true : false;
-	// 			gb.FillSolidRect(this.x, this.y, this.w, this.h, light_cover ? this.bg_color_light : this.bg_color_dark);
-	// 		}
-	// 	} else {
-	// 		if (autoFill) {
-	// 			gb.DrawImage(image, this.x, this.y, this.w, this.h, imgx, imgy, imgw, imgh, 0, alpha);
-	// 		}
-	// 		else {
-	// 			var s = Math.min(this.h / image.Height, this.w / image.Width);
-	// 			var tw = Math.round(image.Width * s);
-	// 			var th = Math.round(image.Height * s);
-	// 			gb.DrawImage(image, (this.w - tw) / 2, (this.h - th) / 2, tw, th, 0, 0, image.Width, image.Height, 0, alpha);
-	// 		}
-	//     }
-	// 	blurImg.ReleaseGraphics(gb);
-	// 	window.Repaint();
-	// }
-	// this.blurChange = function (n) {
-	// 	this.blur_dark = false;
-	// 	this.blur_blend = false;
-	// 	this.blur_light = false;
-	// 	this.imgBg = false;
-	// 	switch (n) {
-	// 		case 2:
-	// 			this.blur_dark = true;
-	// 			break;
-	// 		case 3:
-	// 			this.blur_blend = true;
-	// 			break;
-	// 		case 4:
-	// 			this.blur_light = true;
-	// 			break;
-	// 		case 5:
-	// 			this.imgBg = true;
-	// 			break;
-	// 	}
-	// 	var blur_tmp = window.GetProperty("ADV.Image Blur Background Level (0-100)");
-	// 	this.blurLevel = this.blur_blend ? 91.05 - Math.max(Math.min(blur_tmp, 90), 1.05) : Math.max(Math.min(blur_tmp * 2, 254), 0);
-	// 	window.SetProperty("SYSTEM.Blur Blend Theme", this.blur_blend);
-	// 	window.SetProperty("SYSTEM.Blur Dark Theme", this.blur_dark);
-	// 	window.SetProperty("SYSTEM.Blur Light Theme", this.blur_light);
-	// 	window.SetProperty("SYSTEM.Image Background", this.imgBg);
-	// 	this.blurReset(true);
-	// }
-	// this.blurReset = function(clear) {if (blurImg) blurImg.Dispose(); blurImg = false; image_path_o = ""; if (clear) on_colours_changed(); this.on_playback_new_track();}
 	this.create_images = function () {
 		var cc = StringFormat(1, 1),
 			font1 = gdi.Font("Segoe UI", 270, 1),
@@ -520,40 +442,6 @@ function userinterface() {
 		} catch (e) {}
 	}
 	this.focus_changed = function(ms) {k++; if (k == 1) {this.on_playback_new_track(); timer.reset(timer.focus); timer.focus = setTimeout(function() {k = 0; timer.focus = false;}, ms); return;} timer.reset(timer.focus); timer.focus = setTimeout(function() {ui.on_playback_new_track(); k = 0; timer.focus = false;}, ms);}
-	// this.get_album_art_done = function (image, image_path) {
-	// 	console.log('library.get_album_art_done');
-	// 	if (image_path_o == image_path && blurImg && image) {
-	// 		return window.Repaint();
-	// 	}
-	// 	image_path_o = image_path;
-	// 	if (!image)
-	// 		image = stub(0);
-	// 	if (!image) {
-	// 		if (blurImg)
-	// 			blurImg.Dispose();
-	// 		blurImg = false;
-	// 		return;
-	// 	}
-	// 	this.blur_img(image);
-	// }
-	// this.get_img_fallback = function () {
-	// 	if (sbar.draw_timer || !this.get) return;
-	// 	this.grab_f_img();
-	// 	this.get = false;
-	// }
-	// this.grab_f_img = function (handle) {
-	// 	if (!handle) handle = this.handle();
-	// 	if (handle)
-	// 	return utils.GetAlbumArtAsync(window.ID, handle, 0);
-	// 	if (fb.IsPlaying)
-	// 		return;
-	// 	const image = stub(1);
-	// 	if (!image) {
-	// 		// blurImg = false;
-	// 		return;
-	// 	}
-	// 	this.blur_img(image);
-	// }
 
 	var handle_list = fb.CreateHandleList();
 	this.upd_handle_list = true;
@@ -570,14 +458,7 @@ function userinterface() {
 	}
 
 	this.on_playback_new_track = function (handle) {
-		// console.log('library.on_playback_new_track');
-		// if (!this.blur && !this.imgBg) return;
-		// if (this.block()) {
-		// 	this.get = true;
-		// } else {
-		// 	this.grab_f_img(handle);
-		// 	this.get = false;
-		// }
+		// currently unused
 	}
 	var stub = function (n) {
 		// image_path_o = n ? "noitem" : "stub";
