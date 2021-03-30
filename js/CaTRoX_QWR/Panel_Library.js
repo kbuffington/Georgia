@@ -373,7 +373,7 @@ function userinterface() {
 				this.j_font = gdi.Font(this.font.Name, this.font.Size * 1.5, 1);
 				this.calc_text();
 				p.on_size();
-				quickSearch.on_size();
+				jumpSearch.on_size();
 				library_tree.create_tooltip();
 				if (libraryProps.searchMode || libraryProps.showScrollbar)
 					but.refresh(true);
@@ -466,7 +466,7 @@ function userinterface() {
 	}
 }
 
-function scrollbar() {
+function Scrollbar() {
 	var prefix = GetPropertyPrefix();
 	var smoothness = 1 - 0.70; //window.GetProperty("ADV.Scroll: Smooth Scroll Level 0-1", 0.6561);
 	smoothness = Math.max(Math.min(smoothness, 0.99), 0.01);
@@ -924,79 +924,126 @@ function v_keys() {
 }
 // var v = new v_keys();
 
-function library_manager() {
-	// const prefix = GetPropertyPrefix();
-	var exp = [], full_list, full_list_need_sort = false, node = [], node_s = [],  scr = [], sel = [];
-	this.allmusic = []; this.init = false; this.list; this.none = ""; this.node = []; this.process = false; this.root = []; this.time = fb.CreateProfiler(); this.upd = 0, this.upd_search = false;
-	const swapPrefix = window.GetProperty("ADV.$swapbranchprefix. Prefixes to Swap (| Separator)", "A|The").split("|");
-	if (libraryProps.rememberTree) {
-		exp = JSON.parse(window.GetProperty("SYSTEM.Remember.Exp", JSON.stringify(exp)));
-		this.process = window.GetProperty("SYSTEM.Remember.Proc", false);
-		scr = JSON.parse(window.GetProperty("SYSTEM.Remember.Scr", JSON.stringify(scr)));
-		sel = JSON.parse(window.GetProperty("SYSTEM.Remember.Sel", JSON.stringify(sel)));
-		p.s_txt = window.GetProperty("SYSTEM.Remember.Search Text", "");
-	} else {
-		window.SetProperty("SYSTEM.Remember.Exp", JSON.stringify(exp));
-		window.SetProperty("SYSTEM.Remember.Scr", JSON.stringify(scr));
-		window.SetProperty("SYSTEM.Remember.Sel", JSON.stringify(sel));
-		window.SetProperty("SYSTEM.Remember.Search Text", "");
-	}
-	var arraysIdentical = function (a, b) {
-		var i = a.length;
-		if (i != b.length) return false;
-		while (i--)
-			if (a[i] !== b[i]) return false;
-		return true;
-	}
-	var binaryInsert = function(item) {
-		var min = 0,
-		max = p.list.Count,
-		index = Math.floor((min + max) / 2);
-		while (max > min) {
-			const tmp = new FbMetadbHandleList(item);
-			tmp.Add(p.list[index]);
-			p.sort(tmp);
-			if (item.Compare(tmp[0])) max = index;
-			else min = index + 1;
-			index = Math.floor((min + max) / 2);
-		}
-		return index;
-	}
-	this.checkTree = function() {if (!this.upd && !(this.init && libraryProps.rememberTree)) return; this.init = false; timer.reset(timer.update); this.time.Reset(); library_tree.subCounts =  {"standard": {}, "search": {}, "filter": {}}; this.rootNodes(this.upd == 2 ? 2 : 1, this.process); this.upd = 0;}
-	this.removed_f = function(handle_list) {var j = handle_list.Count; while (j--) {var i = this.list.Find(handle_list[j]); if (i != -1) {this.list.RemoveById(i); node.splice(i, 1);}}}
-	this.removed_s = function(handle_list) {var j = handle_list.Count; while (j--) {var i = p.list.Find(handle_list[j]); if (i != -1) {p.list.RemoveById(i); node_s.splice(i, 1);}}}
-	var sort = function (a, b) {return a.toString().replace(/^\?/,"").replace(/(\d+)/g, function (n) {return ('0000' + n).slice(-5)}).localeCompare(b.toString().replace(/^\?/,"").replace(/(\d+)/g, function (n) {return ('0000' + n).slice(-5)}));}
-	var tr_sort = function(data) {data.sort(function(a, b) {return parseFloat(a.tr) - parseFloat(b.tr)}); return data;}
 
-	this.treeState = function(b, state, handle_list, n) {
+
+var arraysIdentical = function (a, b) {
+	var i = a.length;
+	if (i != b.length) return false;
+	while (i--)
+		if (a[i] !== b[i]) return false;
+	return true;
+}
+var binaryInsert = function(item) {
+	var min = 0,
+	max = p.list.Count,
+	index = Math.floor((min + max) / 2);
+	while (max > min) {
+		const tmp = new FbMetadbHandleList(item);
+		tmp.Add(p.list[index]);
+		p.sort(tmp);
+		if (item.Compare(tmp[0])) max = index;
+		else min = index + 1;
+		index = Math.floor((min + max) / 2);
+	}
+	return index;
+}
+class Library {
+	constructor () {
+		this.exp = [];	// stored list of expanded nodes
+		/** @type {FbMetadbHandleList} */
+		this.full_list = undefined;
+		this.full_list_need_sort = false;	// TODO: can we remove this and all references?
+		this.node_s = [];	// TODO: It seems node_s is always empty array? Check and remove
+		this.scr = [];	// maybe scroll position? I can't figure this out
+		this.sel = [];	// selected item(s)
+		this.allmusic = [];
+		this.init = false;
+		/** @type {FbMetadbHandleList} */
+		this.list = undefined;
+		this.none = "";
+		this.node = [];
+		this.process = false;
+		this.root = [];
+		this.time = fb.CreateProfiler();
+		this.upd = 0;
+		this.upd_search = false;
+
+		this.swapPrefix = window.GetProperty("ADV.$swapbranchprefix. Prefixes to Swap (| Separator)", "A|The").split("|");
+		if (libraryProps.rememberTree) {
+			this.exp = JSON.parse(window.GetProperty("SYSTEM.Remember.Exp", JSON.stringify(this.exp)));
+			this.process = window.GetProperty("SYSTEM.Remember.Proc", false);
+			this.scr = JSON.parse(window.GetProperty("SYSTEM.Remember.Scr", JSON.stringify(this.scr)));
+			this.sel = JSON.parse(window.GetProperty("SYSTEM.Remember.Sel", JSON.stringify(this.sel)));
+			p.s_txt = window.GetProperty("SYSTEM.Remember.Search Text", "");
+		} else {
+			window.SetProperty("SYSTEM.Remember.Exp", JSON.stringify(this.exp));
+			window.SetProperty("SYSTEM.Remember.Scr", JSON.stringify(this.scr));
+			window.SetProperty("SYSTEM.Remember.Sel", JSON.stringify(this.sel));
+			window.SetProperty("SYSTEM.Remember.Search Text", "");
+		}
+
+	}
+
+	checkTree() {if (!this.upd && !(this.init && libraryProps.rememberTree)) return; this.init = false; timer.reset(timer.update); this.time.Reset(); library_tree.subCounts =  {"standard": {}, "search": {}, "filter": {}}; this.rootNodes(this.upd == 2 ? 2 : 1, this.process); this.upd = 0;}
+	removed_f(handle_list) {var j = handle_list.Count; while (j--) {var i = this.list.Find(handle_list[j]); if (i != -1) {this.list.RemoveById(i); this.node.splice(i, 1);}}}
+	removed_s(handle_list) {var j = handle_list.Count; while (j--) {var i = p.list.Find(handle_list[j]); if (i != -1) {p.list.RemoveById(i); this.node_s.splice(i, 1);}}}
+	// var sort = function (a, b) {return a.toString().replace(/^\?/,"").replace(/(\d+)/g, function (n) {return ('0000' + n).slice(-5)}).localeCompare(b.toString().replace(/^\?/,"").replace(/(\d+)/g, function (n) {return ('0000' + n).slice(-5)}));}
+
+	treeState(b, state, handle_list, n) {
+		// console.log(`treeState ${b} ${state} ${handle_list ? handle_list.Count : '0'} ${n}`);
 		if (!state) return;
 		p.search_paint();
 		p.tree_paint();
 		try {
 			var i = 0, ix = -1, tr = 0; this.process = false;
 			if (library_tree.tree.length && (!b || b && !p.reset)) {
-				tr = 0; exp = []; this.process = true; sel = [];
+				tr = 0; this.exp = []; this.process = true; this.sel = [];
 				for (i = 0; i < library_tree.tree.length; i++) {
 					tr = !libraryProps.rootNode ? library_tree.tree[i].tr : library_tree.tree[i].tr - 1;
-					if (library_tree.tree[i].child.length) exp.push({
+					if (library_tree.tree[i].child.length) this.exp.push({
 						tr: tr,
 						a: tr < 1 ? library_tree.tree[i].name : library_tree.tree[library_tree.tree[i].par].name,
 						b: tr < 1 ? "" : library_tree.tree[i].name
 					});
 					tr = library_tree.tree[i].tr;
-					if (library_tree.tree[i].sel == true) sel.push({
+					if (library_tree.tree[i].sel == true) this.sel.push({
 						tr: tr,
 						a: library_tree.tree[i].name,
 						b: tr != 0 ? library_tree.tree[library_tree.tree[i].par].name : "",
 						c: tr > 1 ? library_tree.tree[library_tree.tree[library_tree.tree[i].par].par].name : ""
 					});
 				}
-				ix = library_tree.get_ix(0, p.s_h + ui.row_h / 2, true, false); tr = 0; var l = Math.min(Math.floor(ix + p.rows), library_tree.tree.length);
-				if (ix != -1) {scr = []; for (i = ix; i < l; i++) {tr = library_tree.tree[i].tr; scr.push({tr:tr, a:library_tree.tree[i].name, b:tr != 0 ? library_tree.tree[library_tree.tree[i].par].name : "", c:tr > 1 ? library_tree.tree[library_tree.tree[library_tree.tree[i].par].par].name : ""})}}
-				tr_sort(exp); if (libraryProps.rememberTree) {window.SetProperty("SYSTEM.Remember.Exp",JSON.stringify(exp)); window.SetProperty("SYSTEM.Remember.Proc", this.process); window.SetProperty("SYSTEM.Remember.Scr",JSON.stringify(scr)); window.SetProperty("SYSTEM.Remember.Sel",JSON.stringify(sel));}
+				ix = library_tree.get_ix(0, p.s_h + ui.row_h / 2, true, false);
+				tr = 0;
+				var l = Math.min(Math.floor(ix + p.rows), library_tree.tree.length);
+				if (ix != -1) {
+					this.scr = [];
+					for (i = ix; i < l; i++) {
+						tr = library_tree.tree[i].tr;
+						this.scr.push({tr:tr, a:library_tree.tree[i].name, b:tr != 0 ? library_tree.tree[library_tree.tree[i].par].name : "", c:tr > 1 ? library_tree.tree[library_tree.tree[library_tree.tree[i].par].par].name : ""})
+						// console.log(this.scr);
+					}
+				}
+
+				const tr_sort = function(data) {
+					data.sort((a, b) => {
+						return parseFloat(a.tr) - parseFloat(b.tr)
+					});
+					return data;
+				}
+
+				tr_sort(this.exp);
+				if (libraryProps.rememberTree) {
+					window.SetProperty("SYSTEM.Remember.Exp",JSON.stringify(this.exp));
+					window.SetProperty("SYSTEM.Remember.Proc", this.process);
+					window.SetProperty("SYSTEM.Remember.Scr",JSON.stringify(this.scr));
+					window.SetProperty("SYSTEM.Remember.Sel",JSON.stringify(this.sel));
+				}
 			}
 			if (!b || b && !p.reset && libraryProps.rememberTree) {window.SetProperty("SYSTEM.Remember.Search Text", p.s_txt); if (state == 1) return;}
-		} catch (e) {}
+		} catch (e) {
+			console.log('errored in library_manager.treeState');
+		}
 		if (!handle_list) {
 			this.get_library();
 			this.rootNodes(1, this.process);
@@ -1086,7 +1133,7 @@ function library_manager() {
 						} catch (e) {}
 						if (removeSearchItems.Count) this.removed_s(removeSearchItems);
 						if (newSearchItems.Count || removeSearchItems.Count) {
-							this.node = node_s.slice();
+							this.node = this.node_s.slice();
 							if (!p.list.Count) {
 								library_tree.tree = [];
 								library_tree.line_l = 0;
@@ -1111,47 +1158,53 @@ function library_manager() {
 		}
 	}
 
-	this.get_library = function() {
+	get_library() {
 		this.empty = "";
 		p.list = null;
 		this.time.Reset();
 		this.none = "";
 		this.list = fb.GetLibraryItems();
-		full_list = this.list.Clone();
+		this.full_list = this.list.Clone();
 		if (!this.list.Count || !fb.IsLibraryEnabled()) {library_tree.tree = []; library_tree.line_l = 0; sbar.set_rows(0); this.empty = "Nothing to show\n\nConfigure Media Library first\n\nFile>Preferences>Media library"; p.tree_paint(); return;}
 		if (p.filter_by > 0 && libraryProps.searchMode > 1) try {this.list = fb.GetQueryItems(this.list, p.filt[p.filter_by].type)} catch (e) {};
 		if (!this.list.Count) {library_tree.tree = []; library_tree.line_l = 0; sbar.set_rows(0); this.none = "Nothing found"; p.tree_paint(); return;} this.rootNames("", 0);
 	}
 
-	this.rootNames = function(li, search) {
-		var i = 0, total; switch (search) {case 0: p.sort(this.list); li = p.list = this.list; node = []; var arr = node; break; case 1: node_s = []; var arr = node_s; break;}
-		total = li.Count; var tree_type = p.view_by != p.folder_view ? 0 : 1;
+	rootNames(li, search) {
+		var i = 0, total;
+		switch (search) {
+			case 0: p.sort(this.list); li = p.list = this.list; this.node = []; var arr = this.node; break;
+			case 1: this.node_s = []; var arr = this.node_s; break;
+		}
+		total = li.Count;
+		var tree_type = p.view_by != p.folder_view ? 0 : 1;
 		let items;
         switch (tree_type) {
 			case 0: var tfo = fb.TitleFormat(p.view); items = tfo.EvalWithMetadbs(li); for (i = 0; i < total; i++) arr[i] = items[i].split("|"); break; case 1: items = li.GetLibraryRelativePaths(); for (i = 0; i < total; i++) arr[i] = items[i].split("\\"); break;}
 	}
 
-	this.prefixes = function(n) {
+	prefixes(n) {
 		if (n.indexOf("~#!#") == -1) return n;
 		var found = false, j = 0, ln = 0;
-		for (j = 0; j < swapPrefix.length; j++) if (n.indexOf(swapPrefix[j] + " ") != -1) {found = true; break;}
+		for (j = 0; j < this.swapPrefix.length; j++) if (n.indexOf(this.swapPrefix[j] + " ") != -1) {found = true; break;}
 		if (!found) return n.replace("~#!#", "#!#");
 		var pr1 = n.split("~#!#"), pr2 = pr1[1].split("#!#"), pr = pr2[0].split("@@");
-		for (var i = 0; i < pr.length; i++) for (j = 0; j < swapPrefix.length; j++)  {ln = swapPrefix[j].length + 1; if (pr[i].substr(0, ln) == swapPrefix[j] + " ") pr[i] = pr[i].substr(ln) + ", " + swapPrefix[j];}
+		for (var i = 0; i < pr.length; i++) for (j = 0; j < this.swapPrefix.length; j++)  {ln = this.swapPrefix[j].length + 1; if (pr[i].substr(0, ln) == this.swapPrefix[j] + " ") pr[i] = pr[i].substr(ln) + ", " + this.swapPrefix[j];}
 		return pr1[0] + "#!#" + pr.join("@@") + "#!#" + pr2[1];
 	}
 
-	this.rootNodes = function(lib_update, process) {
+	rootNodes(lib_update, process) {
 		if (!this.list.Count) return;
 		this.root = []; var i = 0, j = 1, h = 0, l = 0, n = "";
 		if (p.s_txt && (this.upd_search || lib_update == 1)) {
-			this.none = ""; try {p.list = fb.GetQueryItems(this.list, p.s_txt);} catch (e) {};
+			this.none = "";
+			try {p.list = fb.GetQueryItems(this.list, p.s_txt);} catch (e) {};
 			if (!p.list.Count) {library_tree.tree = []; library_tree.line_l = 0; sbar.set_rows(0); this.none = "Nothing found"; p.tree_paint(); return;}
 			this.rootNames(p.list, 1);
-			this.node = node_s.slice(); this.upd_search = false;
+			this.node = this.node_s.slice(); this.upd_search = false;
 		} else if (!p.s_txt) {
 			p.list = this.list;
-			this.node = node.slice()
+			this.node = this.node.slice()
 		};
 		var n_o = "#get_node#",
 			nU = "",
@@ -1175,24 +1228,24 @@ function library_manager() {
 		if (libraryProps.rootNode) library_tree.branch(this.root[0], true);
 		// if (p.pn_h_auto && (p.init || lib_update) && p.pn_h == p.pn_h_min && library_tree.tree[0]) library_tree.clear_child(library_tree.tree[0]);
 		p.init = false;
-		// console.log("Library Initialized in: " + this.time.Time / 1000 + " seconds");
+		console.log("Library Initialized in: " + this.time.Time / 1000 + " seconds");
 		if (lib_update && process) {
 			try {
-				var exp_l =  exp.length, scr_l = scr.length, sel_l = sel.length, tree_l = library_tree.tree.length;
+				var exp_l = this.exp.length, scr_l = this.scr.length, sel_l = this.sel.length, tree_l = library_tree.tree.length;
 				for (h = 0; h < exp_l; h++) {
-					if (exp[h].tr == 0) {for (j = 0; j < tree_l; j++) if (library_tree.tree[j].name.toUpperCase() == exp[h].a.toUpperCase()) {library_tree.branch(library_tree.tree[j]); tree_l = library_tree.tree.length; break;}}
-					else if (exp[h].tr > 0) {for (j = 0; j < tree_l; j++) if (library_tree.tree[j].name.toUpperCase() == exp[h].b.toUpperCase() && library_tree.tree[library_tree.tree[j].par].name.toUpperCase() == exp[h].a.toUpperCase()) {library_tree.branch(library_tree.tree[j]); tree_l = library_tree.tree.length; break;}}
+					if (this.exp[h].tr == 0) {for (j = 0; j < tree_l; j++) if (library_tree.tree[j].name.toUpperCase() == this.exp[h].a.toUpperCase()) {library_tree.branch(library_tree.tree[j]); tree_l = library_tree.tree.length; break;}}
+					else if (this.exp[h].tr > 0) {for (j = 0; j < tree_l; j++) if (library_tree.tree[j].name.toUpperCase() == this.exp[h].b.toUpperCase() && library_tree.tree[library_tree.tree[j].par].name.toUpperCase() == this.exp[h].a.toUpperCase()) {library_tree.branch(library_tree.tree[j]); tree_l = library_tree.tree.length; break;}}
 				}
 				for (h = 0; h < sel_l; h++) {
-					if (sel[h].tr == 0) {for (j = 0; j < tree_l; j++) if (library_tree.tree[j].name.toUpperCase() == sel[h].a.toUpperCase()) {library_tree.tree[j].sel = true; break;}}
-					else if (sel[h].tr == 1) {for (j = 0; j < tree_l; j++) if (library_tree.tree[j].name.toUpperCase() == sel[h].a.toUpperCase() && library_tree.tree[library_tree.tree[j].par].name.toUpperCase() == sel[h].b.toUpperCase()) {library_tree.tree[j].sel = true; break;}}
-					else if (sel[h].tr > 1) {for (j = 0; j < tree_l; j++) if (library_tree.tree[j].name.toUpperCase() == sel[h].a.toUpperCase() && library_tree.tree[library_tree.tree[j].par].name.toUpperCase() == sel[h].b.toUpperCase() && library_tree.tree[library_tree.tree[library_tree.tree[j].par].par].name.toUpperCase() == sel[h].c.toUpperCase()) {library_tree.tree[j].sel = true; break;}}
+					if (this.sel[h].tr == 0) {for (j = 0; j < tree_l; j++) if (library_tree.tree[j].name.toUpperCase() == this.sel[h].a.toUpperCase()) {library_tree.tree[j].sel = true; break;}}
+					else if (this.sel[h].tr == 1) {for (j = 0; j < tree_l; j++) if (library_tree.tree[j].name.toUpperCase() == this.sel[h].a.toUpperCase() && library_tree.tree[library_tree.tree[j].par].name.toUpperCase() == this.sel[h].b.toUpperCase()) {library_tree.tree[j].sel = true; break;}}
+					else if (this.sel[h].tr > 1) {for (j = 0; j < tree_l; j++) if (library_tree.tree[j].name.toUpperCase() == this.sel[h].a.toUpperCase() && library_tree.tree[library_tree.tree[j].par].name.toUpperCase() == this.sel[h].b.toUpperCase() && library_tree.tree[library_tree.tree[library_tree.tree[j].par].par].name.toUpperCase() == this.sel[h].c.toUpperCase()) {library_tree.tree[j].sel = true; break;}}
 				}
 				var scr_pos = false; h = 0;
 				while (h < scr_l && !scr_pos) {
-					if (scr[h].tr == 0) {for (j = 0; j < tree_l; j++) if (library_tree.tree[j].name.toUpperCase() == scr[h].a.toUpperCase()) {sbar.check_scroll(!h ? j * ui.row_h : (j - 3) * ui.row_h); scr_pos = true; break;}}
-					else if (scr[h].tr == 1 && !scr_pos) {for (j = 0; j < tree_l; j++) if (library_tree.tree[j].name.toUpperCase() == scr[h].a.toUpperCase() && library_tree.tree[library_tree.tree[j].par].name.toUpperCase() == scr[h].b.toUpperCase()) {sbar.check_scroll(!h ? j * ui.row_h : (j - 3) * ui.row_h); scr_pos = true; break;}}
-					else if (scr[h].tr > 1 && !scr_pos) {for (j = 0; j < tree_l; j++) if (library_tree.tree[j].name.toUpperCase() == scr[h].a.toUpperCase() && library_tree.tree[library_tree.tree[j].par].name.toUpperCase() == scr[h].b.toUpperCase() && library_tree.tree[library_tree.tree[library_tree.tree[j].par].par].name.toUpperCase() == scr[h].c.toUpperCase()) {sbar.check_scroll(!h ? j * ui.row_h : (j - 3) * ui.row_h); scr_pos = true; break;}}
+					if (this.scr[h].tr == 0) {for (j = 0; j < tree_l; j++) if (library_tree.tree[j].name.toUpperCase() == this.scr[h].a.toUpperCase()) {sbar.check_scroll(!h ? j * ui.row_h : (j - 3) * ui.row_h); scr_pos = true; break;}}
+					else if (this.scr[h].tr == 1 && !scr_pos) {for (j = 0; j < tree_l; j++) if (library_tree.tree[j].name.toUpperCase() == this.scr[h].a.toUpperCase() && library_tree.tree[library_tree.tree[j].par].name.toUpperCase() == this.scr[h].b.toUpperCase()) {sbar.check_scroll(!h ? j * ui.row_h : (j - 3) * ui.row_h); scr_pos = true; break;}}
+					else if (this.scr[h].tr > 1 && !scr_pos) {for (j = 0; j < tree_l; j++) if (library_tree.tree[j].name.toUpperCase() == this.scr[h].a.toUpperCase() && library_tree.tree[library_tree.tree[j].par].name.toUpperCase() == scr[h].b.toUpperCase() && library_tree.tree[library_tree.tree[library_tree.tree[j].par].par].name.toUpperCase() == scr[h].c.toUpperCase()) {sbar.check_scroll(!h ? j * ui.row_h : (j - 3) * ui.row_h); scr_pos = true; break;}}
 					h++;
 				}
 				if (!scr_pos) {sbar.reset(); p.tree_paint();}
@@ -1201,7 +1254,7 @@ function library_manager() {
 		if (lib_update && !process) {sbar.reset(); p.tree_paint();}
 	}
 
-	this.binaryInsert = function(folder, insert, li, n) {
+	binaryInsert(folder, insert, li, n) {
 		let item_a;
 		switch (true) {
             case !folder:
@@ -1214,19 +1267,19 @@ function library_manager() {
 		}
 	}
 
-	this.added = function(handle_list) {
+	added(handle_list) {
 		var tree_type = p.view_by != p.folder_view ? 0 : 1;
         switch (true) {
 			case handle_list.Count < 100:
 				var lis = fb.CreateHandleList();
 				if (p.filter_by > 0 && p.s_show > 1) {try {lis = fb.GetQueryItems(handle_list, p.filt[p.filter_by].type);} catch (e) {}} else lis = handle_list; p.sort(lis);
-				this.binaryInsert(p.view_by == p.folder_view, lis, this.list, node);
+				this.binaryInsert(p.view_by == p.folder_view, lis, this.list, this.node);
 				if (this.list.Count) this.empty = "";
 				if (p.s_txt) {
 					var newSearchItems = fb.CreateHandleList();
 					try {newSearchItems = fb.GetQueryItems(handle_list, p.s_txt);} catch(e) {}
-					this.binaryInsert(p.view_by == p.folder_view, newSearchItems, p.list, node_s);
-					this.node = node_s.slice();
+					this.binaryInsert(p.view_by == p.folder_view, newSearchItems, p.list, this.node_s);
+					this.node = this.node_s.slice();
 					if (!p.list.Count) {
 						// pop.tree = []; pop.line_l = 0;
 						sbar.set_rows(0); this.none = "Nothing found"; p.tree_paint();
@@ -1234,14 +1287,20 @@ function library_manager() {
 				} else p.list = this.list;
 				break;
 			default:
-				full_list.InsertRange(full_list.Count, handle_list); full_list_need_sort = true;
+				this.full_list.InsertRange(this.full_list.Count, handle_list);
+				this.full_list_need_sort = true;
 				if (p.filter_by > 0 && p.s_show > 1) {
 					var newFilterItems = fb.CreateHandleList();
 					try {newFilterItems = fb.GetQueryItems(handle_list, p.filt[p.filter_by].type);} catch (e) {}
 					this.list.InsertRange(this.list.Count, newFilterItems);
 					p.sort(this.list);
 				}
-				else {if (full_list_need_sort) p.sort(full_list); this.list = full_list.Clone(); full_list_need_sort = false;} p.sort(handle_list);
+				else {
+					p.sort(this.full_list);
+					this.list = this.full_list.Clone();
+					this.full_list_need_sort = false;
+				}
+				p.sort(handle_list);
 				let item_a;
 				switch (tree_type) {
 					case 0: var tfo = fb.TitleFormat(p.view); item_a = tfo.EvalWithMetadbs(handle_list); for (var j = 0; j < handle_list.Count; j++) {var i = this.list.Find(handle_list[j]); if (i != -1) node.splice(i, 0, item_a[j].split("|"));} break;
@@ -1254,13 +1313,13 @@ function library_manager() {
 					p.list.InsertRange(p.list.Count, newSearchItems); p.sort(p.list); p.sort(newSearchItems);
 					let item_a;
 					switch (tree_type) {
-						case 0: var tfo = fb.TitleFormat(p.view); item_a = tfo.EvalWithMetadbs(newSearchItems); for (var j = 0; j < newSearchItems.Count; j++) {var i = p.list.Find(newSearchItems[j]); if (i != -1) node_s.splice(i, 0, item_a[j].split("|"));} break;
+						case 0: var tfo = fb.TitleFormat(p.view); item_a = tfo.EvalWithMetadbs(newSearchItems); for (var j = 0; j < newSearchItems.Count; j++) {var i = p.list.Find(newSearchItems[j]); if (i != -1) this.node_s.splice(i, 0, item_a[j].split("|"));} break;
 						case 1: item_a = newSearchItems.GetLibraryRelativePaths();
 						for (var j = 0; j < newSearchItems.Count; j++) {
-							var i = p.list.Find(newSearchItems[j]); if (i != -1) node_s.splice(i, 0, item_a[j].split("\\"));
+							var i = p.list.Find(newSearchItems[j]); if (i != -1) this.node_s.splice(i, 0, item_a[j].split("\\"));
 						} break;
 					}
-					this.node = node_s.slice();
+					this.node = this.node_s.slice();
 					if (!p.list.Count) {
 						// pop.tree = []; pop.line_l = 0;
 						sbar.set_rows(0); this.none = "Nothing found"; p.tree_paint();
@@ -1270,11 +1329,11 @@ function library_manager() {
 		}
 	}
 
-	this.added_f = function(handle_list) {
-		console.log('added_f')
-        switch (true) {
+	added_f(handle_list) {
+		switch (true) {
 			case handle_list.Count < 100:
-				this.binaryInsert(p.view_by == p.folder_view, handle_list, this.list, node); break;
+				this.binaryInsert(p.view_by == p.folder_view, handle_list, this.list, this.node);
+				break;
             default:
                 this.list.InsertRange(this.list.Count, handle_list); p.sort(this.list); p.sort(handle_list);
 				var tree_type = p.view_by != p.folder_view ? 0 : 1;
@@ -1283,23 +1342,28 @@ function library_manager() {
 						case 0:
 							var tfo = fb.TitleFormat(p.view);
 							item_a = tfo.EvalWithMetadbs(handle_list);
-							for (var j = 0; j < handle_list.Count; j++) {var i = this.list.Find(handle_list[j]); if (i != -1) node.splice(i, 0, item_a[j].split("|"));}
+							for (var j = 0; j < handle_list.Count; j++) {
+								var i = this.list.Find(handle_list[j]);
+								if (i != -1) this.node.splice(i, 0, item_a[j].split("|"));
+							}
 							if (!this.list.Count) this.none = "Nothing found";
 							break;
 						case 1:
 							item_a = handle_list.GetLibraryRelativePaths();
-							for (var j = 0; j < handle_list.Count; j++) {var i = this.list.Find(handle_list[j]); if (i != -1) node.splice(i, 0, item_a[j].split("\\"));}
+							for (var j = 0; j < handle_list.Count; j++) {
+								var i = this.list.Find(handle_list[j]);
+								if (i != -1) this.node.splice(i, 0, item_a[j].split("\\"));
+							}
 							if (!this.list.Count) this.none = "Nothing found";
 							break;
 				}
         }
 	}
 
-    this.added_s = function(handle_list) {
-		console.log('added_s')
+	added_s(handle_list) {
 		switch (true) {
 			case handle_list.Count < 100:
-				this.binaryInsert(p.view_by == p.folder_view, handle_list, p.list, node_s); break;
+				this.binaryInsert(p.view_by == p.folder_view, handle_list, p.list, this.node_s); break;
             default:
                 p.list.InsertRange(p.list.Count, handle_list); p.sort(p.list);
 				var tree_type = p.view_by != p.folder_view ? 0 : 1;
@@ -1308,27 +1372,38 @@ function library_manager() {
 					case 0:
 						var tfo = fb.TitleFormat(p.view);
 						item_a = tfo.EvalWithMetadbs(handle_list);
-						for (var j = 0; j < handle_list.Count; j++) {var i = p.list.Find(handle_list[j]); if (i != -1) node_s.splice(i, 0, item_a[j].split("|"));}
+						for (var j = 0; j < handle_list.Count; j++) {var i = p.list.Find(handle_list[j]); if (i != -1) this.node_s.splice(i, 0, item_a[j].split("|"));}
 						break;
 					case 1:
 						item_a = handle_list.GetLibraryRelativePaths();
-						for (var j = 0; j < handle_list.Count; j++) {var i = p.list.Find(handle_list[j]); if (i != -1) node_s.splice(i, 0, item_a[j].split("\\"));}
+						for (var j = 0; j < handle_list.Count; j++) {var i = p.list.Find(handle_list[j]); if (i != -1) this.node_s.splice(i, 0, item_a[j].split("\\"));}
 						break;
 				}
         }
     }
 
-	this.removed = function(handle_list) {
-		var j = handle_list.Count; while (j--) {var i = this.list.Find(handle_list[j]); if (i != -1) {this.list.RemoveById(i); node.splice(i, 1);}}
-		if (p.filter_by > 0 && libraryProps.searchMode > 1) {j = handle_list.Count; if (full_list_need_sort) p.sort(full_list); full_list_need_sort = false; while (j--) {i = full_list.Find(handle_list[j]); if (i != -1) full_list.RemoveById(i);}}
-		else full_list = this.list.Clone();
+	removed(handle_list) {
+		var j = handle_list.Count; while (j--) {var i = this.list.Find(handle_list[j]); if (i != -1) {this.list.RemoveById(i); this.node.splice(i, 1);}}
+		if (p.filter_by > 0 && libraryProps.searchMode > 1) {
+			j = handle_list.Count;
+			if (this.full_list_need_sort) p.sort(this.full_list); 	// Can this ever be true?
+			this.full_list_need_sort = false;
+			while (j--) {
+				i = this.full_list.Find(handle_list[j]);
+				if (i != -1) this.full_list.RemoveById(i);
+			}
+		}
+		else this.full_list = this.list.Clone();
 		if (p.s_txt) {
-			j = handle_list.Count; while (j--) {i = p.list.Find(handle_list[j]); if (i != -1) {p.list.RemoveById(i); node_s.splice(i, 1);}}
-			this.node = node_s.slice();
+			j = handle_list.Count; while (j--) {i = p.list.Find(handle_list[j]); if (i != -1) {p.list.RemoveById(i); this.node_s.splice(i, 1);}}
+			this.node = this.node_s.slice();
 			if (!p.list.Count) {library_tree.tree = []; library_tree.line_l = 0; sbar.set_rows(0); this.none = "Nothing found"; p.tree_paint();}
 		}
 		else p.list = this.list;
-		if (!full_list.Count) {this.empty = "Nothing to show\n\nConfigure Media Library first\n\nFile>Preferences>Media library"; this.root = []; library_tree.tree = []; library_tree.line_l = 0; sbar.set_rows(0); p.tree_paint();}
+		if (!this.full_list.Count) {
+			this.empty = "Nothing to show\n\nConfigure Media Library first\n\nFile>Preferences>Media library";
+			this.root = []; library_tree.tree = []; library_tree.line_l = 0; sbar.set_rows(0); p.tree_paint();
+		}
 	}
 }
 
@@ -1416,7 +1491,9 @@ function LibraryTree() {
 		return a - b;
 	}
 	var sort = function (a, b) {return a.srt.replace(/^\?/,"").replace(/(\d+)/g, function (n) {return ('0000' + n).slice(-5)}).localeCompare(b.srt.replace(/^\?/,"").replace(/(\d+)/g, function (n) {return ('0000' + n).slice(-5)}));}
-	var uniq = function(a) {var j = 0, len = a.length, out = [], seen = {}; for (var i = 0; i < len; i++) {var item = a[i]; if (seen[item] !== 1) {seen[item] = 1; out[j++] = item;}} return out.sort(num_sort);}
+	var uniq = function(a) {
+		return [... new Set(a)];
+	}
 	this.add = function (x, y, pl) {
 		if (y < p.s_h) return;
 		var ix = this.get_ix(x, y, true, false);
@@ -1453,7 +1530,17 @@ function LibraryTree() {
 					this.expandNodes(obj.child[k], false);
 	}
     this.gen_pl = !libraryProps.sendToCurrent;
-    this.get_sel_items = function () {p.tree_paint(); var i = 0; this.sel_items = []; for (i = 0; i < this.tree.length; i++) if (this.tree[i].sel) this.sel_items = this.sel_items.concat(this.sel_items, this.tree[i].item); this.sel_items = uniq(this.sel_items);}
+	this.get_sel_items = () => {
+		p.tree_paint();
+		this.sel_items = [];
+		this.tree.forEach(v => {
+			if (v.sel) {
+				this.sel_items.push(... v.item);
+			}
+		});
+		this.sel_items = uniq(this.sel_items);
+	}
+
 	this.getHandles = function(n) {if (n) this.get_sel_items(); var handle_list = fb.CreateHandleList(); try {for (var i = 0; i < this.sel_items.length; i++) handle_list.Add(p.list[this.sel_items[i]]);} catch (e) {} return handle_list;}
 	this.leave = function(){if (men.r_up || tt.Text) return; m_br = -1; row_o = 0; m_i = -1; ix_o = 0; p.tree_paint();}
 	this.mbtn_up = function(x, y) {this.add(x, y, mbtn_pl);}
@@ -2171,7 +2258,16 @@ function LibraryTree() {
 		var sel_type = idx == -1 && !add ? 0 : v.k(SHIFT) && last_sel > -1 && !bypass ? 1 : v.k(CTRL) && !bypass ? 2 : !state ? 3 : 0;
 		switch (sel_type) {
 			case 0: this.clear(); this.sel_items = []; break;
-			case 1: var direction = (idx > last_sel) ? 1 : -1; if (!v.k(CTRL)) this.clear(); for (var i = last_sel; ; i += direction) {this.tree[i].sel = true; if (i == idx) break;} this.get_sel_items(); p.tree_paint(); break;
+			case 1:
+				var direction = (idx > last_sel) ? 1 : -1;
+				if (!v.k(CTRL)) this.clear();
+				for (var i = last_sel; ; i += direction) {
+					this.tree[i].sel = true;
+					if (i == idx) break;
+				}
+				this.get_sel_items();
+				p.tree_paint();
+				break;
 			case 2: this.tree[idx].sel = !this.tree[idx].sel; this.get_sel_items(); last_sel = idx; break;
             case 3: this.sel_items = []; if (!add) this.clear(); if (!add) this.tree[idx].sel = true; this.sel_items = this.sel_items.concat(this.tree[idx].item); this.sel_items = uniq(this.sel_items); last_sel = idx; break;
 		}
@@ -2536,7 +2632,7 @@ function searchLibrary() {
 }
 // if (libraryProps.searchMode) var sL = new searchLibrary();
 
-function QuickSearch() {
+function JumpSearch() {
 	// this is the quick-type search
 	var j_x = 5, j_h = 30, j_y = 5, jSearch = "", jump_search = true, rs1 = 5, rs2 = 4;
 	this.on_size = function() {
@@ -2622,7 +2718,7 @@ class LibraryPanel {
 		library_tree.draw(gr);
 		if (libraryProps.showScrollbar) sbar.draw(gr);
 		if (libraryProps.searchMode || libraryProps.showScrollbar) but.draw(gr);
-		quickSearch.draw(gr);
+		jumpSearch.draw(gr);
 	}
 
 	on_size(x, y, width, height) {
@@ -2640,7 +2736,7 @@ class LibraryPanel {
 		p.on_size();
 		library_tree.create_tooltip();
 		if (libraryProps.searchMode || libraryProps.showScrollbar) but.refresh(true);
-		quickSearch.on_size();
+		jumpSearch.on_size();
     }
 }
 
@@ -3114,7 +3210,7 @@ class LibraryCallbacks {
 
 	on_char(code) {
 		library_tree.on_char(code);
-		quickSearch.on_char(code);
+		jumpSearch.on_char(code);
 		if (!libraryProps.searchMode) return;
 		sL.on_char(code);
 	}
@@ -3188,14 +3284,14 @@ let sbar;
 let p;
 /** @type {v_keys} */
 let v;
-/** @type {library_manager} */
+/** @type {Library} */
 let lib_manager;
 /** @type {LibraryTree} */
 let library_tree;
 /** @type {searchLibrary} */
 let sL;
-/** @type {QuickSearch} */
-let quickSearch;
+/** @type {JumpSearch} */
+let jumpSearch;
 let libraryPanel;
 let but;
 let men;
@@ -3207,15 +3303,15 @@ var libraryInitialized = false;
 function initLibraryPanel() {
 	if (!libraryInitialized) {
 		ui = new userinterface();
-		sbar = new scrollbar();
+		sbar = new Scrollbar();
 		p = new panel_operations();
 		v = new v_keys();
-		lib_manager = new library_manager();
+		lib_manager = new Library();
 		library_tree = new LibraryTree();
 		if (libraryProps.searchMode) {
 			sL = new searchLibrary();
 		}
-		quickSearch = new QuickSearch();
+		jumpSearch = new JumpSearch();
 		libraryPanel = new LibraryPanel();
 		but = new button_manager();
 		men = new menu_object();
@@ -3238,7 +3334,7 @@ function freeLibraryPanel() {
 	lib_manager = null;
 	library_tree = null;
 	sL = null;
-	quickSearch = null;
+	jumpSearch = null;
 	libraryPanel = null;
 	but = null;
 	men = null;
