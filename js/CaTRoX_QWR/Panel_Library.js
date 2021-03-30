@@ -1066,7 +1066,7 @@ class Library {
 							for (var j = 0; j < handle_list.Count; j++) {
 								var h = this.list.Find(handle_list[j]);
 								if (h != -1) {
-									if (!arraysIdentical(node[h], items_b[j].split("|"))) {
+									if (!arraysIdentical(this.node[h], items_b[j].split("|"))) {
 										this.removed(handle_list);
 										this.added(handle_list);
 										if (ui.w < 1 || !window.IsVisible) this.upd = 2;
@@ -1082,7 +1082,7 @@ class Library {
                             for (var j = 0; j < handle_list.Count; j++) {
                                 var h = this.list.Find(handle_list[j]);
                                 if (h != -1) {
-									if (!arraysIdentical(node[h], items_b[j].split("\\"))) {
+									if (!arraysIdentical(this.node[h], items_b[j].split("\\"))) {
 										this.removed(handle_list);
 										this.added(handle_list);
 										if (ui.w < 1 || !window.IsVisible) this.upd = 2;
@@ -1303,8 +1303,8 @@ class Library {
 				p.sort(handle_list);
 				let item_a;
 				switch (tree_type) {
-					case 0: var tfo = fb.TitleFormat(p.view); item_a = tfo.EvalWithMetadbs(handle_list); for (var j = 0; j < handle_list.Count; j++) {var i = this.list.Find(handle_list[j]); if (i != -1) node.splice(i, 0, item_a[j].split("|"));} break;
-					case 1: item_a = handle_list.GetLibraryRelativePaths(); for (var j = 0; j < handle_list.Count; j++) {var i = this.list.Find(handle_list[j]); if (i != -1) node.splice(i, 0, item_a[j].split("\\"));} break;
+					case 0: var tfo = fb.TitleFormat(p.view); item_a = tfo.EvalWithMetadbs(handle_list); for (var j = 0; j < handle_list.Count; j++) {var i = this.list.Find(handle_list[j]); if (i != -1) this.node.splice(i, 0, item_a[j].split("|"));} break;
+					case 1: item_a = handle_list.GetLibraryRelativePaths(); for (var j = 0; j < handle_list.Count; j++) {var i = this.list.Find(handle_list[j]); if (i != -1) this.node.splice(i, 0, item_a[j].split("\\"));} break;
 				}
 				if (this.list.Count) this.empty = "";
 				if (p.s_txt) {
