@@ -351,6 +351,18 @@ const g_font_style = {
 	strikeout:   8
 };
 
+/** @enum{number} */
+const DrawText = {
+	Left:         0x00000000,
+	Center:       0x00000001,
+	Right:        0x00000002,
+	VCenter:      0x00000004,
+	SingleLine:   0x00000020,
+	CalcRect:     0x00000400,
+	NoPrefix:     0x00000800,
+	EndEllipsis:  0x00008000,
+}
+
 /** @enum{string|number} */
 const g_guifx = {
 	name:          'Guifx v2 Transports',
