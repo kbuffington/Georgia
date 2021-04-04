@@ -4,15 +4,23 @@
 // @version "1.4.0.4 beta1 -- modified by Mordred"
 // ==/PREPROCESSOR==
 
+const $$ = {
+	getDpi : () => {let dpi = 120; try {dpi = WshShell.RegRead("HKCU\\Control Panel\\Desktop\\WindowMetrics\\AppliedDPI");} catch (e) {} return dpi < 121 ? 1 : dpi / 120;},
+}
+
 const s = {
-    // browser : c => {if (!s.run(c)) fb.ShowPopupMessage("Unable to launch your default browser.", "Library Tree");},
-    // clamp : (num, min, max) => {num = num <= max ? num : max; num = num >= min ? num : min; return num;},
-    // debounce : (e,r,i) => {var o,u,a,c,v,f,d=0,m=!1,j=!1,n=!0;if("function"!=typeof e)throw new TypeError(FUNC_ERROR_TEXT);function T(i){var n=o,t=u;return o=u=void 0,d=i,c=e.apply(t,n)}function b(i){var n=i-f;return void 0===f||r<=n||n<0||j&&a<=i-d}function l(){var i,n,t=Date.now();if(b(t))return w(t);v=setTimeout(l,(n=r-((i=t)-f),j?Math.min(n,a-(i-d)):n))}function w(i){return v=void 0,n&&o?T(i):(o=u=void 0,c)}function t(){var i,n=Date.now(),t=b(n);if(o=arguments,u=this,f=n,t){if(void 0===v)return d=i=f,v=setTimeout(l,r),m?T(i):c;if(j)return v=setTimeout(l,r),T(f)}return void 0===v&&(v=setTimeout(l,r)),c}return r=parseFloat(r)||0,s.isObject(i)&&(m=!!i.leading,a=(j="maxWait"in i)?Math.max(parseFloat(i.maxWait)||0,r):a,n="trailing"in i?!!i.trailing:n),t.cancel=function(){void 0!==v&&clearTimeout(v),o=f=u=v=void(d=0)},t.flush=function(){return void 0===v?c:w(Date.now())},t}, isObject : function(t) {var e=typeof t;return null!=t&&("object"==e||"function"==e)},
-    // file : f => s.fs.FileExists(f),
+    browser: c => {if (!s.run(c)) fb.ShowPopupMessage("Unable to launch your default browser.", "Library Tree");},
+    clamp: (num, min, max) => {num = num <= max ? num : max; num = num >= min ? num : min; return num;},
+    debounce: (e,r,i) => {var o,u,a,c,v,f,d=0,m=!1,j=!1,n=!0;if("function"!=typeof e)throw new TypeError(FUNC_ERROR_TEXT);function T(i){var n=o,t=u;return o=u=void 0,d=i,c=e.apply(t,n)}function b(i){var n=i-f;return void 0===f||r<=n||n<0||j&&a<=i-d}function l(){var i,n,t=Date.now();if(b(t))return w(t);v=setTimeout(l,(n=r-((i=t)-f),j?Math.min(n,a-(i-d)):n))}function w(i){return v=void 0,n&&o?T(i):(o=u=void 0,c)}function t(){var i,n=Date.now(),t=b(n);if(o=arguments,u=this,f=n,t){if(void 0===v)return d=i=f,v=setTimeout(l,r),m?T(i):c;if(j)return v=setTimeout(l,r),T(f)}return void 0===v&&(v=setTimeout(l,r)),c}return r=parseFloat(r)||0,s.isObject(i)&&(m=!!i.leading,a=(j="maxWait"in i)?Math.max(parseFloat(i.maxWait)||0,r):a,n="trailing"in i?!!i.trailing:n),t.cancel=function(){void 0!==v&&clearTimeout(v),o=f=u=v=void(d=0)},t.flush=function(){return void 0===v?c:w(Date.now())},t}, isObject : function(t) {var e=typeof t;return null!=t&&("object"==e||"function"==e)},
+    file: f => IsFile(f),
     // fs : new ActiveXObject("Scripting.FileSystemObject"),
-    // gr : (w, h, im, func) => {let i = gdi.CreateImage(w, h), g = i.GetGraphics(); func(g, i); i.ReleaseGraphics(g); g = null; if (im) return i; else i = null;},
+    gr: (w, h, im, func) => {let i = gdi.CreateImage(w, h), g = i.GetGraphics(); func(g, i); i.ReleaseGraphics(g); g = null; if (im) return i; else i = null;},
     // padNumber : (num, len, base) => {if (!base) base = 10; return ('000000' + num.toString(base)).substr(-len);},
     query: (h, q) => {let l = new FbMetadbHandleList(); try {l = fb.GetQueryItems(h, q);} catch (e) {} return l;},
+	run: c => _.runCmd(c),
+	scale: $$.getDpi(),
+	throttle: (e,i,t) => {var n=!0,r=!0;if("function"!=typeof e)throw new TypeError(FUNC_ERROR_TEXT);return s.isObject(t)&&(n="leading"in t?!!t.leading:n,r="trailing"in t?!!t.trailing:r),s.debounce(e,i,{leading:n,maxWait:i,trailing:r})},
+	value: (num, def, type) => {num = parseFloat(num); if (isNaN(num)) return def; switch (type) {case 0: return num; case 1: if (num !== 1 && num !== 0) return def; break; case 2: if (num > 2 || num < 0) return def; break;} return num;},
 }
 
 function GetPropertyPrefix(system) {
@@ -49,12 +57,28 @@ libraryProps.add_properties({
 	rowVertPadding: [prefix + 'Row Vertical Item Padding', 3],
 	showScrollbar: [prefix + 'Scrollbar Show', true],
 	pageScroll: ['Library: Scroll: Mouse Wheel Page Scroll', false],
+	smoothScroll: ['Library: Scroll: Smooth Scroll', true],
 	btnTooltipZoom: [prefix + 'Zoom Tooltip [Button] (%)', 100],
 	filterZoom: [prefix + 'Zoom Filter Size (%)', 100],
-	fontZoom: [prefix + 'Zoom Font Size (%)', 100],
+	zoomFont: [prefix + 'Zoom Font Size (%)', 100],
 	nodeZoom: [prefix + 'Zoom Node Size (%)', 100],
 	baseFontSize: [systemPrefix + 'Font Size', 18],
 });
+
+/** @type {*} setting defaults to avoid changing a bunch of crap */
+let pptDefault = {};
+pptDefault.autoFit = true;
+pptDefault.duration = 'Scroll,500,TouchFlick,3000';
+pptDefault.flickDistance = 0.8;
+pptDefault.rowStripes = true;	// try this on true?
+pptDefault.sBarCol = true;
+pptDefault.sBarButPad = -24;
+pptDefault.sbarShow = libraryProps.showScrollbar;
+pptDefault.scrollStep = 3;
+pptDefault.searchShow = libraryProps.searchMode;
+pptDefault.touchControl = false;
+pptDefault.touchStep = 1;
+pptDefault.treeIndent = Math.round(19 * s.scale);
 
 function userinterface() {
 	let dpi;
@@ -63,7 +87,7 @@ function userinterface() {
 	} catch (e) {
 		dpi = 120;
 	}
-	this.scale = dpi < 121 ? 1 : dpi / 120;
+	// this.scale = dpi < 121 ? 1 : dpi / 120;
 	this.zoomUpd = window.GetProperty("SYSTEM.Zoom Update", false);
 		// custom_col = window.GetProperty("_CUSTOM COLOURS/FONTS: USE", false),
 		// cust_icon_font = window.GetProperty("_Custom.Font Icon [Node] (Name,Style[0or1])", "Segoe UI Symbol,0"),
@@ -75,7 +99,7 @@ function userinterface() {
 		// iconcol_e = "",
 		iconcol_h = undefined,
 		// linecol = window.GetProperty(" Node: Lines: Hide-0 Grey-1 Blend-2 Text-3", 1),
-		mix = 0,
+		// mix = 0,
 		noimg = [],
 		orig_font_sz = 16,
 		// s_col = window.GetProperty(" Search Style: Fade-0 Blend-1 Norm-2 Highlight-3", 0),
@@ -83,9 +107,9 @@ function userinterface() {
 		sp1 = 6,
 		sp2 = 6,
 		sum = 0,
-		node_sz, // = Math.round(12 * this.scale),
+		// node_sz, // = Math.round(12 * this.scale),
 		zoom = 100,
-		zoom_font_sz = 16;
+		zoomFontSize = 16;
 		// zoom_node = 100;
 	this.b1 = 0x04ffffff;
 	this.b2 = 0x04000000;
@@ -93,6 +117,7 @@ function userinterface() {
 	this.backcolsel = undefined;
 	// this.backcoltrans = "";
 	this.bg = false;
+	this.col = {};
 	// this.blur_blend = window.GetProperty("SYSTEM.Blur Blend Theme", false);
 	// this.blur_dark = window.GetProperty("SYSTEM.Blur Dark Theme", false);
 	// this.blur_light = window.GetProperty("SYSTEM.Blur Light Theme", false);
@@ -108,6 +133,7 @@ function userinterface() {
 	}
 	this.expand =  "";
 	this.ct = false;
+	this.drag_drop_id = -1;
 	this.dui = window.InstanceType;
 	this.font = undefined;
 	this.icon_font = undefined;
@@ -123,28 +149,27 @@ function userinterface() {
 	this.l_s3 = 7;
 	this.l_width = scaleForDisplay(1);
 	this.linecol = "";
+	this.local = false; //typeof conf === 'undefined' ? false : true;
 	this.row_h = 20;
-	this.s_font = undefined;
+	this.searchFont = undefined;
 	this.s_linecol = 0;
 	this.searchcol = undefined;
 	this.sel = 3;
-	this.textcol = "";
-	this.textcol_h = "";
 	this.textselcol = "";
+	this.touch_dn_id = -1;
 	this.txt_box = "";
 	this.x = 0;
 	this.y = 0;
 	this.h = 0;
 	this.w = 0;
 	this.alternate = true; // window.GetProperty(" Row Stripes", false);
-	// this.local = false; //typeof conf === 'undefined' ? false : true;
 	this.margin = 8;
-	this.node_sz = Math.round(16 * this.scale);
+	this.node_sz = Math.round(16 * s.scale);
 	this.trace = function(message) {
 		var trace = true;
 		if (trace) console.log("Library Tree" + ": " + message);
 	};
-	this.node_style = 1;
+	this.nodeStyle = 1;
 	// window.GetProperty(" Node: Custom (No Lines)", false) ? 0 : !win_node ? 1 : 2;
 	// if (this.node_style > 2 || this.node_style < 0) this.node_style = 1;
 	this.node_win = 0;
@@ -161,7 +186,7 @@ function userinterface() {
 	// }
 	// if (!this.expand.length || !this.collapse.length) this.node_style = 1;
 	// this.hot = libraryProps.nodeHighlight; //window.GetProperty(" Node: Hot Highlight", true);
-	this.pad = Math.round(this.node_sz + (7 * this.scale)); //window.GetProperty(" Tree Indent", 19);
+	this.pad = Math.round(this.node_sz + (7 * s.scale)); //window.GetProperty(" Tree Indent", 19);
 	// window.SetProperty("_CUSTOM COLOURS/FONTS: EMPTY = DEFAULT", "R-G-B (any) or R-G-B-A (not Text...), e.g. 255-0-0");
 	// this.scrollbar_show = libraryProps.showScrollbar;
 	// try {
@@ -170,29 +195,29 @@ function userinterface() {
 	// 	if (this.scr_type ==2)  window.SetProperty(" Scrollbar Type Default-0 Styled-1 Themed-2", "2 // Scrollbar Settings N/A For Themed");
 	// 	else window.SetProperty(" Scrollbar Type Default-0 Styled-1 Themed-2", "" + this.scr_type + "");
 	// } catch (e) {this.scr_type = 0; window.SetProperty(" Scrollbar Type Default-0 Styled-1 Themed-2", "" + 0 + "");}
-	this.scr_type = 2;
+	this.sbarType = 2;
 	this.scr_col = 1; //Math.min(Math.max( window.GetProperty(" Scrollbar Colour Grey-0 Blend-1", 1), 0), 1);
-	if (this.scr_type == 2) {
+	if (this.sbarType == 2) {
 		this.theme = window.CreateThemeManager("scrollbar");
-		var im = gdi.CreateImage(21, 50),
-			j = im.GetGraphics();
-		try {
-			this.theme.SetPartAndStateID(6, 1);
-			this.theme.DrawThemeBackground(j, 0, 0, 21, 50);
-			for (var i = 0; i < 3; i++) {
-				this.theme.SetPartAndStateID(3, i + 1);
-				this.theme.DrawThemeBackground(j, 0, 0, 21, 50);
+		s.gr(21, 21, false, g => {
+			try {
+				this.theme.SetPartAndStateID(6, 1);
+				this.theme.DrawThemeBackground(g, 0, 0, 21, 50);
+				for (let i = 0; i < 3; i++) {
+					this.theme.SetPartAndStateID(3, i + 1);
+					this.theme.DrawThemeBackground(g, 0, 0, 21, 50);
+				}
+				for (let i = 0; i < 3; i++) {
+					this.theme.SetPartAndStateID(1, i + 1);
+					this.theme.DrawThemeBackground(g, 0, 0, 21, 21);
+				}
+			} catch(e) {
+				this.sbarType = 1;
+				window.SetProperty(" Scrollbar Type Default-0 Styled-1 Themed-2", "" + 1 + "");
 			}
-			for (i = 0; i < 3; i++) {
-				this.theme.SetPartAndStateID(1, i + 1);
-				this.theme.DrawThemeBackground(j, 0, 0, 21, 21);
-			}
-		} catch(e) {
-			this.scr_type = 1;
-			window.SetProperty(" Scrollbar Type Default-0 Styled-1 Themed-2", "" + 1 + "");
-		}
-		im.ReleaseGraphics(j);
+		});
 	}
+
 	var themed_w = 21;
 	try {
 		themed_w = utils.GetSystemMetrics(2);
@@ -233,53 +258,92 @@ function userinterface() {
 		// window.SetProperty(" Scrollbar Size", "Bar," + this.scr_w +",Arrow," + this.scr_but_w + ",Gap(+/-)," + this.arrow_pad + ",GripMinHeight," + this.grip_h);
 	// }
 	// window.SetProperty("SYSTEM.Scrollbar Width Bar", this.scr_w);
-	if (this.scr_type == 2)
+	if (this.sbarType == 2)
 		this.scr_w = themed_w;
 	if (!libraryProps.showScrollbar)
 		this.scr_w = 0;
-	this.but_h = this.scr_w + (this.scr_type != 2 ? 1 : 0);
-	if (this.scr_type != 2)
+	this.but_h = this.scr_w + (this.sbarType != 2 ? 1 : 0);
+	if (this.sbarType != 2)
 		this.scr_but_w += 1;
-	this.sbar_sp = this.scr_w ? this.scr_w + (this.scr_w - this.scr_but_w < 5 || this.scr_type == 2 ? 1 : 0) : 0;
+	this.sbar_sp = this.scr_w ? this.scr_w + (this.scr_w - this.scr_but_w < 5 || this.sbarType == 2 ? 1 : 0) : 0;
 	this.arrow_pad = Math.min(Math.max(-this.but_h / 5, this.arrow_pad), this.but_h / 5);
-	var R = function(c) {return c >> 16 & 0xff;}; var G = function(c) {return c >> 8 & 0xff;}; var B = function(c) {return c & 0xff;}; var A = function (c) {return c >> 24 & 0xff;}
+	var R = function(c) {return c >> 16 & 0xff;}; var G = function(c) {return c >> 8 & 0xff;};
+	var B = function(c) {return c & 0xff;};
+	const A = function (c) {return c >> 24 & 0xff;}
+	const colSat = c => {c = toRGB(c); return c[0] + c[1] + c[2];}
 	var RGBAtoRGB = function(col, bg) {var r = R(col) / 255, g = G(col) / 255, b = B(col) / 255, a = A(col) / 255, bgr = R(bg) / 255, bgg = G(bg) / 255, bgb = B(bg) / 255, nR = ((1 - a) * bgr) + (a * r), nG = ((1 - a) * bgg) + (a * g), nB = ((1 - a) * bgb) + (a * b); nR = Math.max(Math.min(Math.round(nR * 255), 255), 0); nG = Math.max(Math.min(Math.round(nG * 255), 255), 0); nB = Math.max(Math.min(Math.round(nB * 255), 255), 0); return RGB(nR, nG, nB);}
-	// var get_blend = function(c1, c2, f) {var nf = 1 - f, r = (R(c1) * f + R(c2) * nf), g = (G(c1) * f + G(c2) * nf), b = (B(c1) * f + B(c2) * nf); return RGB(r, g, b);}
+	const toRGB = c => [c >> 16 & 0xff, c >> 8 & 0xff, c & 0xff];
+    const toRGBA = c => [c >> 16 & 0xff, c >> 8 & 0xff, c & 0xff, c >> 24 & 0xff];
+
+	this.get_blend = (c1, c2, f, alpha) => {const nf = 1 - f; let r, g, b, a; switch (true) {case !alpha: c1 = toRGB(c1); c2 = toRGB(c2); r = c1[0] * f + c2[0] * nf; g = c1[1] * f + c2[1] * nf; b = c1[2] * f + c2[2] * nf; return RGB(r, g, b); case alpha: c1 = toRGBA(c1); c2 = toRGBA(c2); r = c1[0] * f + c2[0] * nf; g = c1[1] * f + c2[1] * nf; b = c1[2] * f + c2[2] * nf; a = c1[3] * f + c2[3] * nf; return RGBA(r, g, b, a);}}
 	var get_grad = function (c, f1, f2) {return [RGB(Math.min(R(c) + f1, 255), Math.min(G(c) + f1, 255), Math.min(B(c) + f1, 255)), RGB(Math.max(R(c) + f2, 0), Math.max(G(c) + f2, 0), Math.max(B(c) + f2, 0))];}
 	var get_textselcol = function(c, n) {var cc = [R(c), G(c), B(c)]; var ccc = []; for (var i = 0; i < cc.length; i++) {ccc[i] = cc[i] / 255; ccc[i] = ccc[i] <= 0.03928 ? ccc[i] / 12.92 : Math.pow(((ccc[i] + 0.055 ) / 1.055), 2.4);} var L = 0.2126 * ccc[0] + 0.7152 * ccc[1] + 0.0722 * ccc[2]; if (L > 0.31) return n ? 50 : RGB(0, 0, 0); else return n ? 200 : RGB(255, 255, 255);}
 	this.outline = function(c, but) {if (but) {if (window.IsTransparent || R(c) + G(c) + B(c) > 30) return RGBA(0, 0, 0, 36); else return RGBA(255, 255, 255, 36);} else if (R(c) + G(c) + B(c) > 255 * 1.5) return RGB(30, 30, 10); else return RGB(225, 225, 245);}
 	this.reset_colors = function () {
 		iconcol_c = ""; iconcol_h = undefined; this.backcol = ""; this.iconcol_c = ""; this.iconcol_h = [];
-		this.linecol = ""; this.s_linecol = 0; this.searchcol = undefined; this.textcol = ""; this.textcol_h = ""; this.textselcol = ""; this.txt_box = "";
+		this.linecol = ""; this.s_linecol = 0; this.searchcol = undefined; this.textselcol = ""; this.txt_box = "";
 	}
 
-	this.icon_col = function() {
-		if (iconcol_c === "") {this.iconcol_c = this.node_style ? [RGB(252, 252, 252), RGB(223, 223, 223)] : this.textcol;} else if (this.node_style) {if (A(iconcol_c) != 255) {this.iconcol_c = RGBAtoRGB(iconcol_c, this.backcol);} else this.iconcol_c = iconcol_c; this.iconcol_c = get_grad(this.iconcol_c, 15, -14);}
-		// if (iconcol_e === "") {this.iconcol_e = this.node_style ? [RGB(252, 252, 252), RGB(223, 223, 223)] : this.textcol & 0xC0ffffff;} else if (this.node_style) {if (A(iconcol_e) != 255) {this.iconcol_e = RGBAtoRGB(iconcol_e, this.backcol);} else this.iconcol_e = iconcol_e; this.iconcol_e = get_grad(this.iconcol_e, 15, -14);}
-		this.iconcol_e = [rgb(252, 252, 252), rgb(223, 223, 223)];
-		this.iconpluscol = RGB(72, 72, 92); //get_textselcol(this.iconcol_e[0], true) == 50 ? RGB(41, 66, 114) : RGB(225, 225, 245);
-		if (!libraryProps.nodeHighlight) return;
-		if (iconcol_h === undefined) {
-			this.iconcol_h = this.textcol_h;
-			iconcol_h = this.iconcol_h;
+	this.icon_col = () => {
+		// if (iconcol_c === "") {this.iconcol_c = this.nodeStyle ? [RGB(252, 252, 252), RGB(223, 223, 223)] : this.textcol;} else if (this.nodeStyle) {if (A(iconcol_c) != 255) {this.iconcol_c = RGBAtoRGB(iconcol_c, this.backcol);} else this.iconcol_c = iconcol_c; this.iconcol_c = get_grad(this.iconcol_c, 15, -14);}
+		// // if (iconcol_e === "") {this.iconcol_e = this.node_style ? [RGB(252, 252, 252), RGB(223, 223, 223)] : this.textcol & 0xC0ffffff;} else if (this.node_style) {if (A(iconcol_e) != 255) {this.iconcol_e = RGBAtoRGB(iconcol_e, this.backcol);} else this.iconcol_e = iconcol_e; this.iconcol_e = get_grad(this.iconcol_e, 15, -14);}
+		// this.iconcol_e = [rgb(252, 252, 252), rgb(223, 223, 223)];
+		// this.iconpluscol = RGB(72, 72, 92); //get_textselcol(this.iconcol_e[0], true) == 50 ? RGB(41, 66, 114) : RGB(225, 225, 245);
+		// if (!libraryProps.nodeHighlight) return;
+		// if (iconcol_h === undefined) {
+		// 	this.iconcol_h = this.textcol_h;
+		// 	iconcol_h = this.iconcol_h;
+		// }
+		// if (A(iconcol_h) != 255) {
+		// 	this.iconcol_h = RGBAtoRGB(iconcol_h, this.backcol);
+		// } else if (iconcol_h !== undefined) {
+		// 	this.iconcol_h = iconcol_h;
+		// }
+		// this.iconcol_h = get_grad(this.iconcol_h, 15, -14);
+		// this.iconpluscol_h = RGB(72, 72, 92); //get_textselcol(this.iconcol_h[0], true) == 50 ? RGB(41, 66, 114) : RGB(225, 225, 245);
+
+		if (iconcol_c === "") {this.col.icon_c = this.nodeStyle ? [RGB(252, 252, 252), RGB(223, 223, 223)] : this.col.text;} else if (this.nodeStyle) {if (A(iconcol_c) != 255) {this.col.icon_c = RGBAtoRGB(iconcol_c, this.col.bg);} else this.col.icon_c = iconcol_c; this.col.icon_c = get_grad(this.col.icon_c, 15, -14);}
+        // if (iconcol_e === "") {this.col.icon_e = this.nodeStyle ? [RGB(252, 252, 252), RGB(223, 223, 223)] : this.col.text & 0xC0ffffff;} else if (this.nodeStyle) {if (A(iconcol_e) != 255) {this.col.icon_e = RGBAtoRGB(iconcol_e, this.col.bg);} else this.col.icon_e = iconcol_e; this.col.icon_e = get_grad(this.col.icon_e, 15, -14);}
+        this.col.icon_e = [rgb(252, 252, 252), rgb(223, 223, 223)];
+		this.col.iconPlus = RGB(72, 72, 92); //get_textselcol(this.col.icon_e[0], true) == 50 ? RGB(41, 66, 114) : RGB(225, 225, 245);
+        this.col.iconMinus_c = get_textselcol(this.col.icon_c[0], true) == 50 ? RGB(75, 99, 167) : RGB(225, 225, 245);
+        this.col.iconMinus_e = RGB(72, 72, 92); //get_textselcol(this.col.icon_e[0], true) == 50 ? RGB(75, 99, 167) : RGB(225, 225, 245);
+        // if (!libraryProps.nodeHighlight) return;
+		/** Code below will probably not execute */
+        if (iconcol_h === undefined) {
+			this.col.icon_h = this.nodeStyle
+					? !libraryProps.blurDark && !libraryProps.blurLight
+							// ? !this.local
+									? (colSat(this.col.text_h) < 650
+											? this.col.text_h
+											: this.col.text)
+									// : (colSat(c_iconcol_h) < 650
+									// 		? c_iconcol_h
+									// 		: c_textcol)
+							: RGB(50, 50, 50)
+					: this.col.text_h;
+			iconcol_h = this.col.icon_h;
 		}
-		if (A(iconcol_h) != 255) {
-			this.iconcol_h = RGBAtoRGB(iconcol_h, this.backcol);
-		} else if (iconcol_h !== undefined) {
-			this.iconcol_h = iconcol_h;
+		if (this.nodeStyle) {
+			if (A(iconcol_h) != 255) {
+				this.col.icon_h = RGBAtoRGB(iconcol_h, this.col.bg);
+			} else if (iconcol_h !== undefined) {
+				this.col.icon_h = iconcol_h;
+			}
+			this.col.icon_h = get_grad(this.col.icon_h, 15, -14);
 		}
-		this.iconcol_h = get_grad(this.iconcol_h, 15, -14);
-		this.iconpluscol_h = RGB(72, 72, 92); //get_textselcol(this.iconcol_h[0], true) == 50 ? RGB(41, 66, 114) : RGB(225, 225, 245);
+		this.col.iconPlus_h = RGB(72, 72, 92); // get_textselcol(this.col.icon_h[0], true) == 50 ? RGB(41, 66, 114) : RGB(225, 225, 245);
+        this.col.iconMinus_h = get_textselcol(this.col.icon_h[0], true) == 50 ? RGB(75, 99, 167) : RGB(225, 225, 245);
 	}
 
-	this.get_colors = function() {
+	this.get_colors = () => {
 		this.backcol = g_theme.colors.pss_back;
 		// this.backcolsel = set_custom_col(window.GetProperty("_Custom.Colour Background Selected", ""), 1);
 		this.linecol = g_pl_colors.title_selected & 0x80ffffff;
 		this.txt_box;
 		this.s_linecol = g_pl_colors.title_selected & 0x80ffffff;
 		this.searchcol;
-		this.textcol = g_pl_colors.artist_normal;
+		// this.textcol = g_pl_colors.artist_normal;
 		this.textselcol = rgb(255,255,255);
 		this.iconcol_c = '';
 		iconcol_c = this.iconcol_c;
@@ -296,19 +360,19 @@ function userinterface() {
 		// 	this.bg_color_light = RGBA(255, 255, 255, Math.min(160 / this.blurAlpha, 255));
 		// 	this.bg_color_dark = RGBA(255, 255, 255, Math.min(205 / this.blurAlpha, 255));
 		// }
-		let textCol = 0;
+		// let textCol = 0;
 		if (this.dui) { // custom colour mapping: DUI colours can be remapped by changing the numbers (0-3)
 			if (this.backcol === "") this.backcol = window.GetColourDUI(1);
 			this.backcolsel = window.GetColourDUI(3);
-			textCol = window.GetColourDUI(0);
+			// textCol = window.GetColourDUI(0);
 		} else { // custom colour mapping: CUI colours can be remapped by changing the numbers (0-6)
 			if (this.backcol === "") this.backcol = window.GetColourCUI(3);
 			this.backcolsel = window.GetColourCUI(4);
-			textCol = window.GetColourCUI(0);
+			// textCol = window.GetColourCUI(0);
 		}
-		const textColHover = rgb(220, 220, 220);
-		if (this.textcol === "") this.textcol = textCol;
-		this.textcol_h = textColHover;
+		this.col.text = g_pl_colors.artist_normal;;
+		this.col.text_h = rgb(220, 220, 220);	// hovered text col
+		// this.textcol_h = textColHover;
 		// if (s_linecol == 1 && window.IsTransparent && !this.dui) s_linecol = 0;
 		// if (this.searchcol === "") this.searchcol = s_col < 3 ? this.textcol : this.textcol_h;
 		// blend = get_blend(this.backcol == 0 ? 0xff000000 : this.backcol, !s_col || s_col == 2 ? this.textcol : this.textcol_h, 0.75);
@@ -327,23 +391,23 @@ function userinterface() {
 	}
 	this.get_colors();
 
-	this.get_font = function() {
+	this.get_font = () => {
 		this.font = ft.library_tree;
 		orig_font_sz = libraryProps.baseFontSize;
-		zoom = libraryProps.fontZoom;
-		zoom_font_sz = Math.max(Math.round(orig_font_sz * zoom / 100), 1);
+		zoom = libraryProps.zoomFont;
+		zoomFontSize = Math.max(Math.round(orig_font_sz * zoom / 100), 1);
 		if (!this.sizedNode) {	// prevents node sizes from growing every time this method is called
-			ui.node_sz = Math.round(ui.node_sz * libraryProps.nodeZoom / 100);
+			this.node_sz = Math.round(this.node_sz * libraryProps.nodeZoom / 100);
 			this.sizedNode = true;
 		}
-		this.font = gdi.Font(this.font.Name, zoom_font_sz, this.font.Style);
-		libraryProps.fontZoom = Math.round(zoom_font_sz / orig_font_sz * 100);
-		this.s_font = gdi.Font(this.font.Name, this.font.Size, 2);
+		this.font = gdi.Font(this.font.Name, zoomFontSize, this.font.Style);
+		libraryProps.zoomFont = Math.round(zoomFontSize / orig_font_sz * 100);
+		this.searchFont = gdi.Font(this.font.Name, this.font.Size, 2);
 		this.j_font = gdi.Font(this.font.Name, this.font.Size * 1.5, 1);
-		this.calc_text();
+		calc_text();
 	}
 
-	this.calc_text = function() {
+	const calc_text = () => {
 		var i = gdi.CreateImage(1, 1),
 			g = i.GetGraphics();
 		this.row_h = Math.round(g.CalcTextHeight("String", this.font)) + libraryProps.rowVertPadding;
@@ -353,7 +417,7 @@ function userinterface() {
 		// libraryProps.nodeZoom = zoom_node;
 		sp = Math.max(Math.round(g.CalcTextWidth(" ", this.font)), scaleForDisplay(4));
 		sp1 = scaleForDisplay(10); //Math.max(Math.round(sp * 1.5), 6);
-		if (!this.node_style) {
+		if (!this.nodeStyle) {
 			var sp_e = g.MeasureString(this.expand, this.icon_font, 0, 0, 500, 500).Width;
 			var sp_c = g.MeasureString(this.collapse, this.icon_font, 0, 0, 500, 500).Width;
 			sp2 = Math.round(Math.max(sp_e, sp_c) + sp / 3);
@@ -361,58 +425,86 @@ function userinterface() {
 		this.l_s1 = Math.round(sp1 / 2) + scaleForDisplay(1); //Math.max(sp1 / 2, 4);
 		this.l_s2 = Math.ceil(this.node_sz / 2);
 		this.l_s3 = Math.max(scaleForDisplay(8), this.node_sz / 2)
-		this.icon_w = this.node_style ? this.node_sz + sp1 : sp + sp2;
-		this.sel = (this.node_style ? sp1 : sp + Math.round(sp / 3)) / 2;
-		this.tt = this.node_style ? -Math.ceil(sp1 / 2 - 3) + sp1 : sp;
+		this.icon_w = this.nodeStyle ? this.node_sz + sp1 : sp + sp2;
+		this.sel = (this.nodeStyle ? sp1 : sp + Math.round(sp / 3)) / 2;
+		this.tt = this.nodeStyle ? -Math.ceil(sp1 / 2 - 3) + sp1 : sp;
 		i.ReleaseGraphics(g);
 	}
 
-	this.wheel = function(step) {
-        if (p.m_y > p.s_h + ui.y) {
-			if (p.m_x >= ui.x + Math.round(this.icon_w + this.margin + (libraryProps.rootNode ? this.pad : 0))) {
-				zoom_font_sz += step;
-				zoom_font_sz = Math.min(is_4k ? 96 : 60, Math.max(zoom_font_sz, 12));
-				this.font = gdi.Font(this.font.Name, zoom_font_sz, this.font.Style);
-				this.s_font = gdi.Font(this.font.Name, this.font.Size, 2);
-				this.j_font = gdi.Font(this.font.Name, this.font.Size * 1.5, 1);
-				this.calc_text();
-				p.on_size();
-				jumpSearch.on_size();
-				library_tree.create_tooltip();
-				if (libraryProps.searchMode || libraryProps.showScrollbar)
-					but.refresh(true);
-				sbar.reset();
-				window.Repaint();
-				libraryProps.fontZoom = Math.round(zoom_font_sz / orig_font_sz * 100);
-			} else {
-				this.node_sz += step;
-				this.calc_text();
-				p.on_size();
-				window.Repaint();
-				libraryProps.nodeZoom = Math.round(this.node_sz / 12 * 100);
-			}
-		} else {
-			if (p.scale < 0.9)
-				return;
-			p.scale += step * 0.1;
-			p.scale = Math.max(p.scale, 0.9);
-			libraryProps.filterZoom = Math.round(p.scale * 100);
-			p.setFilterFont();
-			p.calc_text();
-			but.refresh(true);
-			p.search_paint();
-		}
+	const nodeZoom = step => {this.node_sz += step; calc_text(); p.on_size();}
+
+    const filterZoom = step => {
+		let zoomFilter = libraryProps.filterZoom;
+        if (zoomFilter < 0.7) return; zoomFilter += step * 0.1; zoomFilter = Math.max(zoomFilter, 0.7);
+        p.filterFont = gdi.Font("Segoe UI", zoomFilter > 1.05 ? Math.floor(11 * s.scale * zoomFilter) : 11 * s.scale * zoomFilter, 1);
+        p.filterBtnFont = gdi.Font("Segoe UI", zoomFilter > 1.05 ? Math.floor(9 * s.scale * zoomFilter) : 9 * s.scale * zoomFilter, 1);
+        p.calc_text(); but.refresh(true);
+		libraryProps.filterZoom = Math.round(zoomFilter * 100);
+    }
+
+    const txtZoom = step => {
+        zoomFontSize += step;
+        zoomFontSize = Math.max(zoomFontSize, 1);
+        const fnm = this.font.Name, fst = this.font.Style;
+        this.font = gdi.Font(fnm, zoomFontSize, fst);
+        this.searchFont = gdi.Font(fnm, zoomFontSize, 2);
+        this.jumpFont = gdi.Font(fnm, zoomFontSize * 1.5, 1);
+        calc_text(); p.on_size(); jumpSearch.on_size();
+        library_tree.create_tooltip(); if (pptDefault.searchShow || pptDefault.sbarShow) but.refresh(true); sbar.reset(); libraryProps.zoomFont = Math.round(zoomFontSize / libraryProps.baseFontSize * 100);
+    }
+
+	this.wheel = (step, all) => {
+		const textZoom = p.m_x >= Math.round(this.icon_w + ui.margin + (libraryProps.rootNode ? pptDefault.treeIndent : 0));
+        if (p.m_y > p.s_h && textZoom || all) txtZoom(step);
+        if (p.m_y > p.s_h && !textZoom || all) nodeZoom(step);
+        if (p.m_y <= p.s_h || all) filterZoom(step);
+        window.Repaint();
+
+        // if (p.m_y > p.s_h + ui.y) {
+		// 	if (p.m_x >= ui.x + Math.round(this.icon_w + this.margin + (libraryProps.rootNode ? this.pad : 0))) {
+		//		zoom_font_sz += step;
+		// 		zoom_font_sz = Math.min(is_4k ? 96 : 60, Math.max(zoom_font_sz, 12));
+		// 		this.font = gdi.Font(this.font.Name, zoom_font_sz, this.font.Style);
+		// 		this.s_font = gdi.Font(this.font.Name, this.font.Size, 2);
+		// 		this.j_font = gdi.Font(this.font.Name, this.font.Size * 1.5, 1);
+		// 		this.calc_text();
+		// 		p.on_size();
+		// 		jumpSearch.on_size();
+		// 		library_tree.create_tooltip();
+		// 		if (libraryProps.searchMode || libraryProps.showScrollbar)
+		// 			but.refresh(true);
+		// 		sbar.reset();
+		// 		window.Repaint();
+		// 		libraryProps.zoomFont = Math.round(zoom_font_sz / orig_font_sz * 100);
+		// 	} else {
+		// 		this.node_sz += step;
+		// 		this.calc_text();
+		// 		p.on_size();
+		// 		window.Repaint();
+		// 		libraryProps.nodeZoom = Math.round(this.node_sz / 12 * 100);
+		// 	}
+		// } else {
+		// 	if (p.scale < 0.9)
+		// 		return;
+		// 	p.scale += step * 0.1;
+		// 	p.scale = Math.max(p.scale, 0.9);
+		// 	libraryProps.filterZoom = Math.round(p.scale * 100);
+		// 	p.setFilterFont();
+		// 	p.calc_text();
+		// 	but.refresh(true);
+		// 	p.search_paint();
+		// }
 	}
 
 	this.block = function() {return this.w <= 10 || this.h <= 10 || !window.IsVisible;}
-	this.create_images = function () {
+	this.create_images = () => {
 		var cc = StringFormat(1, 1),
 			font1 = gdi.Font("Segoe UI", 270, 1),
 			font2 = gdi.Font("Segoe UI", 120, 1),
 			font3 = gdi.Font("Segoe UI", 200, 1),
 			font4 = gdi.Font("Segoe UI", 90, 1),
 			gb,
-			tcol = !this.blur_dark && !this.blur_light ? this.textcol : this.dui ? window.GetColourDUI(0) : window.GetColourCUI(0);
+			tcol = !this.blur_dark && !this.blur_light ? this.col.text : this.dui ? window.GetColourDUI(0) : window.GetColourCUI(0);
 		const imgTypes = ["COVER", "SELECTION"];
 		const noimg = {};
 		for (var i = 0; i < imgTypes.length; i++) {
@@ -447,7 +539,7 @@ function userinterface() {
 	}
 	this.focus_changed = function(ms) {k++; if (k == 1) {this.on_playback_new_track(); timer.reset(timer.focus); timer.focus = setTimeout(function() {k = 0; timer.focus = false;}, ms); return;} timer.reset(timer.focus); timer.focus = setTimeout(function() {ui.on_playback_new_track(); k = 0; timer.focus = false;}, ms);}
 
-	var handle_list = fb.CreateHandleList();
+	var handle_list = new FbMetadbHandleList();
 	this.upd_handle_list = true;
 	this.handle = function() {
 		var handle = fb.IsPlaying ? fb.GetNowPlaying() : fb.GetFocusItem();
@@ -471,136 +563,314 @@ function userinterface() {
 }
 
 function Scrollbar() {
-	var prefix = GetPropertyPrefix();
-	var smoothness = 1 - 0.70; //window.GetProperty("ADV.Scroll: Smooth Scroll Level 0-1", 0.6561);
-	smoothness = Math.max(Math.min(smoothness, 0.99), 0.01);
-	this.bar_timer = false;
-	this.count = -1;
-	this.draw_timer = false;
-	this.hover = false;
-	this.s1 = 0;
-	this.s2 = 0;
-	// this.scroll_step = libraryProps.pageScroll;
-	this.smooth = window.GetProperty(prefix + "Scroll: Smooth Scroll", true);
-	this.timer_but = false;
-	this.alpha = !ui.scr_col ? 75 : (!ui.scr_type ? 68 : 51);
-	this.init = true;
-	var alpha1 = this.alpha,
-		alpha2 = !ui.scr_col ? 128 : (!ui.scr_type ? 119 : 85),
-		inStep = ui.scr_type && ui.scr_col ? 12 : 18;
-	this.x = 0;
-	this.y = 0;
-	this.w = 0;
-	this.h = 0;
-	this.bar_ht = 0; this.but_h = 0; this.bar_y = 0; this.row_count = 0; this.scroll = 0; this.delta = 0; this.ratio = 1; this.rows_drawn = 0; this.row_h = 0; this.scrollbar_height = 0; this.scrollable_lines = 0; this.scrollbar_travel = 0; this.stripe_w = 0; this.tree_w = 0;
-	this.b_is_dragging = false; this.drag_distance_per_row; this.initial_drag_y = 0; // dragging
-	this.leave = function() {if (this.b_is_dragging) return; this.hover = !this.hover; this.paint(); this.hover = false; this.hover_o = false;}
-	this.nearest = function(y) {y = (y - this.but_h) / this.scrollbar_height * this.scrollable_lines * this.row_h; y = y / this.row_h; y = Math.round(y) * this.row_h; return y;}
-	this.reset = function() {this.delta = this.scroll = this.s1 = this.s2 = 0; this.metrics(this.x, this.y, this.w, this.h, this.rows_drawn, this.row_h);}
-	this.scroll_timer = function() {var that = this; this.draw_timer = setInterval(function() {if (ui.w < 1 || !window.IsVisible) return; that.smooth_scroll();}, 16);}
-	this.set_rows = function(row_count) {this.row_count = row_count; this.metrics(this.x, this.y, this.w, this.h, this.rows_drawn, this.row_h);}
-	this.wheel = function(step, pgkey) {this.check_scroll(this.scroll + step * - (libraryProps.pageScroll || pgkey ? this.rows_drawn - 1 : 3) * this.row_h);}
+    let period = pptDefault.duration.split(0); period = {drag : 200, inertia : s.clamp(s.value(period[3], 3000, 0), 0, 5000), scroll : s.clamp(s.value(period[1], 500, 0), 0, 5000)}; period.step = period.scroll * 2 / 3;
+    let alpha = !pptDefault.sbarCol ? 75 : (!ui.sbarType ? 68 : 51), amplitude, b_is_dragging = false, bar_ht = 0, bar_timer = null, bar_y = 0, but_h = 0, clock = Date.now(), counter = 0, drag_distance_per_row = 0, duration = period.scroll, elap = 0, event = "", fast = false, frame, hover = false, hover_o = false, init = true, initial_drag_y = 0, initial_scr = 1, initial_y = -1, ix = -1, lastTouchDn = Date.now(), max_scroll, offset = 0, ratio = 1, reference = -1, rows = 0, scrollbar_height = 0, scrollbar_travel = 0, start = 0, startTime = 0, ticker, timestamp, ts, velocity;
+    const alpha1 = alpha, alpha2 = !pptDefault.sbarCol ? 128 : (!ui.sbarType ? 119 : 85), inStep = ui.sbarType && pptDefault.sbarCol ? 12 : 18, ln_sp = pptDefault.searchShow && !ui.local ? Math.floor(ui.row_h * 0.1) : 0, min = 10 * s.scale, mv = 2 * s.scale;
+    this.count = -1; this.delta = 0; pptDefault.flickDistance = s.clamp(pptDefault.flickDistance, 0, 10); this.draw_timer = null; this.item_y = pptDefault.searchShow ? ui.row_h + (!ui.local ? ln_sp * 2 : 0) : ui.margin; this.row_count = 0; this.rows_drawn = 0; this.row_h = 0; this.scroll = 0; this.scrollable_lines = 0; pptDefault.scrollStep = s.clamp(pptDefault.scrollStep, 0, 10); pptDefault.touchStep = s.clamp(pptDefault.touchStep, 1, 10); this.stripe_w = 0; this.timer_but = null; this.touch = {dn: false, end: 0, start: 0}; this.tree_w = 0; this.x = 0; this.y = 0; this.w = 0; this.h = 0;
 
-	this.metrics = function(x, y, w, h, rows_drawn, row_h) {
-		this.x = x;
-		this.y = Math.round(y);
-		this.w = w;
-		this.h = h;
-		this.rows_drawn = Math.floor(rows_drawn);
-		this.row_h = row_h;
-		this.but_h = ui.but_h;
-		// draw info
-		this.scrollbar_height = Math.round(this.h - this.but_h * 2);
-		this.bar_ht = Math.max(Math.round(this.scrollbar_height * this.rows_drawn / this.row_count), Math.max(Math.min(this.scrollbar_height / 2, ui.grip_h), 5));
-		this.scrollbar_travel = this.scrollbar_height - this.bar_ht;
-		// scrolling info
-		this.scrollable_lines = this.rows_drawn > 0 ? this.row_count - this.rows_drawn : 0;
-        this.ratio = this.row_count / this.scrollable_lines;
-		this.bar_y = this.but_h + this.scrollbar_travel * (this.delta * this.ratio) / (this.row_count * this.row_h);
-		this.drag_distance_per_row = this.scrollbar_travel / this.scrollable_lines;
-		// panel info
-		this.tree_w = ui.w - Math.max(libraryProps.showScrollbar && this.scrollable_lines > 0 ? ui.sbar_sp + ui.sel : ui.sel, ui.margin);
-		if (ui.alternate) this.stripe_w = libraryProps.showScrollbar && this.scrollable_lines > 0 ? ui.w - ui.sbar_sp : ui.w;
-	}
+    const upd_debounce = s.debounce(() => lib_manager.treeState(false, libraryProps.rememberTree), 400);
+    const nearest = y => {y = (y - but_h) / scrollbar_height * max_scroll; y = y / this.row_h; y = Math.round(y) * this.row_h; return y;}
+    const scroll_throttle = s.throttle(() => {this.delta = this.scroll; scroll_to();}, 16);
+    const scroll_timer = () => this.draw_timer = setInterval(() => {if (ui.w < 1 || !window.IsVisible) return; smooth_scroll();}, 16);
 
-	this.draw = function(gr) {if (this.scrollable_lines > 0) {try {
-		switch (ui.scr_type) {
-			case 0:
-				switch (ui.scr_col) {
-					case 0: gr.FillSolidRect(this.x, this.y + this.bar_y, this.w, this.bar_ht, RGBA(ui.ct, ui.ct, ui.ct, !this.hover && !this.b_is_dragging ? this.alpha : this.hover && !this.b_is_dragging ? this.alpha : 192)); break;
-					case 1: gr.FillSolidRect(this.x, this.y + this.bar_y, this.w, this.bar_ht, ui.textcol & (!this.hover && !this.b_is_dragging ? RGBA(255, 255, 255, this.alpha) : this.hover && !this.b_is_dragging ? RGBA(255, 255, 255, this.alpha) : 0x99ffffff)); break;
-				}
-				break;
-			case 1:
-				switch (ui.scr_col) {
-					case 0: gr.FillSolidRect(this.x, this.y - p.sbar_o, this.w, this.h + p.sbar_o * 2, RGBA(ui.ct, ui.ct, ui.ct, 15)); gr.FillSolidRect(this.x, this.y + this.bar_y, this.w, this.bar_ht, RGBA(ui.ct, ui.ct, ui.ct, !this.hover && !this.b_is_dragging ? this.alpha : this.hover && !this.b_is_dragging ? this.alpha : 192)); break;
-					case 1: gr.FillSolidRect(this.x, this.y - p.sbar_o, this.w, this.h + p.sbar_o * 2, ui.textcol & 0x15ffffff); gr.FillSolidRect(this.x, this.y + this.bar_y, this.w, this.bar_ht, ui.textcol & (!this.hover && !this.b_is_dragging ? RGBA(255, 255, 255, this.alpha) : this.hover && !this.b_is_dragging ? RGBA(255, 255, 255, this.alpha) : 0x99ffffff)); break;
-				}
-				break;
-			case 2:
-				ui.theme.SetPartAndStateID(6, 1);
-				ui.theme.DrawThemeBackground(gr, this.x, this.y, this.w, this.h);
-				ui.theme.SetPartAndStateID(3, !this.hover && !this.b_is_dragging ? 1 : this.hover && !this.b_is_dragging ? 2 : 3);
-				ui.theme.DrawThemeBackground(gr, this.x, this.y + this.bar_y, this.w, this.bar_ht);
-				break;
-		}} catch (e) {}}
-	}
+    this.leave = () => {if (this.touch.dn) this.touch.dn = false; if (b_is_dragging) return; hover = !hover; this.paint(); hover = false; hover_o = false;}
+    this.page_throttle = s.throttle(dir => this.check_scroll(Math.round((this.scroll + dir * -(this.rows_drawn - 1) * this.row_h) / this.row_h) * this.row_h), 100);
+    this.reset = () => {this.delta = this.scroll = 0; this.item_y = p.s_h; this.metrics(this.x, this.y, this.w, this.h, this.rows_drawn, this.row_h);}
+    this.set_rows = row_count => {if (!row_count) this.item_y = p.s_h; this.row_count = row_count; this.metrics(this.x, this.y, this.w, this.h, this.rows_drawn, this.row_h);}
+    this.wheel = step => this.check_scroll(Math.round((this.scroll + step * - (!pptDefault.scrollStep ? this.rows_drawn - 1 : pptDefault.scrollStep) * this.row_h) / this.row_h) * this.row_h, pptDefault.scrollStep ? 'step' : "");
 
-	this.paint = function() {
-		if (this.hover) this.init = false; if (this.init) return; this.alpha = this.hover ? alpha1 : alpha2; var that = this
-		clearTimeout(this.bar_timer); this.bar_timer = false;
-		this.bar_timer = setInterval(function() {that.alpha = that.hover ? Math.min(that.alpha += inStep, alpha2) : Math.max(that.alpha -= 3, alpha1); window.RepaintRect(that.x, that.y, that.w, that.h);
-			if (that.hover && that.alpha == alpha2 || !that.hover && that.alpha == alpha1) {that.hover_o = that.hover; clearTimeout(that.bar_timer); that.bar_timer = false;}}, 25);
-	}
+    this.metrics = (x, y, w, h, rows_drawn, row_h) => {
+        this.x = x; this.y = Math.round(y); this.w = w; this.h = h; this.rows_drawn = rows_drawn; if (!pptDefault.autoFit) this.rows_drawn = Math.floor(this.rows_drawn); this.row_h = row_h; but_h = ui.but_h;
+        // draw info
+        scrollbar_height = Math.round(this.h - but_h * 2);
+        bar_ht = Math.max(Math.round(scrollbar_height * this.rows_drawn / this.row_count), s.clamp(scrollbar_height / 2, 5, ui.grip_h));
+        scrollbar_travel = scrollbar_height - bar_ht;
+        // scrolling info
+        this.scrollable_lines = this.row_count - this.rows_drawn;
+        ratio = this.row_count / this.scrollable_lines;
+        bar_y = but_h + scrollbar_travel * (this.delta * ratio) / (this.row_count * this.row_h);
+        drag_distance_per_row = scrollbar_travel / this.scrollable_lines;
+        // panel info
+        this.tree_w = ui.w - Math.max(pptDefault.sbarShow && this.scrollable_lines > 0 ? ui.sbar_sp + ui.sel : ui.sel, ui.margin);
+        if (pptDefault.rowStripes) this.stripe_w = pptDefault.sbarShow && this.scrollable_lines > 0 ? ui.w - ui.sbar_sp - Math.round(3 * s.scale) : ui.w;
+		max_scroll = this.scrollable_lines * this.row_h;
+        but.set_scroll_btns_hide();
+    }
 
-	this.lbtn_up = function(p_x, p_y) {
-		var x = p_x - this.x; var y = p_y - this.y;
-		if (!this.hover && this.b_is_dragging) this.paint(); else window.RepaintRect(this.x, this.y, this.w, this.h); if (this.b_is_dragging) {this.b_is_dragging = false; but.Dn = false;} this.initial_drag_y = 0;
-		if (this.timer_but) {clearTimeout(this.timer_but); this.timer_but = false;}; this.count = -1;
-	}
+    this.draw = gr => {
+        if (this.scrollable_lines > 0) {
+            switch (ui.sbarType) {
+                case 0:
+                    if (pptDefault.rowStripes) gr.FillSolidRect(this.x, this.y, this.w, this.h, ui.col.b1);
+                    switch (pptDefault.sbarCol) {
+                        case 0: gr.FillSolidRect(this.x, this.y + bar_y, this.w, bar_ht, RGBA(ui.col.t, ui.col.t, ui.col.t, !hover && !b_is_dragging ? alpha : hover && !b_is_dragging ? alpha : 192)); break;
+                        case 1: gr.FillSolidRect(this.x, this.y + bar_y, this.w, bar_ht, ui.col.text & (!hover && !b_is_dragging ? RGBA(255, 255, 255, alpha) : hover && !b_is_dragging ? RGBA(255, 255, 255, alpha) : 0x99ffffff)); break;
+                    } break;
+                case 1:
+                    switch (pptDefault.sbarCol) {
+                        case 0: gr.FillSolidRect(this.x, this.y - p.sbar_o, this.w, this.h + p.sbar_o * 2, RGBA(ui.col.t, ui.col.t, ui.col.t, 15)); gr.FillSolidRect(this.x, this.y + bar_y, this.w, bar_ht, RGBA(ui.col.t, ui.col.t, ui.col.t, !hover && !b_is_dragging ? alpha : hover && !b_is_dragging ? alpha : 192)); break;
+                        case 1: gr.FillSolidRect(this.x, this.y - p.sbar_o, this.w, this.h + p.sbar_o * 2, ui.col.text & 0x15ffffff); gr.FillSolidRect(this.x, this.y + bar_y, this.w, bar_ht, ui.col.text & (!hover && !b_is_dragging ? RGBA(255, 255, 255, alpha) : hover && !b_is_dragging ? RGBA(255, 255, 255, alpha) : 0x99ffffff)); break;
+                    } break;
+                case 2: ui.theme.SetPartAndStateID(6, 1); ui.theme.DrawThemeBackground(gr, this.x, this.y, this.w, this.h); ui.theme.SetPartAndStateID(3, !hover && !b_is_dragging ? 1 : hover && !b_is_dragging ? 2 : 3); ui.theme.DrawThemeBackground(gr, this.x, this.y + bar_y, this.w, bar_ht); break;
+            }
+        }
+    }
 
-	this.lbtn_dn = function(p_x, p_y) {
-		var x = p_x - this.x; var y = p_y - this.y;
-		if (x < 0 || x > this.w || y < 0 || y > this.h || this.row_count <= this.rows_drawn) return;
-		if (y < this.but_h || y > this.h - this.but_h) return;
-		if (y < this.bar_y) var dir = 1; // above bar
-		else if (y > this.bar_y + this.bar_ht) var dir = -1; // below bar
-		if (y < this.bar_y || y > this.bar_y + this.bar_ht)
-			this.check_scroll(this.nearest(y));
-		else { // on bar
-			this.b_is_dragging = true; but.Dn = true; window.RepaintRect(this.x, this.y, this.w, this.h);
-			this.initial_drag_y = y - this.bar_y;
-		}
-	}
+    this.paint = () => {
+        if (hover) init = false; if (init) return; alpha = hover ? alpha1 : alpha2;
+        clearTimeout(bar_timer); bar_timer = null;
+        bar_timer = setInterval(() => {alpha = hover ? Math.min(alpha += inStep, alpha2) : Math.max(alpha -= 3, alpha1); window.RepaintRect(this.x, this.y, this.w, this.h);
+        if (hover && alpha == alpha2 || !hover && alpha == alpha1) {hover_o = hover; clearTimeout(bar_timer); bar_timer = null;}}, 25);
+    }
 
-	this.move = function(p_x, p_y) {
-		var x = p_x - this.x; var y = p_y - this.y;
-		if (x < 0 || x > this.w || y > this.bar_y + this.bar_ht || y < this.bar_y || but.Dn) this.hover = false; else this.hover = true;
-		if (this.hover != this.hover_o && !this.bar_timer) this.paint();
-		if (!this.b_is_dragging || this.row_count <= this.rows_drawn) return;
-		this.check_scroll(Math.round((y - this.initial_drag_y - this.but_h) / this.drag_distance_per_row) * this.row_h);
-	}
+    this.lbtn_dn = (p_x, p_y) => {
+        if (!pptDefault.sbarShow && pptDefault.touchControl) return tap(p_y);
+        const x = p_x - this.x, y = p_y - this.y; let dir;
+        if (x > this.w || y < 0 || y > this.h || this.row_count <= this.rows_drawn) return;
+        if (x < 0) {if (!pptDefault.touchControl) return; else return tap(p_y);}
+        if (y < but_h || y > this.h - but_h) return;
+        if (y < bar_y) dir = 1; // above bar
+        else if (y > bar_y + bar_ht) dir = -1; // below bar
+        if (y < bar_y || y > bar_y + bar_ht) shift_page(dir, nearest(y));
+        else { // on bar
+            b_is_dragging = true; but.Dn = true; window.RepaintRect(this.x, this.y, this.w, this.h);
+            initial_drag_y = y - bar_y + but_h;
+        }
+    }
 
-	this.check_scroll = function(new_scroll) {
-		var s = Math.max(0, Math.min(new_scroll, this.scrollable_lines * this.row_h));
-		if (s == this.scroll) return; this.scroll = s;
-		if (this.smooth) {if (!this.draw_timer) this.scroll_timer();}
-		if (!this.smooth) {this.delta = this.scroll; this.bar_y = this.but_h + this.scrollbar_travel * (this.delta * this.ratio) / (this.row_count * this.row_h); p.tree_paint(); lib_manager.treeState(false, libraryProps.rememberTree);}
-	}
+    this.lbtn_dblclk = (p_x, p_y) => {
+        const x = p_x - this.x, y = p_y - this.y; let dir;
+        if (x < 0 || x > this.w || y < 0 || y > this.h || this.row_count <= this.rows_drawn) return;
+        if (y < but_h || y > this.h - but_h) return;
+        if (y < bar_y) dir = 1; // above bar
+        else if (y > bar_y + bar_ht) dir = -1; // below bar
+        if (y < bar_y || y > bar_y + bar_ht) shift_page(dir, nearest(y));
+    }
 
-	this.smooth_scroll = function() {
-		if (this.delta <= 0.5) {this.delta = 0; this.bar_y = this.but_h + this.scrollbar_travel * (this.delta * this.ratio) / (this.row_count * this.row_h); p.tree_paint();}
-		if (Math.abs(this.scroll - this.delta) > 0.5) {
-			this.s1 += (this.scroll - this.s1) * smoothness; this.s2 += (this.s1 - this.s2) * smoothness; this.delta += (this.s2 - this.delta) * smoothness;
-			this.bar_y = this.but_h + this.scrollbar_travel * (this.delta * this.ratio) / (this.row_count * this.row_h); p.tree_paint();
-		} else if (this.draw_timer) {clearTimeout(this.draw_timer); this.draw_timer = false; lib_manager.treeState(false, libraryProps.rememberTree);}
-	}
+    this.move = (p_x, p_y) => {
+        if (pptDefault.touchControl) {
+            const delta = reference - p_y;
+            if (delta > mv || delta < -mv) {
+                reference = p_y;
+                if (pptDefault.flickDistance) offset = s.clamp(offset + delta, 0, max_scroll);
+                if (this.touch.dn) {ui.drag_drop_id = ui.touch_dn_id = -1;}
+            }
+        }
+        if (this.touch.dn && !vk.k('zoom')) {ts = Date.now(); if (ts - startTime > 300) startTime = ts; lastTouchDn = ts; this.check_scroll(initial_scr + (initial_y - p_y) * pptDefault.touchStep, 'drag'); return;}
+        const x = p_x - this.x, y = p_y - this.y;
+        if (x < 0 || x > this.w || y > bar_y + bar_ht || y < bar_y || but.Dn) hover = false; else hover = true;
+        if (hover != hover_o && !bar_timer) this.paint();
+        if (!b_is_dragging || this.row_count <= this.rows_drawn) return;
+        this.check_scroll(Math.round((y - initial_drag_y) / drag_distance_per_row) * this.row_h);
+    }
 
-	this.but = function(dir) {
-		this.check_scroll(this.scroll + (dir * -this.row_h));
-		if (!this.timer_but) {var that = this; this.timer_but = setInterval(function() {if (that.count > 6) {that.check_scroll(that.scroll + (dir * -that.row_h));} else that.count++;}, 40);}
-	}
+    this.lbtn_up = (p_x, p_y) => {
+        if (this.touch.dn) {
+            this.touch.dn = false;
+            clearInterval(ticker);
+            if (!counter) track(true);
+            if (Math.abs(velocity) > min && Date.now() - startTime < 300) {
+                amplitude = pptDefault.flickDistance * velocity * pptDefault.touchStep;
+                timestamp = Date.now();
+                this.check_scroll(Math.round((this.scroll + amplitude) / this.row_h) * this.row_h, 'inertia');
+            }
+        }
+        const x = p_x - this.x, y = p_y - this.y;
+        if (!hover && b_is_dragging) this.paint(); else window.RepaintRect(this.x, this.y, this.w, this.h); if (b_is_dragging) {b_is_dragging = false; but.Dn = false;} initial_drag_y = 0;
+        if (this.timer_but) {clearTimeout(this.timer_but); this.timer_but = null;}; this.count = -1;
+    }
+
+    const tap = p_y => {
+        if (amplitude) {clock = 0; this.scroll = this.delta;}
+        counter = 0; initial_scr = this.scroll;
+        this.touch.dn = true; initial_y = reference = p_y;  if (!offset) offset = p_y;
+        velocity = amplitude = 0;
+        if (!pptDefault.flickDistance) return;
+        frame = offset;
+        startTime = timestamp = Date.now();
+        clearInterval(ticker);
+        ticker = setInterval(track, 100);
+    }
+
+    const track = initial => {
+        let now, elapsed, delta, v;
+        counter++; now = Date.now();
+        if (now - lastTouchDn < 10000 && counter == 4) {ui.touch_dn_id = -1; p.last_pressed_coord = {x: -1, y: -1}}
+        elapsed = now - timestamp; if (initial) elapsed = Math.max(elapsed, 32);
+        timestamp = now;
+        delta = offset - frame;
+        frame = offset;
+        v = 1000 * delta / (1 + elapsed);
+        velocity = 0.8 * v + 0.2 * velocity;
+    }
+
+    this.check_scroll = (new_scroll, type) => {
+        const b = s.clamp(new_scroll, 0, max_scroll);
+        if (b == this.scroll) return; this.scroll = b;
+        if (libraryProps.smoothScroll) {
+            elap = 16; event = type; this.item_y = p.s_h; start = this.delta;
+            if (event != 'drag' || pptDefault.touchStep > 1) {
+                duration = !event ? period.scroll : period[event];
+                if (b_is_dragging) {if (Math.abs(this.delta - this.scroll) < scrollbar_height) fast = false; else {fast = true; duration = period.step;}}
+                clock = Date.now(); if (!this.draw_timer) {scroll_timer(); smooth_scroll();}
+            } else scroll_drag();
+        } else {scroll_throttle(); upd_debounce();}
+    }
+
+    const calc_item_y = () => {ix = Math.round(this.delta / this.row_h + 0.4); this.item_y = Math.round(this.row_h * ix + p.s_h - this.delta);}
+    const position = (Start, End, Elapsed, Duration, Event) => {if (Elapsed > Duration) return End; const n = Elapsed / Duration; Event = b_is_dragging ? !fast ? ease.bar(n) : ease.barFast(n) : Event != 'inertia' ? ease.scroll(n) : ease.inertia(n); return Start + (End - Start) * Event;}
+    const scroll_drag = () => {this.delta = this.scroll; scroll_to(); calc_item_y(); upd_debounce();}
+    const scroll_finish = () => {if (!this.draw_timer) return; this.delta = this.scroll; bar_y = but_h + scrollbar_travel * (this.delta * ratio) / (this.row_count * this.row_h); libraryProps.rememberTree ? lib_manager.treeState(false, libraryProps.rememberTree) : p.tree_paint(); calc_item_y(); clearTimeout(this.draw_timer); this.draw_timer = null;}
+    const scroll_to = () => {bar_y = but_h + scrollbar_travel * (this.delta * ratio) / (this.row_count * this.row_h); p.tree_paint();}
+    const shift = (dir, nearest_y) => {let target = Math.round((this.scroll + dir * -((this.rows_drawn - 1) * this.row_h)) / this.row_h) * this.row_h; if (dir == 1) target = Math.max(target, nearest_y); else target = Math.min(target, nearest_y); return target;}
+    const shift_page = (dir, nearest_y) => {this.check_scroll(shift(dir, nearest_y)); if (!this.timer_but) {this.timer_but = setInterval(() => {if (this.count > 1) {this.check_scroll(shift(dir, nearest_y));} else this.count++;}, 100);}}
+    const smooth_scroll = () => {
+        this.delta = position(start, this.scroll, Date.now() - clock + elap, duration, event);
+        if (Math.abs(this.scroll - this.delta) > 0.5) scroll_to(); else scroll_finish();
+    }
+
+    this.but = dir => {this.check_scroll(Math.round((this.scroll + dir * -this.row_h) / this.row_h) * this.row_h); if (!this.timer_but) {this.timer_but = setInterval(() => {if (this.count > 6) {this.check_scroll(this.scroll + dir * -this.row_h);} else this.count++;}, 40);}}
+    this.scroll_round = () => {if (this.item_y == p.s_h) return; this.check_scroll((this.item_y < p.s_h ? Math.floor(this.scroll / this.row_h) : Math.ceil(this.scroll / this.row_h)) * this.row_h);}
+    this.scroll_to_end = () => this.check_scroll(max_scroll);
 }
+
+// function Scrollbar() {
+// 	var prefix = GetPropertyPrefix();
+// 	var smoothness = 1 - 0.70; //window.GetProperty("ADV.Scroll: Smooth Scroll Level 0-1", 0.6561);
+// 	smoothness = Math.max(Math.min(smoothness, 0.99), 0.01);
+// 	this.bar_timer = false;
+// 	this.count = -1;
+// 	this.draw_timer = false;
+// 	this.hover = false;
+// 	this.s1 = 0;
+// 	this.s2 = 0;
+// 	// this.scroll_step = libraryProps.pageScroll;
+// 	this.smooth = window.GetProperty(prefix + "Scroll: Smooth Scroll", true);
+// 	this.timer_but = false;
+// 	this.alpha = !ui.scr_col ? 75 : (!ui.sbarType ? 68 : 51);
+// 	this.init = true;
+// 	var alpha1 = this.alpha,
+// 		alpha2 = !ui.scr_col ? 128 : (!ui.sbarType ? 119 : 85),
+// 		inStep = ui.sbarType && ui.scr_col ? 12 : 18;
+// 	this.x = 0;
+// 	this.y = 0;
+// 	this.w = 0;
+// 	this.h = 0;
+// 	this.bar_ht = 0; this.but_h = 0; this.bar_y = 0; this.row_count = 0; this.scroll = 0; this.delta = 0; this.ratio = 1; this.rows_drawn = 0; this.row_h = 0; this.scrollbar_height = 0; this.scrollable_lines = 0; this.scrollbar_travel = 0; this.stripe_w = 0; this.tree_w = 0;
+// 	this.b_is_dragging = false; this.drag_distance_per_row; this.initial_drag_y = 0; // dragging
+// 	this.leave = function() {if (this.b_is_dragging) return; this.hover = !this.hover; this.paint(); this.hover = false; this.hover_o = false;}
+// 	this.nearest = function(y) {y = (y - this.but_h) / this.scrollbar_height * this.scrollable_lines * this.row_h; y = y / this.row_h; y = Math.round(y) * this.row_h; return y;}
+// 	this.reset = function() {this.delta = this.scroll = this.s1 = this.s2 = 0; this.metrics(this.x, this.y, this.w, this.h, this.rows_drawn, this.row_h);}
+// 	this.scroll_timer = function() {var that = this; this.draw_timer = setInterval(function() {if (ui.w < 1 || !window.IsVisible) return; that.smooth_scroll();}, 16);}
+// 	this.set_rows = row_count => {if (!row_count) this.item_y = p.s_h; this.row_count = row_count; this.metrics(this.x, this.y, this.w, this.h, this.rows_drawn, this.row_h);}
+// 	this.wheel = function(step, pgkey) {this.check_scroll(this.scroll + step * - (libraryProps.pageScroll || pgkey ? this.rows_drawn - 1 : 3) * this.row_h);}
+
+// 	this.metrics = (x, y, w, h, rows_drawn, row_h) => {
+// 		this.x = x;
+// 		this.y = Math.round(y);
+// 		this.w = w;
+// 		this.h = h;
+// 		this.rows_drawn = Math.floor(rows_drawn);
+// 		this.row_h = row_h;
+// 		this.but_h = ui.but_h;
+// 		// draw info
+// 		this.scrollbar_height = Math.round(this.h - this.but_h * 2);
+// 		this.bar_ht = Math.max(Math.round(this.scrollbar_height * this.rows_drawn / this.row_count), Math.max(Math.min(this.scrollbar_height / 2, ui.grip_h), 5));
+// 		this.scrollbar_travel = this.scrollbar_height - this.bar_ht;
+// 		// scrolling info
+// 		this.scrollable_lines = this.rows_drawn > 0 ? this.row_count - this.rows_drawn : 0;
+//         this.ratio = this.row_count / this.scrollable_lines;
+// 		this.bar_y = this.but_h + this.scrollbar_travel * (this.delta * this.ratio) / (this.row_count * this.row_h);
+// 		this.drag_distance_per_row = this.scrollbar_travel / this.scrollable_lines;
+// 		// panel info
+// 		this.tree_w = ui.w - Math.max(libraryProps.showScrollbar && this.scrollable_lines > 0 ? ui.sbar_sp + ui.sel : ui.sel, ui.margin);
+// 		if (ui.alternate) this.stripe_w = libraryProps.showScrollbar && this.scrollable_lines > 0 ? ui.w - ui.sbar_sp : ui.w;
+// 		but.set_scroll_btns_hide();
+// 	}
+
+// 	this.draw = function(gr) {if (this.scrollable_lines > 0) {try {
+// 		switch (ui.sbarType) {
+// 			case 0:
+// 				switch (ui.scr_col) {
+// 					case 0: gr.FillSolidRect(this.x, this.y + this.bar_y, this.w, this.bar_ht, RGBA(ui.ct, ui.ct, ui.ct, !this.hover && !this.b_is_dragging ? this.alpha : this.hover && !this.b_is_dragging ? this.alpha : 192)); break;
+// 					case 1: gr.FillSolidRect(this.x, this.y + this.bar_y, this.w, this.bar_ht, ui.textcol & (!this.hover && !this.b_is_dragging ? RGBA(255, 255, 255, this.alpha) : this.hover && !this.b_is_dragging ? RGBA(255, 255, 255, this.alpha) : 0x99ffffff)); break;
+// 				}
+// 				break;
+// 			case 1:
+// 				switch (ui.scr_col) {
+// 					case 0: gr.FillSolidRect(this.x, this.y - p.sbar_o, this.w, this.h + p.sbar_o * 2, RGBA(ui.ct, ui.ct, ui.ct, 15)); gr.FillSolidRect(this.x, this.y + this.bar_y, this.w, this.bar_ht, RGBA(ui.ct, ui.ct, ui.ct, !this.hover && !this.b_is_dragging ? this.alpha : this.hover && !this.b_is_dragging ? this.alpha : 192)); break;
+// 					case 1: gr.FillSolidRect(this.x, this.y - p.sbar_o, this.w, this.h + p.sbar_o * 2, ui.textcol & 0x15ffffff); gr.FillSolidRect(this.x, this.y + this.bar_y, this.w, this.bar_ht, ui.textcol & (!this.hover && !this.b_is_dragging ? RGBA(255, 255, 255, this.alpha) : this.hover && !this.b_is_dragging ? RGBA(255, 255, 255, this.alpha) : 0x99ffffff)); break;
+// 				}
+// 				break;
+// 			case 2:
+// 				ui.theme.SetPartAndStateID(6, 1);
+// 				ui.theme.DrawThemeBackground(gr, this.x, this.y, this.w, this.h);
+// 				ui.theme.SetPartAndStateID(3, !this.hover && !this.b_is_dragging ? 1 : this.hover && !this.b_is_dragging ? 2 : 3);
+// 				ui.theme.DrawThemeBackground(gr, this.x, this.y + this.bar_y, this.w, this.bar_ht);
+// 				break;
+// 		}} catch (e) {}}
+// 	}
+
+// 	this.paint = () => {
+// 		if (this.hover) this.init = false; if (this.init) return; this.alpha = this.hover ? alpha1 : alpha2; var that = this
+// 		clearTimeout(this.bar_timer); this.bar_timer = false;
+// 		this.bar_timer = setInterval(function() {that.alpha = that.hover ? Math.min(that.alpha += inStep, alpha2) : Math.max(that.alpha -= 3, alpha1); window.RepaintRect(that.x, that.y, that.w, that.h);
+// 			if (that.hover && that.alpha == alpha2 || !that.hover && that.alpha == alpha1) {that.hover_o = that.hover; clearTimeout(that.bar_timer); that.bar_timer = false;}}, 25);
+// 	}
+
+// 	this.lbtn_up = (p_x, p_y) => {
+// 		var x = p_x - this.x; var y = p_y - this.y;
+// 		if (!this.hover && this.b_is_dragging) this.paint(); else window.RepaintRect(this.x, this.y, this.w, this.h); if (this.b_is_dragging) {this.b_is_dragging = false; but.Dn = false;} this.initial_drag_y = 0;
+// 		if (this.timer_but) {clearTimeout(this.timer_but); this.timer_but = false;}; this.count = -1;
+// 	}
+
+// 	this.lbtn_dn = (p_x, p_y) => {
+// 		var x = p_x - this.x; var y = p_y - this.y;
+// 		if (x < 0 || x > this.w || y < 0 || y > this.h || this.row_count <= this.rows_drawn) return;
+// 		if (y < this.but_h || y > this.h - this.but_h) return;
+// 		if (y < this.bar_y) var dir = 1; // above bar
+// 		else if (y > this.bar_y + this.bar_ht) var dir = -1; // below bar
+// 		if (y < this.bar_y || y > this.bar_y + this.bar_ht)
+// 			this.check_scroll(this.nearest(y));
+// 		else { // on bar
+// 			this.b_is_dragging = true; but.Dn = true; window.RepaintRect(this.x, this.y, this.w, this.h);
+// 			this.initial_drag_y = y - this.bar_y;
+// 		}
+// 	}
+
+// 	this.move = (p_x, p_y) => {
+// 		var x = p_x - this.x; var y = p_y - this.y;
+// 		if (x < 0 || x > this.w || y > this.bar_y + this.bar_ht || y < this.bar_y || but.Dn) this.hover = false; else this.hover = true;
+// 		if (this.hover != this.hover_o && !this.bar_timer) this.paint();
+// 		if (!this.b_is_dragging || this.row_count <= this.rows_drawn) return;
+// 		this.check_scroll(Math.round((y - this.initial_drag_y - this.but_h) / this.drag_distance_per_row) * this.row_h);
+// 	}
+
+// 	this.check_scroll = (new_scroll) => {
+// 		var s = Math.max(0, Math.min(new_scroll, this.scrollable_lines * this.row_h));
+// 		if (s == this.scroll) return; this.scroll = s;
+// 		if (this.smooth) {if (!this.draw_timer) this.scroll_timer();}
+// 		if (!this.smooth) {this.delta = this.scroll; this.bar_y = this.but_h + this.scrollbar_travel * (this.delta * this.ratio) / (this.row_count * this.row_h); p.tree_paint(); lib_manager.treeState(false, libraryProps.rememberTree);}
+// 	}
+
+// 	this.smooth_scroll = () => {
+// 		if (this.delta <= 0.5) {this.delta = 0; this.bar_y = this.but_h + this.scrollbar_travel * (this.delta * this.ratio) / (this.row_count * this.row_h); p.tree_paint();}
+// 		if (Math.abs(this.scroll - this.delta) > 0.5) {
+// 			this.s1 += (this.scroll - this.s1) * smoothness; this.s2 += (this.s1 - this.s2) * smoothness; this.delta += (this.s2 - this.delta) * smoothness;
+// 			this.bar_y = this.but_h + this.scrollbar_travel * (this.delta * this.ratio) / (this.row_count * this.row_h); p.tree_paint();
+// 		} else if (this.draw_timer) {clearTimeout(this.draw_timer); this.draw_timer = false; lib_manager.treeState(false, libraryProps.rememberTree);}
+// 	}
+
+// 	this.but = (dir) => {
+// 		this.check_scroll(this.scroll + (dir * -this.row_h));
+// 		if (!this.timer_but) {var that = this; this.timer_but = setInterval(function() {if (that.count > 6) {that.check_scroll(that.scroll + (dir * -that.row_h));} else that.count++;}, 40);}
+// 	}
+
+// 	this.scroll_round = () => {if (this.item_y == p.s_h) return; this.check_scroll((this.item_y < p.s_h ? Math.floor(this.scroll / this.row_h) : Math.ceil(this.scroll / this.row_h)) * this.row_h);}
+//     this.scroll_to_end = () => this.check_scroll(max_scroll);
+// }
+
+function Bezier(){const i=4,c=.001,o=1e-7,v=10,l=11,s=1/(l-1),n=typeof Float32Array==="function";function e(r,n){return 1-3*n+3*r}function u(r,n){return 3*n-6*r}function a(r){return 3*r}function w(r,n,t){return((e(n,t)*r+u(n,t))*r+a(n))*r}function y(r,n,t){return 3*e(n,t)*r*r+2*u(n,t)*r+a(n)}function h(r,n,t,e,u){let a,f,i=0;do{f=n+(t-n)/2;a=w(f,e,u)-r;if(a>0){t=f}else{n=f}}while(Math.abs(a)>o&&++i<v);return f}function A(r,n,t,e){for(let u=0;u<i;++u){const a=y(n,t,e);if(a===0){return n}const f=w(n,t,e)-r;n-=f/a}return n}function f(r){return r}function bezier(i,t,o,e){if(!(0<=i&&i<=1&&0<=o&&o<=1)){throw new Error("Bezier x values must be in [0, 1] range")}if(i===t&&o===e){return f}const v=n?new Float32Array(l):new Array(l);for(let r=0;r<l;++r){v[r]=w(r*s,i,o)}function u(r){const e=l-1;let n=0,t=1;for(;t!==e&&v[t]<=r;++t){n+=s}--t;const u=(r-v[t])/(v[t+1]-v[t]),a=n+u*s,f=y(a,i,o);if(f>=c){return A(r,a,i,o)}else if(f===0){return a}else{return h(r,n,n+s,i,o)}}return function r(n){if(n===0){return 0}if(n===1){return 1}return w(u(n),t,e)}} this.scroll = bezier(0.25, 0.1, 0.25, 1); this.bar = bezier(0.165,0.84,0.44,1); this.barFast = bezier(0.19, 1, 0.22, 1); this.inertia = bezier(0.23, 1, 0.32, 1);}; const ease = new Bezier();
 
 function panel_operations() {
 	this.splitter = '|';
@@ -672,6 +942,8 @@ function panel_operations() {
 	this.grp_split_clone = [];
 	this.grp_split_orig = [];
 	this.f_menu = [];
+	this.last_pressed_coord = {x: -1, y: -1};
+	this.list = new FbMetadbHandleList();
 	this.menu = [];
 	this.multi_value = [];
 	this.m_x = 0;
@@ -685,17 +957,17 @@ function panel_operations() {
 	this.s_w1 = 0;
 	this.s_w2 = 0;
 	this.tf = "";
+	// this.scale = 0;
 
 	libraryProps.rootNode = Math.max(Math.min(libraryProps.rootNode, 2), 0);
 	//this.syncType = window.GetProperty(" Library Sync: Auto-0, Initialisation Only-1") !== undefined ? window.GetProperty(" Library Sync: Auto-0, Initialisation Only-1") : 1;
 	this.syncType = 1;	// init only
-	this.scale = Math.max(libraryProps.filterZoom / 100, 0.9);
-	libraryProps.filterZoom = this.scale * 100;
+	libraryProps.filterZoom = Math.max(libraryProps.filterZoom / 100, 0.9) * 100;
 
-	this.setFilterFont = function() {
+	this.setFilterFont = () => {
 		var scale = Math.max(libraryProps.filterZoom / 100, 0.9);
-		this.filter_font = gdi.Font("Segoe UI", scale > 1.05 ? Math.floor(12 * ui.scale * scale) : 12 * ui.scale * scale, 1);
-		this.filter_but_ft = gdi.Font("Segoe UI", scale > 1.05 ? Math.floor(9 * ui.scale * scale) : 9 * ui.scale * scale, 1);
+		this.filterFont = gdi.Font("Segoe UI", scale > 1.05 ? Math.floor(12 * s.scale * scale) : 12 * s.scale * scale, 1);
+		this.filterBtnFont = gdi.Font("Segoe UI", scale > 1.05 ? Math.floor(9 * s.scale * scale) : 9 * s.scale * scale, 1);
 	}
 	this.setFilterFont();
 
@@ -727,26 +999,21 @@ function panel_operations() {
 	var paint_y = Math.floor(libraryProps.searchMode || !libraryProps.showScrollbar ? this.s_h : 0);
 	this.tree_paint = function() {window.RepaintRect(ui.x, ui.y + paint_y, ui.w, ui.h - paint_y + 1);}
 	this.view_by = window.GetProperty("SYSTEM.View By", 1);
-	this.calc_text = function() {
-		this.f_w = [];
-		var im = gdi.CreateImage(1, 1),
-			g = im.GetGraphics();
-		for (i = 0; i < this.filt.length; i++) {
-			this.f_w[i] = g.CalcTextWidth(this.filt[i].name, this.filter_font);
-			if (!i)
-				this.f_h = g.CalcTextHeight("String", this.filter_font);
-		}
-		this.f_sw = g.CalcTextWidth("   ▼", this.filter_but_ft);
-		this.filter_x1 = ui.x + ui.w - ui.margin - this.f_w[this.filter_by] - this.f_sw;
-		this.s_w2 = libraryProps.searchMode > 1 ? this.filter_x1 - this.s_x - 11 : this.s_w1 - Math.round(ui.row_h * 0.75) - this.s_x + 1;
-		im.ReleaseGraphics(g);
+	this.calc_text = () => {
+		s.gr(1, 1, false, g => {
+            this.f_h = g.CalcTextHeight("String", this.filterFont);
+            this.f_w = this.filt.map(v => g.CalcTextWidth(v.name, this.filterFont));
+            this.f_sw = g.CalcTextWidth("   ▼", this.filterBtnFont);
+        });
+        this.filter_x1 = ui.x + ui.w - ui.margin - this.f_w[this.filterBy] - this.f_sw;
+        this.s_w2 = libraryProps.searchShow > 1 ? this.filter_x1 - this.s_x - 11 : this.s_w1 - Math.round(ui.row_h * 0.75) - this.s_x + 1;
 	}
 
 	this.getBaseName = function() {
 		return libraryProps.rootNode == 2 ? this.grp[this.view_by].name : "All Music";
 	}
 
-	this.fields = function(view, filter) {
+	this.fields = (view, filter) => {
 		this.filt = [];
 		this.folder_view = 10;
 		this.grp = [];
@@ -808,10 +1075,11 @@ function panel_operations() {
 				if (this.multi_value[i]) this.grp_split[i] = this.grp_split_clone[i].replace(/%</g, "#!#$meta_sep(").replace(/>%/g, "," + "@@)#!#");
 				this.view += (this.grp_split[i] + "|");
 			}
+			let ix1, ix2;
 			if (!this.multiProcess) this.view = this.view.replace(/\$nodisplay{.*?}/gi, "");
-			else while(this.view.indexOf("$nodisplay{") != -1) {var ix1 = this.view.indexOf("$nodisplay{"), ix2 = this.view.indexOf("}", ix1); this.view = replaceAt(this.view, ix2, " #@#"); this.view = this.view.replace("$nodisplay{", "#@#");}
+			else while(this.view.indexOf("$nodisplay{") != -1) {ix1 = this.view.indexOf("$nodisplay{"); ix2 = this.view.indexOf("}", ix1); this.view = replaceAt(this.view, ix2, " #@#"); this.view = this.view.replace("$nodisplay{", "#@#");}
 			this.view = this.view.slice(0, -1);
-			while(this.grp_sort.indexOf("$nodisplay{") != -1) {var ix1 = this.grp_sort.indexOf("$nodisplay{"), ix2 = this.grp_sort.indexOf("}", ix1); this.grp_sort = replaceAt(this.grp_sort, ix2, " "); this.grp_sort = this.grp_sort.replace("$nodisplay{", "");}
+			while(this.grp_sort.indexOf("$nodisplay{") != -1) {ix1 = this.grp_sort.indexOf("$nodisplay{"); ix2 = this.grp_sort.indexOf("}", ix1); this.grp_sort = replaceAt(this.grp_sort, ix2, " "); this.grp_sort = this.grp_sort.replace("$nodisplay{", "");}
 		} window.SetProperty("SYSTEM.Filter By", filter); window.SetProperty("SYSTEM.View By", view);
 		this.baseName = this.getBaseName();
 		this.f_menu = [];
@@ -847,7 +1115,7 @@ function panel_operations() {
 		window.SetProperty(prefix + "View Filter " + padNumber(i, 2) + ": Name // Query", " // ");
 	}
 
-	this.on_size = function() {
+	this.on_size = () => {
 		this.filter_x1 = ui.x + ui.w - ui.margin - this.f_w[this.filter_by] - this.f_sw;
 		this.s_x = ui.x + Math.round(ui.margin + ui.row_h);
 		this.s_y = ui.y;
@@ -861,21 +1129,38 @@ function panel_operations() {
 		this.rows = Math.floor(this.rows);
 		this.sp = ui.row_h * this.rows;
 		this.node_y = Math.round((ui.row_h - ui.node_sz) / 1.75);
-		var sbar_top = !ui.scr_type ? 5 : libraryProps.searchMode ? 3 : 0, sbar_bot = !ui.scr_type ? 5 : 0;
-		this.sbar_o = [ui.arrow_pad, Math.max(Math.floor(ui.scr_but_w * 0.2), 3) + ui.arrow_pad * 2, 0][ui.scr_type];
+		var sbar_top = !ui.sbarType ? 5 : libraryProps.searchMode ? 3 : 0, sbar_bot = !ui.sbarType ? 5 : 0;
+		this.sbar_o = [ui.arrow_pad, Math.max(Math.floor(ui.scr_but_w * 0.2), 3) + ui.arrow_pad * 2, 0][ui.sbarType];
 		this.sbar_x = ui.x + ui.w - ui.sbar_sp;
-		var top_corr = [this.sbar_o - (ui.but_h - ui.scr_but_w) / 2, this.sbar_o, 0][ui.scr_type];
-		var bot_corr = [(ui.but_h - ui.scr_but_w) / 2 - this.sbar_o, -this.sbar_o, 0][ui.scr_type];
+		var top_corr = [this.sbar_o - (ui.but_h - ui.scr_but_w) / 2, this.sbar_o, 0][ui.sbarType];
+		var bot_corr = [(ui.but_h - ui.scr_but_w) / 2 - this.sbar_o, -this.sbar_o, 0][ui.sbarType];
 		var sbar_y = ui.y + (libraryProps.searchMode ? this.s_sp + 1 : 0) + sbar_top + top_corr;
 		var sbar_h =
 				// ui.scr_type < js_stnd && true ?
 				this.sp + 1 - sbar_top - sbar_bot + bot_corr * 2 //:
 				// ui.y + ui.h - sbar_y - sbar_bot + bot_corr;
-		if (ui.scr_type == 2) {
+		if (ui.sbarType == 2) {
 			sbar_y += 1;
 			sbar_h -= 2;
 		}
 		sbar.metrics(this.sbar_x, sbar_y, ui.scr_w, sbar_h, this.rows, ui.row_h);
+	}
+
+	this.resetZoom = () => {
+		libraryProps.zoomFont = 100;
+		libraryProps.zoomNode = 100;
+		this.zoomFilter = 1;
+		libraryProps.zoomFilter = 100;
+		// ppt.set(" Zoom Tooltip [Button] (%)", 100);
+		this.filterFont = gdi.Font("Segoe UI", 11 * s.scale * this.zoomFilter, 1);
+		this.filterBtnFont = gdi.Font("Segoe UI", 9 * s.scale * this.zoomFilter, 1);
+		this.calc_text();
+		ui.get_font();
+		this.on_size(); jumpSearch.on_size();
+		but.create_tooltip();
+		library_tree.create_tooltip();
+		if (libraryProps.searchShow || libraryProps.sbarShow) but.refresh(true); sbar.reset();
+		window.Repaint();
 	}
 }
 if ('DlgCode' in window) { window.DlgCode = 4; }
@@ -1525,8 +1810,8 @@ const ObjType = {
 	NoObj: 2
 };
 
+/** called Populate() in other version */
 function LibraryTree() {
-
 	var get_pos = -1,
 		handles = null,
 		is_focused = false,
@@ -1620,7 +1905,7 @@ function LibraryTree() {
 			}
 	}
 	// libraryProps.autoCollapse = window.GetProperty(" Node: Auto Collapse", false);
-	this.branch_chg = function(br) {var new_br = 0; if (br.tr == 0) {for (var i = 0; i < lib_manager.root.length; i++) {new_br += lib_manager.root[i].child.length; lib_manager.root[i].child = [];}} else {var par = this.tree[br.par]; for (var i = 0; i < par.child.length; i++) {new_br += par.child[i].child.length; par.child[i].child = [];}} return new_br;}
+	this.branch_chg = function(br, unused1, unused2) {var new_br = 0; if (br.tr == 0) {for (var i = 0; i < lib_manager.root.length; i++) {new_br += lib_manager.root[i].child.length; lib_manager.root[i].child = [];}} else {var par = this.tree[br.par]; for (var i = 0; i < par.child.length; i++) {new_br += par.child[i].child.length; par.child[i].child = [];}} return new_br;}
 	this.check_row = function (x, y) {
 		m_br = -1;
 		var im = this.get_ix(x, y, true, false);
@@ -1802,7 +2087,7 @@ function LibraryTree() {
 		return combinations;
 	}
 
-	this.buildTree = function(br, tr, node, full, block) {
+	this.buildTree = (br, tr, node, full, block) => {
 		const l = !libraryProps.rootNode ? tr : tr - 1; let i = 0, j = 0;
 		if (p.multiProcess) {
 			const multi_cond = [], multi_obj = [], multi_rem = [], nm_arr = [];
@@ -1934,38 +2219,58 @@ function LibraryTree() {
 	}
 
 	this.create_images = function() {
-		var sz = ui.node_sz,
-			plus = true,
+		const sz = ui.node_sz,
+			ln_w = Math.max(Math.floor(sz / 9), 1);
+		let plus = true,
 			hot = false,
-			ln_w = Math.max(Math.floor(sz / 7), 1),
 			sy_w = ln_w,
 			x = 0,
 			y = 0;
-		// if (((sz - ln_w * 3) / 2) % 1 != 0)
-		// 	sy_w = ln_w > 1 ? ln_w - 1 : ln_w + 1;
-		for (var j = 0; j < 4; j++) {
-			nd[j] = gdi.CreateImage(sz, sz);
-			g = nd[j].GetGraphics();
-			g.SetSmoothingMode(SmoothingMode.AntiAlias);
-			hot = j > 1 ? true : false;
-			plus = !j || j == 2 ? true : false;
-			g.FillSolidRect(x, y, sz, sz, RGB(145, 145, 145));
-			if (!hot) {
-				g.FillGradRect(x + ln_w, y + ln_w, sz - ln_w * 2, sz - ln_w * 2, 91, plus ? ui.iconcol_e[0] : ui.iconcol_c[0],
-					plus ? ui.iconcol_e[1] : ui.iconcol_c[1], 1.0);
-			} else {
-				g.FillGradRect(x + ln_w, y + ln_w, sz - ln_w * 2, sz - ln_w * 2, 91, ui.iconcol_hArr[0], ui.iconcol_hArr[1], 1.0);
-			}
-			var x_o = [x, x + sz - ln_w, x, x + sz - ln_w],
-				y_o = [y, y, y + sz - ln_w, y + sz - ln_w];
-			for (var i = 0; i < 4; i++)
-				g.FillSolidRect(x_o[i], y_o[i], ln_w, ln_w, RGB(186, 187, 188));
-			if (plus)
-			// 	g.FillSolidRect(Math.floor(x + (sz - sy_w) / 2), y + ln_w + Math.min(ln_w, sy_w), sy_w, sz - ln_w * 2 - Math.min(ln_w, sy_w) * 2, !hot ? ui.iconpluscol : ui.iconpluscol_h);
-			// g.FillSolidRect(x + ln_w + Math.min(ln_w, sy_w), Math.floor(y + (sz - sy_w) / 2), sz - ln_w * 2 - Math.min(ln_w, sy_w) * 2, sy_w, !hot ? ui.iconpluscol : ui.iconpluscol_h);
-				g.FillSolidRect(x + (sz - sy_w) / 2, y + ln_w + Math.min(ln_w, sy_w), sy_w, sz - ln_w * 2 - Math.min(ln_w, sy_w) * 2, !hot ? ui.iconpluscol : ui.iconpluscol_h);
-			g.FillSolidRect(x + ln_w + Math.min(ln_w, sy_w), y + (sz - sy_w) / 2, sz - ln_w * 2 - Math.min(ln_w, sy_w) * 2, sy_w, !hot ? ui.iconpluscol : ui.iconpluscol_h);
-			nd[j].ReleaseGraphics(g);
+		if (((sz - ln_w * 3) / 2) % 1 != 0)
+			sy_w = ln_w > 1 ? ln_w - 1 : ln_w + 1;
+		// // if (((sz - ln_w * 3) / 2) % 1 != 0)
+		// // 	sy_w = ln_w > 1 ? ln_w - 1 : ln_w + 1;
+		// for (var j = 0; j < 4; j++) {
+		// 	nd[j] = gdi.CreateImage(sz, sz);
+		// 	g = nd[j].GetGraphics();
+		// 	g.SetSmoothingMode(SmoothingMode.AntiAlias);
+		// 	hot = j > 1 ? true : false;
+		// 	plus = !j || j == 2 ? true : false;
+		// 	g.FillSolidRect(x, y, sz, sz, RGB(145, 145, 145));
+		// 	if (!hot) {
+		// 		g.FillGradRect(x + ln_w, y + ln_w, sz - ln_w * 2, sz - ln_w * 2, 91, plus ? ui.iconcol_e[0] : ui.iconcol_c[0],
+		// 			plus ? ui.iconcol_e[1] : ui.iconcol_c[1], 1.0);
+		// 	} else {
+		// 		g.FillGradRect(x + ln_w, y + ln_w, sz - ln_w * 2, sz - ln_w * 2, 91, ui.iconcol_hArr[0], ui.iconcol_hArr[1], 1.0);
+		// 	}
+		// 	var x_o = [x, x + sz - ln_w, x, x + sz - ln_w],
+		// 		y_o = [y, y, y + sz - ln_w, y + sz - ln_w];
+		// 	for (var i = 0; i < 4; i++)
+		// 		g.FillSolidRect(x_o[i], y_o[i], ln_w, ln_w, RGB(186, 187, 188));
+		// 	if (plus)
+		// 	// 	g.FillSolidRect(Math.floor(x + (sz - sy_w) / 2), y + ln_w + Math.min(ln_w, sy_w), sy_w, sz - ln_w * 2 - Math.min(ln_w, sy_w) * 2, !hot ? ui.iconpluscol : ui.iconpluscol_h);
+		// 	// g.FillSolidRect(x + ln_w + Math.min(ln_w, sy_w), Math.floor(y + (sz - sy_w) / 2), sz - ln_w * 2 - Math.min(ln_w, sy_w) * 2, sy_w, !hot ? ui.iconpluscol : ui.iconpluscol_h);
+		// 		g.FillSolidRect(x + (sz - sy_w) / 2, y + ln_w + Math.min(ln_w, sy_w), sy_w, sz - ln_w * 2 - Math.min(ln_w, sy_w) * 2, !hot ? ui.iconpluscol : ui.iconpluscol_h);
+		// 	g.FillSolidRect(x + ln_w + Math.min(ln_w, sy_w), y + (sz - sy_w) / 2, sz - ln_w * 2 - Math.min(ln_w, sy_w) * 2, sy_w, !hot ? ui.iconpluscol : ui.iconpluscol_h);
+		// 	nd[j].ReleaseGraphics(g);
+		// }
+
+        for (let j = 0; j < 4; j++) {
+            nd[j] = s.gr(sz, sz, true, g => {
+                hot = j > 1 ? true : false;
+				plus = !j || j == 2 ? true : false;
+                g.FillSolidRect(x, y, sz, sz, RGB(145, 145, 145));
+                if (!hot) g.FillGradRect(x + ln_w, y + ln_w, sz - ln_w * 2, sz - ln_w * 2, 91,  plus ? ui.col.icon_e[0] : ui.col.icon_c[0], plus ? ui.col.icon_e[1] : ui.col.icon_c[1], 1.0);
+                else g.FillGradRect(x + ln_w, y + ln_w, sz - ln_w * 2, sz - ln_w * 2, 91, ui.col.icon_h[0], ui.col.icon_h[1], 1.0);
+                let x_o = [x, x + sz - ln_w, x, x + sz - ln_w],
+					y_o = [y, y, y + sz - ln_w, y + sz - ln_w];
+				for (let i = 0; i < 4; i++)
+					g.FillSolidRect(x_o[i], y_o[i], ln_w, ln_w, RGB(186, 187, 188));
+                if (plus)
+					// g.FillSolidRect(Math.floor(x + (sz - sy_w) / 2), y + ln_w + Math.min(ln_w, sy_w), sy_w, sz - ln_w * 2 - Math.min(ln_w, sy_w) * 2, !hot ? ui.col.iconPlus : ui.col.iconPlus_h);
+					g.FillSolidRect(x + (sz - sy_w) / 2, y + ln_w + Math.min(ln_w, sy_w), sy_w, sz - ln_w * 2 - Math.min(ln_w, sy_w) * 2, !hot ? ui.col.iconPlus : ui.col.iconPlus_h);
+                g.FillSolidRect(x + ln_w + Math.min(ln_w, sy_w), Math.floor(y + (sz - sy_w) / 2), sz - ln_w * 2 - Math.min(ln_w, sy_w) * 2, sy_w, !hot ? (plus ? ui.col.iconMinus_e : ui.col.iconMinus_c) : ui.col.iconMinus_h);
+            });
 		}
 	}
 
@@ -2076,52 +2381,44 @@ function LibraryTree() {
 		lib_manager.treeState(false, libraryProps.rememberTree);
 	}
 
-	this.expand = function(ie, nm) {
-		var h = 0, m = 0; this.tree[ie].sel = true;
+	this.expand = (ie, nm) => {
+		let h = 0, m = 0; this.tree[ie].sel = true;
 		if (libraryProps.autoCollapse) {
-			var j = 0, par = 0, parent = [];
-			for (h = 0; h < this.tree.length; h++) if (this.tree[h].sel) {
-				j = this.tree[h].tr;
-				if (libraryProps.rootNode) j -= 1;
-				if (this.tree[h].tr != 0) {
-					par = this.tree[h].par;
-					let pr_pr = [];
-					for (let m = 1; m < j + 1; m++) {
-						if (m == 1) pr_pr[m] = par;
-						else pr_pr[m] = this.tree[pr_pr[m - 1]].par;
-						parent.push(pr_pr[m]);
+			const parent = [], pr_pr = []; let j = 0, par = 0;
+			this.tree.forEach((v, j, arr) => {
+				if (v.sel) {
+					j = v.tr; if (libraryProps.rootNode) j -= 1; if (v.tr != 0) {
+						par = v.par;
+						for (m = 1; m < j + 1; m++) {
+							if (m == 1) pr_pr[m] = par; else pr_pr[m] = arr[pr_pr[m - 1]].par;
+							parent.push(pr_pr[m]);
+						}
 					}
 				}
-			}
-			for (h = 0; h < this.tree.length; h++) if (!arr_contains(parent, h) && !this.tree[h].sel && (!libraryProps.rootNode || this.tree[h].tr)) this.tree[h].child = [] ; this.buildTree(lib_manager.root, 0);
+			});
+			this.tree.forEach((v, i) => {
+				if (!parent.includes(i) && !v.sel && (!libraryProps.rootNode || v.tr)) v.child = [];
+			});
+			this.buildTree(lib_manager.root, 0);
 		}
-		var start_l = this.tree.length,
-			nodes = -1;
-		m = this.tree.length;
-		while (m--) {
-			if (this.tree[m].sel) {
-				this.expandNodes(this.tree[m], !!libraryProps.rootNode && !m);
-				nodes++;
-			}
-		}
-		this.clear();
-		if (libraryProps.rootNode && this.tree.length == 1) this.line_l = 0; sbar.set_rows(this.tree.length); p.tree_paint(); var nm_n = "";
-		for (h = 0; h < this.tree.length; h++) {
-			nm_n = (this.tree[h].tr ? this.tree[this.tree[h].par].name : "") + this.tree[h].name; nm_n = nm_n.toUpperCase();
-			if (nm_n == nm) break;
-		}
-		var new_items = this.tree.length - start_l + nodes, s = Math.round(sbar.scroll / ui.row_h + 0.4), n = Math.max(h - s, libraryProps.rootNode ? 1 : 0);
-		if (n + 1 + new_items > sbar.rows_drawn) {if (new_items > (sbar.rows_drawn - 2)) sbar.check_scroll(h * ui.row_h); else sbar.check_scroll(Math.min(h * ui.row_h,(h + 1 - sbar.rows_drawn + new_items) * ui.row_h));}
-		if (sbar.scroll > h * ui.row_h) sbar.check_scroll(h * ui.row_h); lib_manager.treeState(false, libraryProps.rememberTree);
+		const start_l = this.tree.length; let nm_n = "", nodes = -1; m = this.tree.length; while (m--) if (this.tree[m].sel) {this.expandNodes(this.tree[m], !libraryProps.rootNode || m ? false : true); nodes++;} this.clear();
+		sbar.set_rows(this.tree.length); p.tree_paint();
+		this.tree.some((v, i, arr) => {
+			nm_n = (v.tr ? arr[v.par].name : "") + v.name; nm_n = nm_n.toUpperCase();
+			if (nm_n == nm) {h = i; return true;}
+		});
+		const new_items = this.tree.length - start_l + nodes, b = Math.round(sbar.scroll / ui.row_h + 0.4), n = Math.max(h - b, libraryProps.rootNode ? 1 : 0); let scrollChk = false;
+		if (n + 1 + new_items > this.rows) {scrollChk = true; if (new_items > this.rows - 2) sbar.check_scroll(h * ui.row_h); else sbar.check_scroll(Math.min(h * ui.row_h,(h + 1 - sbar.rows_drawn + new_items) * ui.row_h));}
+		if (sbar.scroll > h * ui.row_h) {scrollChk = true; sbar.check_scroll(h * ui.row_h);} if (!scrollChk) sbar.scroll_round(); lib_manager.treeState(false, libraryProps.rememberTree);
 	}
 
 	this.draw = function(gr) {
 		try {
 			// ui.linecol = rgb(0,0,255);
 			if (lib_manager.empty)
-				return gr.GdiDrawText(lib_manager.empty, ui.font, ui.textcol, ui.x + ui.margin, ui.y + p.s_h, sbar.tree_w, ui.row_h * 5, 0x00000004 | 0x00000400);
+				return gr.GdiDrawText(lib_manager.empty, ui.font, ui.col.text, ui.x + ui.margin, ui.y + p.s_h, sbar.tree_w, ui.row_h * 5, 0x00000004 | 0x00000400);
 			if (!this.tree.length)
-				return gr.GdiDrawText(lib_manager.none, ui.font, ui.textcol, ui.x + ui.margin, ui.y + p.s_h, sbar.tree_w, ui.row_h, 0x00000004 | 0x00000400);
+				return gr.GdiDrawText(lib_manager.none, ui.font, ui.col.text, ui.x + ui.margin, ui.y + p.s_h, sbar.tree_w, ui.row_h, 0x00000004 | 0x00000400);
 			var libraryProfiler = timings.showDrawTiming && fb.CreateProfiler('library_tree');
 			var item_x = 0,
 				item_y = 0,
@@ -2173,7 +2470,7 @@ function LibraryTree() {
 				}
 
 				item_y = Math.round(ui.y + ui.row_h * i + p.s_h - sbar.delta);
-				if (ui.alternate) {
+				if (pptDefault.rowStripes) {
 					if (i % 2 == 0)
 						gr.FillSolidRect(ui.x, item_y + 1, sbar.stripe_w, ui.row_h - 2, ui.b1);
 					else
@@ -2229,7 +2526,7 @@ function LibraryTree() {
 					item_w = ui.x + sbar.tree_w - item_x;
 				}
 				item.w = item_w;
-				var txt_c = item.sel ? ui.textselcol : m_i == i ? ui.textcol_h : ui.textcol;
+				var txt_c = item.sel ? ui.textselcol : m_i == i ? ui.col.text_h : ui.col.text;
 				if (new Color(bgColor).brightness > 180) {
 					txt_c = m_i == i ? rgb(0,0,0) : rgb(48,48,48);
 				}
@@ -2255,7 +2552,7 @@ function LibraryTree() {
 		else this.tracking(item.item, true);
 	}
 
-	this.lbtn_dn = function(x, y) {
+	this.lbtn_dn = (x, y) => {
 		lbtn_dn = false;
 		sent = false;
 		if (y < p.s_h) return;
@@ -2387,7 +2684,7 @@ function LibraryTree() {
 		}
 	}
 
-	this.get_selection = function(idx, state, add, bypass) {
+	this.get_selection = (idx, state, add, bypass) => {
 		var sel_type = idx == -1 && !add ? 0 : v.k(SHIFT) && last_sel > -1 && !bypass ? 1 : v.k(CTRL) && !bypass ? 2 : !state ? 3 : 0;
 		switch (sel_type) {
 			case 0: this.clear(); this.sel_items = []; break;
@@ -2519,10 +2816,10 @@ function searchLibrary() {
 		txt_w = 0,
 		cursor_width = scaleForDisplay(1);
 	var calc_text = function () {var im = gdi.CreateImage(1, 1), g = im.GetGraphics(); txt_w = g.CalcTextWidth(p.s_txt.substr(offsetChars), ui.font); im.ReleaseGraphics(g); }
-	var drawcursor = function (gr) {
+	var drawcursor = (gr) => {
 		if (p.s_search && p.s_cursor && selStart == selEnd && cx >= offsetChars) {
 			var x1 = p.s_x + get_cursor_x(cx);
-			gr.DrawLine(x1, p.s_y + p.s_sp * 0.1, x1, p.s_y + p.s_sp * 0.85, cursor_width, ui.textcol);
+			gr.DrawLine(x1, p.s_y + p.s_sp * 0.1, x1, p.s_y + p.s_sp * 0.85, cursor_width, ui.col.text);
 		}
 	}
 	/**
@@ -2558,6 +2855,7 @@ function searchLibrary() {
 	var record = function() {lg.push(p.s_txt); log = []; if (lg.length > 30) lg.shift();}
 	this.clear = function() {
 		lib_manager.time.Reset(); library_tree.subCounts.search = {}; offsetChars = selStart = selEnd = cx = 0; p.s_cursor = false; p.s_search = false; p.s_txt = "";
+		but.set_scroll_btns_hide();
 		p.search_paint(); timer.reset(timer.search_cursor); lib_manager.rootNodes();
 		// if (p.pn_h_auto && p.pn_h == p.pn_h_min && library_tree.tree[0]) library_tree.clear_child(library_tree.tree[0]);
 	}
@@ -2752,13 +3050,13 @@ function searchLibrary() {
 				}
 				gr.GdiDrawText(p.s_txt.substr(offsetChars), ui.font, txt_col, p.s_x, p.s_y, p.s_w2, p.s_sp, p.l);
 			} else {
-				gr.GdiDrawText('Search', ui.s_font, ui.txt_box, p.s_x, p.s_y, p.s_w2, p.s_sp, p.l);
+				gr.GdiDrawText('Search', ui.searchFont, ui.txt_box, p.s_x, p.s_y, p.s_w2, p.s_sp, p.l);
 			}
 			drawcursor(gr);
 			if (libraryProps.searchMode > 1) {
 				var l_x = p.filter_x1 - 8 - ui.l_width,
 					l_y = p.s_y;
-				gr.GdiDrawText(p.filt[p.filterBy].name, p.filter_font, ui.txt_box, p.filter_x1, ui.y, p.f_w[p.filterBy], p.s_sp, p.cc);
+				gr.GdiDrawText(p.filt[p.filterBy].name, p.filterFont, ui.txt_box, p.filter_x1, ui.y, p.f_w[p.filterBy], p.s_sp, p.cc);
 				gr.FillSolidRect(l_x, l_y, ui.l_width, p.s_sp, ui.s_linecol);
 			}
 		} catch (e) {
@@ -2876,179 +3174,396 @@ class LibraryPanel {
     }
 }
 
-function button_manager() {
-	// arrow_symb = 0;
-	var b_x,
-		b3 = ["scrollUp", "scrollDn"],
-		but_tt = g_tooltip,
-		bx, by, bh, byDn, byUp, fw, hot_o, i, qx, qy, qh, s_img = [],
-		scr = [],
-		scrollBut_x, scrollDn_y, scrollUp_y;
-	this.btns = [];
-	this.b = null;
-	this.Dn = false;
-	var browser = function(c) {if (!_.runCmd(c)) fb.ShowPopupMessage("Unable to launch your default browser.", "Library Tree");}
-	var tooltip = function(n) {if (but_tt.text == n) return; but_tt.text = n; but_tt.Activate();}
-	this.lbtn_dn = function (x, y) {
-		this.move(x, y);
-		if (!this.b) return false;
-		this.Dn = this.b;
-		if (libraryProps.showScrollbar) {
-			for (let j = 0; j < b3.length; j++) {
-				if (this.b == b3[j]) {
-					if (this.btns[this.b].trace(x, y)) {
-						this.btns[this.b].down = true;
-					}
-					this.btns[this.b].changestate("down");
-				}
-			}
-		}
-		this.btns[this.b].lbtn_dn(x, y);
-		return true;
-	}
-	this.lbtn_up = function (x, y) {
-		this.Dn = false;
-		if (libraryProps.showScrollbar)
-			for (let j = 0; j < b3.length; j++) this.btns[b3[j]].down = false;
-		if (!this.b) return false;
-		if (libraryProps.showScrollbar)
-			for (let j = 0; j < b3.length; j++)
-				if (this.b == b3[j]) this.btns[this.b].changestate(this.btns[this.b].trace(x, y) ? "hover" : "normal");
-		this.move(x, y);
-		if (!this.b) return false;
-		this.btns[this.b].lbtn_up(x, y);
-		return true;
-	}
-	this.leave = function () {
-		if (this.b) this.btns[this.b].changestate("normal");
-		this.b = null;
-		tooltip("");
-	}
-	this.on_script_unload = function() {tooltip("");}
+function Buttons() {
+    const sbarButPad = s.clamp(pptDefault.sbarButPad / 100, -0.5, 0.3), sAlpha = pptDefault.sbarCol ? [68, 153, 255] : [75, 192, 228], scrBtns = ["scrollUp", "scrollDn"];
+    let arrow_symb = 0, b_x, bx, by, bh, byDn, byUp, cur_btn = null, fw, hot_o, i, iconFontName = "Segoe UI", iconFontStyle = 0, qx, qy, qh, s_img, scrollBtn, scrollBtn_x, scrollDn_y, scrollUp_y, tooltip, transition, tt_start = Date.now() - 2000;
+    this.btns = {}; this.Dn = false; this.show_tt = true;
 
-	this.create_images = function() {
-		var alpha = [75, 192, 228],
-			c,
-			col = [ui.textcol & 0x44ffffff, ui.textcol & 0x99ffffff, ui.textcol],
-			g,
-			// sz = arrow_symb == 0 ? Math.max(Math.round(ui.but_h * 1.666667), 1) : 100,
-			sz = Math.max(Math.round(ui.but_h * 1.666667), 1),
-			sc = sz / 100;
-		for (var j = 0; j < 2; j++) {
-			c = j ? 0xe4ffffff : 0x99ffffff;
-			s_img[j] = gdi.CreateImage(100, 100);
-			g = s_img[j].GetGraphics();
-			g.SetSmoothingMode(SmoothingMode.HighQuality);
-            g.DrawLine(69, 71, 88, 90, 12, ui.txt_box & c);
-            g.DrawEllipse(8, 11, 67, 67, 10, ui.txt_box & c);
+    // if (ppt.get(" Scrollbar Arrow Custom", false)) arrow_symb = ppt.arrowSymbol.replace(/\s+/g, "").charAt(); if (!arrow_symb.length) arrow_symb = 0;
+    // if (ppt.customCol && ppt.butCustIconFont.length) {
+    //     const butCustIconFont = ppt.butCustIconFont.splt(1);
+    //     iconFontName = butCustIconFont[0];
+    //     iconFontStyle = Math.round(s.value(butCustIconFont[1], 0, 0));
+    // }
 
-            g.FillEllipse(15, 17, 55, 55, 0x0AFAFAFA);
-			g.SetSmoothingMode(SmoothingMode.Default);
-			s_img[j].ReleaseGraphics(g);
-		}
-		for (j = 0; j < 3; j++) {
-			scr[j] = gdi.CreateImage(sz, sz);
-			g = scr[j].GetGraphics();
-			g.SetTextRenderingHint(3);
-			g.SetSmoothingMode(SmoothingMode.HighQuality);
-			if (ui.scr_col) {
-				g.FillPolygon(col[j], 1, [50 * sc, 0, 100 * sc, 76 * sc, 0, 76 * sc]);
-			} else {
-				g.FillPolygon(RGBA(ui.ct, ui.ct, ui.ct, alpha[j]), 1, [50 * sc, 0, 100 * sc, 76 * sc, 0, 76 * sc]);
-			}
-			g.SetSmoothingMode(SmoothingMode.Default);
-			scr[j].ReleaseGraphics(g);
-		}
-	};
-	this.create_images();
+    const clear = () => {this.Dn = false; Object.values(this.btns).forEach(v => v.down = false);}
+    // const tt = (n, force) => {if (tooltip.Text !== n || force) {tooltip.Text = n; tooltip.Activate();}}
 
-	this.draw = function(gr) {
-		try {
-			for (i in this.btns) {
-				if ((libraryProps.searchMode == 1 || libraryProps.searchMode > 1 && !p.s_txt) && i == "s_img") this.btns[i].draw(gr);
-				if (libraryProps.searchMode == 1 && i == "cross1") this.btns[i].draw(gr);
-				if (libraryProps.searchMode > 1 && p.s_txt && i == "cross2") this.btns[i].draw(gr);
-				if (libraryProps.searchMode > 1 && i == "filter") this.btns[i].draw(gr);
-				if (libraryProps.showScrollbar && sbar.scrollable_lines > 0 && (i == "scrollUp" || i == "scrollDn"))  this.btns[i].draw(gr);
-			}
-		} catch (e) {}
-	}
-	this.move = function(x, y) {
-		if (sbar.timer_but) {if ((this.btns["scrollUp"].down || this.btns["scrollDn"].down) && !this.btns["scrollUp"].trace(x, y) && !this.btns["scrollDn"].trace(x, y)) {this.btns["scrollUp"].changestate("normal"); this.btns["scrollDn"].changestate("normal"); clearTimeout(sbar.timer_but); sbar.timer_but = false; sbar.count = -1;}}
-		else for (let j = 0; j < b3.length; j++) if (this.b == b3[j] && this.btns[this.b].down) {this.btns[this.b].changestate("down"); this.btns[this.b].l_dn();}
-		var b = null, hand = false;
-		for (i in this.btns) {
-			if ((libraryProps.searchMode == 1 || libraryProps.searchMode > 1 && !p.s_txt) && i == "s_img" && (!this.Dn || this.Dn == "s_img") && this.btns[i].trace(x, y)) {b = i; hand = true;}
-			if (libraryProps.searchMode == 1 && i == "cross1" && (!this.Dn || this.Dn == "cross1") && this.btns[i].trace(x, y)) {b = i; hand = true;}
-			if (libraryProps.searchMode > 1 && p.s_txt && i == "cross2" && (!this.Dn || this.Dn == "cross2") && this.btns[i].trace(x, y)) {b = i; hand = true;}
-			if (libraryProps.searchMode > 1 && i == "filter" && (!this.Dn || this.Dn == "filter") && this.btns[i].trace(x, y)) {b = i; hand = true;}
-			if (libraryProps.showScrollbar && sbar.scrollable_lines > 0) for (let j = 0; j < b3.length; j++) if (i == b3[j] && (!this.Dn || this.Dn == b3[j]) && this.btns[i].trace(x, y)) b = i;
-		}
-		window.SetCursor(this.Dn && this.Dn != this.b ? 32512 : hand ? 32649 : y < p.s_h && libraryProps.searchMode && x > qx + qh ? 32513 : 32512);
-		if (this.b == b) return this.b;
-		if (b && (!this.Dn || this.Dn == b)) this.btns[b].changestate("hover");
-		if (this.b) this.btns[this.b].changestate("normal");
-		this.b = b;
-		if (!this.b) tooltip("");
-		return this.b;
-	}
+    this.create_images = () => {
+        const sz = arrow_symb == 0 ? Math.max(Math.round(ui.but_h * 1.666667), 1) : 100, sc = sz / 100, iconFont = gdi.Font(iconFontName, sz, iconFontStyle);
+            s_img = s.gr(100, 100, true, g => {
+                g.SetSmoothingMode(2);
+                if (!ui.local) {g.DrawLine(69, 71, 88, 90, 12, ui.col.txt_box); g.DrawEllipse(8, 11, 67, 67, 10, ui.col.txt_box);}
+                else {g.DrawLine(69, 71, 88, 90, 12, ui.col.txt_box); g.DrawEllipse(8, 11, 67, 67, 10, ui.col.txt_box);}
+                g.FillEllipse(15, 17, 55, 55, 0x0AFAFAFA); g.SetSmoothingMode(0);
+            });
+                scrollBtn = s.gr(sz, sz, true, g => {
+                    g.SetTextRenderingHint(3); g.SetSmoothingMode(2);
+                    if (pptDefault.sbarCol) {arrow_symb == 0 ? g.FillPolygon(ui.col.text, 1, [50 * sc, 0, 100 * sc, 76 * sc, 0, 76 * sc]) : g.DrawString(arrow_symb, iconFont, ui.col.text, 0, sz * sbarButPad, sz, sz, StringFormat(1, 1));}
+                    else {arrow_symb == 0 ? g.FillPolygon(RGBA(ui.col.t, ui.col.t, ui.col.t, 255), 1, [50 * sc, 0, 100 * sc, 76 * sc, 0, 76 * sc]) :
+                    g.DrawString(arrow_symb, iconFont, RGBA(ui.col.t, ui.col.t, ui.col.t, 255), 0, sz * sbarButPad, sz, sz, StringFormat(1, 1));} g.SetSmoothingMode(0);
+                });
+     }; this.create_images();
 
-	var btn = function(x, y, w, h, type, ft, txt, stat, img_src, down, l_dn, l_up, tooltext) {
-		this.draw = function (gr) {
-			switch (type) {
-				case 3: gr.SetInterpolationMode(2); if (this.img) gr.DrawImage(this.img, this.x, this.y, this.w, this.h, 0, 0, this.img.Width, this.img.Height); gr.SetInterpolationMode(0); break;
-				case 4: gr.DrawLine(Math.round(this.x + bh * 0.67), Math.round(this.y + bh * 0.67), Math.round(this.x + bh * 0.27), Math.round(this.y + bh * 0.27), Math.round(bh / 10), RGBA(136, 136, 136, this.img)); gr.DrawLine(Math.round(this.x + bh * 0.67), Math.round(this.y + bh * 0.27), Math.round(this.x + bh * 0.27), Math.round(this.y + bh * 0.67), Math.round(bh / 10), RGBA(136, 136, 136, this.img)); break;
-				case 5: gr.SetTextRenderingHint(5); gr.DrawString(txt, ft, this.img, this.x, this.y - 1, this.w, this.h, StringFormat(2, 1)); break;
-				case 6: ui.theme.SetPartAndStateID(1, this.img); ui.theme.DrawThemeBackground(gr, this.x, this.y, this.w, this.h); break;
-				default: if (this.img) gr.DrawImage(this.img, this.x + ft, txt, stat, stat, 0, 0, this.img.Width, this.img.Height, type == 1 ? 0 : 180); break;
-			}
-		}
-		this.trace = function(x, y) {return x > this.x && x < this.x + this.w && y > this.y && y < this.y + this.h;}
-		this.lbtn_dn = function () {this.l_dn && this.l_dn(x, y);}
-		this.lbtn_up = function () {this.l_up && this.l_up(x, y);}
+	this.create_tooltip = () => tooltip = g_tooltip; //window.CreateTooltip("Segoe UI", 15 * s.scale * /* ppt.get(" Zoom Tooltip [Button] (%)", 100)*/ 100 / 100, 0);
+	this.create_tooltip();
+    this.lbtn_dn = (x, y) => {this.move(x, y); if (!cur_btn || cur_btn.hide) {this.Dn = false; return false} else this.Dn = cur_btn.name; cur_btn.down = true; cur_btn.cs("down"); cur_btn.lbtn_dn(x, y); return true;}
+    this.leave = () => {if (cur_btn) {cur_btn.cs("normal"); if (!cur_btn.hide) transition.start();} cur_btn = null;}
+    this.on_script_unload = () => tt("");
+    this.draw = gr => Object.values(this.btns).forEach(v => {if (!v.hide) v.draw(gr);});
+    this.reset = () => transition.stop();
+    this.set_scroll_btns_hide = (force) => {if (!this.btns || (!pptDefault.sbarShow && !force)) return; scrBtns.forEach((v, i) => {if (this.btns[v]) this.btns[v].hide = sbar.scrollable_lines < 1 || !pptDefault.sbarShow;});}
+    this.set_search_btns_hide = () => {
+        if (this.btns.s_img) this.btns.s_img.hide = pptDefault.searchShow > 1 && p.s_txt;
+        if (this.btns.cross2) this.btns.cross2.hide = !this.btns.s_img.hide;
+    }
 
-		this.changestate = function(state) {
-			switch (state) {case "hover": this.img = this.img_hover; tooltip(this.tooltext); break; case "down": this.img = this.img_down; break; default: this.img = this.img_normal; break;}
-			window.RepaintRect(this.x, this.y, this.w + 1, this.h + 1);
-		}
-		this.x = x; this.y = y; this.w = w; this.h = h; this.l_dn = l_dn; this.l_up = l_up; this.tooltext = tooltext;
-		this.img_normal = img_src.normal; this.img_hover = img_src.hover || this.img_normal; this.img_down = img_src.down || this.img_normal; this.img = this.img_normal;
-	}
+    const Btn = function(x, y, w, h, type, ft, txt, stat, im, hide, l_dn, l_up, tiptext, hand, name) {
+        this.draw = gr => {
+            switch (this.type) {
+                case 1: case 2: drawScrollBtn(gr); break;
+                case 3: ui.theme.SetPartAndStateID(1, im[this.state]); ui.theme.DrawThemeBackground(gr, this.x, this.y, this.w, this.h); break;
+                case 4: drawSearch(gr); break;
+                case 5: drawCross(gr); break;
+                case 6: drawFilter(gr); break;
+            }
+        }
 
-	this.refresh = function(upd) {
-		if (upd) {
-			bx = p.s_w1 - Math.round(ui.row_h * 0.75);
+        this.cs = state => {this.state = state; if (state === "down" || state === "normal") tt.stop(); this.repaint();}
+        this.lbtn_dn = () => {if (!but.Dn) return; this.l_dn && this.l_dn(x, y);}
+        this.lbtn_up = (x, y) => {if (pptDefault.touchControl && Math.sqrt((Math.pow(p.last_pressed_coord.x - x, 2) + Math.pow(p.last_pressed_coord.y - y, 2))) > 3 * s.scale) return; if (this.l_up) this.l_up();}
+        this.repaint = () => {const expXY = 2, expWH = 4; window.RepaintRect(this.x - expXY, this.y - expXY, this.w + expWH, this.h + expWH);}
+        this.trace = (x, y) => {return x > this.x && x < this.x + this.w && y > this.y && y < this.y + this.h;}
+
+        this.x = x; this.y = y; this.w = w; this.h = h; this.type = type; this.hide = hide; this.l_dn = l_dn; this.l_up = l_up; this.tt = new _.tt_handler; this.tiptext = tiptext; this.transition_factor = 0; this.state = "normal"; this.hand = hand; this.name = name;
+
+        const drawCross = gr => {
+            let a; if (this.state !== "down") {const b = im.normal, c = im.hover - b; a = Math.min(b + c * this.transition_factor, im.hover);} else a = im.hover;
+            gr.DrawLine(Math.round(this.x + bh * 0.67), Math.round(this.y + bh * 0.67), Math.round(this.x + bh * 0.27), Math.round(this.y + bh * 0.27), Math.round(bh / 10), RGBA(136, 136, 136, a)); gr.DrawLine(Math.round(this.x + bh * 0.67), Math.round(this.y + bh * 0.27), Math.round(this.x + bh * 0.27), Math.round(this.y + bh * 0.67), Math.round(bh / 10), RGBA(136, 136, 136, a));
+        }
+
+		const drawFilter = gr => {
+            const col = !ui.local ? (this.state !== "down" ? ui.get_blend(im.hover, im.normal, this.transition_factor, true) : im.hover) : im.normal;
+            gr.SetTextRenderingHint(5);
+			console.log(Math.max(this.x, 0), this.y - 1, this.w, this.h)
+			gr.DrawString(txt, ft, col, Math.max(this.x, 0), this.y - 1, this.w, this.h, StringFormat(2, 1));
+        }
+
+		const drawScrollBtn = gr => {
+            const a = this.state !== "down" ? Math.min(sAlpha[0] + (sAlpha[1] - sAlpha[0]) * this.transition_factor, sAlpha[1]) : sAlpha[2];
+            if (scrollBtn) gr.DrawImage(scrollBtn, this.x + ft, txt, stat, stat, 0, 0, scrollBtn.Width, scrollBtn.Height, this.type == 1 ? 0 : 180, a);
+        }
+
+        const drawSearch = gr => {
+			const a = !ui.local ? (this.state !== "down" ? Math.min(153 + (228 - 153) * this.transition_factor, 228)  : 228) : 255;
+			gr.SetInterpolationMode(2); if (im.normal) gr.DrawImage(im.normal, this.x, this.y, this.w, this.h, 0, 0, im.normal.Width, im.normal.Height, 0, a); gr.SetInterpolationMode(0);
+        }
+    }
+
+    this.move = (x, y) => {
+        const hover_btn = Object.values(this.btns).find(v => {
+             if (!v.hide && (!this.Dn || this.Dn == v.name)) return v.trace(x, y);
+        });
+        let hand = false;
+        check_scrollBtns(x, y, hover_btn); if (hover_btn) hand = hover_btn.hand; window.SetCursor(hand ? 32649 : !this.Dn && y < p.s_h && pptDefault.searchShow && x > qx + qh ? 32513 : 32512);
+        if (hover_btn && hover_btn.hide) {if (cur_btn) {cur_btn.cs("normal"); transition.start();} cur_btn = null; return null;} // btn hidden, ignore
+        if (cur_btn === hover_btn) return cur_btn;
+        if (cur_btn) {cur_btn.cs("normal"); transition.start();} // return prev btn to normal state
+        if (hover_btn && !(hover_btn.down && hover_btn.type < 4)) {hover_btn.cs("hover"); if (this.show_tt) hover_btn.tt.showDelayed(hover_btn.tiptext); transition.start();}
+        cur_btn = hover_btn;
+        return cur_btn;
+    }
+
+    this.lbtn_up = (x, y) => {
+        if (!cur_btn || cur_btn.hide || this.Dn != cur_btn.name) {clear(); return false;}
+        clear();
+        if (cur_btn.trace(x, y)) cur_btn.cs("hover");
+        cur_btn.lbtn_up(x, y);
+        return true;
+    }
+
+    this.refresh = upd => {
+        if (upd) {
+            bx = p.s_w1 - Math.round(ui.row_h * 0.75);
 			bh = ui.row_h;
 			by = ui.y + Math.round((p.s_sp - bh * 0.4) / 2 - bh * 0.27);
-			b_x = p.sbar_x;
+            b_x = p.sbar_x;
 			byUp = sbar.y;
 			byDn = sbar.y + sbar.h - ui.but_h;
 			fw = p.f_w[p.filterBy] + p.f_sw + 12;
 			qx = ui.x + ui.margin;
 			qy = ui.y + (p.s_sp - ui.row_h * 0.6) / 2;
 			qh = ui.row_h * 0.6;
-			if (ui.scr_type != 2) {b_x -= 1; hot_o = byUp - p.s_h; scrollBut_x = (ui.but_h - ui.scr_but_w) / 2; scrollUp_y = -ui.arrow_pad + byUp + (ui.but_h - 1 - ui.scr_but_w) / 2; scrollDn_y = ui.arrow_pad + byDn + (ui.but_h - 1 - ui.scr_but_w) / 2 ;}
-		}
-		if (libraryProps.showScrollbar) {
-			switch (ui.scr_type) {
-				case 2:
-					this.btns.scrollUp = new btn(b_x, byUp, ui.but_h, ui.but_h, 6, "", "", "", {normal: 1, hover: 2, down: 3}, false, function() {sbar.but(1);}, "", "");
-					this.btns.scrollDn = new btn(b_x, byDn, ui.but_h, ui.but_h, 6, "", "", "", {normal: 5, hover: 6, down: 7}, false, function() {sbar.but(-1);}, "", "");
-					break;
+            if (ui.sbarType != 2) {b_x -= 1; hot_o = byUp - p.s_h; scrollBtn_x = (ui.but_h - ui.scr_but_w) / 2; scrollUp_y = -ui.arrow_pad + byUp + (ui.but_h - 1 - ui.scr_but_w) / 2; scrollDn_y = ui.arrow_pad + byDn + (ui.but_h - 1 - ui.scr_but_w) / 2 ;}
+        }
+        if (pptDefault.sbarShow) {
+			switch (ui.sbarType) {
+                case 2:
+                    this.btns.scrollUp = new Btn(b_x, byUp, ui.but_h, ui.but_h, 3, "", "", "", {normal: 1, hover: 2, down: 3}, sbar.scrollable_lines < 1, () => sbar.but(1), "", "", false, "scrollUp");
+                    this.btns.scrollDn = new Btn(b_x, byDn, ui.but_h, ui.but_h, 3, "", "", "", {normal: 5, hover: 6, down: 7}, sbar.scrollable_lines < 1, () => sbar.but(-1), "", "", false, "scrollDn");
+                    break;
 				default:
-					this.btns.scrollUp = new btn(b_x, byUp - hot_o, ui.but_h, ui.but_h + hot_o, 1, scrollBut_x, scrollUp_y, ui.scr_but_w, {normal: scr[0], hover: scr[1], down: scr[2]}, false, function() {sbar.but(1);}, "", "");
-					this.btns.scrollDn = new btn(b_x, byDn, ui.but_h, ui.but_h + hot_o, 2, scrollBut_x, scrollDn_y, ui.scr_but_w, {normal: scr[0], hover: scr[1], down: scr[2]}, false, function() {sbar.but(-1);}, "", "");
-					break;
-			}
-		}
-		if (libraryProps.searchMode)  {
-			this.btns.s_img = new btn(qx, qy, qh, qh, 3, "", "", "", {normal: s_img[0], hover: s_img[1]}, false, "", function() {browser("\"" + fb.FoobarPath + "doc\\Query Syntax Help.html");}, "Open Query Syntax Help");
-			this.btns.cross1 = new btn(bx, by, bh, bh, 4, "", "", "", {normal: "85", hover: "192"}, false, "", function() {sL.clear();}, "Clear Search Text");
-			this.btns.cross2 = new btn(qx - bh * 0.2, by, bh, bh, 4, "", "", "", {normal: "85", hover: "192"}, false, "", function() {sL.clear();}, "Clear Search Text");
-			this.btns.filter = new btn(p.filter_x1 - 12, ui.y, fw, p.s_sp, 5, p.filter_but_ft, "▼", "", {normal: ui.txt_box & 0x99ffffff, hover: ui.txt_box & 0xe4ffffff}, false, "", function() {men.button(p.filter_x1, p.s_h); but.refresh(true)}, "Filter");
-		}
+                    this.btns.scrollUp = new Btn(b_x, byUp - hot_o, ui.but_h, ui.but_h + hot_o, 1, scrollBtn_x, scrollUp_y, ui.scr_but_w, "", sbar.scrollable_lines < 1, () => sbar.but(1), "", "", false, "scrollUp");
+                    this.btns.scrollDn = new Btn(b_x, byDn, ui.but_h, ui.but_h + hot_o, 2, scrollBtn_x, scrollDn_y, ui.scr_but_w, "", sbar.scrollable_lines < 1, () => sbar.but(-1), "", "", false, "scrollDn");
+                    break;
+            }
+        }
+            if (pptDefault.searchShow) this.btns.s_img = new Btn(qx, qy, qh, qh, 4, "", "", "", {normal: s_img}, pptDefault.searchShow > 1 && p.s_txt, "", () => {let fn = fb.FoobarPath + "doc\\Query Syntax Help.html"; if (!s.file(fn)) fn = fb.FoobarPath + "Query Syntax Help.html"; s.browser("\"" + fn);}, "Open Query Syntax Help", true, "s_img");
+            if (pptDefault.searchShow == 2) {
+                this.btns.cross2 = new Btn(qx - bh * 0.2, by, bh, bh, 5, "", "", "", {normal: 85, hover: 192}, !p.s_txt, "", () => {sL.clear();}, "Clear Search Text", true, "cross2");
+                this.btns.filter = new Btn(p.filter_x1 - 12, 0, fw, p.s_sp, 6, p.filterBtnFont, "▼", "", {normal: !ui.local ? (ui.col.txt_box & 0x99ffffff) : ui.col.txt_box, hover: ui.col.txt_box & 0xe4ffffff}, pptDefault.searchShow != 2, "", () => {men.button(p.filter_x1, p.s_h); but.btns.filter.x = p.filter_x1 - 12; but.btns.filter.w = p.f_w[p.filterBy] + p.f_sw + 12;}, "Filter", true, "filter");
+            }
+        if (pptDefault.searchShow == 1) this.btns.cross1 = new Btn(bx, by, bh, bh, 5, "", "", "", {normal: 85, hover: 192}, pptDefault.searchShow != 1, "", () => {sL.clear();}, "Clear Search Text");
+        transition = new Transition(this.btns, v => v.state !== 'normal');
+    }
+
+    const Transition = function(items_arg, hover_predicate) {
+        this.start = () => {
+            const hover_in_step = 0.2, hover_out_step = 0.06;
+            if (!transition_timer) {
+                transition_timer = setInterval(() => {
+                    Object.values(items).forEach(v => {
+                        const saved = v.transition_factor;
+                        if (hover(v)) v.transition_factor = Math.min(1, v.transition_factor += hover_in_step);
+                        else v.transition_factor = Math.max(0, v.transition_factor -= hover_out_step);
+                        if (saved !== v.transition_factor) v.repaint();
+                    });
+                    const running = Object.values(items).some(v => v.transition_factor > 0 && v.transition_factor < 1);
+                    if (!running) this.stop();
+                }, 25);
+            }
+        }
+        this.stop = () => {
+            if (transition_timer) {
+                clearInterval(transition_timer);
+                transition_timer = null;
+            }
+        }
+    const items = items_arg, hover = hover_predicate; let transition_timer = null;
+    }
+
+    // const Tooltip = function() {
+    //     this.show = text => {if (Date.now() - tt_start > 2000) this.showDelayed(text); else this.showImmediate(text); tt_start = Date.now();}
+    //     this.showDelayed = text => tt_timer.start(this.id, text);
+    //     this.showImmediate = text => {tt_timer.set_id(this.id); tt_timer.stop(this.id); tt(text);}
+    //     this.clear = () => tt_timer.stop(this.id);
+    //     this.stop = () => tt_timer.force_stop();
+    //     this.id = Math.ceil(Math.random() * 100000);
+    //     const tt_timer = TooltipTimer;
+    // }
+
+    // const TooltipTimer = new function() {
+    //     let delay_timer, tt_caller = undefined;
+    //     this.start = (id, text) => {
+    //         const old_caller = tt_caller; tt_caller = id;
+    //         if (!delay_timer && tooltip.Text) tt(text, old_caller !== tt_caller );
+    //         else {
+    //             this.force_stop();
+    //             if (!delay_timer) {
+    //                 delay_timer = setTimeout(() => {
+    //                     tt(text);
+    //                     delay_timer = null;
+    //                 }, 500);
+    //             }
+    //         }
+    //     }
+    //     this.set_id = id => tt_caller = id;
+    //     this.stop = id => {if (tt_caller === id) this.force_stop();}
+    //     this.force_stop = () => {
+    //         tt("");
+    //         if (delay_timer) {
+    //             clearTimeout(delay_timer);
+    //             delay_timer = null;
+    //         }
+    //     }
+    // }
+
+    const check_scrollBtns = (x, y, hover_btn) => {
+		if (sbar.timer_but) {
+			if ((this.btns["scrollUp"].down || this.btns["scrollDn"].down) && !this.btns["scrollUp"].trace(x, y) && !this.btns["scrollDn"].trace(x, y)) {
+				this.btns["scrollUp"].cs("normal"); this.btns["scrollDn"].cs("normal"); clearTimeout(sbar.timer_but); sbar.timer_but = null; sbar.count = -1;}
+		} else if (hover_btn) scrBtns.forEach(v => {
+			if (hover_btn.name == v && hover_btn.down) {this.btns[v].cs("down"); hover_btn.l_dn();}
+		});
 	}
 }
+
+// class button_manager {
+// 	constructor() {
+// 		var b_x,
+// 			b3 = ["scrollUp", "scrollDn"],
+// 			but_tt = g_tooltip,
+// 			bx, by, bh, byDn, byUp, fw, hot_o, i, qx, qy, qh, s_img = [],
+// 			scr = [],
+// 			scrollBut_x, scrollDn_y, scrollUp_y;
+// 		this.btns = [];
+// 		this.b = null;
+// 		this.Dn = false;
+
+// 	}
+// 	// arrow_symb = 0;
+// 	var browser = function(c) {if (!_.runCmd(c)) fb.ShowPopupMessage("Unable to launch your default browser.", "Library Tree");}
+// 	var tooltip = function(n) {if (but_tt.text == n) return; but_tt.text = n; but_tt.Activate();}
+// 	this.lbtn_dn = function (x, y) {
+// 		this.move(x, y);
+// 		if (!this.b) return false;
+// 		this.Dn = this.b;
+// 		if (libraryProps.showScrollbar) {
+// 			for (let j = 0; j < b3.length; j++) {
+// 				if (this.b == b3[j]) {
+// 					if (this.btns[this.b].trace(x, y)) {
+// 						this.btns[this.b].down = true;
+// 					}
+// 					this.btns[this.b].changestate("down");
+// 				}
+// 			}
+// 		}
+// 		this.btns[this.b].lbtn_dn(x, y);
+// 		return true;
+// 	}
+// 	this.lbtn_up = function (x, y) {
+// 		this.Dn = false;
+// 		if (libraryProps.showScrollbar)
+// 			for (let j = 0; j < b3.length; j++) this.btns[b3[j]].down = false;
+// 		if (!this.b) return false;
+// 		if (libraryProps.showScrollbar)
+// 			for (let j = 0; j < b3.length; j++)
+// 				if (this.b == b3[j]) this.btns[this.b].changestate(this.btns[this.b].trace(x, y) ? "hover" : "normal");
+// 		this.move(x, y);
+// 		if (!this.b) return false;
+// 		this.btns[this.b].lbtn_up(x, y);
+// 		return true;
+// 	}
+// 	this.leave = function () {
+// 		if (this.b) this.btns[this.b].changestate("normal");
+// 		this.b = null;
+// 		tooltip("");
+// 	}
+// 	this.on_script_unload = function() {tooltip("");}
+
+// 	this.create_images = function() {
+// 		var alpha = [75, 192, 228],
+// 			c,
+// 			col = [ui.textcol & 0x44ffffff, ui.textcol & 0x99ffffff, ui.textcol],
+// 			g,
+// 			// sz = arrow_symb == 0 ? Math.max(Math.round(ui.but_h * 1.666667), 1) : 100,
+// 			sz = Math.max(Math.round(ui.but_h * 1.666667), 1),
+// 			sc = sz / 100;
+// 		for (var j = 0; j < 2; j++) {
+// 			c = j ? 0xe4ffffff : 0x99ffffff;
+// 			s_img[j] = gdi.CreateImage(100, 100);
+// 			g = s_img[j].GetGraphics();
+// 			g.SetSmoothingMode(SmoothingMode.HighQuality);
+//             g.DrawLine(69, 71, 88, 90, 12, ui.txt_box & c);
+//             g.DrawEllipse(8, 11, 67, 67, 10, ui.txt_box & c);
+
+//             g.FillEllipse(15, 17, 55, 55, 0x0AFAFAFA);
+// 			g.SetSmoothingMode(SmoothingMode.Default);
+// 			s_img[j].ReleaseGraphics(g);
+// 		}
+// 		for (j = 0; j < 3; j++) {
+// 			scr[j] = gdi.CreateImage(sz, sz);
+// 			g = scr[j].GetGraphics();
+// 			g.SetTextRenderingHint(3);
+// 			g.SetSmoothingMode(SmoothingMode.HighQuality);
+// 			if (ui.scr_col) {
+// 				g.FillPolygon(col[j], 1, [50 * sc, 0, 100 * sc, 76 * sc, 0, 76 * sc]);
+// 			} else {
+// 				g.FillPolygon(RGBA(ui.ct, ui.ct, ui.ct, alpha[j]), 1, [50 * sc, 0, 100 * sc, 76 * sc, 0, 76 * sc]);
+// 			}
+// 			g.SetSmoothingMode(SmoothingMode.Default);
+// 			scr[j].ReleaseGraphics(g);
+// 		}
+// 	};
+// 	this.create_images();
+
+// 	this.draw = function(gr) {
+// 		try {
+// 			for (i in this.btns) {
+// 				if ((libraryProps.searchMode == 1 || libraryProps.searchMode > 1 && !p.s_txt) && i == "s_img") this.btns[i].draw(gr);
+// 				if (libraryProps.searchMode == 1 && i == "cross1") this.btns[i].draw(gr);
+// 				if (libraryProps.searchMode > 1 && p.s_txt && i == "cross2") this.btns[i].draw(gr);
+// 				if (libraryProps.searchMode > 1 && i == "filter") this.btns[i].draw(gr);
+// 				if (libraryProps.showScrollbar && sbar.scrollable_lines > 0 && (i == "scrollUp" || i == "scrollDn"))  this.btns[i].draw(gr);
+// 			}
+// 		} catch (e) {}
+// 	}
+// 	this.move = function(x, y) {
+// 		if (sbar.timer_but) {if ((this.btns["scrollUp"].down || this.btns["scrollDn"].down) && !this.btns["scrollUp"].trace(x, y) && !this.btns["scrollDn"].trace(x, y)) {this.btns["scrollUp"].changestate("normal"); this.btns["scrollDn"].changestate("normal"); clearTimeout(sbar.timer_but); sbar.timer_but = false; sbar.count = -1;}}
+// 		else for (let j = 0; j < b3.length; j++) if (this.b == b3[j] && this.btns[this.b].down) {this.btns[this.b].changestate("down"); this.btns[this.b].l_dn();}
+// 		var b = null, hand = false;
+// 		for (i in this.btns) {
+// 			if ((libraryProps.searchMode == 1 || libraryProps.searchMode > 1 && !p.s_txt) && i == "s_img" && (!this.Dn || this.Dn == "s_img") && this.btns[i].trace(x, y)) {b = i; hand = true;}
+// 			if (libraryProps.searchMode == 1 && i == "cross1" && (!this.Dn || this.Dn == "cross1") && this.btns[i].trace(x, y)) {b = i; hand = true;}
+// 			if (libraryProps.searchMode > 1 && p.s_txt && i == "cross2" && (!this.Dn || this.Dn == "cross2") && this.btns[i].trace(x, y)) {b = i; hand = true;}
+// 			if (libraryProps.searchMode > 1 && i == "filter" && (!this.Dn || this.Dn == "filter") && this.btns[i].trace(x, y)) {b = i; hand = true;}
+// 			if (libraryProps.showScrollbar && sbar.scrollable_lines > 0) for (let j = 0; j < b3.length; j++) if (i == b3[j] && (!this.Dn || this.Dn == b3[j]) && this.btns[i].trace(x, y)) b = i;
+// 		}
+// 		window.SetCursor(this.Dn && this.Dn != this.b ? 32512 : hand ? 32649 : y < p.s_h && libraryProps.searchMode && x > qx + qh ? 32513 : 32512);
+// 		if (this.b == b) return this.b;
+// 		if (b && (!this.Dn || this.Dn == b)) this.btns[b].changestate("hover");
+// 		if (this.b) this.btns[this.b].changestate("normal");
+// 		this.b = b;
+// 		if (!this.b) tooltip("");
+// 		return this.b;
+// 	}
+
+// 	var btn = function(x, y, w, h, type, ft, txt, stat, img_src, down, l_dn, l_up, tooltext) {
+// 		this.draw = function (gr) {
+// 			switch (type) {
+// 				case 3: gr.SetInterpolationMode(2); if (this.img) gr.DrawImage(this.img, this.x, this.y, this.w, this.h, 0, 0, this.img.Width, this.img.Height); gr.SetInterpolationMode(0); break;
+// 				case 4: gr.DrawLine(Math.round(this.x + bh * 0.67), Math.round(this.y + bh * 0.67), Math.round(this.x + bh * 0.27), Math.round(this.y + bh * 0.27), Math.round(bh / 10), RGBA(136, 136, 136, this.img)); gr.DrawLine(Math.round(this.x + bh * 0.67), Math.round(this.y + bh * 0.27), Math.round(this.x + bh * 0.27), Math.round(this.y + bh * 0.67), Math.round(bh / 10), RGBA(136, 136, 136, this.img)); break;
+// 				case 5: gr.SetTextRenderingHint(5); gr.DrawString(txt, ft, this.img, this.x, this.y - 1, this.w, this.h, StringFormat(2, 1)); break;
+// 				case 6: ui.theme.SetPartAndStateID(1, this.img); ui.theme.DrawThemeBackground(gr, this.x, this.y, this.w, this.h); break;
+// 				default: if (this.img) gr.DrawImage(this.img, this.x + ft, txt, stat, stat, 0, 0, this.img.Width, this.img.Height, type == 1 ? 0 : 180); break;
+// 			}
+// 		}
+// 		this.trace = function(x, y) {return x > this.x && x < this.x + this.w && y > this.y && y < this.y + this.h;}
+// 		this.lbtn_dn = function () {this.l_dn && this.l_dn(x, y);}
+// 		this.lbtn_up = function () {this.l_up && this.l_up(x, y);}
+
+// 		this.changestate = function(state) {
+// 			switch (state) {case "hover": this.img = this.img_hover; tooltip(this.tooltext); break; case "down": this.img = this.img_down; break; default: this.img = this.img_normal; break;}
+// 			window.RepaintRect(this.x, this.y, this.w + 1, this.h + 1);
+// 		}
+// 		this.x = x; this.y = y; this.w = w; this.h = h; this.l_dn = l_dn; this.l_up = l_up; this.tooltext = tooltext;
+// 		this.img_normal = img_src.normal; this.img_hover = img_src.hover || this.img_normal; this.img_down = img_src.down || this.img_normal; this.img = this.img_normal;
+// 	}
+
+// 	this.refresh = function(upd) {
+// 		if (upd) {
+// 			bx = p.s_w1 - Math.round(ui.row_h * 0.75);
+// 			bh = ui.row_h;
+// 			by = ui.y + Math.round((p.s_sp - bh * 0.4) / 2 - bh * 0.27);
+// 			b_x = p.sbar_x;
+// 			byUp = sbar.y;
+// 			byDn = sbar.y + sbar.h - ui.but_h;
+// 			fw = p.f_w[p.filterBy] + p.f_sw + 12;
+// 			qx = ui.x + ui.margin;
+// 			qy = ui.y + (p.s_sp - ui.row_h * 0.6) / 2;
+// 			qh = ui.row_h * 0.6;
+// 			if (ui.scr_type != 2) {b_x -= 1; hot_o = byUp - p.s_h; scrollBut_x = (ui.but_h - ui.scr_but_w) / 2; scrollUp_y = -ui.arrow_pad + byUp + (ui.but_h - 1 - ui.scr_but_w) / 2; scrollDn_y = ui.arrow_pad + byDn + (ui.but_h - 1 - ui.scr_but_w) / 2 ;}
+// 		}
+// 		if (libraryProps.showScrollbar) {
+// 			switch (ui.scr_type) {
+// 				case 2:
+// 					this.btns.scrollUp = new btn(b_x, byUp, ui.but_h, ui.but_h, 6, "", "", "", {normal: 1, hover: 2, down: 3}, false, function() {sbar.but(1);}, "", "");
+// 					this.btns.scrollDn = new btn(b_x, byDn, ui.but_h, ui.but_h, 6, "", "", "", {normal: 5, hover: 6, down: 7}, false, function() {sbar.but(-1);}, "", "");
+// 					break;
+// 				default:
+// 					this.btns.scrollUp = new btn(b_x, byUp - hot_o, ui.but_h, ui.but_h + hot_o, 1, scrollBut_x, scrollUp_y, ui.scr_but_w, {normal: scr[0], hover: scr[1], down: scr[2]}, false, function() {sbar.but(1);}, "", "");
+// 					this.btns.scrollDn = new btn(b_x, byDn, ui.but_h, ui.but_h + hot_o, 2, scrollBut_x, scrollDn_y, ui.scr_but_w, {normal: scr[0], hover: scr[1], down: scr[2]}, false, function() {sbar.but(-1);}, "", "");
+// 					break;
+// 			}
+// 		}
+// 		if (libraryProps.searchMode)  {
+// 			this.btns.s_img = new btn(qx, qy, qh, qh, 3, "", "", "", {normal: s_img[0], hover: s_img[1]}, false, "", function() {browser("\"" + fb.FoobarPath + "doc\\Query Syntax Help.html");}, "Open Query Syntax Help");
+// 			this.btns.cross1 = new btn(bx, by, bh, bh, 4, "", "", "", {normal: "85", hover: "192"}, false, "", function() {sL.clear();}, "Clear Search Text");
+// 			this.btns.cross2 = new btn(qx - bh * 0.2, by, bh, bh, 4, "", "", "", {normal: "85", hover: "192"}, false, "", function() {sL.clear();}, "Clear Search Text");
+// 			this.btns.filter = new btn(p.filter_x1 - 12, ui.y, fw, p.s_sp, 5, p.filter_but_ft, "▼", "", {normal: ui.txt_box & 0x99ffffff, hover: ui.txt_box & 0xe4ffffff}, false, "", function() {men.button(p.filter_x1, p.s_h); but.refresh(true)}, "Filter");
+// 		}
+// 	}
+// }
 // var but = new button_manager();
 
 function menu_object() {
@@ -3168,7 +3683,7 @@ function menu_object() {
 		}
 	}
 
-	this.rbtn_up = function(x, y) {
+	this.rbtn_up = (x, y) => {
 		this.r_up = true;
 		var Context = fb.CreateContextMenuManager(),
 			FilterMenu = window.CreatePopupMenu(),
@@ -3414,7 +3929,7 @@ class LibraryCallbacks {
 
 /** @type {userinterface} */
 let ui;
-/** @type {scrollbar} */
+/** @type {Scrollbar} */
 let sbar;
 /** @type {panel_operations} */
 let p;
@@ -3429,6 +3944,7 @@ let sL;
 /** @type {JumpSearch} */
 let jumpSearch;
 let libraryPanel;
+/** @type {Buttons} */
 let but;
 let men;
 /** @type {Timers} */
@@ -3449,7 +3965,8 @@ function initLibraryPanel() {
 		}
 		jumpSearch = new JumpSearch();
 		libraryPanel = new LibraryPanel();
-		but = new button_manager();
+		// but = new button_manager();
+		but = new Buttons();
 		men = new menu_object();
 		timer = new Timers();
 		timer.lib();
