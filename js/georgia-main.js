@@ -1525,8 +1525,10 @@ function on_playback_new_track(metadb) {
 		bandLogo = art_cache.getImage(path);
 		if (!bandLogo) {
 			const logo = gdi.Image(path);
-			bandLogo = art_cache.encache(logo, path);
-			invertedBandLogo = art_cache.encache(logo.InvertColours(), `${path}-inv`);
+			if (logo) {
+				bandLogo = art_cache.encache(logo, path);
+				invertedBandLogo = art_cache.encache(logo.InvertColours(), `${path}-inv`);
+			}
 		}
 		invertedBandLogo = art_cache.getImage(`${path}-inv`);
 		if (!invertedBandLogo) {
@@ -2075,7 +2077,7 @@ function on_playback_stop(reason) {
 	}
     bandLogo = null;
     invertedBandLogo = null;
-	if (displayLyrics) {
+	if (displayLyrics && gLyrics) {
 		gLyrics.on_playback_stop(reason);
 	}
 
