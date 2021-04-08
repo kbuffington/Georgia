@@ -8,7 +8,7 @@ let globals = {};
 let transport = {};
 
 
-const currentVersion = '2.0.2';
+const currentVersion = '2.0.3-dev';
 let configVersion = currentVersion;	// will be overwritten when loaded from config file
 let updateAvailable = false;
 let updateHyperlink;
@@ -226,6 +226,8 @@ function migrateCheck(version, storedVersion) {
 				config.writeConfiguration();
 				window.Reload();
 
+			case '2.0.2':
+			case '2.0.3-dev':
 
 			default:
 				break;
