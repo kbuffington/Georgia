@@ -4,6 +4,8 @@
 // @version "1.4.0.4 beta1 -- modified by Mordred"
 // ==/PREPROCESSOR==
 
+const FUNC_ERROR_TEXT = 'Expected a function';
+
 const $$ = {
 	getDpi : () => {let dpi = 120; try {dpi = WshShell.RegRead("HKCU\\Control Panel\\Desktop\\WindowMetrics\\AppliedDPI");} catch (e) {} return dpi < 121 ? 1 : dpi / 120;},
 }
@@ -155,9 +157,7 @@ function userinterface() {
 	this.s_linecol = 0;
 	this.searchcol = undefined;
 	this.sel = 3;
-	this.textselcol = "";
 	this.touch_dn_id = -1;
-	this.txt_box = "";
 	this.x = 0;
 	this.y = 0;
 	this.h = 0;
@@ -281,7 +281,7 @@ function userinterface() {
 	this.outline = function(c, but) {if (but) {if (window.IsTransparent || R(c) + G(c) + B(c) > 30) return RGBA(0, 0, 0, 36); else return RGBA(255, 255, 255, 36);} else if (R(c) + G(c) + B(c) > 255 * 1.5) return RGB(30, 30, 10); else return RGB(225, 225, 245);}
 	this.reset_colors = function () {
 		iconcol_c = ""; iconcol_h = undefined; this.backcol = ""; this.iconcol_c = ""; this.iconcol_h = [];
-		this.linecol = ""; this.s_linecol = 0; this.searchcol = undefined; this.textselcol = ""; this.txt_box = "";
+		this.linecol = ""; this.s_linecol = 0; this.searchcol = undefined;
 	}
 
 	this.icon_col = () => {
@@ -340,11 +340,10 @@ function userinterface() {
 		this.backcol = g_theme.colors.pss_back;
 		// this.backcolsel = set_custom_col(window.GetProperty("_Custom.Colour Background Selected", ""), 1);
 		this.linecol = g_pl_colors.title_selected & 0x80ffffff;
-		this.txt_box;
 		this.s_linecol = g_pl_colors.title_selected & 0x80ffffff;
 		this.searchcol;
 		// this.textcol = g_pl_colors.artist_normal;
-		this.textselcol = rgb(255,255,255);
+		this.col.textsel = rgb(255,255,255);
 		this.iconcol_c = '';
 		iconcol_c = this.iconcol_c;
 		// this.iconcol_e = set_custom_col(window.GetProperty("_Custom.Colour Node Expand", ""), 1); iconcol_e = this.iconcol_e;
@@ -378,9 +377,9 @@ function userinterface() {
 		// blend = get_blend(this.backcol == 0 ? 0xff000000 : this.backcol, !s_col || s_col == 2 ? this.textcol : this.textcol_h, 0.75);
         // if (this.txt_box === "")
         //     this.txt_box = s_col < 2 ? get_blend(!s_col ? this.textcol : this.textcol_h, this.backcol == 0 ? 0xff000000 : this.backcol, !s_col ? 0.65 : 0.7) : s_col == 2 ? this.textcol : this.textcol_h;
-        // console.log(' >>> ', colToRgb(this.txt_box));
-        this.txt_box = rgb(125, 127, 128);
-        this.searchcol = rgb(180, 182, 184);
+        this.col.txt_box = rgb(125, 127, 128);
+		this.col.txt_filter = toRGB(this.col.txt_box);
+        this.col.search = rgb(180, 182, 184);
 		// if (this.s_linecol === "") this.s_linecol = s_linecol == 0 ? RGBA(136, 136, 136, 85) : s_linecol == 1 ? blend : this.txt_box;
 		// if (window.IsTransparent && this.backcoltrans) {this.bg = true; this.backcol = this.backcoltrans}
 		if (!window.IsTransparent || this.dui) {this.bg = true; if ((R(this.backcol) + G(this.backcol) + B(this.backcol)) > 759) this.b2 = 0x06000000;}
@@ -2526,7 +2525,7 @@ function LibraryTree() {
 					item_w = ui.x + sbar.tree_w - item_x;
 				}
 				item.w = item_w;
-				var txt_c = item.sel ? ui.textselcol : m_i == i ? ui.col.text_h : ui.col.text;
+				var txt_c = item.sel ? ui.col.textsel : m_i == i ? ui.col.text_h : ui.col.text;
 				if (new Color(bgColor).brightness > 180) {
 					txt_c = m_i == i ? rgb(0,0,0) : rgb(48,48,48);
 				}
@@ -3040,23 +3039,23 @@ function searchLibrary() {
 			if (p.s_txt) {
 				const selColor = drawsel(gr);
 				get_offset(gr);
-				var txt_col = ui.searchcol;
+				var txt_col = ui.col.search;
 				if (selStart === 0 && selEnd === p.s_txt.length) {
 					if (new Color(selColor).brightness > 180) {
 						txt_col = rgb(0,0,0);
 					} else {
-						txt_col = ui.textselcol;
+						txt_col = ui.col.textsel;
 					}
 				}
 				gr.GdiDrawText(p.s_txt.substr(offsetChars), ui.font, txt_col, p.s_x, p.s_y, p.s_w2, p.s_sp, p.l);
 			} else {
-				gr.GdiDrawText('Search', ui.searchFont, ui.txt_box, p.s_x, p.s_y, p.s_w2, p.s_sp, p.l);
+				gr.GdiDrawText('Search', ui.searchFont, ui.col.txt_box, p.s_x, p.s_y, p.s_w2, p.s_sp, p.l);
 			}
 			drawcursor(gr);
 			if (libraryProps.searchMode > 1) {
 				var l_x = p.filter_x1 - 8 - ui.l_width,
 					l_y = p.s_y;
-				gr.GdiDrawText(p.filt[p.filterBy].name, p.filterFont, ui.txt_box, p.filter_x1, ui.y, p.f_w[p.filterBy], p.s_sp, p.cc);
+				gr.GdiDrawText(p.filt[p.filterBy].name, p.filterFont, ui.col.txt_box, p.filter_x1, ui.y, p.f_w[p.filterBy], p.s_sp, p.cc);
 				gr.FillSolidRect(l_x, l_y, ui.l_width, p.s_sp, ui.s_linecol);
 			}
 		} catch (e) {
@@ -3190,19 +3189,21 @@ function Buttons() {
     // const tt = (n, force) => {if (tooltip.Text !== n || force) {tooltip.Text = n; tooltip.Activate();}}
 
     this.create_images = () => {
-        const sz = arrow_symb == 0 ? Math.max(Math.round(ui.but_h * 1.666667), 1) : 100, sc = sz / 100, iconFont = gdi.Font(iconFontName, sz, iconFontStyle);
-            s_img = s.gr(100, 100, true, g => {
-                g.SetSmoothingMode(2);
-                if (!ui.local) {g.DrawLine(69, 71, 88, 90, 12, ui.col.txt_box); g.DrawEllipse(8, 11, 67, 67, 10, ui.col.txt_box);}
-                else {g.DrawLine(69, 71, 88, 90, 12, ui.col.txt_box); g.DrawEllipse(8, 11, 67, 67, 10, ui.col.txt_box);}
-                g.FillEllipse(15, 17, 55, 55, 0x0AFAFAFA); g.SetSmoothingMode(0);
-            });
-                scrollBtn = s.gr(sz, sz, true, g => {
-                    g.SetTextRenderingHint(3); g.SetSmoothingMode(2);
-                    if (pptDefault.sbarCol) {arrow_symb == 0 ? g.FillPolygon(ui.col.text, 1, [50 * sc, 0, 100 * sc, 76 * sc, 0, 76 * sc]) : g.DrawString(arrow_symb, iconFont, ui.col.text, 0, sz * sbarButPad, sz, sz, StringFormat(1, 1));}
-                    else {arrow_symb == 0 ? g.FillPolygon(RGBA(ui.col.t, ui.col.t, ui.col.t, 255), 1, [50 * sc, 0, 100 * sc, 76 * sc, 0, 76 * sc]) :
-                    g.DrawString(arrow_symb, iconFont, RGBA(ui.col.t, ui.col.t, ui.col.t, 255), 0, sz * sbarButPad, sz, sz, StringFormat(1, 1));} g.SetSmoothingMode(0);
-                });
+        const sz = arrow_symb == 0 ? Math.max(Math.round(ui.but_h * 1.666667), 1) : 100,
+			sc = sz / 100,
+			iconFont = gdi.Font(iconFontName, sz, iconFontStyle);
+		s_img = s.gr(100, 100, true, g => {
+			g.SetSmoothingMode(2);
+			g.DrawLine(69, 71, 88, 90, 12, ui.col.txt_box); g.DrawEllipse(8, 11, 67, 67, 10, ui.col.txt_box);
+			g.FillEllipse(15, 17, 55, 55, 0x0AFAFAFA);
+			g.SetSmoothingMode(0);
+		});
+		scrollBtn = s.gr(sz, sz, true, g => {
+			g.SetTextRenderingHint(3); g.SetSmoothingMode(2);
+			if (pptDefault.sbarCol) {arrow_symb == 0 ? g.FillPolygon(ui.col.text, 1, [50 * sc, 0, 100 * sc, 76 * sc, 0, 76 * sc]) : g.DrawString(arrow_symb, iconFont, ui.col.text, 0, sz * sbarButPad, sz, sz, StringFormat(1, 1));}
+			else {arrow_symb == 0 ? g.FillPolygon(RGBA(ui.col.t, ui.col.t, ui.col.t, 255), 1, [50 * sc, 0, 100 * sc, 76 * sc, 0, 76 * sc]) :
+			g.DrawString(arrow_symb, iconFont, RGBA(ui.col.t, ui.col.t, ui.col.t, 255), 0, sz * sbarButPad, sz, sz, StringFormat(1, 1));} g.SetSmoothingMode(0);
+		});
      }; this.create_images();
 
 	this.create_tooltip = () => tooltip = g_tooltip; //window.CreateTooltip("Segoe UI", 15 * s.scale * /* ppt.get(" Zoom Tooltip [Button] (%)", 100)*/ 100 / 100, 0);
@@ -3245,7 +3246,6 @@ function Buttons() {
 		const drawFilter = gr => {
             const col = !ui.local ? (this.state !== "down" ? ui.get_blend(im.hover, im.normal, this.transition_factor, true) : im.hover) : im.normal;
             gr.SetTextRenderingHint(5);
-			console.log(Math.max(this.x, 0), this.y - 1, this.w, this.h)
 			gr.DrawString(txt, ft, col, Math.max(this.x, 0), this.y - 1, this.w, this.h, StringFormat(2, 1));
         }
 
@@ -3255,8 +3255,10 @@ function Buttons() {
         }
 
         const drawSearch = gr => {
-			const a = !ui.local ? (this.state !== "down" ? Math.min(153 + (228 - 153) * this.transition_factor, 228)  : 228) : 255;
-			gr.SetInterpolationMode(2); if (im.normal) gr.DrawImage(im.normal, this.x, this.y, this.w, this.h, 0, 0, im.normal.Width, im.normal.Height, 0, a); gr.SetInterpolationMode(0);
+			let a = !ui.local ? (this.state !== "down" ? Math.min(153 + (228 - 153) * this.transition_factor, 228) : 228) : 255;
+			gr.SetInterpolationMode(2);
+			if (im.normal) gr.DrawImage(im.normal, this.x, this.y, this.w, this.h, 0, 0, im.normal.Width, im.normal.Height, 0, a);
+			gr.SetInterpolationMode(0);
         }
     }
 
@@ -3308,11 +3310,11 @@ function Buttons() {
                     break;
             }
         }
-            if (pptDefault.searchShow) this.btns.s_img = new Btn(qx, qy, qh, qh, 4, "", "", "", {normal: s_img}, pptDefault.searchShow > 1 && p.s_txt, "", () => {let fn = fb.FoobarPath + "doc\\Query Syntax Help.html"; if (!s.file(fn)) fn = fb.FoobarPath + "Query Syntax Help.html"; s.browser("\"" + fn);}, "Open Query Syntax Help", true, "s_img");
-            if (pptDefault.searchShow == 2) {
-                this.btns.cross2 = new Btn(qx - bh * 0.2, by, bh, bh, 5, "", "", "", {normal: 85, hover: 192}, !p.s_txt, "", () => {sL.clear();}, "Clear Search Text", true, "cross2");
-                this.btns.filter = new Btn(p.filter_x1 - 12, 0, fw, p.s_sp, 6, p.filterBtnFont, "▼", "", {normal: !ui.local ? (ui.col.txt_box & 0x99ffffff) : ui.col.txt_box, hover: ui.col.txt_box & 0xe4ffffff}, pptDefault.searchShow != 2, "", () => {men.button(p.filter_x1, p.s_h); but.btns.filter.x = p.filter_x1 - 12; but.btns.filter.w = p.f_w[p.filterBy] + p.f_sw + 12;}, "Filter", true, "filter");
-            }
+		if (pptDefault.searchShow) this.btns.s_img = new Btn(qx, qy, qh, qh, 4, "", "", "", {normal: s_img}, pptDefault.searchShow > 1 && p.s_txt, "", () => {let fn = fb.FoobarPath + "doc\\Query Syntax Help.html"; if (!s.file(fn)) fn = fb.FoobarPath + "Query Syntax Help.html"; s.browser("\"" + fn);}, "Open Query Syntax Help", true, "s_img");
+		if (pptDefault.searchShow == 2) {
+			this.btns.cross2 = new Btn(qx - bh * 0.2, by, bh, bh, 5, "", "", "", {normal: 85, hover: 192}, !p.s_txt, "", () => {sL.clear();}, "Clear Search Text", true, "cross2");
+			this.btns.filter = new Btn(p.filter_x1 - 12, by, fw, p.s_sp, 6, p.filterBtnFont, "▼", "", {normal: !ui.local ? (ui.col.txt_box & 0x99ffffff) : ui.col.txt_box, hover: ui.col.txt_box & 0xe4ffffff}, pptDefault.searchShow != 2, "", () => {men.button(p.filter_x1, p.s_h); but.btns.filter.x = p.filter_x1 - 12; but.btns.filter.w = p.f_w[p.filterBy] + p.f_sw + 12;}, "Filter", true, "filter");
+		}
         if (pptDefault.searchShow == 1) this.btns.cross1 = new Btn(bx, by, bh, bh, 5, "", "", "", {normal: 85, hover: 192}, pptDefault.searchShow != 1, "", () => {sL.clear();}, "Clear Search Text");
         transition = new Transition(this.btns, v => v.state !== 'normal');
     }
