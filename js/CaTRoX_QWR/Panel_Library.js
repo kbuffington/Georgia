@@ -956,6 +956,7 @@ function panel_operations() {
 	this.s_w1 = 0;
 	this.s_w2 = 0;
 	this.tf = "";
+	this.init = true;
 	// this.scale = 0;
 
 	libraryProps.rootNode = Math.max(Math.min(libraryProps.rootNode, 2), 0);
@@ -1490,11 +1491,10 @@ class Library {
 			this.node = this.otherNode.slice()
 		};
         let n_o = "#get_node#",
-			nU = "",
-			total = p.list.Count;
+			nU = "";
         // pop.getNowplaying();	// do we need this?
         if (libraryProps.rootNode) {
-            this.root[0] = {name:p.rootName, sel:false, child:[], item:[]};
+            this.root[0] = {name: p.getBaseName() /*p.rootName*/, sel:false, child:[], item:[]};
             this.node.forEach((v, l) => this.root[0].item[l] = l);
         } else switch (p.multiProcess) {
 			case false:
@@ -1940,7 +1940,7 @@ function LibraryTree() {
 	this.getHandles = function(n) {if (n) this.get_sel_items(); var handle_list = fb.CreateHandleList(); try {for (var i = 0; i < this.sel_items.length; i++) handle_list.Add(p.list[this.sel_items[i]]);} catch (e) {} return handle_list;}
 	this.leave = function(){if (men.r_up || tt.Text) return; m_br = -1; row_o = 0; m_i = -1; ix_o = 0; p.tree_paint();}
 	this.mbtn_up = function(x, y) {this.add(x, y, mbtn_pl);}
-	this.on_char = function(code) {if (p.s_search || code != v.copy) return; var handle_list = this.getHandles(true); fb.CopyHandleListToClipboard(handle_list); }
+	this.on_char = function(code) {if (p.s_search || code != vk.copy) return; var handle_list = this.getHandles(true); fb.CopyHandleListToClipboard(handle_list); }
 	this.on_focus = function(p_is_focused) {is_focused = p_is_focused; if (p_is_focused && handles && handles.Count) selection_holder.SetSelection(handles);}
 	this.row = function(y) {return Math.round((y - p.s_h - ui.row_h * 0.5) / ui.row_h);}
 	this.setGetPos = function(pos) {m_i = get_pos = pos;}
@@ -2539,15 +2539,15 @@ function LibraryTree() {
 
 	this.send = function(item, x, y) {
 		if (!this.check_ix(item, x, y, false)) return;
-		if (v.k(CTRL)) this.load(this.sel_items, true, false, false, this.gen_pl, false);
-		else if (v.k(SHIFT)) this.load(this.sel_items, true, false, false, this.gen_pl, false);
+		if (vk.k(CTRL)) this.load(this.sel_items, true, false, false, this.gen_pl, false);
+		else if (vk.k(SHIFT)) this.load(this.sel_items, true, false, false, this.gen_pl, false);
 		else this.load(item.item, true, false, false, this.gen_pl, false);
 	}
 
 	this.track = function(item, x, y) {
 		if (!this.check_ix(item, x, y, false)) return;
-		if (v.k(CTRL)) this.tracking(this.sel_items, true);
-		else if (v.k(SHIFT)) this.tracking(this.sel_items, true);
+		if (vk.k(CTRL)) this.tracking(this.sel_items, true);
+		else if (vk.k(SHIFT)) this.tracking(this.sel_items, true);
 		else this.tracking(item.item, true);
 	}
 
@@ -2558,7 +2558,7 @@ function LibraryTree() {
 		var ix = this.get_ix(x, y, true, false);
 		p.pos = ix;
 		if (ix >= this.tree.length || ix < 0)
-			return this.get_selection(-1);
+			return get_selection(-1);
 		var item = this.tree[ix],
 			clickedOn = x < Math.round(ui.pad * item.tr) + ui.icon_w + ui.margin + ui.x ? ObjType.Node : this.check_ix(item, x, y, false) ? ObjType.Item : ObjType.NoObj,
 			expanded = item.child.length > 0;
@@ -2593,8 +2593,8 @@ function LibraryTree() {
 				last_pressed_coord.x = x - ui.x;
 				last_pressed_coord.y = y - ui.y;
 				lbtn_dn = true;
-				if (v.k(ALT) && libraryProps.autoFill) return;
-				if (!item.sel && !v.k(CTRL)) this.get_selection(ix, item.sel);
+				if (vk.k(ALT) && libraryProps.autoFill) return;
+				if (!item.sel && !vk.k(CTRL)) get_selection(ix, item.sel);
 				break;
 		}
 		lib_manager.treeState(false, libraryProps.rememberTree);
@@ -2608,17 +2608,17 @@ function LibraryTree() {
 		var ix = this.get_ix(x, y, true, false);
 		p.pos = ix;
 		if (ix >= this.tree.length || ix < 0)
-			return this.get_selection(-1);
+			return get_selection(-1);
 		var item = this.tree[ix],
 			clickedOn = x < Math.round(ui.pad * item.tr) + ui.icon_w + ui.margin ? ObjType.Node : this.check_ix(item, x, y, false) ? ObjType.Item : ObjType.NoObj;
 		if (clickedOn !== ObjType.Item) return;
-		if (v.k(ALT) && libraryProps.autoFill) {
+		if (vk.k(ALT) && libraryProps.autoFill) {
 			return this.add(x, y, alt_lbtn_pl);
 		}
-		if (!v.k(CTRL)) {
+		if (!vk.k(CTRL)) {
 			this.clear();	// clear selected items unless ctrl key is down
 		}
-		this.get_selection(ix, item.sel);
+		get_selection(ix, item.sel);
 		p.tree_paint();
 		lib_manager.treeState(false, libraryProps.rememberTree);
 		if (libraryProps.autoFill) this.send(item, x, y);
@@ -2683,24 +2683,15 @@ function LibraryTree() {
 		}
 	}
 
-	this.get_selection = (idx, state, add, bypass) => {
-		var sel_type = idx == -1 && !add ? 0 : v.k(SHIFT) && last_sel > -1 && !bypass ? 1 : v.k(CTRL) && !bypass ? 2 : !state ? 3 : 0;
-		switch (sel_type) {
-			case 0: this.clear(); this.sel_items = []; break;
-			case 1:
-				var direction = (idx > last_sel) ? 1 : -1;
-				if (!v.k(CTRL)) this.clear();
-				for (var i = last_sel; ; i += direction) {
-					this.tree[i].sel = true;
-					if (i == idx) break;
-				}
-				this.get_sel_items();
-				p.tree_paint();
-				break;
-			case 2: this.tree[idx].sel = !this.tree[idx].sel; this.get_sel_items(); last_sel = idx; break;
-            case 3: this.sel_items = []; if (!add) this.clear(); if (!add) this.tree[idx].sel = true; this.sel_items = this.sel_items.concat(this.tree[idx].item); this.sel_items = uniq(this.sel_items); last_sel = idx; break;
-		}
-	}
+    const get_selection = (idx, state, add, bypass) => {
+        const sel_type = idx == -1 && !add ? 0 : vk.k('shift') && last_sel > -1 && !bypass ? 1 : vk.k('ctrl') && !bypass ? 2 : !state ? 3 : 0;
+        switch (sel_type) {
+            case 0: this.clear(); this.sel_items = []; break;
+            case 1: const direction = (idx > last_sel) ? 1 : -1; if (!vk.k('ctrl')) this.clear(); for (let i = last_sel; ; i += direction) {this.tree[i].sel = true; if (i == idx) break;} this.get_sel_items(); p.tree_paint(); break;
+            case 2: this.tree[idx].sel = !this.tree[idx].sel; this.get_sel_items(); last_sel = idx; break;
+            case 3: this.sel_items = []; if (!add) this.clear(); if (!add) this.tree[idx].sel = true; this.sel_items.push.apply(this.sel_items, this.tree[idx].item); this.sel_items = uniq(this.sel_items); last_sel = idx; break;
+        }
+    }
 
 	this.move = function(x, y) {
 		if (but.Dn) return;
@@ -2744,24 +2735,24 @@ function LibraryTree() {
 	this.on_key_down = function(vkey) {
 		if (p.s_search) return;
 		switch(vkey) {
-			case v.left:
+			case vk.left:
 				if (!(p.pos >= 0) && get_pos != -1) p.pos = get_pos;
 				else p.pos = p.pos + this.tree.length % this.tree.length;
 				p.pos = Math.max(Math.min(p.pos, this.tree.length - 1), 0); get_pos = -1; m_i = -1;
 				if ((this.tree[p.pos].tr == (libraryProps.rootNode ? 1 : 0)) && this.tree[p.pos].child.length < 1) break;
-				if (this.tree[p.pos].child.length > 0) {var item = this.tree[p.pos]; this.clear_child(item); this.get_selection(item.ix); m_i = p.pos = item.ix;}
-				else {try {var item = this.tree[this.tree[p.pos].par]; this.clear_child(item); this.get_selection(item.ix); m_i = p.pos = item.ix;} catch (e) {return;};}
+				if (this.tree[p.pos].child.length > 0) {var item = this.tree[p.pos]; this.clear_child(item); get_selection(item.ix); m_i = p.pos = item.ix;}
+				else {try {var item = this.tree[this.tree[p.pos].par]; this.clear_child(item); get_selection(item.ix); m_i = p.pos = item.ix;} catch (e) {return;};}
 				p.tree_paint();
 				if (libraryProps.autoFill) this.load(this.sel_items, true, false, false, this.gen_pl, false);
 				sbar.set_rows(this.tree.length); if (sbar.scroll > p.pos * ui.row_h) sbar.check_scroll(p.pos * ui.row_h); lib_manager.treeState(false, libraryProps.rememberTree);
 				break;
-			case v.right:
+			case vk.right:
 				if (!(p.pos >= 0) && get_pos != -1) p.pos = get_pos
 				else p.pos = p.pos + this.tree.length % this.tree.length;
 				p.pos = Math.max(Math.min(p.pos, this.tree.length - 1), 0); get_pos = -1; m_i = -1;
 				var item = this.tree[p.pos]; if (libraryProps.autoCollapse) this.branch_chg(item, false, true);
 				this.branch(item, libraryProps.rootNode && p.pos == 0 ? true : false, true);
-				this.get_selection(item.ix); p.tree_paint(); m_i = p.pos = item.ix;
+				get_selection(item.ix); p.tree_paint(); m_i = p.pos = item.ix;
 				if (libraryProps.autoFill) this.load(this.sel_items, true, false, false, this.gen_pl, false);
 				sbar.set_rows(this.tree.length);
 				var row = (p.pos * ui.row_h - sbar.scroll) / ui.row_h;
@@ -2771,24 +2762,23 @@ function LibraryTree() {
 				}
 				lib_manager.treeState(false, libraryProps.rememberTree);
 				break;
-			case v.pgUp:
-				if (this.tree.length == 0) break; p.pos = Math.round(sbar.scroll / ui.row_h + 0.4) - Math.floor(p.rows); p.pos = Math.max(!libraryProps.rootNode ? 0 : 1, p.pos); sbar.wheel(1, true); this.get_selection(this.tree[p.pos].ix); p.tree_paint();
-				if (libraryProps.autoFill) this.load(this.sel_items, true, false, false, this.gen_pl, false); lib_manager.treeState(false, libraryProps.rememberTree); break;
-			case v.pgDn: if (this.tree.length == 0) break; p.pos = Math.round(sbar.scroll / ui.row_h + 0.4); p.pos = p.pos + Math.floor(p.rows) * 2 - 1; p.pos = this.tree.length < p.pos ? this.tree.length - 1 : p.pos; sbar.wheel(-1, true); this.get_selection(this.tree[p.pos].ix); p.tree_paint(); if (libraryProps.autoFill) this.load(this.sel_items, true, false, false, this.gen_pl, false); lib_manager.treeState(false, libraryProps.rememberTree); break;
-			case v.home: if (this.tree.length == 0) break; p.pos = !libraryProps.rootNode ? 0 : 1; sbar.check_scroll(0); this.get_selection(this.tree[p.pos].ix); p.tree_paint(); if (libraryProps.autoFill) this.load(this.sel_items, true, false, false, this.gen_pl, false); lib_manager.treeState(false, libraryProps.rememberTree); break;
-			case v.end: if (this.tree.length == 0) break; p.pos = this.tree.length - 1; sbar.check_scroll((this.tree.length) * ui.row_h); this.get_selection(this.tree[p.pos].ix); p.tree_paint(); if (libraryProps.autoFill) this.load(this.sel_items, true, false, false, this.gen_pl, false); lib_manager.treeState(false, libraryProps.rememberTree); break;
-			case v.enter: if (!this.sel_items.length) return; this.load(this.sel_items, true, false, true, this.gen_pl, false); break;
-			case v.dn: case v.up:
+			case vk.pgUp: if (this.tree.length == 0) break; p.pos = Math.max(Math.round(sbar.scroll / ui.row_h + 0.4) - Math.floor(p.rows) + 1, !libraryProps.rootNode ? 0 : 1); sbar.page_throttle(1); get_selection(this.tree[p.pos].ix); p.tree_paint(); if (libraryProps.autoFill) this.load(this.sel_items, true, false, false, this.gen_pl, false); lib_manager.treeState(false, libraryProps.rememberTree); break;
+			case vk.pgDn: if (this.tree.length == 0) break; p.pos = Math.round(sbar.scroll / ui.row_h + 0.4); p.pos = p.pos + Math.floor(p.rows) * 2 - 2; p.pos = this.tree.length < p.pos ? this.tree.length - 1 : p.pos; sbar.page_throttle(-1); get_selection(this.tree[p.pos].ix); p.tree_paint(); if (libraryProps.autoFill) this.load(this.sel_items, true, false, false, this.gen_pl, false); lib_manager.treeState(false, libraryProps.rememberTree); break;
+            case vk.pgDn: if (this.tree.length == 0) break; p.pos = Math.min(Math.round(sbar.scroll / ui.row_h + 0.4) + Math.floor(p.rows) * 2 - 2, this.tree.length - 1); sbar.page_throttle(-1); get_selection(this.tree[p.pos].ix); p.tree_paint(); if (libraryProps.autoFill) this.load(this.sel_items, true, false, false, this.gen_pl, false); lib_manager.treeState(false, libraryProps.rememberTree); break;
+			case vk.home: if (this.tree.length == 0) break; p.pos = !libraryProps.rootNode ? 0 : 1; sbar.check_scroll(0); get_selection(this.tree[p.pos].ix); p.tree_paint(); if (libraryProps.autoFill) this.load(this.sel_items, true, false, false, this.gen_pl, false); lib_manager.treeState(false, libraryProps.rememberTree); break;
+			case vk.end: if (this.tree.length == 0) break; p.pos = this.tree.length - 1; sbar.check_scroll((this.tree.length) * ui.row_h); get_selection(this.tree[p.pos].ix); p.tree_paint(); if (libraryProps.autoFill) this.load(this.sel_items, true, false, false, this.gen_pl, false); lib_manager.treeState(false, libraryProps.rememberTree); break;
+			case vk.enter: if (!this.sel_items.length) return; this.load(this.sel_items, true, false, true, this.gen_pl, false); break;
+			case vk.dn: case vk.up:
 				if (this.tree.length == 0) break;
-				if ((p.pos == 0 && get_pos == -1 && vkey == v.up) || (p.pos == this.tree.length - 1 && vkey == v.dn)) {this.get_selection(-1); break;}
+				if ((p.pos == 0 && get_pos == -1 && vkey == vk.up) || (p.pos == this.tree.length - 1 && vkey == vk.dn)) {get_selection(-1); break;}
 				if (get_pos != -1) p.pos = get_pos;
 				else p.pos = p.pos + this.tree.length % this.tree.length;
-				get_pos = -1; m_i = -1; if (vkey == v.dn) p.pos++; if (vkey == v.up) p.pos--;
-				p.pos = Math.max(Math.min(p.pos, this.tree.length - 1), !libraryProps.rootNode ? 0 : 1);
+				get_pos = -1; m_i = -1; if (vkey == vk.dn) p.pos++; if (vkey == vk.up) p.pos--;
+				p.pos = s.clamp(p.pos, !libraryProps.rootNode ? 0 : 1, this.tree.length - 1);
 				var row = (p.pos * ui.row_h - sbar.scroll) / ui.row_h;
 				if (sbar.rows_drawn - row < 3) sbar.check_scroll((p.pos + 3) * ui.row_h - sbar.rows_drawn * ui.row_h);
-				else if (row < 2 && vkey == v.up) sbar.check_scroll((p.pos - 1) * ui.row_h);
-				m_i = p.pos; this.get_selection(p.pos); p.tree_paint();
+				else if (row < 2 && vkey == vk.up) sbar.check_scroll((p.pos - 1) * ui.row_h);
+				m_i = p.pos; get_selection(p.pos); p.tree_paint();
 				if (libraryProps.autoFill)
 					this.load(this.sel_items, true, false, false, this.gen_pl, false);
 				lib_manager.treeState(false, libraryProps.rememberTree);
@@ -2852,65 +2842,94 @@ function searchLibrary() {
 		}
 	}
 	var record = function() {lg.push(p.s_txt); log = []; if (lg.length > 30) lg.shift();}
-	this.clear = function() {
+	this.clear = () => {
 		lib_manager.time.Reset(); library_tree.subCounts.search = {}; offsetChars = selStart = selEnd = cx = 0; p.s_cursor = false; p.s_search = false; p.s_txt = "";
-		but.set_scroll_btns_hide();
+		but.set_search_btns_hide();
 		p.search_paint(); timer.reset(timer.search_cursor); lib_manager.rootNodes();
-		// if (p.pn_h_auto && p.pn_h == p.pn_h_min && library_tree.tree[0]) library_tree.clear_child(library_tree.tree[0]);
+		// library_tree.checkAutoHeight();
 	}
-	this.on_key_up = function(vkey) {if (!p.s_search) return; if (vkey == v.shift) {shift = false; shift_x = cx;}}
-	this.lbtn_up = function(x, y) {if (selStart != selEnd) timer.reset(timer.search_cursor); lbtn_dn = false;}
-	this.move = function(x, y) {if (y > p.s_h || !lbtn_dn) return; var t = get_cursor_pos(x), t_x = get_cursor_x(t); calc_text(); if(t < selStart) {if (t < selEnd) {if (t_x < p.s_x) if(offsetChars > 0) offsetChars--;} else if (t > selEnd) {if (t_x + p.s_x > p.s_x + p.s_w2) {var l = (txt_w > p.s_w2) ? txt_w - p.s_w2 : 0; if(l > 0) offsetChars++;}} selEnd = t;} else if (t > selStart) {if(t_x + p.s_x > p.s_x + p.s_w2) {var l = (txt_w > p.s_w2) ? txt_w - p.s_w2 : 0; if(l > 0) offsetChars++;} selEnd = t;} cx = t; p.search_paint();}
-	this.rbtn_up = function(x, y) {men.search_menu(x, y, selStart, selEnd, doc.parentWindow.clipboardData.getData('text') ? true : false)}
-	// this.search_auto_expand = window.GetProperty(" Search Results Auto Expand", false);
+	this.on_key_up = vkey => {if (!p.s_search) return; if (vkey == vk.shift) {shift = false; shift_x = cx;}}
+	this.lbtn_up = (x, y) => {if (selStart != selEnd) timer.reset(timer.search_cursor); lbtn_dn = false;}
+	this.move = (x, y) => {if (y > p.s_h || !lbtn_dn) return; const t = get_cursor_pos(x), t_x = get_cursor_x(t); let l; calc_text(); if (t < selStart) {if (t < selEnd) {if (t_x < p.s_x) if (offsetChars > 0) offsetChars--;} else if (t > selEnd) {if (t_x + p.s_x > p.s_x + p.s_w2) {l = (txt_w > p.s_w2) ? txt_w - p.s_w2 : 0; if (l > 0) offsetChars++;}} selEnd = t;} else if (t > selStart) {if (t_x + p.s_x > p.s_x + p.s_w2) {l = (txt_w > p.s_w2) ? txt_w - p.s_w2 : 0; if (l > 0) offsetChars++;} selEnd = t;} cx = t; p.search_paint();}
+	this.rbtn_up = (x, y) => {men.search_menu(x, y, selStart, selEnd, doc.parentWindow.clipboardData.getData('text') ? true : false);}
 
-	this.lbtn_dn = function(x, y) {
-		var hadFocus = p.s_search;
+	// this.lbtn_dn = function(x, y) {
+	// 	var hadFocus = p.s_search;
+	// 	p.search_paint();
+	// 	lbtn_dn = p.s_search = (y < p.s_y + p.s_h && x >= p.s_x && x < p.s_x + p.s_w2);
+	// 	if (!lbtn_dn) {
+	// 		offsetChars = selStart = selEnd = cx = 0;
+	// 		timer.reset(timer.search_cursor);
+	// 		return;
+	// 	} else {
+	// 		if (shift) {
+	// 			selStart = cx;
+	// 			selEnd = cx = get_cursor_pos(x);
+	// 		} else {
+	// 			cx = get_cursor_pos(x);
+	// 			selStart = selEnd = cx;
+	// 		}
+	// 		if (!hadFocus) {
+	// 			this.searchFocus();
+	// 		}
+	// 		this.reset_cursor_timer();
+	// 	}
+	// 	p.search_paint();
+    // }
+	this.lbtn_dn = (x, y) => {
 		p.search_paint();
 		lbtn_dn = p.s_search = (y < p.s_y + p.s_h && x >= p.s_x && x < p.s_x + p.s_w2);
 		if (!lbtn_dn) {
 			offsetChars = selStart = selEnd = cx = 0;
-			timer.reset(timer.search_cursor);
+			timer.clear(timer.search_cursor);
 			return;
 		} else {
 			if (shift) {
-				selStart = cx;
-				selEnd = cx = get_cursor_pos(x);
+				selStart = cx; selEnd = cx = get_cursor_pos(x);
 			} else {
-				cx = get_cursor_pos(x);
+	    		cx = get_cursor_pos(x);
 				selStart = selEnd = cx;
 			}
-			if (!hadFocus) {
-				this.searchFocus();
-			}
-			this.reset_cursor_timer();
+			timer.clear(timer.search_cursor);
+			p.s_cursor = true;
+			timer.search_cursor.id = setInterval(() => {p.s_cursor = !p.s_cursor; p.search_paint();}, 530);
 		}
 		p.search_paint();
     }
 
     this.on_mouse_lbtn_dblclk = function(x, y, m) {
         if (y < p.s_y + p.s_h && x >= p.s_x && x < p.s_x + p.s_w2) {
-			this.on_char(v.selAll, true);
+			this.on_char(vk.selAll, true);
             p.search_paint();
         }
 	}
 
-	this.reset_cursor_timer = function () {
-		timer.reset(timer.search_cursor);
-		p.s_cursor = true;
-		timer.search_cursor = setInterval(function() {
-			p.s_cursor = !p.s_cursor;
-			p.search_paint();
-		}, 530);
-	}
+	// this.reset_cursor_timer = function () {
+	// 	timer.clear(timer.search_cursor);
+	// 	p.s_cursor = true;
+	// 	timer.search_cursor = setInterval(function() {
+	// 		p.s_cursor = !p.s_cursor;
+	// 		p.search_paint();
+	// 	}, 530);
+	// }
 
-	this.searchFocus = function() {
+	// this.searchFocus = function() {
+	// 	p.search_paint();
+	// 	p.s_search = true;
+	// 	this.reset_cursor_timer();
+	// 	p.search_paint();
+	// 	p.tree_paint();
+	// }
+	this.searchFocus = () => {
 		p.search_paint();
 		p.s_search = true;
-		this.reset_cursor_timer();
+		shift = false;
+		selStart = selEnd = cx = p.s_x;
+		timer.clear(timer.search_cursor);
+		p.s_cursor = true;
+		timer.search_cursor.id = setInterval(() => {p.s_cursor = !p.s_cursor; p.search_paint();}, 530);
 		p.search_paint();
-		p.tree_paint();
-	}
+    }
 
 	this.on_char = function(code, force) {
 		var text = String.fromCharCode(code);
@@ -2919,14 +2938,14 @@ function searchLibrary() {
 		p.s_cursor = false;
 		p.pos = -1;
 		switch (code) {
-			case v.enter: if (p.s_txt.length < 3) break; var items = fb.CreateHandleList(); try {items = fb.GetQueryItems(lib_manager.list, p.s_txt)} catch (e) {} library_tree.load(items, false, false, false, library_tree.gen_pl, false); break;
-			case v.redo: lg.push(p.s_txt); if (lg.length > 30) lg.shift(); if (log.length > 0) {p.s_txt = log.pop() + ""; cx++} break;
-			case v.undo: log.push(p.s_txt); if (log.length > 30) lg.shift(); if (lg.length > 0) p.s_txt = lg.pop() + ""; break;
-			case v.selAll:
+			case vk.enter: if (p.s_txt.length < 3) break; var items = fb.CreateHandleList(); try {items = fb.GetQueryItems(lib_manager.list, p.s_txt)} catch (e) {} library_tree.load(items, false, false, false, library_tree.gen_pl, false); break;
+			case vk.redo: lg.push(p.s_txt); if (lg.length > 30) lg.shift(); if (log.length > 0) {p.s_txt = log.pop() + ""; cx++} break;
+			case vk.undo: log.push(p.s_txt); if (log.length > 30) lg.shift(); if (lg.length > 0) p.s_txt = lg.pop() + ""; break;
+			case vk.selAll:
 				selStart = 0; selEnd = p.s_txt.length;
 				break;
-			case v.copy: if (selStart != selEnd) doc.parentWindow.clipboardData.setData('text', p.s_txt.substring(selStart, selEnd)); break; case v.cut: if (selStart != selEnd) doc.parentWindow.clipboardData.setData('text', p.s_txt.substring(selStart, selEnd));
-			case v.back:
+			case vk.copy: if (selStart != selEnd) doc.parentWindow.clipboardData.setData('text', p.s_txt.substring(selStart, selEnd)); break; case vk.cut: if (selStart != selEnd) doc.parentWindow.clipboardData.setData('text', p.s_txt.substring(selStart, selEnd));
+			case vk.back:
 				record();
 				if (selStart == selEnd) {if (cx > 0) {p.s_txt = p.s_txt.substr(0, cx - 1) + p.s_txt.substr(cx, p.s_txt.length - cx); if (offsetChars > 0) offsetChars--; cx--;}}
 				else {if (selEnd - selStart == p.s_txt.length) {p.s_txt = ""; cx = 0;} else {if (selStart > 0) {var st = selStart, en = selEnd; selStart = Math.min(st, en); selEnd = Math.max(st, en); p.s_txt = p.s_txt.substring(0, selStart) + p.s_txt.substring(selEnd, p.s_txt.length); cx = selStart;} else {p.s_txt = p.s_txt.substring(selEnd, p.s_txt.length); cx = selStart;}}}
@@ -2936,7 +2955,7 @@ function searchLibrary() {
 				if (selStart == selEnd) {if (cx < p.s_txt.length) {p.s_txt = p.s_txt.substr(0, cx) + p.s_txt.substr(cx + 1, p.s_txt.length - cx - 1);}}
 				else {if (selEnd - selStart == p.s_txt.length) {p.s_txt = ""; cx = 0;} else {if (selStart > 0) {var st = selStart, en = selEnd; selStart = Math.min(st, en); selEnd = Math.max(st, en); p.s_txt = p.s_txt.substring(0, selStart) + p.s_txt.substring(selEnd, p.s_txt.length); cx = selStart;} else {p.s_txt = p.s_txt.substring(selEnd, p.s_txt.length); cx = selStart;}}}
 				calc_text(); offsetChars = offsetChars >= selEnd - selStart ? offsetChars - selEnd + selStart : 0; selStart = cx; selEnd = selStart; break;
-			case v.paste:
+			case vk.paste:
 				text = doc.parentWindow.clipboardData.getData('text');
 				// fall through
 			default:
@@ -2954,45 +2973,50 @@ function searchLibrary() {
 				}
 				break;
 		}
-		if (code == v.copy || code == v.selAll) return;
-		if (!timer.search_cursor) timer.search_cursor = setInterval(function() {p.s_cursor = !p.s_cursor; p.search_paint();}, 530);
-		p.search_paint();
-		lib_manager.upd_search = true;
-		timer.reset(timer.search);
-		timer.search = setTimeout(function() {
-			lib_manager.time.Reset();
-			library_tree.subCounts.search = {};
-			lib_manager.treeState(false, libraryProps.rememberTree);
-			lib_manager.rootNodes();
+		// if (code == vk.copy || code == vk.selAll) return;
+		// if (!timer.search_cursor) timer.search_cursor = setInterval(function() {p.s_cursor = !p.s_cursor; p.search_paint();}, 530);
+		// p.search_paint();
+		// lib_manager.upd_search = true;
+		// timer.reset(timer.search);
+		// timer.search = setTimeout(function() {
+		// 	lib_manager.time.Reset();
+		// 	library_tree.subCounts.search = {};
+		// 	lib_manager.treeState(false, libraryProps.rememberTree);
+		// 	lib_manager.rootNodes();
+		// 	// p.setHeight(true);
+		// 	if (libraryProps.searchAutoExpand) {
+		// 		if (!library_tree.tree.length) return timer.search = false;
+		// 		var count = 0, m = libraryProps.rootNode ? 1 : 0;
+		// 		for (m; m < library_tree.tree.length; m++) count += library_tree.tree[m].item.length;
+		// 		if (count > expand_limit) return timer.search = false; var n = false;
+		// 		if (libraryProps.rootNode && library_tree.tree.length > 1) n = true;
+		// 		m = library_tree.tree.length;
+		// 		while (m--) {
+		// 			library_tree.expandNodes(library_tree.tree[m], !!libraryProps.rootNode && !m);
+		// 			if (n && m == 1) break;
+		// 		}
+		// 		if (libraryProps.rootNode && library_tree.tree.length == 1) library_tree.line_l = 0;
+		// 		sbar.set_rows(library_tree.tree.length); p.tree_paint(); lib_manager.treeState(false, libraryProps.rememberTree);
+		// 	}
+		// 	timer.search = false;
+		// }, 160);
+		if (code == vk.copy || code == vk.selAll) return;
+        if (!timer.search_cursor) timer.search_cursor.id = setInterval(() => {p.s_cursor = !p.s_cursor; p.search_paint();}, 530);
+        but.set_search_btns_hide(); p.search_paint(); lib_manager.upd_search = true; timer.clear(timer.search);
+        timer.search.id = setTimeout(() => {lib_manager.time.Reset(); library_tree.subCounts.search = {}; lib_manager.treeState(false, libraryProps.rememberTree); lib_manager.rootNodes();
 			// p.setHeight(true);
-			if (libraryProps.searchAutoExpand) {
-				if (!library_tree.tree.length) return timer.search = false;
-				var count = 0, m = libraryProps.rootNode ? 1 : 0;
-				for (m; m < library_tree.tree.length; m++) count += library_tree.tree[m].item.length;
-				if (count > expand_limit) return timer.search = false; var n = false;
-				if (libraryProps.rootNode && library_tree.tree.length > 1) n = true;
-				m = library_tree.tree.length;
-				while (m--) {
-					library_tree.expandNodes(library_tree.tree[m], !!libraryProps.rootNode && !m);
-					if (n && m == 1) break;
-				}
-				if (libraryProps.rootNode && library_tree.tree.length == 1) library_tree.line_l = 0;
-				sbar.set_rows(library_tree.tree.length); p.tree_paint(); lib_manager.treeState(false, libraryProps.rememberTree);
-			}
-			timer.search = false;
 		}, 160);
 	}
 
 	this.on_key_down = function(vkey) {
 		if (!p.s_search) return;
 		switch(vkey) {
-			case v.left:
-			case v.right:
-				if (vkey == v.left) {
+			case vk.left:
+			case vk.right:
+				if (vkey == vk.left) {
 					if (offsetChars > 0) {
 						if (cx <= offsetChars) {
-							offsetChars--;
-							cx--;
+							offsetChars--; cx--;
 						} else {
 							cx--;
 						}
@@ -3001,7 +3025,7 @@ function searchLibrary() {
 					}
 					selStart = selEnd = cx;
 				}
-				if (vkey == v.right && cx < p.s_txt.length)
+				if (vkey == vk.right && cx < p.s_txt.length)
 					cx++;
 				selStart = selEnd = cx;
 				if (shift) {
@@ -3009,20 +3033,31 @@ function searchLibrary() {
 					selEnd = Math.max(cx, shift_x);
 				}
 				p.s_cursor = true;
-				timer.reset(timer.search_cursor);
-				timer.search_cursor = setInterval(function() {
-					p.s_cursor = !p.s_cursor; p.search_paint();
-				}, 530);
+				timer.clear(timer.search_cursor);
+				timer.search_cursor.id = setInterval(() => {p.s_cursor = !p.s_cursor; p.search_paint();}, 530);
 				break;
-			case v.home:
-			case v.end:
-				if (vkey == v.home) offsetChars = selStart = selEnd = cx = 0; else selStart = selEnd = cx = p.s_txt.length; p.s_cursor = true; timer.reset(timer.search_cursor); timer.search_cursor = setInterval(function() {p.s_cursor = !p.s_cursor; p.search_paint();}, 530);
+			case vk.home:
+			case vk.end:
+				if (vkey == vk.home) {
+					offsetChars = selStart = cx = 0;
+					if (!shift) {
+						selEnd = 0;
+					}
+				} else {
+					selEnd = cx = p.s_txt.length;
+					if (!shift) {
+						selStart = p.s_txt.length;
+					}
+				}
+				p.s_cursor = true;
+				timer.clear(timer.search_cursor);
+				timer.search_cursor.id = setInterval(() => {p.s_cursor = !p.s_cursor; p.search_paint();}, 530);
 				break;
-			case v.shift:
+			case vk.shift:
 				shift = true;
 				shift_x = cx;
 				break;
-			case v.del:
+			case vk.del:
 				this.on_char("delete");
 				break;
 		}
@@ -3082,8 +3117,8 @@ function JumpSearch() {
 		if (!p.s_search) {
 			var found = false, i = 0, pos = -1;
 			switch(code) {
-				case v.back: jSearch = jSearch.substr(0, jSearch.length - 1); break;
-				case v.enter: jSearch = ""; return;
+				case vk.back: jSearch = jSearch.substr(0, jSearch.length - 1); break;
+				case vk.enter: jSearch = ""; return;
 				default: jSearch += text; break;
 			}
 			library_tree.clear();
@@ -3215,7 +3250,7 @@ function Buttons() {
     this.reset = () => transition.stop();
     this.set_scroll_btns_hide = (force) => {if (!this.btns || (!pptDefault.sbarShow && !force)) return; scrBtns.forEach((v, i) => {if (this.btns[v]) this.btns[v].hide = sbar.scrollable_lines < 1 || !pptDefault.sbarShow;});}
     this.set_search_btns_hide = () => {
-        if (this.btns.s_img) this.btns.s_img.hide = pptDefault.searchShow > 1 && p.s_txt;
+	    if (this.btns.s_img) this.btns.s_img.hide = pptDefault.searchShow > 1 && p.s_txt;
         if (this.btns.cross2) this.btns.cross2.hide = !this.btns.s_img.hide;
     }
 
@@ -3678,9 +3713,9 @@ function menu_object() {
 		if (idx >= 1 && idx <= Index) {
 			i = MenuMap[idx].value;
 			switch (i) {
-				case 1: sL.on_char(v.copy); break;
-				case 2: sL.on_char(v.cut); break;
-				case 3: sL.on_char(v.paste, true); break;
+				case 1: sL.on_char(vk.copy); break;
+				case 2: sL.on_char(vk.cut); break;
+				case 3: sL.on_char(vk.paste, true); break;
 			}
 		}
 	}
@@ -3815,14 +3850,19 @@ class Timers {
 		this.clear_jsearch = undefined;
 		this.focus = undefined;
 		this.jsearch = undefined;
-		this.search = undefined;
-		this.search_cursor = undefined;
+		this.search = { id: undefined };
+		this.search_cursor = { id: undefined };
 		this.tt = undefined;
 		this.update = undefined;
 	}
 
 	reset(timer) {
 		clearTimeout(timer);	// can always call clearTimeout even on bogus non-timer input
+	}
+
+	clear(timer) {
+		if (timer) { clearTimeout(timer.id); }
+		timer.id = null;
 	}
 
 	lib() {
@@ -3908,8 +3948,8 @@ class LibraryCallbacks {
 	on_mouse_move(x, y, m) {if (p.m_x == x && p.m_y == y) return; if (libraryProps.searchMode || libraryProps.showScrollbar) but.move(x, y); if (libraryProps.searchMode) sL.move(x, y); library_tree.move(x, y); library_tree.dragDrop(x, y); sbar.move(x, y); p.m_x = x; p.m_y = y;}
 	on_mouse_rbtn_up(x, y) {if (y < p.s_h && x > p.s_x && x < p.s_x + p.s_w2) {if (libraryProps.searchMode) sL.rbtn_up(x, y); return true;} else {men.rbtn_up(x, y); return true;}}
 	on_mouse_wheel(step) {
-        if (!v.k(CTRL_ALT)) {
-            sbar.wheel(step, false);
+        if (!vk.k(CTRL_ALT)) {
+            sbar.wheel(step);
         } else {
             ui.wheel(step);
         }
@@ -3936,7 +3976,7 @@ let sbar;
 /** @type {panel_operations} */
 let p;
 /** @type {v_keys} */
-let v;
+let vk;
 /** @type {Library} */
 let lib_manager;
 /** @type {LibraryTree} */
@@ -3959,7 +3999,7 @@ function initLibraryPanel() {
 		ui = new userinterface();
 		sbar = new Scrollbar();
 		p = new panel_operations();
-		v = new v_keys();
+		vk = new v_keys();
 		lib_manager = new Library();
 		library_tree = new LibraryTree();
 		if (libraryProps.searchMode) {
@@ -3985,7 +4025,7 @@ function freeLibraryPanel() {
 	ui = null;
 	sbar = null;
 	p = null;
-	v = null;
+	vk = null;
 	lib_manager = null;
 	library_tree = null;
 	sL = null;
