@@ -42,7 +42,7 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
         window.RepaintRect(this.x, this.y, this.w, this.h);
     };
 
-    this.reset = function () {
+    this.reset = () => {
         throttled_scroll_to.flush();
         alpha_timer.stop();
         this.stop_shift_timer();
@@ -55,14 +55,14 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
         return x > this.x && x < this.x + this.w && y > this.y && y < this.y + this.h;
     };
 
-    this.set_window_param = function (rows_drawn, row_count) {
+    this.set_window_param = (rows_drawn, row_count) => {
         this.rows_drawn = rows_drawn;
         this.row_count = row_count;
         this.calc_params();
         this.create_parts();
     };
 
-    this.calc_params = function () {
+    this.calc_params = () => {
         this.btn_h = this.w;
         // draw info
         this.scrollbar_h = this.h - this.btn_h * 2;
@@ -74,7 +74,7 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
         this.drag_distance_per_row = this.scrollbar_travel / this.scrollable_lines;
     };
 
-    this.create_parts = function () {
+    this.create_parts = () => {
         create_dynamic_scrollbar_images(this.w, this.thumb_h);
 
         var x = this.x;
@@ -91,7 +91,7 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
 
     /** @type {number} */ this.desiredScrollPosition = undefined;
     /** @type {number} */ this.lastScrollPosition = undefined;
-    this.wheel = function (wheel_direction) {
+    this.wheel = (wheel_direction) => {
         var direction = -wheel_direction;
 
         if (this.wheel_scroll_page) {
@@ -103,11 +103,16 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
             } else {
                 this.desiredWheelScroll += (direction * 2);
             }
+            if (direction === -1 && this.desiredWheelScroll < 0) {
+                this.desiredWheelScroll = 0;
+            } else if (direction === 1 && this.desiredWheelScroll > this.scrollable_lines) {
+                this.desiredWheelScroll = this.scrollable_lines;
+            }
             this.smooth_scroll_to(this.desiredWheelScroll);
         }
     };
 
-    this.parts_leave = function () {
+    this.parts_leave = () => {
         this.in_sbar = false;
         cur_part_key = null;
 
@@ -125,7 +130,7 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
         this.parts_leave();
     };
 
-    this.parts_move = function (x, y) {
+    this.parts_move = (x, y) => {
         var hover_part_key = _.findKey(this.sb_parts, function (item) {
             return item.trace(x, y);
         });
@@ -202,7 +207,7 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
         }
     };
 
-    this.lbtn_dn = function (p_x, p_y) {
+    this.lbtn_dn = (p_x, p_y) => {
         if (!this.trace(p_x, p_y) || this.row_count <= this.rows_drawn) {
             return;
         }
@@ -248,7 +253,7 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
         return true;
     };
 
-    this.lbtn_up = function (x, y) {
+    this.lbtn_up = (x, y) => {
         this.parts_lbtn_up(x, y);
         if (this.b_is_dragging) {
             this.b_is_dragging = false;
@@ -282,7 +287,7 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
      * after the first scroll event happens.
      * @param {number} shift_amount number of rows to shift
      */
-    this.start_shift_timer = function (shift_amount) {
+    this.start_shift_timer = (shift_amount) => {
         if (_.isNil(timer_shift)) {
             timer_shift_count = 0;
             timer_shift = setInterval(() => {
@@ -402,7 +407,7 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
         scrollFunc(timerVal);   // want to immediately start scroll
     }
 
-    this.scroll_to = function (new_position, scroll_wo_redraw = false) {
+    this.scroll_to = (new_position, scroll_wo_redraw = false) => {
         var s = Math.max(0, Math.min(new_position, this.scrollable_lines));
         if (s === this.scroll) {
             return;
@@ -419,7 +424,7 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
         }
     };
 
-    this.set_x = function (x) {
+    this.set_x = (x) => {
         this.x = x;
         _.forEach(this.sb_parts, function (item) {
             item.x = x;
@@ -685,7 +690,7 @@ function ScrollBarPart(x, y, w, h, img_src) {
         return x > this.x && x < this.x + this.w && y > this.y && y < this.y + this.h;
     };
 
-    this.cs = function (s) {
+    this.cs = (s) => {
         this.state = s;
         this.repaint();
     };
