@@ -81,6 +81,9 @@ pptDefault.searchShow = libraryProps.searchMode;
 pptDefault.touchControl = false;
 pptDefault.touchStep = 1;
 pptDefault.treeIndent = Math.round(19 * s.scale);
+pptDefault.blurBlend = false;
+pptDefault.blurDark = false;
+pptDefault.blurLight = false;
 
 function userinterface() {
 	let dpi;
@@ -113,20 +116,15 @@ function userinterface() {
 		zoom = 100,
 		zoomFontSize = 16;
 		// zoom_node = 100;
-	this.b1 = 0x04ffffff;
-	this.b2 = 0x04000000;
-	this.backcol = "";
-	this.backcolsel = undefined;
-	// this.backcoltrans = "";
 	this.bg = false;
 	this.col = {};
 	// this.blur_blend = window.GetProperty("SYSTEM.Blur Blend Theme", false);
-	// this.blur_dark = window.GetProperty("SYSTEM.Blur Dark Theme", false);
-	// this.blur_light = window.GetProperty("SYSTEM.Blur Light Theme", false);
+	// this.blurDark = window.GetProperty("SYSTEM.Blur Dark Theme", false);
+	// this.blurLight = window.GetProperty("SYSTEM.Blur Light Theme", false);
 	// var blur_tmp = window.GetProperty("ADV.Image Blur Background Level (0-100)", 90),
 	//     blurAutofill = window.GetProperty("ADV.Image Blur Background Auto-Fill", false);
 	// this.blurLevel = this.blur_blend ? 91.05 - Math.max(Math.min(blur_tmp, 90), 1.05) : Math.max(Math.min(blur_tmp * 2, 254), 0);
-	// this.blur = this.blur_blend || this.blur_dark || this.blur_light;
+	// this.blur = this.blur_blend || this.blurDark || this.blurLight;
 	this.collapse = "";
 	// this.blurAlpha = window.GetProperty("ADV.Image Blur Background Opacity (0-100)", 30);
 	// this.blurAlpha = Math.min(Math.max(this.blurAlpha, 0), 100) / 30;
@@ -134,7 +132,7 @@ function userinterface() {
 		return RGB(Math.min(Math.max(r + (256 - r) * percent / 100, 0), 255), Math.min(Math.max(g + (256 - g) * percent / 100, 0), 255), Math.min(Math.max(b + (256 - b) * percent / 100, 0), 255));
 	}
 	this.expand =  "";
-	this.ct = false;
+	// this.ct = false;
 	this.drag_drop_id = -1;
 	this.dui = window.InstanceType;
 	this.font = undefined;
@@ -150,12 +148,10 @@ function userinterface() {
 	this.l_s2 = 6;
 	this.l_s3 = 7;
 	this.l_width = scaleForDisplay(1);
-	this.linecol = "";
 	this.local = false; //typeof conf === 'undefined' ? false : true;
 	this.row_h = 20;
 	this.searchFont = undefined;
 	this.s_linecol = 0;
-	this.searchcol = undefined;
 	this.sel = 3;
 	this.touch_dn_id = -1;
 	this.x = 0;
@@ -279,13 +275,14 @@ function userinterface() {
 	var get_grad = function (c, f1, f2) {return [RGB(Math.min(R(c) + f1, 255), Math.min(G(c) + f1, 255), Math.min(B(c) + f1, 255)), RGB(Math.max(R(c) + f2, 0), Math.max(G(c) + f2, 0), Math.max(B(c) + f2, 0))];}
 	var get_textselcol = function(c, n) {var cc = [R(c), G(c), B(c)]; var ccc = []; for (var i = 0; i < cc.length; i++) {ccc[i] = cc[i] / 255; ccc[i] = ccc[i] <= 0.03928 ? ccc[i] / 12.92 : Math.pow(((ccc[i] + 0.055 ) / 1.055), 2.4);} var L = 0.2126 * ccc[0] + 0.7152 * ccc[1] + 0.0722 * ccc[2]; if (L > 0.31) return n ? 50 : RGB(0, 0, 0); else return n ? 200 : RGB(255, 255, 255);}
 	this.outline = function(c, but) {if (but) {if (window.IsTransparent || R(c) + G(c) + B(c) > 30) return RGBA(0, 0, 0, 36); else return RGBA(255, 255, 255, 36);} else if (R(c) + G(c) + B(c) > 255 * 1.5) return RGB(30, 30, 10); else return RGB(225, 225, 245);}
-	this.reset_colors = function () {
-		iconcol_c = ""; iconcol_h = undefined; this.backcol = ""; this.iconcol_c = ""; this.iconcol_h = [];
-		this.linecol = ""; this.s_linecol = 0; this.searchcol = undefined;
+	this.reset_colors = () => {
+		this.col = {};	// clear all
+		iconcol_c = ""; iconcol_h = undefined; this.iconcol_c = ""; this.iconcol_h = [];
+		this.s_linecol = 0;
 	}
 
 	this.icon_col = () => {
-		// if (iconcol_c === "") {this.iconcol_c = this.nodeStyle ? [RGB(252, 252, 252), RGB(223, 223, 223)] : this.textcol;} else if (this.nodeStyle) {if (A(iconcol_c) != 255) {this.iconcol_c = RGBAtoRGB(iconcol_c, this.backcol);} else this.iconcol_c = iconcol_c; this.iconcol_c = get_grad(this.iconcol_c, 15, -14);}
+		// if (iconcol_c === "") {this.iconcol_c = this.nodeStyle ? [RGB(252, 252, 252), RGB(223, 223, 223)] : this.textcol;} else if (this.nodeStyle) {if (A(iconcol_c) != 255) {this.iconcol_c = RGBAtoRGB(iconcol_c, this.col.bg);} else this.iconcol_c = iconcol_c; this.iconcol_c = get_grad(this.iconcol_c, 15, -14);}
 		// // if (iconcol_e === "") {this.iconcol_e = this.node_style ? [RGB(252, 252, 252), RGB(223, 223, 223)] : this.textcol & 0xC0ffffff;} else if (this.node_style) {if (A(iconcol_e) != 255) {this.iconcol_e = RGBAtoRGB(iconcol_e, this.backcol);} else this.iconcol_e = iconcol_e; this.iconcol_e = get_grad(this.iconcol_e, 15, -14);}
 		// this.iconcol_e = [rgb(252, 252, 252), rgb(223, 223, 223)];
 		// this.iconpluscol = RGB(72, 72, 92); //get_textselcol(this.iconcol_e[0], true) == 50 ? RGB(41, 66, 114) : RGB(225, 225, 245);
@@ -312,7 +309,7 @@ function userinterface() {
 		/** Code below will probably not execute */
         if (iconcol_h === undefined) {
 			this.col.icon_h = this.nodeStyle
-					? !libraryProps.blurDark && !libraryProps.blurLight
+					? !pptDefault.blurDark && !pptDefault.blurLight
 							// ? !this.local
 									? (colSat(this.col.text_h) < 650
 											? this.col.text_h
@@ -337,11 +334,10 @@ function userinterface() {
 	}
 
 	this.get_colors = () => {
-		this.backcol = g_theme.colors.pss_back;
-		// this.backcolsel = set_custom_col(window.GetProperty("_Custom.Colour Background Selected", ""), 1);
-		this.linecol = g_pl_colors.title_selected & 0x80ffffff;
+		this.col.bg = g_theme.colors.pss_back;
+		// this.col.bgSel = set_custom_col(window.GetProperty("_Custom.Colour Background Selected", ""), 1);
+		this.col.line = g_pl_colors.title_selected & 0x80ffffff;
 		this.s_linecol = g_pl_colors.title_selected & 0x80ffffff;
-		this.searchcol;
 		// this.textcol = g_pl_colors.artist_normal;
 		this.col.textsel = rgb(255,255,255);
 		this.iconcol_c = '';
@@ -350,43 +346,43 @@ function userinterface() {
 		this.iconcol_h = [];
 		iconcol_h = this.iconcol_h;
 		// this.backcoltrans = set_custom_col(window.GetProperty("_Custom.Colour Transparent Fill", ""), 1);
-		this.blur = false; //this.blur_dark || this.blur_light;
-		// if (this.blur_dark) {
+		this.col.b1 = 0x04ffffff; this.col.b2 = 0x04000000;
+		this.blur = false; //this.blurDark || this.blurLight;
+		// if (this.blurDark) {
 		// 	this.bg_color_light = RGBA(0, 0, 0, Math.min(160 / this.blurAlpha, 255));
 		// 	this.bg_color_dark = RGBA(0, 0, 0, Math.min(80 / this.blurAlpha, 255));
 		// }
-		// if (this.blur_light) {
+		// if (this.blurLight) {
 		// 	this.bg_color_light = RGBA(255, 255, 255, Math.min(160 / this.blurAlpha, 255));
 		// 	this.bg_color_dark = RGBA(255, 255, 255, Math.min(205 / this.blurAlpha, 255));
 		// }
 		// let textCol = 0;
 		if (this.dui) { // custom colour mapping: DUI colours can be remapped by changing the numbers (0-3)
-			if (this.backcol === "") this.backcol = window.GetColourDUI(1);
-			this.backcolsel = window.GetColourDUI(3);
+			if (this.col.bg === undefined) this.col.bg = window.GetColourDUI(1);
+			this.col.bgSel = window.GetColourDUI(3);
 			// textCol = window.GetColourDUI(0);
 		} else { // custom colour mapping: CUI colours can be remapped by changing the numbers (0-6)
-			if (this.backcol === "") this.backcol = window.GetColourCUI(3);
-			this.backcolsel = window.GetColourCUI(4);
+			if (this.col.bg === undefined) this.col.bg = window.GetColourCUI(3);
+			this.col.bgSel = window.GetColourCUI(4);
 			// textCol = window.GetColourCUI(0);
 		}
 		this.col.text = g_pl_colors.artist_normal;;
 		this.col.text_h = rgb(220, 220, 220);	// hovered text col
 		// this.textcol_h = textColHover;
 		// if (s_linecol == 1 && window.IsTransparent && !this.dui) s_linecol = 0;
-		// if (this.searchcol === "") this.searchcol = s_col < 3 ? this.textcol : this.textcol_h;
+		// if (this.col.search === undefined) this.col.search = s_col < 3 ? this.textcol : this.textcol_h;
 		// blend = get_blend(this.backcol == 0 ? 0xff000000 : this.backcol, !s_col || s_col == 2 ? this.textcol : this.textcol_h, 0.75);
         // if (this.txt_box === "")
-        //     this.txt_box = s_col < 2 ? get_blend(!s_col ? this.textcol : this.textcol_h, this.backcol == 0 ? 0xff000000 : this.backcol, !s_col ? 0.65 : 0.7) : s_col == 2 ? this.textcol : this.textcol_h;
+        //     this.txt_box = s_col < 2 ? get_blend(!s_col ? this.textcol : this.textcol_h, this.col.bg == 0 ? 0xff000000 : this.col.bg, !s_col ? 0.65 : 0.7) : s_col == 2 ? this.textcol : this.textcol_h;
         this.col.txt_box = rgb(125, 127, 128);
 		this.col.txt_filter = toRGB(this.col.txt_box);
         this.col.search = rgb(180, 182, 184);
 		// if (this.s_linecol === "") this.s_linecol = s_linecol == 0 ? RGBA(136, 136, 136, 85) : s_linecol == 1 ? blend : this.txt_box;
-		// if (window.IsTransparent && this.backcoltrans) {this.bg = true; this.backcol = this.backcoltrans}
-		if (!window.IsTransparent || this.dui) {this.bg = true; if ((R(this.backcol) + G(this.backcol) + B(this.backcol)) > 759) this.b2 = 0x06000000;}
+		// if (window.IsTransparent && this.backcoltrans) {this.bg = true; this.col.bg = this.backcoltrans}
+		if (!window.IsTransparent || this.dui) {this.bg = true; if ((R(this.col.bg) + G(this.col.bg) + B(this.col.bg)) > 759) this.col.b2 = 0x06000000;}
 		this.icon_col();
-		this.ct = this.bg ? get_textselcol(this.backcol, true) : 200;
-        this.ibeamcol1 = window.IsTransparent ? 0xffe1e1f5 : this.outline(this.backcol);
-		this.ibeamcol2 = window.IsTransparent || !this.backcolsel ? 0xff0099ff : this.backcolsel != this.searchcol ? this.backcolsel : 0xff0099ff;
+		this.col.t = this.bg ? get_textselcol(this.col.bg, true) : 200;
+   		this.col.searchSel = window.IsTransparent || !this.col.bgSel ? 0xff0099ff : this.col.bgSel != this.col.search ? this.col.bgSel : 0xff0099ff;
 	}
 	this.get_colors();
 
@@ -503,7 +499,7 @@ function userinterface() {
 			font3 = gdi.Font("Segoe UI", 200, 1),
 			font4 = gdi.Font("Segoe UI", 90, 1),
 			gb,
-			tcol = !this.blur_dark && !this.blur_light ? this.col.text : this.dui ? window.GetColourDUI(0) : window.GetColourCUI(0);
+			tcol = !pptDefault.blurDark && !pptDefault.blurLight ? this.col.text : this.dui ? window.GetColourDUI(0) : window.GetColourCUI(0);
 		const imgTypes = ["COVER", "SELECTION"];
 		const noimg = {};
 		for (var i = 0; i < imgTypes.length; i++) {
@@ -511,10 +507,10 @@ function userinterface() {
 			noimg[i] = gdi.CreateImage(500, 500);
 			gb = noimg[i].GetGraphics();
 			gb.SetSmoothingMode(SmoothingMode.HighQuality);
-			if (!this.blur_dark && !this.blur_light) {
+			// if (!pptDefault.blurDark && !pptDefault.blurLight) {
 				gb.FillSolidRect(0, 0, 500, 500, tcol);
-				gb.FillGradRect(-1, 0, 505, 500, 90, this.backcol & 0xbbffffff, this.backcol, 1.0);
-			}
+				gb.FillGradRect(-1, 0, 505, 500, 90, this.col.bg & 0xbbffffff, this.col.bg, 1.0);
+			// }
 			gb.SetTextRenderingHint(3);
 			gb.DrawString("NO", i ? font3 : font1, tcol & 0x25ffffff, 0, 0, 500, 275, cc);
 			gb.DrawString(n, i ? font4 : font2, tcol & 0x20ffffff, 2.5, 175, 500, 275, cc);
@@ -527,7 +523,7 @@ function userinterface() {
 	this.draw = function (gr) {
 		try {
 			if (this.bg) {
-				gr.FillSolidRect(this.x, this.y, this.w, this.h, this.backcol);
+				gr.FillSolidRect(this.x, this.y, this.w, this.h, this.col.bg);
 			}
 			// if (!this.blur && !this.imgBg)
 			// 	return;
@@ -791,13 +787,13 @@ function Scrollbar() {
 // 		switch (ui.sbarType) {
 // 			case 0:
 // 				switch (ui.scr_col) {
-// 					case 0: gr.FillSolidRect(this.x, this.y + this.bar_y, this.w, this.bar_ht, RGBA(ui.ct, ui.ct, ui.ct, !this.hover && !this.b_is_dragging ? this.alpha : this.hover && !this.b_is_dragging ? this.alpha : 192)); break;
+// 					case 0: gr.FillSolidRect(this.x, this.y + this.bar_y, this.w, this.bar_ht, RGBA(ui.col.t, ui.col.t, ui.col.t, !this.hover && !this.b_is_dragging ? this.alpha : this.hover && !this.b_is_dragging ? this.alpha : 192)); break;
 // 					case 1: gr.FillSolidRect(this.x, this.y + this.bar_y, this.w, this.bar_ht, ui.textcol & (!this.hover && !this.b_is_dragging ? RGBA(255, 255, 255, this.alpha) : this.hover && !this.b_is_dragging ? RGBA(255, 255, 255, this.alpha) : 0x99ffffff)); break;
 // 				}
 // 				break;
 // 			case 1:
 // 				switch (ui.scr_col) {
-// 					case 0: gr.FillSolidRect(this.x, this.y - p.sbar_o, this.w, this.h + p.sbar_o * 2, RGBA(ui.ct, ui.ct, ui.ct, 15)); gr.FillSolidRect(this.x, this.y + this.bar_y, this.w, this.bar_ht, RGBA(ui.ct, ui.ct, ui.ct, !this.hover && !this.b_is_dragging ? this.alpha : this.hover && !this.b_is_dragging ? this.alpha : 192)); break;
+// 					case 0: gr.FillSolidRect(this.x, this.y - p.sbar_o, this.w, this.h + p.sbar_o * 2, RGBA(ui.col.t, ui.col.t, ui.col.t, 15)); gr.FillSolidRect(this.x, this.y + this.bar_y, this.w, this.bar_ht, RGBA(ui.col.t, ui.col.t, ui.col.t, !this.hover && !this.b_is_dragging ? this.alpha : this.hover && !this.b_is_dragging ? this.alpha : 192)); break;
 // 					case 1: gr.FillSolidRect(this.x, this.y - p.sbar_o, this.w, this.h + p.sbar_o * 2, ui.textcol & 0x15ffffff); gr.FillSolidRect(this.x, this.y + this.bar_y, this.w, this.bar_ht, ui.textcol & (!this.hover && !this.b_is_dragging ? RGBA(255, 255, 255, this.alpha) : this.hover && !this.b_is_dragging ? RGBA(255, 255, 255, this.alpha) : 0x99ffffff)); break;
 // 				}
 // 				break;
@@ -1861,7 +1857,7 @@ function LibraryTree() {
 		ui.node_win = 0;
 	}
 	im.ReleaseGraphics(g);
-	this.line_l = 0; this.sel_items = []; this.subCounts =  {"standard": {}, "filter": {}, "search": {}}; this.tree = [];
+	this.line_l = 0; this.rows = 0; this.sel_items = []; this.subCounts =  {"standard": {}, "filter": {}, "search": {}}; this.tree = [];
 	// if (!window.GetProperty("SYSTEM.Playlist Checked", false))
 	// 	fb.ShowPopupMessage("Default playlist: Library View.\n\nChange in panel properties if required.", "Library Tree");
 	// window.SetProperty("SYSTEM.Playlist Checked", true);
@@ -2460,7 +2456,7 @@ function LibraryTree() {
 							var l_x = (ui.x + Math.round(ui.pad * drawDepth + ui.margin) + Math.floor(ui.node_sz / 2));
 							var l_y = Math.round(ui.y + ui.row_h * line_row_start + p.s_h - sbar.delta);
 							var lineHeight = Math.ceil(ui.row_h * (line_row_end - line_row_start)) + 1;
-							gr.FillSolidRect(l_x, l_y, lineWidth, lineHeight, ui.linecol);
+							gr.FillSolidRect(l_x, l_y, lineWidth, lineHeight, ui.col.line);
 						}
 					}
 					if (item.bot) {
@@ -2469,15 +2465,16 @@ function LibraryTree() {
 				}
 
 				item_y = Math.round(ui.y + ui.row_h * i + p.s_h - sbar.delta);
+				this.rows++;
 				if (pptDefault.rowStripes) {
 					if (i % 2 == 0)
-						gr.FillSolidRect(ui.x, item_y + 1, sbar.stripe_w, ui.row_h - 2, ui.b1);
+						gr.FillSolidRect(ui.x, item_y + 1, sbar.stripe_w, ui.row_h - 2, ui.col.b1);
 					else
-						gr.FillSolidRect(ui.x, item_y, sbar.stripe_w, ui.row_h, ui.b2);
+						gr.FillSolidRect(ui.x, item_y, sbar.stripe_w, ui.row_h, ui.col.b2);
 				}
 				// item selected
-				let bgColor = ui.backcolsel;
-				if (item.sel && (ui.backcolsel !== 0 || col.primary !== 0)) {
+				let bgColor = ui.col.bgSel;
+				if (item.sel && (ui.col.bgSel !== 0 || col.primary !== 0)) {
 					nm = item.name + item.count;
 					item_x = Math.round(ui.pad * item.tr + ui.margin) + ui.icon_w;
 					item_w = gr.CalcTextWidth(nm, ui.font);
@@ -2501,12 +2498,12 @@ function LibraryTree() {
 				if (libraryProps.tooltips && libraryProps.fullLine) item.tt_w = item_w;
 				var y2 = Math.round(ui.y + ui.row_h * (i + 0.5) + p.s_h - sbar.delta) - 1;
 				if (!item.track) {
-					gr.FillSolidRect(item_x + ui.node_sz, y2, ui.l_s1, nodeLineWidth, ui.linecol);
+					gr.FillSolidRect(item_x + ui.node_sz, y2, ui.l_s1, nodeLineWidth, ui.col.line);
                     draw_node(gr, item.child.length < 1 ? m_br != i ? 0 : 2 : m_br != i ? 1 : 3, item_x, item_y + p.node_y);
 				}
 				else {
 					// y2 = Math.round(p.s_h - sbar.delta) + Math.ceil(ui.row_h * (i + 0.5)) - ui.l_widthf; // TODO: Do we need this line?
-					gr.FillSolidRect(item_x + ui.l_s2, y2, ui.l_s3, nodeLineWidth, ui.linecol);
+					gr.FillSolidRect(item_x + ui.l_s2, y2, ui.l_s3, nodeLineWidth, ui.col.line);
 				}
 				item_x += ui.icon_w;
 				let bgColor = item.sel ? col.primary : undefined;
@@ -3506,7 +3503,7 @@ function Buttons() {
 // 			if (ui.scr_col) {
 // 				g.FillPolygon(col[j], 1, [50 * sc, 0, 100 * sc, 76 * sc, 0, 76 * sc]);
 // 			} else {
-// 				g.FillPolygon(RGBA(ui.ct, ui.ct, ui.ct, alpha[j]), 1, [50 * sc, 0, 100 * sc, 76 * sc, 0, 76 * sc]);
+// 				g.FillPolygon(RGBA(ui.col.t, ui.col.t, ui.col.t, alpha[j]), 1, [50 * sc, 0, 100 * sc, 76 * sc, 0, 76 * sc]);
 // 			}
 // 			g.SetSmoothingMode(SmoothingMode.Default);
 // 			scr[j].ReleaseGraphics(g);
@@ -3654,7 +3651,7 @@ function menu_object() {
 	this.TagTypeMenu = function(Menu, StartIndex) {var Index = StartIndex; this.NewMenuItem(Index, "Tag", 1); Menu.AppendMenuItem(mtags_installed && p.view.replace(/^\s+/, "") == "$directory_path(%path%)|%filename_ext%" ? MF_STRING : MF_GRAYED, Index, "Create m-TAGS..." + (mtags_installed ? (p.view.replace(/^\s+/, "").toLowerCase() == "$directory_path(%path%)|%filename_ext%" ? "" : " N/A Requires View by Path // $directory_path(%path%)|%filename_ext%$nodisplay{%subsong%}") : " N/A m-TAGS Not Installed")); Index++; return Index;}
 	this.ThemeTypeMenu = function (Menu, StartIndex) {
 		var Index = StartIndex,
-			c = [!ui.blur_dark && !ui.blur_blend && !ui.blur_light && !ui.imgBg, ui.blur_dark, ui.blur_blend, ui.blur_light, ui.imgBg, false],
+			c = [!pptDefault.blurDark && !pptDefault.blurBlend && !pptDefault.blurLight && !ui.imgBg, pptDefault.blurDark, pptDefault.blurBlend, pptDefault.blurLight, ui.imgBg, false],
 			n = ["None", "Dark", "Blend", "Light", "Cover", "Reload"];
 		for (var i = 0; i < n.length; i++) {
 			this.NewMenuItem(Index, "Theme", i + 1);
