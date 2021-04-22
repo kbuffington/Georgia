@@ -370,7 +370,7 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
      * @param {number} newPosition row position to scroll to
      * @returns
      */
-    this.smooth_scroll_to = function(newPosition) {
+    this.smooth_scroll_to = (newPosition) => {
         const end = Math.max(0, Math.min(newPosition, this.scrollable_lines));
         if (end === this.scroll) {
             return;
@@ -397,6 +397,7 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
             // console.log(`${start} + easeOut(${animationProgress}/100) * (${end} - ${start}) = `, newVal)
             this.scroll_to(newVal, false);
             if (animationProgress >= 100) {
+                this.desiredWheelScroll = undefined;
                 clearInterval(smoothScrollTimer);
             }
         }
