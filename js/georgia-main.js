@@ -1820,11 +1820,11 @@ function on_mouse_move(x, y, m) {
 		state.mouse_x = x;
 		state.mouse_y = y;
 
-		if (settings.hideCursor) {
+		if (settings.hideCursor && fb.IsPlaying) {
 			clearTimeout(hideCursorTimeout);
 			hideCursorTimeout = setTimeout(() => {
 				// if there's a menu id (i.e. a menu is down) we don't want the cursor to ever disappear
-				if (!menu_down) {
+				if (!menu_down && fb.IsPlaying) {
 					window.SetCursor(-1); // hide cursor
 				}
 			}, 10000);
@@ -2300,7 +2300,7 @@ function calcDateRatios(dontUpdateLastPlayed, currentLastPlayed) {
 	var added = toTime($('$if2(%added_enhanced%,%added%)'));
     var first_played = toTime($('$if2(%first_played_enhanced%,%first_played%)'));
     let last_played = toTime($('$if2(%last_played_enhanced%,%last_played%)'));
-	var today = dateToYMD(newDate);
+	const today = dateToYMD(newDate);
 	if (dontUpdateLastPlayed && $date(last_played) === today) {
 		last_played = toTime(currentLastPlayed);
 	}

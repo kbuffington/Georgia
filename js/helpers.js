@@ -285,7 +285,8 @@ function calcAgeDateString(date) {
 		try {
 			str = dateDiff($date(date));
 		} catch (e) {
-			throw new ArgumentError('date', date, 'in calcAgeDateString()');
+			console.log('date has invalid value', date, 'in calcAgeDateString()');
+			// throw new ArgumentError('date', date, 'in calcAgeDateString()');
 		}
 	}
 
@@ -300,7 +301,7 @@ function dateToYMD(date) {
 	var d = date.getDate();
 	var m = date.getMonth() + 1; //Month from 0 to 11
 	var y = date.getFullYear();
-	return '' + y + '-' + (m<=9 ? '0' + m : m) + '-' + (d <= 9 ? '0' + d : d);
+	return `${y}-${(m<=9 ? `0${m}` : m)}-${(d <= 9 ? `0${d}` : d)}`;
 }
 
 function toDatetime(dateTimeStr) {
