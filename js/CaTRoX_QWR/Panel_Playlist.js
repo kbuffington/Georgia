@@ -2369,7 +2369,7 @@ class Playlist extends List {
 
 				scroll_shift += visible_to_item.h / this.row_h;
 
-				this.scrollbar.scroll_to(g_properties.scroll_pos + direction * scroll_shift);
+				this.scrollbar.smooth_scroll_to(g_properties.scroll_pos + direction * scroll_shift);
 				shifted_successfully = true;
 
 				break;
@@ -2378,7 +2378,7 @@ class Playlist extends List {
 				if (to_item_state.invisible_part % 1 > 0) {
 					this.scrollbar.shift_line(-1);
 				}
-				this.scrollbar.scroll_to(g_properties.scroll_pos - Math.floor(to_item_state.invisible_part));
+				this.scrollbar.smooth_scroll_to(g_properties.scroll_pos - Math.floor(to_item_state.invisible_part));
 				shifted_successfully = true;
 				break;
 			}
@@ -2386,7 +2386,7 @@ class Playlist extends List {
 				if (to_item_state.invisible_part % 1 > 0) {
 					this.scrollbar.shift_line(1);
 				}
-				this.scrollbar.scroll_to(g_properties.scroll_pos + Math.floor(to_item_state.invisible_part));
+				this.scrollbar.smooth_scroll_to(g_properties.scroll_pos + Math.floor(to_item_state.invisible_part));
 				shifted_successfully = true;
 				break;
 			}
@@ -2408,13 +2408,13 @@ class Playlist extends List {
 					var header_state = this.get_item_visibility_state(top_item);
 					scroll_shift += header_state.invisible_part;
 				}
-				this.scrollbar.scroll_to(g_properties.scroll_pos - scroll_shift);
+				this.scrollbar.smooth_scroll_to(g_properties.scroll_pos - scroll_shift);
 			}
 		}
 		else {
 			var item_draw_idx = this.get_item_draw_row_idx(visible_to_item);
 			var new_scroll_pos = Math.max(0, item_draw_idx - Math.floor(this.rows_to_draw_precise / 2));
-			this.scrollbar.scroll_to(new_scroll_pos);
+			this.scrollbar.smooth_scroll_to(new_scroll_pos);
 		}
 	}
 
@@ -5328,7 +5328,7 @@ function SelectionHandler(cnt_arg, cur_playlist_idx_arg) {
  * @constructor
  */
 function CollapseHandler(cnt_arg) {
-	this.on_content_change = function () {
+	this.on_content_change = () => {
 		headers = cnt.sub_items;
 		this.changed = false;
 
