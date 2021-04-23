@@ -53,15 +53,19 @@ Image packs can be found in [this repo](https://github.com/kbuffington/georgia-i
 
 As you can see, the `\images` folder is next to the `\georgia` folder, and _**NOT**_ inside it.
 
-##### NOTE: If installing to a portable install the images folder should be put at the root level. i.e. if foobar is at `c:\foobar\` then install the image packs to `c:\foobar\images`.
+##### NOTE: for portable installs:
 {: .no_toc }
+* On a new portable install (i.e. a brand new foobar portable install 1.5 or later, not an upgrade) [install to the `profile` folder](https://user-images.githubusercontent.com/2282004/115901262-8f9bd880-a426-11eb-84b7-bd0f6961df78.png) inside the foobar root folder.
+* On a legacy portable install which does **not** have a profile folder, install in the [foobar root](https://user-images.githubusercontent.com/2282004/112567951-b6c3a380-8daf-11eb-82af-c9f842e5d2bd.png).
 
 You can download each of the individual packs below, or you can star the [georgia-image-packs](https://github.com/kbuffington/georgia-image-packs) repo, and only download the update packs. I try and release updated images every 2-3 months. When installing an update pack just overwrite any duplicate images as they are new or improved logos.
 
 ### Artist Logos
 {: .no_toc }
 
-* **[Artist Logos](https://github.com/kbuffington/georgia-image-packs/raw/master/artistlogos.zip)**: Extract to `%appdata%\Roaming\foobar2000\images\`
+*Note: As of April 2021, the file size of artistlogos.zip has exceeded the 100MB max that github allows. The file is now split between two, and both will need to be downloaded individually if you aren't getting the update packs*
+
+* **[Artist Logos.zip](https://github.com/kbuffington/georgia-image-packs/raw/master/artistlogos.zip)** and **[Artist Logos.z01](https://github.com/kbuffington/georgia-image-packs/raw/master/artistlogos.z01)**: Extract to `%appdata%\Roaming\foobar2000\images\`
 
 Artist logos are searched for using the %album artist% of the currently playing song. Since %album artist% is a meta field that typically evaluates to `$if2(%album artist%,%artist%)` it will usually use the `ARTIST` field. If `ARTIST` or `ALBUM ARTIST` are multi-value fields, the logo displayed will be the first logo found. So if you have a track where `ARTIST` is "Jessie J; Nicki Minaj; Ariana Grande;", and no `Jessie J.png` is found, then the `Nicki Minaj.png` logo will be displayed, even if `Ariana Grande.png` exists.
 

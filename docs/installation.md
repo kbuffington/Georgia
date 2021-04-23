@@ -50,8 +50,10 @@ If something is unchecked, either you chose not to install it, or it's probably 
 These packs will all need to be extracted to a folder called `images` which you will need to create in your foobar profile folder.
 
 * **[Record Labels](https://github.com/kbuffington/georgia-image-packs/raw/master/recordlabel.zip)**: Extract to `.../AppData/Roaming/foobar2000/images/`
-* **[Artist Logos](https://github.com/kbuffington/georgia-image-packs/raw/master/artistlogos.zip)**: Extract to `.../AppData/Roaming/foobar2000/images/`
+* **[Artist Logos.zip](https://github.com/kbuffington/georgia-image-packs/raw/master/artistlogos.zip)** and **[Artist Logos.z01](https://github.com/kbuffington/georgia-image-packs/raw/master/artistlogos.z01)**: Extract to `/AppData/Roaming/foobar2000/images/`
 * **[Flags](https://github.com/kbuffington/georgia-image-packs/raw/master/flags.zip)**: Extract to `.../AppData/Roaming/foobar2000/images/`
 
-##### NOTE: If installing to a portable install the images folder should be put at the root level. i.e. if foobar is at `c:\foobar\` then install the image packs to `c:\foobar\images`.
+##### NOTE: for portable installs:
 {: .no_toc }
+* On a new portable install (i.e. a brand new foobar portable install 1.5 or later, not an upgrade) [install to the `profile` folder](https://user-images.githubusercontent.com/2282004/115901262-8f9bd880-a426-11eb-84b7-bd0f6961df78.png) inside the foobar root folder.
+* On a legacy portable install which does **not** have a profile folder, install in the [foobar root](https://user-images.githubusercontent.com/2282004/112567951-b6c3a380-8daf-11eb-82af-c9f842e5d2bd.png).
