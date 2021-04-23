@@ -1187,6 +1187,7 @@ class Playlist extends List {
 		if (playing_item_location.IsValid && playing_item_location.PlaylistIndex === this.cur_playlist_idx) {
 			this.playing_item = this.cnt.rows[playing_item_location.PlaylistItemIndex];
 			this.playing_item.is_playing = true;
+			this.playing_item.clear_title_text();
 
 			if (fb.CursorFollowPlayback) {
 				this.selection_handler.clear_selection();
@@ -4500,7 +4501,8 @@ class Row extends ListItem {
 			var track_num_query = '$if2(%tracknumber%,$pad_right(' + (this.idx_in_header + 1) + ',2,0)).';
 			if (pref.use_vinyl_nums) {
 				track_num_query = tf.vinyl_track;
-			}if (this.is_playing) {
+			}
+			if (this.is_playing) {
 				track_num_query = '      ';
 			}
 			var title_query = track_num_query + '  %title%[ \'(\'%original artist%\' cover)\']';
@@ -6448,7 +6450,8 @@ function ArtImageCache(max_cache_size_arg) {
 
 Header.art_cache = new ArtImageCache(200);
 
-var playlist;
+/** @type {PlaylistPanel} */
+let playlist;
 function initPlaylist() {
 	playlist = new PlaylistPanel(0, 0);
 	playlist.initialize();
