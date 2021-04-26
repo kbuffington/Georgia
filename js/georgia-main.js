@@ -219,6 +219,7 @@ var timings = {
 	showDebugTiming: false, 	// spam console with debug timings
 	showDrawTiming: false, 	// spam console with draw times
 	showExtraDrawTiming: false,// spam console with every section of the draw code to determine bottlenecks
+	drawRepaintRects: false, // outline window.RepaintRect in red
 }
 
 // PLAYLIST JUNK
@@ -344,12 +345,17 @@ var volume_btn;
 // Call initialization function
 on_init();
 
+let repaintRects = [];
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**
  * @param {GdiGraphics} gr
  */
 function draw_ui(gr) {
+	let topBarProfiler = null;
+	if (timings.showExtraDrawTiming) {
+		topBarProfiler = fb.CreateProfiler('on_paint -> top bar');
+	}
 	gr.SetTextRenderingHint(TextRenderingHint.AntiAliasGridFit);
 	gr.SetSmoothingMode(SmoothingMode.None);
 
@@ -421,9 +427,14 @@ function draw_ui(gr) {
 			}
 		}
 	}
+	topBarProfiler && topBarProfiler.Print();
 
 	// BIG ALBUMART
 	if (fb.IsPlaying) {
+		let drawArt = null;
+		if (timings.showExtraDrawTiming) {
+			drawArt = fb.CreateProfiler('on_paint -> artwork');
+		}
 		if (cdart && !rotatedCD && !displayPlaylist && !displayLibrary && pref.display_cdart) {
 			CreateRotatedCDImage();
 		}
@@ -433,10 +444,6 @@ function draw_ui(gr) {
 			// gr.DrawRect(-geo.aa_shadow, albumart_size.y - geo.aa_shadow, shadow_image.Width, shadow_image.Height, 1, RGBA(0,0,255,125));	// viewing border line
 		}
 		if (albumart && albumart_scaled) {
-			let drawArt = null;
-			if (timings.showExtraDrawTiming) {
-				drawArt = fb.CreateProfiler('on_paint -> artwork');
-			}
 			if (!pref.cdart_ontop || displayLyrics) {
 				if (rotatedCD && !displayPlaylist && !displayLibrary) {
 					drawCdArt(gr);
@@ -452,11 +459,11 @@ function draw_ui(gr) {
 				gr.FillSolidRect(albumart_size.x - 1, albumart_size.y - 1, albumart_size.w + 1, albumart_size.h + 1, RGBA(0, 0, 0, 155));
 				gLyrics && gLyrics.drawLyrics(gr);
 			}
-			if (timings.showExtraDrawTiming) drawArt.Print();
 		} else if (rotatedCD && pref.display_cdart) {
 			// cdArt, but no album art
 			drawCdArt(gr);
 		}
+		if (timings.showExtraDrawTiming) drawArt.Print();
 	}
 	if (fb.IsPlaying && (albumart || !cdart) && ((!displayLibrary && !displayPlaylist) || !settings.hidePanelBgWhenCollapsed)) {
 		gr.SetSmoothingMode(SmoothingMode.None);
@@ -487,6 +494,8 @@ function draw_ui(gr) {
 
 	// text info grid
 	if (((!displayPlaylist && !displayLibrary) || (!albumart && noArtwork)) && fb.IsPlaying) {
+		let drawTextGrid = null;
+		if (timings.showExtraDrawTiming) drawTextGrid = fb.CreateProfiler('on_paint -> textGrid');
 		let gridSpace = 0;
 		if (!albumart && cdart) {
 			gridSpace = Math.round(cdart_size.x - geo.aa_shadow - textLeft);
@@ -494,9 +503,6 @@ function draw_ui(gr) {
 			gridSpace = Math.round(albumart_size.x - geo.aa_shadow - textLeft);
 		}
 		const text_width = gridSpace;
-		let drawTextGrid = null;
-
-		if (timings.showExtraDrawTiming) drawTextGrid = fb.CreateProfiler('on_paint -> textGrid');
 
 		var c = new Color(col.primary);
 		if (c.brightness > 190) {
@@ -674,14 +680,13 @@ function draw_ui(gr) {
             gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
 		}
 		if (timings.showExtraDrawTiming) drawTextGrid.Print();
-
 	} /* if (!displayPlaylist && !displayLibrary) */
 
 	if ((fb.IsPlaying && !displayPlaylist && !displayLibrary) || (!albumart && !cdart && noArtwork)) {
-		let drawBandLogos = null;
+		let drawLogos = null;
+		timings.showExtraDrawTiming && (drawLogos = fb.CreateProfiler('on_paint -> logos/labels'));
         // BAND LOGO drawing code
         const brightBackground = (new Color(col.primary).brightness) > 190;
-		timings.showExtraDrawTiming && (drawBandLogos = fb.CreateProfiler('on_paint -> band logos'));
         const availableSpace = albumart_size.y + albumart_size.h - top;
         var logo = brightBackground ? (invertedBandLogo ? invertedBandLogo : bandLogo) : bandLogo;
 		if (logo && availableSpace > 75) {
@@ -700,8 +705,6 @@ function draw_ui(gr) {
 			gr.DrawImage(logo, Math.round(albumart_size.x / 2 - logoWidth / 2), logoTop, Math.round(logoWidth), Math.round(logo.Height * heightScale),
 				0, 0, logo.Width, logo.Height, 0);
 		}
-		if (timings.showExtraDrawTiming) drawBandLogos.Print();
-
 
 		// RECORD LABEL drawing code
 		// this section should draw in 3ms or less always
@@ -712,14 +715,14 @@ function draw_ui(gr) {
 				leftEdgeGap = (art_off_center ? 20 : 40) * (is_4k ? 1.8 : 1), // space between art and label
 				maxLabelWidth = scaleForDisplay(200);
 			let leftEdgeWidth = is_4k ? 45 : 30; // how far label background extends on left
-			let drawLabelTime = null;
 			let totalLabelWidth = 0;
 			let labelAreaWidth = 0;
 			let leftEdge = 0;
 			let topEdge = 0;
 			let labelWidth;
 			let labelHeight;
-			if (timings.showExtraDrawTiming) drawLabelTime = fb.CreateProfiler('on_paint -> record labels');
+			// let drawLabelTime = null;
+			// if (timings.showExtraDrawTiming) drawLabelTime = fb.CreateProfiler('on_paint -> record labels');
 
 			for (let i = 0; i < labels.length; i++) {
 				if (labels[i].Width > maxLabelWidth) {
@@ -811,8 +814,9 @@ function draw_ui(gr) {
 				}
 				labelHeight = origLabelHeight; // restore
 			}
-			if (timings.showExtraDrawTiming) drawLabelTime.Print();
+			// if (timings.showExtraDrawTiming) drawLabelTime.Print();
 		}
+		if (timings.showExtraDrawTiming) drawLogos.Print();
 	} /* if (!displayPlaylist && !displayLibrary) */
 
 	// LOWER BAR
@@ -844,10 +848,14 @@ function draw_ui(gr) {
 		playlist.on_paint(gr);
 		timings.showExtraDrawTiming && drawPlaylistProfiler.Print();
 	} else if (displayLibrary) {
+		let drawLibraryProfiler = null;
+		timings.showExtraDrawTiming && (drawLibraryProfiler = fb.CreateProfiler('on_paint -> library'));
+
 		libraryPanel.on_paint(gr);
 		if (pref.darkMode) {
 			gr.DrawRect(libraryPanel.x - 1, libraryPanel.y - 1, libraryPanel.w + 2, libraryPanel.h + 2, 1, rgb(64,64,64));
 		}
+		drawLibraryProfiler && drawLibraryProfiler.Print();
 	}
 
 	// MENUBAR
@@ -869,6 +877,9 @@ function draw_ui(gr) {
 	}
 
 	timings.showExtraDrawTiming && drawMenuBar.Print();
+
+	let drawLowerBarProfiler = null;
+	timings.showExtraDrawTiming && (drawLowerBarProfiler = fb.CreateProfiler('on_paint -> lower bar'));
 
     gr.SetTextRenderingHint(TextRenderingHint.AntiAliasGridFit);
 
@@ -936,6 +947,21 @@ function draw_ui(gr) {
 		progressBar.draw(gr);
 	}
     gr.SetSmoothingMode(SmoothingMode.AntiAliasGridFit);
+	drawLowerBarProfiler && drawLowerBarProfiler.Print();
+	if (repaintRects.length) {
+		repaintRects.forEach(rect => gr.DrawRect(rect.x, rect.y, rect.w, rect.h, scaleForDisplay(2), rgba(255,0,0,200)));
+		repaintRects = [];
+	}
+}
+
+window.oldRepaintRect = window.RepaintRect;
+window.RepaintRect = (x, y, w, h, force = undefined) => {
+	if (timings.drawRepaintRects) {
+		repaintRects.push({ x, y, w, h });
+		window.Repaint();
+	} else {
+		window.oldRepaintRect(x, y, w, h, force);
+	}
 }
 
 let rotatedCdIndex = 0;
@@ -947,7 +973,7 @@ function setupRotationTimer() {
 			rotatedCdIndex++;
 			rotatedCdIndex %= maxRotatedCdImages;
 			if (!cdartArray[rotatedCdIndex] && cdart && cdart_size.w) {
-				console.log('creating cdImg:', rotatedCdIndex, ' with rotation:', 360/maxRotatedCdImages * rotatedCdIndex, 'degrees');
+				console.log(`creating cdImg: ${rotatedCdIndex} (${cdart_size.w}x${cdart_size.h}) with rotation: ${360/maxRotatedCdImages * rotatedCdIndex} degrees`);
 				cdartArray[rotatedCdIndex] = rotateImg(cdart, cdart_size.w, cdart_size.h, 360/maxRotatedCdImages * rotatedCdIndex)
 			}
 			const cdLeftEdge = pref.cdart_ontop ? cdart_size.x : albumart_size.x + albumart_size.w; // the first line of cdImage that will be drawn
@@ -959,24 +985,22 @@ function setupRotationTimer() {
 function drawCdArt(gr) {
 	if (pref.display_cdart && cdart_size.y >= albumart_size.y && cdart_size.h <= albumart_size.h) {
 		let drawCdProfiler = null;
-		if (timings.showExtraDrawTiming) drawCdProfiler = fb.CreateProfiler('cdart');
+		// if (timings.showExtraDrawTiming) drawCdProfiler = fb.CreateProfiler('on_paint -> cdart');
 		const cdImg = cdartArray[rotatedCdIndex] || rotatedCD;
 		gr.DrawImage(cdImg, cdart_size.x, cdart_size.y, cdart_size.w, cdart_size.h, 0, 0, cdImg.Width, cdImg.Height, 0);
-		if (timings.showExtraDrawTiming) drawCdProfiler.Print();
+		// if (timings.showExtraDrawTiming) drawCdProfiler.Print();
 	}
 }
 
 function on_paint(gr) {
 	let onPaintProfiler = null;
-	if (timings.showDrawTiming) onPaintProfiler = fb.CreateProfiler("on_paint");
+	if (timings.showDrawTiming || timings.showExtraDrawTiming) onPaintProfiler = fb.CreateProfiler('on_paint');
 	draw_ui(gr);
 	if (transport.showVolume) {
 		volume_btn.on_paint(gr);
 	}
 
-	if (timings.showDrawTiming) {
-		onPaintProfiler.Print();
-	}
+	onPaintProfiler && onPaintProfiler.Print();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1289,6 +1313,9 @@ function onOptionsMenu(x, y) {
 	debugMenu.addToggleItem('Show draw timing (doesn\'t persist)', timings, 'showDrawTiming');
 	debugMenu.addToggleItem('Show extra draw timing (doesn\'t persist)', timings, 'showExtraDrawTiming');
 	debugMenu.addToggleItem('Show debug timing (doesn\'t persist)', timings, 'showDebugTiming');
+	debugMenu.addToggleItem('Show RepaintRect areas (doesn\'t persist)', timings, 'drawRepaintRects', (val) => {
+		if (!val) { repaintRects = []; window.Repaint(); }
+	});
 	debugMenu.addToggleItem('Show reload button', pref, 'show_reload_button', () => { window.Reload(); });
 	debugMenu.appendTo(menu);
 
@@ -2037,7 +2064,7 @@ function on_playback_pause(pausing) {
 		progressBarTimer = 0;
 		window.RepaintRect(0.015 * ww, 0.12 * wh, Math.max(albumart_size.x - 0.015 * ww, 0.015 * ww), wh - geo.lower_bar_h - 0.12 * wh);
 	} else { // unpausing
-		if (progressBarTimer > 0) clearInterval(progressBarTimer); // clear to avoid multiple progressTimers which can happen depending on the playback state when theme is loaded
+		clearInterval(progressBarTimer); // clear to avoid multiple progressTimers which can happen depending on the playback state when theme is loaded
 		debugLog("on_playback_pause: creating refresh_seekbar() interval with delay = " + t_interval);
 		progressBarTimer = setInterval(() => {
 			refresh_seekbar();
@@ -2257,14 +2284,14 @@ function SetProgressBarRefresh() {
 			t_interval = Math.abs(Math.ceil(1000 / ((0.95 * ww) / fb.PlaybackLength))); // we want to update the progress bar for every pixel so divide total time by number of pixels in progress bar
 			while (t_interval > 500) // we want even multiples of the base t_interval, so that the progress bar always updates as smoothly as possible
 				t_interval = Math.floor(t_interval / 2);
-			while (t_interval < 25)
+			while (t_interval < 32)	// roughly 30fps
 				t_interval *= 2;
 		} else {
 			t_interval = 333; // for slow computers, only update 3x a second
 		}
 
 		if (timings.showDebugTiming)
-			console.log("Progress bar will update every " + t_interval + "ms or " + 1000 / t_interval + " times per second.");
+			console.log(`Progress bar will update every ${t_interval}ms or ${1000 / t_interval} times per second.`);
 
 		progressBarTimer && clearInterval(progressBarTimer);
 		progressBarTimer = null;
