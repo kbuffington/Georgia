@@ -968,7 +968,7 @@ let rotatedCdIndex = 0;
 const maxRotatedCdImages = 72;
 function setupRotationTimer() {
 	clearInterval(cdartRotationTimer);
-	if (pref.display_cdart && cdart && fb.IsPlaying && !fb.IsPaused && pref.spinCdart) {
+	if (pref.display_cdart && cdart && fb.IsPlaying && !fb.IsPaused && pref.spinCdart && !displayLibrary && !displayPlaylist) {
 		cdartRotationTimer = setInterval(() => {
 			rotatedCdIndex++;
 			rotatedCdIndex %= maxRotatedCdImages;

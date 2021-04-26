@@ -302,6 +302,7 @@ function btnActionHandler(btn) {
 			} else {
 				ResizeArtwork(false);
 			}
+			setupRotationTimer();	// clear or start cdRotation if required
 			btn.enable = displayLibrary;
 			btns.playlist.enable = false;
 			window.Repaint();
@@ -316,6 +317,7 @@ function btnActionHandler(btn) {
 			} else {
 				ResizeArtwork(false);
 			}
+			setupRotationTimer();	// clear or start cdRotation if required
 			btn.enable = displayPlaylist;
 			btns.library.enable = false;
 			window.Repaint();
