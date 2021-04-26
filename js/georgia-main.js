@@ -1241,6 +1241,7 @@ function onOptionsMenu(x, y) {
 
 	playlistMenu.addToggleItem('Follow hyperlinks only if CTRL is down', pref, 'hyperlinks_ctrl');
 	playlistMenu.addToggleItem('Show weblinks in context menu', pref, 'show_weblinks');
+	playlistMenu.addToggleItem('Enable smooth scrolling', pref, 'smoothScrolling');
 	playlistMenu.appendTo(menu);
 
 	menu.addSeparator();

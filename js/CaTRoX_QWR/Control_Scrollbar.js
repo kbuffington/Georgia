@@ -371,6 +371,9 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
      * @returns
      */
     this.smooth_scroll_to = (newPosition) => {
+        if (!pref.smoothScrolling) {
+            this.scroll_to(newPosition, false);
+        }
         const end = Math.max(0, Math.min(newPosition, this.scrollable_lines));
         if (end === this.scroll) {
             return;

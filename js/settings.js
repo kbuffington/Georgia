@@ -66,6 +66,7 @@ pref.add_properties({
 	showPlaylistFulldate: ['Playlist: Show full date', false],
 	hyperlinks_ctrl: ['Playlist: Hyperlinks require CTRL Key', false], // true: clicking on hyperlinks only works if CTRL key is held down
 	show_weblinks: ['Playlist: Show weblinks', true],
+	smoothScrolling: ['Playlist: Smooth scrolling', true],
 
 	font_size_playlist: ['Font Size: Playlist', 12],
 	font_size_playlist_header: ['Font Size: Playlist Header', 15],
