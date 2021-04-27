@@ -191,8 +191,8 @@ function userinterface() {
     // 	if (this.scr_type ==2)  window.SetProperty(" Scrollbar Type Default-0 Styled-1 Themed-2", "2 // Scrollbar Settings N/A For Themed");
     // 	else window.SetProperty(" Scrollbar Type Default-0 Styled-1 Themed-2", "" + this.scr_type + "");
     // } catch (e) {this.scr_type = 0; window.SetProperty(" Scrollbar Type Default-0 Styled-1 Themed-2", "" + 0 + "");}
-    this.sbarType = 2;
-    this.scr_col = 1; //Math.min(Math.max( window.GetProperty(" Scrollbar Colour Grey-0 Blend-1", 1), 0), 1);
+    this.sbarType = 1;
+    // this.scr_col = 1; //Math.min(Math.max( window.GetProperty(" Scrollbar Colour Grey-0 Blend-1", 1), 0), 1);
     if (this.sbarType == 2) {
         this.theme = window.CreateThemeManager("scrollbar");
         s.gr(21, 21, false, g => {
@@ -209,7 +209,7 @@ function userinterface() {
                 }
             } catch(e) {
                 this.sbarType = 1;
-                window.SetProperty(" Scrollbar Type Default-0 Styled-1 Themed-2", "" + 1 + "");
+                // window.SetProperty(" Scrollbar Type Default-0 Styled-1 Themed-2", "" + 1 + "");
             }
         });
     }
@@ -597,16 +597,33 @@ function Scrollbar() {
             switch (ui.sbarType) {
                 case 0:
                     if (pptDefault.rowStripes) gr.FillSolidRect(this.x, this.y, this.w, this.h, ui.col.b1);
-                    switch (pptDefault.sbarCol) {
-                        case 0: gr.FillSolidRect(this.x, this.y + bar_y, this.w, bar_ht, RGBA(ui.col.t, ui.col.t, ui.col.t, !hover && !b_is_dragging ? alpha : hover && !b_is_dragging ? alpha : 192)); break;
-                        case 1: gr.FillSolidRect(this.x, this.y + bar_y, this.w, bar_ht, ui.col.text & (!hover && !b_is_dragging ? RGBA(255, 255, 255, alpha) : hover && !b_is_dragging ? RGBA(255, 255, 255, alpha) : 0x99ffffff)); break;
-                    } break;
+                    if (!pptDefault.sbarCol) {
+                        gr.FillSolidRect(this.x, this.y + bar_y, this.w, bar_ht, RGBA(ui.col.t, ui.col.t, ui.col.t, !hover && !b_is_dragging ? alpha : hover && !b_is_dragging ? alpha : 192));
+                    } else {
+                        gr.FillSolidRect(this.x, this.y + bar_y, this.w, bar_ht, ui.col.text & (!hover && !b_is_dragging ? RGBA(255, 255, 255, alpha) : hover && !b_is_dragging ? RGBA(255, 255, 255, alpha) : 0x99ffffff));
+                    }
+                    break;
                 case 1:
-                    switch (pptDefault.sbarCol) {
-                        case 0: gr.FillSolidRect(this.x, this.y - p.sbar_o, this.w, this.h + p.sbar_o * 2, RGBA(ui.col.t, ui.col.t, ui.col.t, 15)); gr.FillSolidRect(this.x, this.y + bar_y, this.w, bar_ht, RGBA(ui.col.t, ui.col.t, ui.col.t, !hover && !b_is_dragging ? alpha : hover && !b_is_dragging ? alpha : 192)); break;
-                        case 1: gr.FillSolidRect(this.x, this.y - p.sbar_o, this.w, this.h + p.sbar_o * 2, ui.col.text & 0x15ffffff); gr.FillSolidRect(this.x, this.y + bar_y, this.w, bar_ht, ui.col.text & (!hover && !b_is_dragging ? RGBA(255, 255, 255, alpha) : hover && !b_is_dragging ? RGBA(255, 255, 255, alpha) : 0x99ffffff)); break;
-                    } break;
-                case 2: ui.theme.SetPartAndStateID(6, 1); ui.theme.DrawThemeBackground(gr, this.x, this.y, this.w, this.h); ui.theme.SetPartAndStateID(3, !hover && !b_is_dragging ? 1 : hover && !b_is_dragging ? 2 : 3); ui.theme.DrawThemeBackground(gr, this.x, this.y + bar_y, this.w, bar_ht); break;
+                    if (!pptDefault.sbarCol) {
+                        const thumbColors = [
+                            RGBA(110, 112, 114, alpha), // normal
+                            RGBA(170, 172, 174, alpha), // hover
+                            RGBA(90, 92, 94, alpha) // drag
+                        ]
+                        gr.FillSolidRect(this.x, this.y - p.sbar_o, this.w, this.h + p.sbar_o * 2, RGBA(ui.col.t, ui.col.t, ui.col.t, 15));
+                        gr.FillSolidRect(this.x, this.y + bar_y, this.w, bar_ht, RGBA(ui.col.t, ui.col.t, ui.col.t, !hover && !b_is_dragging ? alpha : hover && !b_is_dragging ? alpha : 192));
+                        // gr.FillSolidRect(this.x, this.y + bar_y, this.w, bar_ht, hover ? thumbColors[1] : b_is_dragging ? thumbColors[1] : thumbColors[0]);
+                    } else {
+                        gr.FillSolidRect(this.x, this.y - p.sbar_o, this.w, this.h + p.sbar_o * 2, ui.col.text & 0x15ffffff);
+                        gr.FillSolidRect(this.x, this.y + bar_y, this.w, bar_ht, ui.col.text & (!hover && !b_is_dragging ? RGBA(255, 255, 255, alpha) : hover && !b_is_dragging ? RGBA(255, 255, 255, alpha) : 0x99ffffff));
+                    }
+                    break;
+                case 2:
+                    ui.theme.SetPartAndStateID(6, 1);
+                    ui.theme.DrawThemeBackground(gr, this.x, this.y, this.w, this.h);
+                    ui.theme.SetPartAndStateID(3, !hover && !b_is_dragging ? 1 : hover && !b_is_dragging ? 2 : 3);
+                    ui.theme.DrawThemeBackground(gr, this.x, this.y + bar_y, this.w, bar_ht);
+                    break;
             }
         }
     }
@@ -3203,7 +3220,9 @@ class LibraryPanel {
 
 function Buttons() {
     const sbarButPad = s.clamp(pptDefault.sbarButPad / 100, -0.5, 0.3), sAlpha = pptDefault.sbarCol ? [68, 153, 255] : [75, 192, 228], scrBtns = ["scrollUp", "scrollDn"];
-    let arrow_symb = 0, b_x, bx, by, bh, byDn, byUp, cur_btn = null, fw, hot_o, i, iconFontName = "Segoe UI", iconFontStyle = 0, qx, qy, qh, s_img, scrollBtn, scrollBtn_x, scrollDn_y, scrollUp_y, tooltip, transition, tt_start = Date.now() - 2000;
+    let arrow_symb = '\uE010', b_x, bx, by, bh, byDn, byUp, cur_btn = null, fw, hot_o, i, iconFontName = "Segoe UI", iconFontStyle = 0, qx, qy, qh, s_img, scrollBtn, scrollBtn_x, scrollDn_y, scrollUp_y, tooltip, transition, tt_start = Date.now() - 2000;
+    let scrollBtnStates = {}; //0=normal, 1=hover, 2=down, 3=hot;
+
     this.btns = {}; this.Dn = false; this.show_tt = true;
 
     // if (ppt.get(" Scrollbar Arrow Custom", false)) arrow_symb = ppt.arrowSymbol.replace(/\s+/g, "").charAt(); if (!arrow_symb.length) arrow_symb = 0;
@@ -3217,22 +3236,61 @@ function Buttons() {
     // const tt = (n, force) => {if (tooltip.Text !== n || force) {tooltip.Text = n; tooltip.Activate();}}
 
     this.create_images = () => {
-        const sz = arrow_symb == 0 ? Math.max(Math.round(ui.but_h * 1.666667), 1) : 100,
+        const sz = !arrow_symb ? Math.max(Math.round(ui.but_h * 1.666667), 1) : 100,
             sc = sz / 100,
             iconFont = gdi.Font(iconFontName, sz, iconFontStyle);
         s_img = s.gr(100, 100, true, g => {
             g.SetSmoothingMode(2);
-            g.DrawLine(69, 71, 88, 90, 12, ui.col.txt_box); g.DrawEllipse(8, 11, 67, 67, 10, ui.col.txt_box);
+            g.DrawLine(69, 71, 88, 90, 12, ui.col.txt_box);
+            g.DrawEllipse(8, 11, 67, 67, 10, ui.col.txt_box);
             g.FillEllipse(15, 17, 55, 55, 0x0AFAFAFA);
             g.SetSmoothingMode(0);
         });
         scrollBtn = s.gr(sz, sz, true, g => {
-            g.SetTextRenderingHint(3); g.SetSmoothingMode(2);
-            if (pptDefault.sbarCol) {arrow_symb == 0 ? g.FillPolygon(ui.col.text, 1, [50 * sc, 0, 100 * sc, 76 * sc, 0, 76 * sc]) : g.DrawString(arrow_symb, iconFont, ui.col.text, 0, sz * sbarButPad, sz, sz, StringFormat(1, 1));}
-            else {arrow_symb == 0 ? g.FillPolygon(RGBA(ui.col.t, ui.col.t, ui.col.t, 255), 1, [50 * sc, 0, 100 * sc, 76 * sc, 0, 76 * sc]) :
-            g.DrawString(arrow_symb, iconFont, RGBA(ui.col.t, ui.col.t, ui.col.t, 255), 0, sz * sbarButPad, sz, sz, StringFormat(1, 1));} g.SetSmoothingMode(0);
+            g.SetTextRenderingHint(3);
+            g.SetSmoothingMode(2);
+
+            if (pptDefault.sbarCol) {
+                !arrow_symb ? g.FillPolygon(ui.col.text, 1, [50 * sc, 0, 100 * sc, 76 * sc, 0, 76 * sc]) :
+                    g.DrawString(arrow_symb, iconFont, ui.col.text, 0, sz * sbarButPad, sz, sz, StringFormat(1, 1));
+            } else {
+                !arrow_symb ? g.FillPolygon(RGBA(ui.col.t, ui.col.t, ui.col.t, 255), 1, [50 * sc, 0, 100 * sc, 76 * sc, 0, 76 * sc]) :
+                    g.DrawString(arrow_symb, iconFont, RGBA(ui.col.t, ui.col.t, ui.col.t, 255), 0, 0, sz, sz, StringFormat(1, 2));
+            }
+            g.SetSmoothingMode(0);
         });
-     }; this.create_images();
+        const ico_back_colors = [
+            RGB(37, 37, 37),
+            RGB(170, 172, 174),
+            RGB(90, 92, 94),
+            RGB(140, 142, 144)
+        ];
+        const ico_fore_colors = [
+            RGB(140, 142, 144),
+            RGB(40, 42, 44),
+            RGB(30, 32, 34),
+            RGB(30, 32, 34)
+        ];
+        const stateImages = [];
+        for (let state = 0; state < 4; state++) {
+            const img = s.gr(sz, sz, true, g => {
+                g.FillSolidRect(0, 0, sz, sz, ico_back_colors[state]);
+
+                g.SetSmoothingMode(SmoothingMode.HighQuality);
+                g.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
+
+                g.DrawString(arrow_symb, iconFont, ico_fore_colors[state], 0, 0, sz, sz, StringFormat(1, 2));
+            })
+            stateImages.push(img);
+        }
+        scrollBtnStates = {
+            normal:  stateImages[0],
+            hover:   stateImages[1],
+            down:    stateImages[2],    // 'pressed' in Control_Scrollbar.js
+            hot:     stateImages[3]
+        }
+    };
+    this.create_images();
 
     this.create_tooltip = () => tooltip = g_tooltip; //window.CreateTooltip("Segoe UI", 15 * s.scale * /* ppt.get(" Zoom Tooltip [Button] (%)", 100)*/ 100 / 100, 0);
     this.create_tooltip();
@@ -3258,7 +3316,8 @@ function Buttons() {
             }
         }
 
-        this.cs = state => {this.state = state; if (state === "down" || state === "normal") tt.stop(); this.repaint();}
+        let lastState = undefined;  // save last state for hacky button transitions
+        this.cs = state => { lastState = this.state; this.state = state; if (state === "down" || state === "normal") tt.stop(); this.repaint(); return true; }
         this.lbtn_dn = () => {if (!but.Dn) return; this.l_dn && this.l_dn(x, y);}
         this.lbtn_up = (x, y) => {if (pptDefault.touchControl && Math.sqrt((Math.pow(p.last_pressed_coord.x - x, 2) + Math.pow(p.last_pressed_coord.y - y, 2))) > 3 * s.scale) return; if (this.l_up) this.l_up();}
         this.repaint = () => {const expXY = 2, expWH = 4; window.RepaintRect(this.x - expXY, this.y - expXY, this.w + expWH, this.h + expWH);}
@@ -3278,8 +3337,16 @@ function Buttons() {
         }
 
         const drawScrollBtn = gr => {
-            const a = this.state !== "down" ? Math.min(sAlpha[0] + (sAlpha[1] - sAlpha[0]) * this.transition_factor, sAlpha[1]) : sAlpha[2];
-            if (scrollBtn) gr.DrawImage(scrollBtn, this.x + ft, txt, stat, stat, 0, 0, scrollBtn.Width, scrollBtn.Height, this.type == 1 ? 0 : 180, a);
+            // const a = this.state !== "down" ? Math.min(sAlpha[0] + (sAlpha[1] - sAlpha[0]) * this.transition_factor, sAlpha[1]) : sAlpha[2];
+            const a = this.transition_factor * 255;
+            // if (scrollBtn) gr.DrawImage(scrollBtn, this.x + ft, txt, stat, stat, 0, 0, scrollBtn.Width, scrollBtn.Height, this.type == 1 ? 0 : 180, a);
+            const bImg = scrollBtnStates[this.state];
+            gr.DrawImage(scrollBtnStates.normal, this.x + ft, txt, stat, stat, 0, 0, bImg.Width, bImg.Height, this.type === 1 ? 0 : 180, 255);
+            if (this.state !== 'normal') {
+                gr.DrawImage(bImg, this.x + ft, txt, stat, stat, 0, 0, bImg.Width, bImg.Height, this.type === 1 ? 0 : 180, a);
+            } else if (this.transition_factor > 0 && lastState !== 'normal') {
+                gr.DrawImage(scrollBtnStates[lastState], this.x + ft, txt, stat, stat, 0, 0, bImg.Width, bImg.Height, this.type === 1 ? 0 : 180, a);
+            }
         }
 
         const drawSearch = gr => {
@@ -3291,11 +3358,24 @@ function Buttons() {
     }
 
     this.move = (x, y) => {
+        let startTransition = false;
+        if (!this.btns.scrollUp.hide && x >= sbar.x && x <= sbar.x + sbar.w &&
+                                        y >= sbar.y && y <= sbar.y + sbar.h) {
+            if (this.btns.scrollUp.state === 'normal' && this.btns.scrollUp.cs('hot')) startTransition = true;
+            if (this.btns.scrollDn.state === 'normal' && this.btns.scrollDn.cs('hot')) startTransition = true;
+        } else {
+            if (this.btns.scrollUp.state === 'hot' && this.btns.scrollUp.cs('normal')) startTransition = true;
+            if (this.btns.scrollDn.state === 'hot' && this.btns.scrollDn.cs('normal')) startTransition = true;
+        }
+        if (startTransition) {
+            transition.start();
+        }
         const hover_btn = Object.values(this.btns).find(v => {
              if (!v.hide && (!this.Dn || this.Dn == v.name)) return v.trace(x, y);
         });
         let hand = false;
-        check_scrollBtns(x, y, hover_btn); if (hover_btn) hand = hover_btn.hand; window.SetCursor(hand ? 32649 : !this.Dn && y < p.s_h && pptDefault.searchShow && x > qx + qh ? 32513 : 32512);
+        check_scrollBtns(x, y, hover_btn);
+        // if (hover_btn) hand = hover_btn.hand; window.SetCursor(hand ? 32649 : !this.Dn && y < p.s_h && pptDefault.searchShow && x > qx + qh ? 32513 : 32512);
         if (hover_btn && hover_btn.hide) {if (cur_btn) {cur_btn.cs("normal"); transition.start();} cur_btn = null; return null;} // btn hidden, ignore
         if (cur_btn === hover_btn) return cur_btn;
         if (cur_btn) {cur_btn.cs("normal"); transition.start();} // return prev btn to normal state
