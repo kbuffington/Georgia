@@ -5494,14 +5494,14 @@ class QueueHandler {
 			}
 
 			var cur_queued_row = this.rows[queued_item.PlaylistItemIndex];
-			var has_row = this.queued_rows.find(queued_row => {
-				// got a crash here once when queuing a bunch of songs (before SMP refactor). Not sure if queued_row or cur_queued_row was undefined
-				return queued_row.idx === cur_queued_row.idx;
-			});
-
 			if (!cur_queued_row) {
+				// It is possible that cur_queued_row can be undefined for some reason, even though the row is in the playlist. Possibly this.rows.length < queued_item.PlaylistItemIndex?
+				var has_row = this.queued_rows.find(queued_row => {
+					return queued_row.idx === cur_queued_row.idx;
+				});
+
 				console.log('>>> Error! - queued_item.PlaylistIndex:', queued_item.PlaylistIndex,
-					'queued_item.PlaylistItemIndex:', queued_item.PlaylistItemIndex, 'this.cur_playlist_idx:', this.cur_playlist_idx);
+					'queued_item.PlaylistItemIndex:', queued_item.PlaylistItemIndex, 'this.cur_playlist_idx:', this.cur_playlist_idx, 'this.rows.length:', this.rows.length);
 				return;
 			}
 
