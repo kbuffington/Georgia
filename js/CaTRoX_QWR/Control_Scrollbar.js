@@ -98,17 +98,17 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
             this.shift_page(direction);
         } else {
             var newScroll = this.nearestScroll(direction);
-            if (this.desiredWheelScroll === undefined) {
-                this.desiredWheelScroll = newScroll + direction * 2;
+            if (this.desiredScrollPosition === undefined) {
+                this.desiredScrollPosition = newScroll + direction * 2;
             } else {
-                this.desiredWheelScroll += (direction * 2);
+                this.desiredScrollPosition += (direction * 2);
             }
-            if (direction === -1 && this.desiredWheelScroll < 0) {
-                this.desiredWheelScroll = 0;
-            } else if (direction === 1 && this.desiredWheelScroll > this.scrollable_lines) {
-                this.desiredWheelScroll = this.scrollable_lines;
+            if (direction === -1 && this.desiredScrollPosition < 0) {
+                this.desiredScrollPosition = 0;
+            } else if (direction === 1 && this.desiredScrollPosition > this.scrollable_lines) {
+                this.desiredScrollPosition = this.scrollable_lines;
             }
-            this.smooth_scroll_to(this.desiredWheelScroll);
+            this.smooth_scroll_to(this.desiredScrollPosition);
         }
     };
 
@@ -257,7 +257,7 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
         this.parts_lbtn_up(x, y);
         if (this.b_is_dragging) {
             this.b_is_dragging = false;
-            this.desiredWheelScroll = undefined;
+            this.desiredScrollPosition = undefined;
         }
         this.initial_drag_y = 0;
 
@@ -328,25 +328,24 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
     };
 
     this.nearestScroll = function (direction) {
-        var scrollShift = this.scroll - Math.floor(this.scroll);
+        const scrollShift = this.scroll - Math.floor(this.scroll);
         var drawnShift = 1 - (this.rows_drawn - Math.floor(this.rows_drawn));
         var newScroll = 0;
 
         if (direction < 0 && scrollShift !== 0) {
             newScroll = Math.floor(this.scroll);
-        }
-        else if (direction > 0 && Math.abs(drawnShift - scrollShift) > 0.0001) {
+        } else if (direction > 0 && Math.abs(drawnShift - scrollShift) > 0.0001) {
             if (drawnShift > scrollShift) {
                 newScroll = Math.floor(this.scroll) + drawnShift;
             }
             else {
                 newScroll = Math.ceil(this.scroll) + drawnShift;
             }
-        }
-        else {
+        } else {
             newScroll = this.scroll + direction;
         }
 
+        // console.log('current:', this.scroll, 'new:', newScroll, 'dir:', direction, Math.round(this.desiredScrollPosition));
         return newScroll;
     };
 
@@ -400,7 +399,7 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
             // console.log(`${start} + easeOut(${animationProgress}/100) * (${end} - ${start}) = `, newVal)
             this.scroll_to(newVal, false);
             if (animationProgress >= 100) {
-                this.desiredWheelScroll = undefined;
+                this.desiredScrollPosition = undefined;
                 clearInterval(smoothScrollTimer);
             }
         }
