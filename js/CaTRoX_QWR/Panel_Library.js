@@ -231,7 +231,7 @@ function userinterface() {
     // var scr_w_o = Math.min(Math.max(window.GetProperty("SYSTEM.Scrollbar Width Bar", 11), 0), 400);
     // this.arrow_pad = parseFloat(sbar_w[5]);
     // if (isNaN(this.arrow_pad))
-    this.arrow_pad = 0;
+    this.arrow_pad = 1;
     // this.grip_h = parseFloat(sbar_w[7]);
     // if (isNaN(this.grip_h))
     this.grip_h = scaleForDisplay(20);
@@ -559,8 +559,8 @@ function userinterface() {
 
 function Scrollbar() {
     let period = pptDefault.duration.split(0); period = {drag : 200, inertia : s.clamp(s.value(period[3], 3000, 0), 0, 5000), scroll : s.clamp(s.value(period[1], 500, 0), 0, 5000)}; period.step = period.scroll * 2 / 3;
-    let alpha = !pptDefault.sbarCol ? 75 : (!ui.sbarType ? 68 : 51), amplitude, b_is_dragging = false, bar_ht = 0, bar_timer = null, bar_y = 0, but_h = 0, clock = Date.now(), counter = 0, drag_distance_per_row = 0, duration = period.scroll, elap = 0, event = "", fast = false, frame, hover = false, hover_o = false, init = true, initial_drag_y = 0, initial_scr = 1, initial_y = -1, ix = -1, lastTouchDn = Date.now(), max_scroll, offset = 0, ratio = 1, reference = -1, rows = 0, scrollbar_height = 0, scrollbar_travel = 0, start = 0, startTime = 0, ticker, timestamp, ts, velocity;
-    const alpha1 = alpha, alpha2 = !pptDefault.sbarCol ? 128 : (!ui.sbarType ? 119 : 85), inStep = ui.sbarType && pptDefault.sbarCol ? 12 : 18, ln_sp = pptDefault.searchShow && !ui.local ? Math.floor(ui.row_h * 0.1) : 0, min = 10 * s.scale, mv = 2 * s.scale;
+    let alpha = 128/*!pptDefault.sbarCol ? 75 : (!ui.sbarType ? 68 : 51)*/, amplitude, b_is_dragging = false, bar_ht = 0, bar_timer = null, bar_y = 0, but_h = 0, clock = Date.now(), counter = 0, drag_distance_per_row = 0, duration = period.scroll, elap = 0, event = "", fast = false, frame, hover = false, hover_o = false, init = true, initial_drag_y = 0, initial_scr = 1, initial_y = -1, ix = -1, lastTouchDn = Date.now(), max_scroll, offset = 0, ratio = 1, reference = -1, rows = 0, scrollbar_height = 0, scrollbar_travel = 0, start = 0, startTime = 0, ticker, timestamp, ts, velocity;
+    const alpha1 = alpha, alpha2 = 255/*!pptDefault.sbarCol ? 128 : (!ui.sbarType ? 119 : 85)*/, inStep = ui.sbarType && pptDefault.sbarCol ? 12 : 18, ln_sp = pptDefault.searchShow && !ui.local ? Math.floor(ui.row_h * 0.1) : 0, min = 10 * s.scale, mv = 2 * s.scale;
     this.count = -1; this.delta = 0; pptDefault.flickDistance = s.clamp(pptDefault.flickDistance, 0, 10); this.draw_timer = null; this.item_y = pptDefault.searchShow ? ui.row_h + (!ui.local ? ln_sp * 2 : 0) : ui.margin; this.row_count = 0; this.rows_drawn = 0; this.row_h = 0; this.scroll = 0; this.scrollable_lines = 0; pptDefault.scrollStep = s.clamp(pptDefault.scrollStep, 0, 10); pptDefault.touchStep = s.clamp(pptDefault.touchStep, 1, 10); this.stripe_w = 0; this.timer_but = null; this.touch = {dn: false, end: 0, start: 0}; this.tree_w = 0; this.x = 0; this.y = 0; this.w = 0; this.h = 0;
 
     const upd_debounce = s.debounce(() => lib_manager.treeState(false, libraryProps.rememberTree), 400);
@@ -606,13 +606,13 @@ function Scrollbar() {
                 case 1:
                     if (!pptDefault.sbarCol) {
                         const thumbColors = [
-                            RGBA(110, 112, 114, alpha), // normal
+                            RGBA(150, 152, 154, alpha), // normal
                             RGBA(170, 172, 174, alpha), // hover
                             RGBA(90, 92, 94, alpha) // drag
                         ]
                         gr.FillSolidRect(this.x, this.y - p.sbar_o, this.w, this.h + p.sbar_o * 2, RGBA(ui.col.t, ui.col.t, ui.col.t, 15));
-                        gr.FillSolidRect(this.x, this.y + bar_y, this.w, bar_ht, RGBA(ui.col.t, ui.col.t, ui.col.t, !hover && !b_is_dragging ? alpha : hover && !b_is_dragging ? alpha : 192));
-                        // gr.FillSolidRect(this.x, this.y + bar_y, this.w, bar_ht, hover ? thumbColors[1] : b_is_dragging ? thumbColors[1] : thumbColors[0]);
+                        // gr.FillSolidRect(this.x, this.y + bar_y, this.w, bar_ht, RGBA(ui.col.t, ui.col.t, ui.col.t, !hover && !b_is_dragging ? alpha : hover && !b_is_dragging ? alpha : 192));
+                        gr.FillSolidRect(this.x, this.y + bar_y, this.w, bar_ht, b_is_dragging ? thumbColors[2] : hover ? thumbColors[1] : thumbColors[0]);
                     } else {
                         gr.FillSolidRect(this.x, this.y - p.sbar_o, this.w, this.h + p.sbar_o * 2, ui.col.text & 0x15ffffff);
                         gr.FillSolidRect(this.x, this.y + bar_y, this.w, bar_ht, ui.col.text & (!hover && !b_is_dragging ? RGBA(255, 255, 255, alpha) : hover && !b_is_dragging ? RGBA(255, 255, 255, alpha) : 0x99ffffff));
@@ -670,7 +670,7 @@ function Scrollbar() {
         }
         if (this.touch.dn && !vk.k('zoom')) {ts = Date.now(); if (ts - startTime > 300) startTime = ts; lastTouchDn = ts; this.check_scroll(initial_scr + (initial_y - p_y) * pptDefault.touchStep, 'drag'); return;}
         const x = p_x - this.x, y = p_y - this.y;
-        if (x < 0 || x > this.w || y > bar_y + bar_ht || y < bar_y || but.Dn) hover = false; else hover = true;
+        if (x < 0 || x > this.w || y > bar_y + bar_ht || y < bar_y /*|| but.Dn*/) hover = false; else hover = true;
         if (hover != hover_o && !bar_timer) this.paint();
         if (!b_is_dragging || this.row_count <= this.rows_drawn) return;
         this.check_scroll(Math.round((y - initial_drag_y) / drag_distance_per_row) * this.row_h);
@@ -687,8 +687,9 @@ function Scrollbar() {
                 this.check_scroll(Math.round((this.scroll + amplitude) / this.row_h) * this.row_h, 'inertia');
             }
         }
-        const x = p_x - this.x, y = p_y - this.y;
-        if (!hover && b_is_dragging) this.paint(); else window.RepaintRect(this.x, this.y, this.w, this.h); if (b_is_dragging) {b_is_dragging = false; but.Dn = false;} initial_drag_y = 0;
+        if (!hover && b_is_dragging) this.paint();
+        else window.RepaintRect(this.x, this.y, this.w, this.h);
+        if (b_is_dragging) {b_is_dragging = false; but.Dn = false;} initial_drag_y = 0;
         if (this.timer_but) {clearTimeout(this.timer_but); this.timer_but = null;}; this.count = -1;
     }
 
@@ -3222,6 +3223,16 @@ function Buttons() {
     const sbarButPad = s.clamp(pptDefault.sbarButPad / 100, -0.5, 0.3), sAlpha = pptDefault.sbarCol ? [68, 153, 255] : [75, 192, 228], scrBtns = ["scrollUp", "scrollDn"];
     let arrow_symb = '\uE010', b_x, bx, by, bh, byDn, byUp, cur_btn = null, fw, hot_o, i, iconFontName = "Segoe UI", iconFontStyle = 0, qx, qy, qh, s_img, scrollBtn, scrollBtn_x, scrollDn_y, scrollUp_y, tooltip, transition, tt_start = Date.now() - 2000;
     let scrollBtnStates = {}; //0=normal, 1=hover, 2=down, 3=hot;
+    const scrollBtns = {
+        lineUp:   {
+            ico:  '\uE010',
+            stateImgs: {}
+        },
+        lineDown: {
+            ico:  '\uE011',
+            stateImgs: {}
+        }
+    };
 
     this.btns = {}; this.Dn = false; this.show_tt = true;
 
@@ -3246,19 +3257,19 @@ function Buttons() {
             g.FillEllipse(15, 17, 55, 55, 0x0AFAFAFA);
             g.SetSmoothingMode(0);
         });
-        scrollBtn = s.gr(sz, sz, true, g => {
-            g.SetTextRenderingHint(3);
-            g.SetSmoothingMode(2);
+        // scrollBtn = s.gr(sz, sz, true, g => {
+        //     g.SetTextRenderingHint(3);
+        //     g.SetSmoothingMode(2);
 
-            if (pptDefault.sbarCol) {
-                !arrow_symb ? g.FillPolygon(ui.col.text, 1, [50 * sc, 0, 100 * sc, 76 * sc, 0, 76 * sc]) :
-                    g.DrawString(arrow_symb, iconFont, ui.col.text, 0, sz * sbarButPad, sz, sz, StringFormat(1, 1));
-            } else {
-                !arrow_symb ? g.FillPolygon(RGBA(ui.col.t, ui.col.t, ui.col.t, 255), 1, [50 * sc, 0, 100 * sc, 76 * sc, 0, 76 * sc]) :
-                    g.DrawString(arrow_symb, iconFont, RGBA(ui.col.t, ui.col.t, ui.col.t, 255), 0, 0, sz, sz, StringFormat(1, 2));
-            }
-            g.SetSmoothingMode(0);
-        });
+        //     if (pptDefault.sbarCol) {
+        //         !arrow_symb ? g.FillPolygon(ui.col.text, 1, [50 * sc, 0, 100 * sc, 76 * sc, 0, 76 * sc]) :
+        //             g.DrawString(arrow_symb, iconFont, ui.col.text, 0, sz * sbarButPad, sz, sz, StringFormat(1, 1));
+        //     } else {
+        //         !arrow_symb ? g.FillPolygon(RGBA(ui.col.t, ui.col.t, ui.col.t, 255), 1, [50 * sc, 0, 100 * sc, 76 * sc, 0, 76 * sc]) :
+        //             g.DrawString(arrow_symb, iconFont, RGBA(ui.col.t, ui.col.t, ui.col.t, 255), 0, 0, sz, sz, StringFormat(1, 2));
+        //     }
+        //     g.SetSmoothingMode(0);
+        // });
         const ico_back_colors = [
             RGB(37, 37, 37),
             RGB(170, 172, 174),
@@ -3271,23 +3282,27 @@ function Buttons() {
             RGB(30, 32, 34),
             RGB(30, 32, 34)
         ];
-        const stateImages = [];
-        for (let state = 0; state < 4; state++) {
-            const img = s.gr(sz, sz, true, g => {
-                g.FillSolidRect(0, 0, sz, sz, ico_back_colors[state]);
+        for (const btnName in scrollBtns) {
+            const btn = scrollBtns[btnName];
+            const stateImages = [];
+            for (let state = 0; state < 4; state++) {
+                const img = s.gr(sz, sz, true, g => {
+                    g.SetSmoothingMode(SmoothingMode.None);
+                    g.FillSolidRect(0, 0, sz, sz, ico_back_colors[state]);
 
-                g.SetSmoothingMode(SmoothingMode.HighQuality);
-                g.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
+                    g.SetSmoothingMode(SmoothingMode.HighQuality);
+                    g.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
 
-                g.DrawString(arrow_symb, iconFont, ico_fore_colors[state], 0, 0, sz, sz, StringFormat(1, 2));
-            })
-            stateImages.push(img);
-        }
-        scrollBtnStates = {
-            normal:  stateImages[0],
-            hover:   stateImages[1],
-            down:    stateImages[2],    // 'pressed' in Control_Scrollbar.js
-            hot:     stateImages[3]
+                    g.DrawString(btn.ico, iconFont, ico_fore_colors[state], 0, 0, sz, sz, StringFormat(1, 2));
+                })
+                stateImages.push(img);
+            }
+            btn.stateImgs = {
+                normal:  stateImages[0],
+                hover:   stateImages[1],
+                down:    stateImages[2],    // 'pressed' in Control_Scrollbar.js
+                hot:     stateImages[3]
+            }
         }
     };
     this.create_images();
@@ -3340,12 +3355,14 @@ function Buttons() {
             // const a = this.state !== "down" ? Math.min(sAlpha[0] + (sAlpha[1] - sAlpha[0]) * this.transition_factor, sAlpha[1]) : sAlpha[2];
             const a = this.transition_factor * 255;
             // if (scrollBtn) gr.DrawImage(scrollBtn, this.x + ft, txt, stat, stat, 0, 0, scrollBtn.Width, scrollBtn.Height, this.type == 1 ? 0 : 180, a);
-            const bImg = scrollBtnStates[this.state];
-            gr.DrawImage(scrollBtnStates.normal, this.x + ft, txt, stat, stat, 0, 0, bImg.Width, bImg.Height, this.type === 1 ? 0 : 180, 255);
+            const bImg = stat[this.state];
+            const xOffset = 0.5;    // since we have a large (100x100) img we're scaling down, draw slightly offset to line up with scrollbar
+            const widthAdj = -1;
+            gr.DrawImage(stat.normal, this.x + xOffset, this.y, this.w + widthAdj, this.w, 0, 0, bImg.Width, bImg.Height, 0, 255);
             if (this.state !== 'normal') {
-                gr.DrawImage(bImg, this.x + ft, txt, stat, stat, 0, 0, bImg.Width, bImg.Height, this.type === 1 ? 0 : 180, a);
+                gr.DrawImage(bImg, this.x + xOffset, this.y, this.w + widthAdj, this.w, 0, 0, bImg.Width, bImg.Height, 0, a);
             } else if (this.transition_factor > 0 && lastState !== 'normal') {
-                gr.DrawImage(scrollBtnStates[lastState], this.x + ft, txt, stat, stat, 0, 0, bImg.Width, bImg.Height, this.type === 1 ? 0 : 180, a);
+                gr.DrawImage(stat[lastState], this.x + xOffset, this.y, this.w + widthAdj, this.w, 0, 0, bImg.Width, bImg.Height, 0, a);
             }
         }
 
@@ -3413,8 +3430,8 @@ function Buttons() {
                     this.btns.scrollDn = new Btn(b_x, byDn, ui.but_h, ui.but_h, 3, "", "", "", {normal: 5, hover: 6, down: 7}, sbar.scrollable_lines < 1, () => sbar.but(-1), "", "", false, "scrollDn");
                     break;
                 default:
-                    this.btns.scrollUp = new Btn(b_x, byUp - hot_o, ui.but_h, ui.but_h + hot_o, 1, scrollBtn_x, scrollUp_y, ui.scr_but_w, "", sbar.scrollable_lines < 1, () => sbar.but(1), "", "", false, "scrollUp");
-                    this.btns.scrollDn = new Btn(b_x, byDn, ui.but_h, ui.but_h + hot_o, 2, scrollBtn_x, scrollDn_y, ui.scr_but_w, "", sbar.scrollable_lines < 1, () => sbar.but(-1), "", "", false, "scrollDn");
+                    this.btns.scrollUp = new Btn(b_x, scrollUp_y, ui.scr_but_w, ui.but_h + hot_o, 1, null, null, scrollBtns.lineUp.stateImgs, "", sbar.scrollable_lines < 1, () => sbar.but(1), "", "", false, "scrollUp");
+                    this.btns.scrollDn = new Btn(b_x, scrollDn_y, ui.scr_but_w, ui.but_h + hot_o, 2, null, null, scrollBtns.lineDown.stateImgs, "", sbar.scrollable_lines < 1, () => sbar.but(-1), "", "", false, "scrollDn");
                     break;
             }
         }
