@@ -703,7 +703,8 @@ class Playlist extends List {
 		var ctrl_pressed = utils.IsKeyPressed(VK_CONTROL);
 		var shift_pressed = utils.IsKeyPressed(VK_SHIFT);
 
-		/** @type {BaseHeader} */
+		/** @type {BaseHeader|Row} */
+		// @ts-ignore
 		const item = this.trace_list(x, y) ? this.get_item_under_mouse(x, y) : undefined;
 		this.last_hover_item = item;
 		this.last_pressed_coord.x = x;
@@ -749,9 +750,13 @@ class Playlist extends List {
 		}
 
 		if (item instanceof BaseHeader) {
-			item.on_mouse_lbtn_dblclk(x, y, m, this.collapse_handler);
+			if (item instanceof DiscHeader) {
+				item.on_mouse_lbtn_dblclk(this.collapse_handler);
+			} else {
+				item.on_mouse_lbtn_dblclk(x, y, m);
+			}
 			this.repaint();
-		} else {
+		} else if (item instanceof Row) {
 			if (g_properties.show_rating && item.rating_trace(x, y)) {
 				item.rating_click(x, y);
 				item.repaint();
@@ -786,9 +791,11 @@ class Playlist extends List {
 		if (!this.selection_handler.is_dragging() && this.mouse_on_item) {
 			var ctrl_pressed = utils.IsKeyPressed(VK_CONTROL);
 			var shift_pressed = utils.IsKeyPressed(VK_SHIFT);
-			var item = this.get_item_under_mouse(x, y);
+			/** @type {Row|BaseHeader} */
+			// @ts-ignore
+			const item = this.get_item_under_mouse(x, y);
 			if (item) {
-				this.selection_handler.update_selection(/** @type {Row|BaseHeader} */ item, ctrl_pressed, shift_pressed);
+				this.selection_handler.update_selection(item, ctrl_pressed, shift_pressed);
 			}
 		}
 
@@ -1246,7 +1253,6 @@ class Playlist extends List {
 		var items = this.items_to_draw;
 		items.forEach(function (item) {
 			if (item instanceof Header) {
-				/** @type {Header} */
 				var header = item;
 				if (!header.is_art_loaded() && header.get_first_row().metadb.Compare(metadb)) {
 					header.assign_art(image);
@@ -1349,7 +1355,8 @@ class Playlist extends List {
 					var top_item = this.items_to_draw[0];
 					this.focused_item = top_item instanceof Row ? top_item : top_item.get_first_row();
 				}
-				var new_focus = this.focused_item;
+				/** @type {BaseHeader|Row} */
+				let new_focus = this.focused_item;
 
 				// Get top uncollapsed header
 				var visible_header = this.cnt_helper.get_visible_parent(this.focused_item);
@@ -1376,7 +1383,8 @@ class Playlist extends List {
 					var top_item = this.items_to_draw[0];
 					this.focused_item = top_item instanceof Row ? top_item : top_item.get_first_row();
 				}
-				var new_focus = this.focused_item;
+				/** @type {BaseHeader|Row} */
+				let new_focus = this.focused_item;
 
 				var visible_header = this.cnt_helper.get_visible_parent(this.focused_item);
 				var new_focus_item = visible_header.get_first_row();
@@ -1437,6 +1445,7 @@ class Playlist extends List {
 				if (!this.focused_item) {
 					this.focused_item = this.items_to_draw[0];
 					if (!this.cnt_helper.is_item_navigateable(this.focused_item)) {
+						// @ts-ignore
 						this.focused_item = this.cnt_helper.get_navigateable_neighbour(this.focused_item, 1);
 					}
 				}
@@ -1680,6 +1689,7 @@ class Playlist extends List {
 	 */
 	on_content_to_draw_change() {
 		this.set_rows_boundary_status();
+		// @ts-ignore
 		List.prototype.on_content_to_draw_change.apply(this);
 		if (g_properties.show_album_art && !g_properties.use_compact_header) {
 			get_album_art(this.items_to_draw);
@@ -1692,6 +1702,7 @@ class Playlist extends List {
 	 */
 	scrollbar_redraw_callback() {
 		this.scroll_pos_list[this.cur_playlist_idx] = Math.round(this.scrollbar.scroll * 1e2) / 1e2;
+		// @ts-ignore
 		List.prototype.scrollbar_redraw_callback.apply(this);
 	}
 
@@ -2252,7 +2263,7 @@ class Playlist extends List {
 				drop_info.is_above = true;
 			}
 		}
-		else {
+		else if (item instanceof Row) {
 			if (is_above) {
 				drop_info.row = item;
 				drop_info.is_above = true;
@@ -2775,15 +2786,16 @@ class PlaylistContent extends ListRowContent {
 
 				for (var i = 0; i < sub_items.length; ++i) {
 					/** @type {BaseHeader} */
-					var header = sub_items[i];
-					if (cur_row + header_h_in_rows - 1 >= row_shift && !header.dont_draw) {
+					// @ts-ignore
+					const header = sub_items[i];
+					if (cur_row + header_h_in_rows - 1 >= row_shift /*&& !header.dont_draw*/) {
 						header.set_y(start_y + (cur_row - row_shift) * row_h);
 						return header;
 					}
 
-					if (!header.dont_draw) {
+					// if (!header.dont_draw) {
 						cur_row += header_h_in_rows;
-					}
+					// }
 
 					if (header.is_collapsed) {
 						continue;
@@ -2851,7 +2863,7 @@ class PlaylistContent extends ListRowContent {
 
 			for (var i = start_idx; i < sub_items.length; ++i) {
 				var item = sub_items[i];
-				if (start_item_used && !item.dont_draw) {
+				if (start_item_used /* && !item.dont_draw*/) {
 					item.set_y(cur_y);
 
 					items_to_draw.push(item);
@@ -2866,10 +2878,11 @@ class PlaylistContent extends ListRowContent {
 				}
 
 				if (is_cur_level_header) {
-					if (item.is_collapsed) {
+					if (item instanceof BaseHeader && item.is_collapsed) {
 						continue;
 					}
 
+					// @ts-ignore
 					if (iterate_level(item.sub_items, start_item_used ? null : start_item)) {
 						start_item_used = true;
 					}
@@ -3002,6 +3015,7 @@ function ContentNavigationHelper(cnt_arg) {
 				return header.parent instanceof BaseHeader ? header.parent : null;
 			}
 
+			// @ts-ignore
 			return get_last_visible_item(header.parent.sub_items[header.idx - 1]);
 		}
 
@@ -3022,6 +3036,7 @@ function ContentNavigationHelper(cnt_arg) {
 				return null;
 			}
 
+			// @ts-ignore
 			return cnt.rows[item.idx - 1];
 		}
 
@@ -3065,6 +3080,7 @@ function ContentNavigationHelper(cnt_arg) {
 				return null;
 			}
 
+			// @ts-ignore
 			return cnt.rows[item.idx + 1];
 		}
 
@@ -3100,8 +3116,9 @@ class BaseHeader extends ListItem {
 
 		/**
 		 * @const
-		 * @type {BaseHeader|ListContent}
+		 * @type {BaseHeader}
 		 */
+		// @ts-ignore
 		this.parent = parent;
 
 		/**
@@ -3150,6 +3167,9 @@ class BaseHeader extends ListItem {
 		});
 	}
 
+	/**
+	 * @returns {Row}
+	 */
 	get_first_row() {
 		if (!this.sub_items.length) {
 			return null;
@@ -3160,6 +3180,7 @@ class BaseHeader extends ListItem {
 			item = item.sub_items[0];
 		}
 
+		// @ts-ignore
 		return item;
 	}
 
@@ -3204,16 +3225,18 @@ class BaseHeader extends ListItem {
 	}
 
 	has_selected_items() {
-		var is_function = typeof this.sub_items[0].has_selected_items === "function";
+		// var is_function = typeof this.sub_items[0].has_selected_items === "function";
+		const isHeader = this.sub_items[0] instanceof BaseHeader;
 		return this.sub_items.some(item => {
-			return is_function ? item.has_selected_items() : item.is_selected();
+			return isHeader ? item.has_selected_items() : item.is_selected();
 		});
 	}
 
 	is_completely_selected() {
-		var is_function = typeof this.sub_items[0].is_completely_selected === "function";
+		const isHeader = this.sub_items[0] instanceof BaseHeader;
+		// @ts-ignore
 		return this.sub_items.every(item => {
-			return is_function ? item.is_completely_selected() : item.is_selected();
+			return isHeader ? item.is_completely_selected() : item.is_selected();
 		});
 	}
 
@@ -3268,7 +3291,7 @@ class DiscHeader extends BaseHeader {
 		this.idx = idx;
 
 		this.num_in_header = 0;
-		this.dont_draw = false;
+		// this.dont_draw = false;
 		this.is_odd = false;    // TODO: does this ever get set?
 
 		this.disc_title = '';
@@ -3276,6 +3299,7 @@ class DiscHeader extends BaseHeader {
 
 	/** @override */
 	initialize_items(rows_with_data) {
+		/** @type {Row[]} */
 		this.sub_items = [];
 		if (!rows_with_data.length) {
 			return 0;
@@ -3359,7 +3383,7 @@ class DiscHeader extends BaseHeader {
 		// this.header.expand();
 	}
 
-	on_mouse_lbtn_dblclk(x, y, m, collapse_handler) {
+	on_mouse_lbtn_dblclk(collapse_handler) {
 		collapse_handler.toggle_collapse(this);
 	}
 
@@ -3369,9 +3393,9 @@ class DiscHeader extends BaseHeader {
 	get_duration() {
 		var duration_in_seconds = 0;
 
-		for (var i = 0; i < this.sub_items.length; ++i) {
-			duration_in_seconds += this.sub_items[i].metadb.Length;
-		}
+		this.sub_items.forEach(item => {
+			duration_in_seconds += item.metadb.Length;
+		});
 
 		if (!duration_in_seconds) {
 			return 0;
@@ -5303,6 +5327,7 @@ function SelectionHandler(cnt_arg, cur_playlist_idx_arg) {
 	 * @const
 	 * @type {Array<Row>}
 	 */
+	// @ts-ignore
 	var rows = cnt_arg.rows;
 	/**
 	 * @const
