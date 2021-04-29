@@ -3430,8 +3430,8 @@ function Buttons() {
                     this.btns.scrollDn = new Btn(b_x, byDn, ui.but_h, ui.but_h, 3, "", "", "", {normal: 5, hover: 6, down: 7}, sbar.scrollable_lines < 1, () => sbar.but(-1), "", "", false, "scrollDn");
                     break;
                 default:
-                    this.btns.scrollUp = new Btn(b_x, scrollUp_y, ui.scr_but_w, ui.but_h + hot_o, 1, null, null, scrollBtns.lineUp.stateImgs, "", sbar.scrollable_lines < 1, () => sbar.but(1), "", "", false, "scrollUp");
-                    this.btns.scrollDn = new Btn(b_x, scrollDn_y, ui.scr_but_w, ui.but_h + hot_o, 2, null, null, scrollBtns.lineDown.stateImgs, "", sbar.scrollable_lines < 1, () => sbar.but(-1), "", "", false, "scrollDn");
+                    this.btns.scrollUp = new Btn(b_x, scrollUp_y, ui.scr_but_w, ui.but_h, 1, null, null, scrollBtns.lineUp.stateImgs, "", sbar.scrollable_lines < 1, () => sbar.but(1), "", "", false, "scrollUp");
+                    this.btns.scrollDn = new Btn(b_x, scrollDn_y, ui.scr_but_w, ui.but_h, 2, null, null, scrollBtns.lineDown.stateImgs, "", sbar.scrollable_lines < 1, () => sbar.but(-1), "", "", false, "scrollDn");
                     break;
             }
         }
