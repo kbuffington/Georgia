@@ -3958,7 +3958,9 @@ class Header extends BaseHeader {
 		}
 		gr.DrawImage(cache_header ? this.header_image : clipImg, this.x, y, this.w, h, 0, srcY, this.w, h);
 		if (this.is_completely_selected()) {
-			gr.FillSolidRect(this.x, y, scaleForDisplay(2), this.h, col.accent);
+			gr.SetSmoothingMode(SmoothingMode.None);
+			gr.FillSolidRect(this.x, y, scaleForDisplay(2), h, col.accent);
+			gr.SetSmoothingMode(SmoothingMode.HighQuality);
 		}
 		clipImg = null;
 	}
