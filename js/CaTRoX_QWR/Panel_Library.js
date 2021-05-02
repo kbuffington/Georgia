@@ -1020,7 +1020,7 @@ function panel_operations() {
             this.f_sw = g.CalcTextWidth("   ▼", this.filterBtnFont);
         });
         this.filter_x1 = ui.x + ui.w - ui.margin - this.f_w[this.filterBy] - this.f_sw;
-        this.s_w2 = libraryProps.searchShow > 1 ? this.filter_x1 - this.s_x - 11 : this.s_w1 - Math.round(ui.row_h * 0.75) - this.s_x + 1;
+        this.s_w2 = libraryProps.searchMode > 1 ? this.filter_x1 - this.s_x - 11 : this.s_w1 - Math.round(ui.row_h * 0.75) - this.s_x + 1;
     }
 
     this.getBaseName = function() {
@@ -1173,7 +1173,7 @@ function panel_operations() {
         this.on_size(); jumpSearch.on_size();
         but.create_tooltip();
         library_tree.create_tooltip();
-        if (libraryProps.searchShow || libraryProps.sbarShow) but.refresh(true); sbar.reset();
+        if (libraryProps.searchMode || libraryProps.sbarShow) but.refresh(true); sbar.reset();
         window.Repaint();
     }
 }
@@ -2805,7 +2805,6 @@ function searchLibrary() {
     var cx = 0,
         selEnd = 0,
         selStart = 0,
-        expand_limit = 350, //Math.min(Math.max(window.GetProperty("ADV.Limit Search Results Auto Expand: 10-1000", 350), 10), 1000),
         i = 0,
         lbtn_dn = false,
         lg = [],
@@ -2815,7 +2814,7 @@ function searchLibrary() {
         shift_x = 0,
         txt_w = 0,
         cursor_width = scaleForDisplay(1);
-    var calc_text = function () {var im = gdi.CreateImage(1, 1), g = im.GetGraphics(); txt_w = g.CalcTextWidth(p.s_txt.substr(offsetChars), ui.font); im.ReleaseGraphics(g); }
+    const calc_text = () => {s.gr(1, 1, false, g => txt_w = g.CalcTextWidth(p.s_txt.substr(offsetChars), ui.font));}
     var drawcursor = (gr) => {
         if (p.s_search && p.s_cursor && selStart == selEnd && cx >= offsetChars) {
             var x1 = p.s_x + get_cursor_x(cx);
@@ -2836,23 +2835,23 @@ function searchLibrary() {
         return selcol;
     }
     var get_cursor_pos = function (x) {var im = gdi.CreateImage(1, 1), g = im.GetGraphics(), nx = x - p.s_x, pos = 0; for (i = offsetChars; i < p.s_txt.length; i++) {pos += g.CalcTextWidth(p.s_txt.substr(i,1), ui.font); if (pos >= nx + 3) break;} im.ReleaseGraphics(g); return i;}
-    var get_cursor_x = function (pos) {
-        var im = gdi.CreateImage(1, 1),
-        g = im.GetGraphics(),
-        x = 0;
-        if (pos >= offsetChars) x = g.CalcTextWidth(p.s_txt.substr(offsetChars, pos - offsetChars), ui.font);
-        im.ReleaseGraphics(g);
+    const get_cursor_x = pos => {
+        let x = 0;
+        s.gr(1, 1, false, g => {
+            if (pos >= offsetChars) x = g.CalcTextWidth(p.s_txt.substr(offsetChars, pos - offsetChars), ui.font);
+        });
         return x;
     }
-    var get_offset = function (gr) {
-        var t = gr.CalcTextWidth(p.s_txt.substr(offsetChars, cx - offsetChars), ui.font);
-        var j = 0;
-        while (t >= p.s_w2 && j < 500) {
+    const get_offset = gr => {
+        let t = gr.CalcTextWidth(p.s_txt.substr(offsetChars, cx - offsetChars), ui.font);
+        let j = 0;
+        while (t >= p.s_w2 && j < 499) {
             j++; offsetChars++;
             t = gr.CalcTextWidth(p.s_txt.substr(offsetChars, cx - offsetChars), ui.font);
         }
     }
-    var record = function() {lg.push(p.s_txt); log = []; if (lg.length > 30) lg.shift();}
+    const record = () => {lg.push(p.s_txt); log = []; if (lg.length > 30) lg.shift();}
+
     this.clear = () => {
         lib_manager.time.Reset(); library_tree.subCounts.search = {}; offsetChars = selStart = selEnd = cx = 0; p.s_cursor = false; p.s_search = false; p.s_txt = "";
         but.set_search_btns_hide();
