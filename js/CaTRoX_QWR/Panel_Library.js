@@ -1179,50 +1179,12 @@ function panel_operations() {
 }
 if ('DlgCode' in window) { window.DlgCode = 4; }
 
-const SHIFT = 0;
-const CTRL = 1;
-const ALT = 2;
-const CTRL_ALT = 3;
-
-function v_keys() {
-    this.selAll = 1;
-    this.copy = 3;
-    this.back = 8;
-    this.enter = 13;
-    this.shift = 16;
-    this.control = 17;
-    this.alt = 18;
-    this.paste = 22;
-    this.cut = 24;
-    this.redo = 25;
-    this.undo = 26;
-    this.pgUp = 33;
-    this.pgDn = 34;
-    this.end = 35;
-    this.home = 36;
-    this.left = 37;
-    this.up = 38;
-    this.right = 39;
-    this.dn = 40;
-    this.del = 46;
-    this.k = function (n) {
-        switch (n) {
-            case 0:
-                return utils.IsKeyPressed(this.shift);
-                break;
-            case 1:
-                return utils.IsKeyPressed(this.control);
-                break;
-            case 2:
-                return utils.IsKeyPressed(this.alt);
-                break;
-            case 3:
-                return utils.IsKeyPressed(this.control) && utils.IsKeyPressed(this.alt);
-                break;
-        }
-    }
+function Vkeys() {
+	// ppt.zoomKey = s.clamp(ppt.zoomKey, 0, 4);
+    let zoomKey = 0; if (zoomKey != 0) zoomKey = [, 0x11, 0x12, 0x1B, 0x09][zoomKey];
+    this.selAll = 1; this.copy = 3; this.back = 8; this.enter = 13; this.shift = 16; this.paste = 22; this.cut = 24; this.redo = 25; this.undo = 26; this.pgUp = 33; this.pgDn = 34; this.end = 35; this.home = 36; this.left = 37; this.up = 38; this.right = 39; this.dn = 40; this.del = 46;
+    this.k = n => {switch (n) {case 'enter': return utils.IsKeyPressed(0x0D); break; case 'shift': return utils.IsKeyPressed(0x10); break; case 'ctrl': return utils.IsKeyPressed(0x11); break; case 'alt': return utils.IsKeyPressed(0x12); break; case 'zoom': return !zoomKey ? utils.IsKeyPressed(0x11) && utils.IsKeyPressed(0x12) : utils.IsKeyPressed(zoomKey); break;}}
 }
-// var v = new v_keys();
 
 
 const arraysEqual = (arr1, arr2) => {let i = arr1.length; if (i != arr2.length) return false; while (i--) if (arr1[i] !== arr2[i]) return false; return true;};
@@ -2550,15 +2512,15 @@ function LibraryTree() {
 
     this.send = function(item, x, y) {
         if (!this.check_ix(item, x, y, false)) return;
-        if (vk.k(CTRL)) this.load(this.sel_items, true, false, false, this.gen_pl, false);
-        else if (vk.k(SHIFT)) this.load(this.sel_items, true, false, false, this.gen_pl, false);
+        if (vk.k('ctrl')) this.load(this.sel_items, true, false, false, this.gen_pl, false);
+        else if (vk.k('shift')) this.load(this.sel_items, true, false, false, this.gen_pl, false);
         else this.load(item.item, true, false, false, this.gen_pl, false);
     }
 
     this.track = function(item, x, y) {
         if (!this.check_ix(item, x, y, false)) return;
-        if (vk.k(CTRL)) this.tracking(this.sel_items, true);
-        else if (vk.k(SHIFT)) this.tracking(this.sel_items, true);
+        if (vk.k('ctrl')) this.tracking(this.sel_items, true);
+        else if (vk.k('shift')) this.tracking(this.sel_items, true);
         else this.tracking(item.item, true);
     }
 
@@ -2601,11 +2563,15 @@ function LibraryTree() {
                 this.check_row(x, y);
                 break;
             case ObjType.Item:
-                last_pressed_coord.x = x - ui.x;
-                last_pressed_coord.y = y - ui.y;
-                lbtn_dn = true;
-                if (vk.k(ALT) && libraryProps.autoFill) return;
-                if (!item.sel && !vk.k(CTRL)) get_selection(ix, item.sel);
+                // only use for this code is drag/drop which doesn't work in Georgia since there's no place to drop to
+                // last_pressed_coord.x = x - ui.x;
+                // last_pressed_coord.y = y - ui.y;
+                // lbtn_dn = true;
+                // if (vk.k('alt') && libraryProps.autoFill) return;
+                // if (!item.sel && !vk.k('ctrl')) get_selection(ix, item.sel);
+
+                // allows drag/selection
+                if (vk.k('shift')) get_selection(ix, item.sel);
                 break;
         }
         lib_manager.treeState(false, libraryProps.rememberTree);
@@ -2623,10 +2589,10 @@ function LibraryTree() {
         var item = this.tree[ix],
             clickedOn = x < Math.round(ui.pad * item.tr) + ui.icon_w + ui.margin ? ObjType.Node : this.check_ix(item, x, y, false) ? ObjType.Item : ObjType.NoObj;
         if (clickedOn !== ObjType.Item) return;
-        if (vk.k(ALT) && libraryProps.autoFill) {
+        if (vk.k('alt') && libraryProps.autoFill) {
             return this.add(x, y, alt_lbtn_pl);
         }
-        if (!vk.k(CTRL)) {
+        if (!vk.k('ctrl')) {
             this.clear();	// clear selected items unless ctrl key is down
         }
         get_selection(ix, item.sel);
@@ -2700,7 +2666,12 @@ function LibraryTree() {
             case 0: this.clear(); this.sel_items = []; break;
             case 1: const direction = (idx > last_sel) ? 1 : -1; if (!vk.k('ctrl')) this.clear(); for (let i = last_sel; ; i += direction) {this.tree[i].sel = true; if (i == idx) break;} this.get_sel_items(); p.tree_paint(); break;
             case 2: this.tree[idx].sel = !this.tree[idx].sel; this.get_sel_items(); last_sel = idx; break;
-            case 3: this.sel_items = []; if (!add) this.clear(); if (!add) this.tree[idx].sel = true; this.sel_items.push.apply(this.sel_items, this.tree[idx].item); this.sel_items = uniq(this.sel_items); last_sel = idx; break;
+            case 3:
+                this.sel_items = [];
+                if (!add) this.clear();
+                if (!add) this.tree[idx].sel = true;
+                this.sel_items.push.apply(this.sel_items, this.tree[idx].item); this.sel_items = uniq(this.sel_items); last_sel = idx;
+                break;
         }
     }
 
@@ -3710,7 +3681,7 @@ function menu_object() {
     // 	var Index = StartIndex,
     // 		n = ["Panel Properties"];
     // 	if (p.syncType) n.push("Refresh");
-    // 	if (v.k(SHIFT)) n.push("Configure...");
+    // 	if (v.k('shift')) n.push("Configure...");
     // 	for (var i = 0; i < n.length; i++) {
     // 		this.NewMenuItem(Index, "Config", i + 1);
     // 		Menu.AppendMenuItem(MF_STRING, Index, n[i]);
@@ -4036,13 +4007,7 @@ class LibraryCallbacks {
     on_mouse_mbtn_up(x, y) {library_tree.mbtn_up(x, y);}
     on_mouse_move(x, y, m) {if (p.m_x == x && p.m_y == y) return; if (libraryProps.searchMode || libraryProps.showScrollbar) but.move(x, y); if (libraryProps.searchMode) sL.move(x, y); library_tree.move(x, y); library_tree.dragDrop(x, y); sbar.move(x, y); p.m_x = x; p.m_y = y;}
     on_mouse_rbtn_up(x, y) {if (y < p.s_h && x > p.s_x && x < p.s_x + p.s_w2) {if (libraryProps.searchMode) sL.rbtn_up(x, y); return true;} else {men.rbtn_up(x, y); return true;}}
-    on_mouse_wheel(step) {
-        if (!vk.k(CTRL_ALT)) {
-            sbar.wheel(step);
-        } else {
-            ui.wheel(step);
-        }
-    }
+    on_mouse_wheel(step) {if (!vk.k('zoom')) sbar.wheel(step); else ui.wheel(step);}
     on_notify_data(name, info) {switch (name) {case "!!.tags update": lib_manager.treeState(false, 2); break;}}
     on_playback_new_track(handle) {ui.on_playback_new_track(handle);}
     on_playback_stop(reason) {if (reason == 2) return; on_item_focus_change();}
@@ -4088,7 +4053,7 @@ function initLibraryPanel() {
         ui = new userinterface();
         sbar = new Scrollbar();
         p = new panel_operations();
-        vk = new v_keys();
+        vk = new Vkeys();
         lib_manager = new Library();
         library_tree = new LibraryTree();
         if (libraryProps.searchMode) {
