@@ -429,12 +429,14 @@ function userinterface() {
     const nodeZoom = step => {this.node_sz += step; calc_text(); p.on_size();}
 
     const filterZoom = step => {
-        let zoomFilter = libraryProps.filterZoom;
-        if (zoomFilter < 0.7) return; zoomFilter += step * 0.1; zoomFilter = Math.max(zoomFilter, 0.7);
-        p.filterFont = gdi.Font("Segoe UI", zoomFilter > 1.05 ? Math.floor(11 * s.scale * zoomFilter) : 11 * s.scale * zoomFilter, 1);
+        let zoomFilter = libraryProps.filterZoom / 100;
+        if (zoomFilter < 0.8) return;
+        zoomFilter += step * 0.1;
+        zoomFilter = Math.max(zoomFilter, 0.8);
+        p.filterFont = gdi.Font("Segoe UI", 11 * s.scale * zoomFilter, 1);
         p.filterBtnFont = gdi.Font("Segoe UI", zoomFilter > 1.05 ? Math.floor(9 * s.scale * zoomFilter) : 9 * s.scale * zoomFilter, 1);
-        p.calc_text(); but.refresh(true);
         libraryProps.filterZoom = Math.round(zoomFilter * 100);
+        p.calc_text(); but.refresh(true);
     }
 
     const txtZoom = step => {
@@ -449,10 +451,10 @@ function userinterface() {
     }
 
     this.wheel = (step, all) => {
-        const textZoom = p.m_x >= Math.round(this.icon_w + ui.margin + (libraryProps.rootNode ? pptDefault.treeIndent : 0));
-        if (p.m_y > p.s_h && textZoom || all) txtZoom(step);
-        if (p.m_y > p.s_h && !textZoom || all) nodeZoom(step);
-        if (p.m_y <= p.s_h || all) filterZoom(step);
+        const textZoom = p.m_x >= ui.x + Math.round(this.icon_w + ui.margin + (libraryProps.rootNode ? pptDefault.treeIndent : 0));
+        if (p.m_y > p.s_h + ui.y && textZoom || all) txtZoom(step);
+        if (p.m_y > p.s_h + ui.y && !textZoom || all) nodeZoom(step);
+        if (p.m_y <= p.s_h + ui.y || all) filterZoom(step);
         window.Repaint();
 
         // if (p.m_y > p.s_h + ui.y) {
