@@ -1291,10 +1291,6 @@ function onOptionsMenu(x, y) {
 	});
 	libraryMenu.addToggleItem('Auto collapse nodes', libraryProps, 'autoCollapse');
 	libraryMenu.addItem('Reset library zoom', false, () => {
-		// libraryProps.filterZoom = 100;
-		// libraryProps.fontZoom = 100;
-		// libraryProps.nodeZoom = 100;
-		// setLibrarySize();
 		p.resetZoom();
 	});
 	libraryMenu.appendTo(menu);

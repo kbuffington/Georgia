@@ -61,9 +61,9 @@ libraryProps.add_properties({
     pageScroll: ['Library: Scroll: Mouse Wheel Page Scroll', false],
     smoothScroll: ['Library: Scroll: Smooth Scroll', true],
     btnTooltipZoom: [prefix + 'Zoom Tooltip [Button] (%)', 100],
-    filterZoom: [prefix + 'Zoom Filter Size (%)', 100],
+    zoomFilter: [prefix + 'Zoom Filter Size (%)', 100],
     zoomFont: [prefix + 'Zoom Font Size (%)', 100],
-    nodeZoom: [prefix + 'Zoom Node Size (%)', 100],
+    zoomNode: [prefix + 'Zoom Node Size (%)', 100],
     baseFontSize: [systemPrefix + 'Font Size', 18],
 });
 
@@ -94,8 +94,6 @@ function userinterface() {
     }
     // this.scale = dpi < 121 ? 1 : dpi / 120;
     this.zoomUpd = window.GetProperty("SYSTEM.Zoom Update", false);
-        // custom_col = window.GetProperty("_CUSTOM COLOURS/FONTS: USE", false),
-        // cust_icon_font = window.GetProperty("_Custom.Font Icon [Node] (Name,Style[0or1])", "Segoe UI Symbol,0"),
     var k = 0,
         // icon = window.GetProperty(" Node: Custom Icon: +|- // Examples","| // (+)|(−) | | | | | | | | |").trim(),
         // icon_f_name= "Segoe UI",
@@ -111,8 +109,7 @@ function userinterface() {
         sp = 6,
         sp1 = 6,
         sp2 = 6,
-        sum = 0,
-        // node_sz, // = Math.round(12 * this.scale),
+        node_sz = Math.round(16 * s.scale)
         zoom = 100,
         zoomFontSize = 16;
         // zoom_node = 100;
@@ -136,7 +133,6 @@ function userinterface() {
     this.drag_drop_id = -1;
     this.dui = window.InstanceType;
     this.font = undefined;
-    this.icon_font = undefined;
     this.icon_pad = -2; //window.GetProperty(" Node: Custom Icon: Vertical Padding", -2);
     this.icon_w = 17;
     this.iconcol_c = "";
@@ -392,7 +388,7 @@ function userinterface() {
         zoom = libraryProps.zoomFont;
         zoomFontSize = Math.max(Math.round(orig_font_sz * zoom / 100), 1);
         if (!this.sizedNode) {	// prevents node sizes from growing every time this method is called
-            this.node_sz = Math.round(this.node_sz * libraryProps.nodeZoom / 100);
+            this.node_sz = Math.round(this.node_sz * libraryProps.zoomNode / 100);
             this.sizedNode = true;
         }
         this.font = gdi.Font(this.font.Name, zoomFontSize, this.font.Style);
@@ -403,39 +399,42 @@ function userinterface() {
     }
 
     const calc_text = () => {
-        var i = gdi.CreateImage(1, 1),
-            g = i.GetGraphics();
-        this.row_h = Math.round(g.CalcTextHeight("String", this.font)) + libraryProps.rowVertPadding;
-        this.node_sz = Math.round(Math.max(Math.min(this.node_sz, this.row_h - 2), 7));
-        library_tree.create_images();	// is this needed??
-        // zoom_node = Math.round(this.node_sz / node_sz * 100);
-        // libraryProps.nodeZoom = zoom_node;
-        sp = Math.max(Math.round(g.CalcTextWidth(" ", this.font)), scaleForDisplay(4));
-        sp1 = scaleForDisplay(10); //Math.max(Math.round(sp * 1.5), 6);
-        if (!this.nodeStyle) {
-            var sp_e = g.MeasureString(this.expand, this.icon_font, 0, 0, 500, 500).Width;
-            var sp_c = g.MeasureString(this.collapse, this.icon_font, 0, 0, 500, 500).Width;
-            sp2 = Math.round(Math.max(sp_e, sp_c) + sp / 3);
-        }
+        s.gr(1, 1, false, (/** @type {GdiGraphics} */ g) => {
+            if (!this.local) this.row_h = Math.max(Math.round(g.CalcTextHeight("String", this.font)) + libraryProps.rowVertPadding, 2);
+            if (this.nodeStyle) {
+                this.node_sz = Math.round(s.clamp(this.node_sz, 7, this.row_h - 2));
+                library_tree.create_images();	// is this needed??
+                libraryProps.zoomNode = Math.round(this.node_sz / node_sz * 100);}
+            else {
+                this.node_sz = Math.round(s.clamp(this.node_sz, 7, this.row_h * 1.15));
+                this.iconFont = gdi.Font(iconFontName, this.node_sz, iconFontStyle);
+                libraryProps.zoomNode = Math.round(this.node_sz / ppt.baseFontSize * 100);
+            }
+            sp = Math.max(Math.round(g.CalcTextWidth(" ", this.font)), 4);
+            sp1 = Math.max(Math.round(sp * 1.5), 6);
+            if (!this.nodeStyle) {
+                const sp_e = g.MeasureString(this.expand, this.iconFont, 0, 0, 500, 500).Width;
+                const sp_c = g.MeasureString(this.collapse, this.iconFont, 0, 0, 500, 500).Width;
+                sp2 = Math.round(Math.max(sp_e, sp_c) + sp / 3);}
+        });
         this.l_s1 = Math.round(sp1 / 2) + scaleForDisplay(1); //Math.max(sp1 / 2, 4);
         this.l_s2 = Math.ceil(this.node_sz / 2);
         this.l_s3 = Math.max(scaleForDisplay(8), this.node_sz / 2)
         this.icon_w = this.nodeStyle ? this.node_sz + sp1 : sp + sp2;
         this.sel = (this.nodeStyle ? sp1 : sp + Math.round(sp / 3)) / 2;
         this.tt = this.nodeStyle ? -Math.ceil(sp1 / 2 - 3) + sp1 : sp;
-        i.ReleaseGraphics(g);
     }
 
     const nodeZoom = step => {this.node_sz += step; calc_text(); p.on_size();}
 
     const filterZoom = step => {
-        let zoomFilter = libraryProps.filterZoom / 100;
+        let zoomFilter = libraryProps.zoomFilter / 100;
         if (zoomFilter < 0.8) return;
         zoomFilter += step * 0.1;
         zoomFilter = Math.max(zoomFilter, 0.8);
         p.filterFont = gdi.Font("Segoe UI", 11 * s.scale * zoomFilter, 1);
         p.filterBtnFont = gdi.Font("Segoe UI", zoomFilter > 1.05 ? Math.floor(9 * s.scale * zoomFilter) : 9 * s.scale * zoomFilter, 1);
-        libraryProps.filterZoom = Math.round(zoomFilter * 100);
+        libraryProps.zoomFilter = Math.round(zoomFilter * 100);
         p.calc_text(); but.refresh(true);
     }
 
@@ -478,14 +477,14 @@ function userinterface() {
         // 		this.calc_text();
         // 		p.on_size();
         // 		window.Repaint();
-        // 		libraryProps.nodeZoom = Math.round(this.node_sz / 12 * 100);
+        // 		libraryProps.zoomNode = Math.round(this.node_sz / 12 * 100);
         // 	}
         // } else {
         // 	if (p.scale < 0.9)
         // 		return;
         // 	p.scale += step * 0.1;
         // 	p.scale = Math.max(p.scale, 0.9);
-        // 	libraryProps.filterZoom = Math.round(p.scale * 100);
+        // 	libraryProps.zoomFilter = Math.round(p.scale * 100);
         // 	p.setFilterFont();
         // 	p.calc_text();
         // 	but.refresh(true);
@@ -978,10 +977,10 @@ function panel_operations() {
     libraryProps.rootNode = Math.max(Math.min(libraryProps.rootNode, 2), 0);
     //this.syncType = window.GetProperty(" Library Sync: Auto-0, Initialisation Only-1") !== undefined ? window.GetProperty(" Library Sync: Auto-0, Initialisation Only-1") : 1;
     this.syncType = 1;	// init only
-    libraryProps.filterZoom = Math.max(libraryProps.filterZoom / 100, 0.9) * 100;
+    libraryProps.zoomFilter = Math.max(libraryProps.zoomFilter / 100, 0.9) * 100;
 
     this.setFilterFont = () => {
-        var scale = Math.max(libraryProps.filterZoom / 100, 0.9);
+        var scale = Math.max(libraryProps.zoomFilter / 100, 0.9);
         this.filterFont = gdi.Font("Segoe UI", scale > 1.05 ? Math.floor(12 * s.scale * scale) : 12 * s.scale * scale, 1);
         this.filterBtnFont = gdi.Font("Segoe UI", scale > 1.05 ? Math.floor(9 * s.scale * scale) : 9 * s.scale * scale, 1);
     }
@@ -1167,6 +1166,7 @@ function panel_operations() {
         libraryProps.zoomNode = 100;
         this.zoomFilter = 1;
         libraryProps.zoomFilter = 100;
+        ui.node_sz = Math.round(16 * s.scale);
         // ppt.set(" Zoom Tooltip [Button] (%)", 100);
         this.filterFont = gdi.Font("Segoe UI", 11 * s.scale * this.zoomFilter, 1);
         this.filterBtnFont = gdi.Font("Segoe UI", 9 * s.scale * this.zoomFilter, 1);
@@ -2205,6 +2205,7 @@ function LibraryTree() {
             y = 0;
         if (((sz - ln_w * 3) / 2) % 1 != 0)
             sy_w = ln_w > 1 ? ln_w - 1 : ln_w + 1;
+        sy_w = Math.max(sy_w, 2);   // set minimum size
         // // if (((sz - ln_w * 3) / 2) % 1 != 0)
         // // 	sy_w = ln_w > 1 ? ln_w - 1 : ln_w + 1;
         // for (var j = 0; j < 4; j++) {
@@ -2233,11 +2234,11 @@ function LibraryTree() {
         // }
 
         for (let j = 0; j < 4; j++) {
-            nd[j] = s.gr(sz, sz, true, g => {
+            nd[j] = s.gr(sz, sz, true, (/** @type {GdiGraphics} */ g) => {
                 hot = j > 1 ? true : false;
-                plus = !j || j == 2 ? true : false;
+                plus = !(j % 2) ? true : false;
                 g.FillSolidRect(x, y, sz, sz, RGB(145, 145, 145));
-                if (!hot) g.FillGradRect(x + ln_w, y + ln_w, sz - ln_w * 2, sz - ln_w * 2, 91,  plus ? ui.col.icon_e[0] : ui.col.icon_c[0], plus ? ui.col.icon_e[1] : ui.col.icon_c[1], 1.0);
+                if (!hot) g.FillGradRect(x + ln_w, y + ln_w, sz - ln_w * 2, sz - ln_w * 2, 91, plus ? ui.col.icon_e[0] : ui.col.icon_c[0], plus ? ui.col.icon_e[1] : ui.col.icon_c[1], 1.0);
                 else g.FillGradRect(x + ln_w, y + ln_w, sz - ln_w * 2, sz - ln_w * 2, 91, ui.col.icon_h[0], ui.col.icon_h[1], 1.0);
                 let x_o = [x, x + sz - ln_w, x, x + sz - ln_w],
                     y_o = [y, y, y + sz - ln_w, y + sz - ln_w];
