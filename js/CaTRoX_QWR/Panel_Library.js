@@ -41,7 +41,9 @@ var libraryProps = new PanelProperties(); // library Preferences
 var prefix = GetPropertyPrefix(false);
 var systemPrefix = GetPropertyPrefix(true);
 libraryProps.add_properties({
-    doubleClickAction: ['Library: Double Click Action', 1],
+    clickAction: ['Library: Single-Click Action', 1],
+    dblClickAction: ['Library: Double Click Action', 1],
+    keyAction: ['Library: Key: Send to Playlist', false],
     rememberTree: [prefix + 'Tree: Remember State', true],
     fullLine: [prefix + 'Text Whole Line Clickable', false],
     searchMode: [prefix + 'Search: Hide-0, SearchOnly-1, Search+Filter-2', 2],
@@ -61,6 +63,8 @@ libraryProps.add_properties({
     pageScroll: ['Library: Scroll: Mouse Wheel Page Scroll', false],
     smoothScroll: ['Library: Scroll: Smooth Scroll', true],
     btnTooltipZoom: [prefix + 'Zoom Tooltip [Button] (%)', 100],
+    filterBy: ['Library: Active Filter', 0],
+    viewBy: ['Library: Active View', 2],
     zoomFilter: [prefix + 'Zoom Filter Size (%)', 100],
     zoomFont: [prefix + 'Zoom Font Size (%)', 100],
     zoomNode: [prefix + 'Zoom Node Size (%)', 100],
@@ -70,14 +74,17 @@ libraryProps.add_properties({
 /** @type {*} setting defaults to avoid changing a bunch of crap */
 let pptDefault = {};
 pptDefault.autoFit = true;
+pptDefault.autoPlay = true;
 pptDefault.duration = 'Scroll,500,TouchFlick,3000';
 pptDefault.flickDistance = 0.8;
-pptDefault.rowStripes = true;	// try this on true?
+// pptDefault.keyAction = false; // is this what we want?
+pptDefault.rowStripes = true;
 pptDefault.sBarCol = true;
 pptDefault.sBarButPad = -24;
 pptDefault.sbarShow = libraryProps.showScrollbar;
 pptDefault.scrollStep = 3;
 pptDefault.searchShow = libraryProps.searchMode;
+pptDefault.showNowplaying = false;  // try true?
 pptDefault.touchControl = false;
 pptDefault.touchStep = 1;
 pptDefault.treeIndent = Math.round(19 * s.scale);
@@ -109,9 +116,9 @@ function userinterface() {
         sp = 6,
         sp1 = 6,
         sp2 = 6,
-        node_sz = Math.round(16 * s.scale)
-        zoom = 100,
-        zoomFontSize = 16;
+        node_sz = Math.round(16 * s.scale),
+        zoom = 100;
+    let zoomFontSize = 16;
         // zoom_node = 100;
     this.bg = false;
     this.col = {};
@@ -407,8 +414,8 @@ function userinterface() {
                 libraryProps.zoomNode = Math.round(this.node_sz / node_sz * 100);}
             else {
                 this.node_sz = Math.round(s.clamp(this.node_sz, 7, this.row_h * 1.15));
-                this.iconFont = gdi.Font(iconFontName, this.node_sz, iconFontStyle);
-                libraryProps.zoomNode = Math.round(this.node_sz / ppt.baseFontSize * 100);
+                this.iconFont = gdi.Font('Segoe UI', this.node_sz, 0);
+                libraryProps.zoomNode = Math.round(this.node_sz / libraryProps.baseFontSize * 100);
             }
             sp = Math.max(Math.round(g.CalcTextWidth(" ", this.font)), 4);
             sp1 = Math.max(Math.round(sp * 1.5), 6);
@@ -888,6 +895,7 @@ function Bezier(){const i=4,c=.001,o=1e-7,v=10,l=11,s=1/(l-1),n=typeof Float32Ar
 
 function panel_operations() {
     this.splitter = '|';
+    this.sp_splitter = ` ${this.splitter}`;
     this.multiProcess = false;
     var prefix = GetPropertyPrefix();
     var def_ppt = window.GetProperty(prefix + "View by Folder Structure: Name // Pattern", "View by Folder Structure // Pattern Not Configurable");
@@ -963,6 +971,7 @@ function panel_operations() {
     this.m_x = 0;
     this.m_y = 0;
     this.pos = -1;
+    this.rootName = "";
     this.s_cursor = false;
     this.s_search = false;
     this.s_txt = "";
@@ -986,7 +995,7 @@ function panel_operations() {
     }
     this.setFilterFont();
 
-    this.filterBy = window.GetProperty("SYSTEM.Filter By", 0);
+    // this.filterBy = window.GetProperty("SYSTEM.Filter By", 0);
     this.searchShow = 2; // show search and filter // TODO: can remove these because it's always true
     // this.pn_h_auto = window.GetProperty("ADV.Height Auto [Expand/Collapse With Root]", false) && libraryProps.rootNode; this.init = true;
     // this.pn_h_max = window.GetProperty("ADV.Height Auto-Expand", 578);
@@ -1012,98 +1021,159 @@ function panel_operations() {
             }
         }
     var paint_y = Math.floor(libraryProps.searchMode || !libraryProps.showScrollbar ? this.s_h : 0);
+    this.search_paint = () => {window.RepaintRect(ui.x + ui.margin, ui.y, ui.w - ui.margin, this.s_h);}
+    this.setHeight = n => {}//if (!this.pn_h_auto) return; ppt.pn_h = n ? ppt.pn_h_max : ppt.pn_h_min; window.MaxHeight = window.MinHeight = ppt.pn_h;}
+	this.setRootName = () => {this.rootName = libraryProps.rootNode == 2 ? this.grp[libraryProps.viewBy].name : "All Music";}
     this.tree_paint = function() {window.RepaintRect(ui.x, ui.y + paint_y, ui.w, ui.h - paint_y + 1);}
-    this.view_by = window.GetProperty("SYSTEM.View By", 1);
+    // this.viewBy = window.GetProperty("SYSTEM.View By", 1);
     this.calc_text = () => {
         s.gr(1, 1, false, g => {
             this.f_h = g.CalcTextHeight("String", this.filterFont);
             this.f_w = this.filt.map(v => g.CalcTextWidth(v.name, this.filterFont));
             this.f_sw = g.CalcTextWidth("   ▼", this.filterBtnFont);
         });
-        this.filter_x1 = ui.x + ui.w - ui.margin - this.f_w[this.filterBy] - this.f_sw;
+        this.filter_x1 = ui.x + ui.w - ui.margin - this.f_w[libraryProps.filterBy] - this.f_sw;
         this.s_w2 = libraryProps.searchMode > 1 ? this.filter_x1 - this.s_x - 11 : this.s_w1 - Math.round(ui.row_h * 0.75) - this.s_x + 1;
     }
 
-    this.getBaseName = function() {
-        return libraryProps.rootNode == 2 ? this.grp[this.view_by].name : "All Music";
-    }
+    // this.getBaseName = function() {
+    //     return libraryProps.rootNode == 2 ? this.grp[this.viewBy].name : "All Music";
+    // }
 
     this.fields = (view, filter) => {
+        // this.filt = [];
+        // this.folder_view = 10;
+        // this.grp = [];
+        // this.grp_sort = "";
+        // this.multiProcess = false;
+        // this.multi_swap = false;
+        // // this.filterBy = filter;
+        // // this.mv_sort = "";
+        // this.view = "";
+        // this.viewBy = view;
+        // for (i = 0; i < view_ppt.length; i++) {
+        //     if (view_ppt[i].indexOf("//") != -1) {
+        //         grps = view_ppt[i].split("//");
+        //         this.grp[i] = { name:grps[0].trim(), type:grps[1] };
+        //     }
+        // }
+        // grps = [];
+        // for (i = 0; i < filter_ppt.length; i++) {
+        //     if (filter_ppt[i].indexOf("//") != -1) {
+        //         grps = filter_ppt[i].split("//");
+        //         this.filt[i] = { name:grps[0].trim(), type:grps[1].trim() };
+        //     }
+        // }
         this.filt = [];
         this.folder_view = 10;
         this.grp = [];
         this.grp_sort = "";
         this.multiProcess = false;
         this.multi_swap = false;
-        this.filter_by = filter;
+        libraryProps.filterBy = filter;
         // this.mv_sort = "";
         this.view = "";
-        this.view_by = view;
-        for (i = 0; i < view_ppt.length; i++) {
-            if (view_ppt[i].indexOf("//") != -1) {
-                grps = view_ppt[i].split("//");
-                this.grp[i] = { name:grps[0].trim(), type:grps[1] };
+        libraryProps.viewBy = view;
+        view_ppt.forEach((v, i) => {
+            if (v.includes("//")) {
+                grps = v.split("//");
+                this.grp[i] = {name:grps[0].trim(), type:grps[1]}
             }
-        }
+        });
         grps = [];
-        for (i = 0; i < filter_ppt.length; i++) {
-            if (filter_ppt[i].indexOf("//") != -1) {
-                grps = filter_ppt[i].split("//");
-                this.filt[i] = { name:grps[0].trim(), type:grps[1].trim() };
+        filter_ppt.forEach((v, i) => {
+            if (v.includes("//")) {
+                grps = v.split("//");
+                this.filt[i] = {name:grps[0].trim(), type:grps[1].trim()}
             }
-        }
-        i = this.grp.length;
-        while (i--) if (!this.grp[i] || this.grp[i].name == "" || this.grp[i].type == "") this.grp.splice(i, 1);
-        i = this.filt.length;
-        while (i--) if (!this.filt[i] || this.filt[i].name == "" || this.filt[i].type == "") this.filt.splice(i, 1);
+        });
+
+        const name = v => v.name;
+        const removeEmpty = v => v && v.name != "" && v.type != "";
+
+        // i = this.grp.length;
+        // while (i--) if (!this.grp[i] || this.grp[i].name == "" || this.grp[i].type == "") this.grp.splice(i, 1);
+        // i = this.filt.length;
+        // while (i--) if (!this.filt[i] || this.filt[i].name == "" || this.filt[i].type == "") this.filt.splice(i, 1);
+        // this.grp[this.grp.length] = {name: def_ppt.split("//")[0].trim(), type: ""}
+        // const folder_view = this.grp.length - 1; // folder view is last group
+        // this.filterBy = Math.min(this.filterBy, this.filt.length - 1); this.viewBy = Math.min(this.viewBy, this.grp.length - 1);
+        // if (this.grp[this.viewBy].type.indexOf("%<") != -1) {
+        //     this.multiProcess = true;
+        // }
+        // this.folderView = this.viewBy === folder_view;
+        this.grp = this.grp.filter(removeEmpty);
+        this.filt = this.filt.filter(removeEmpty);
         this.grp[this.grp.length] = {name: def_ppt.split("//")[0].trim(), type: ""}
-        const folder_view = this.grp.length - 1; // folder view is last group
-        this.filter_by = Math.min(this.filter_by, this.filt.length - 1); this.view_by = Math.min(this.view_by, this.grp.length - 1);
-        if (this.grp[this.view_by].type.indexOf("%<") != -1) {
-            this.multiProcess = true;
-        }
-        this.folderView = this.view_by === folder_view;
+        this.folder_view = this.grp.length - 1; libraryProps.filterBy = Math.min(libraryProps.filterBy, this.filt.length - 1); libraryProps.viewBy = Math.min(libraryProps.viewBy, this.grp.length - 1);
+        if (this.grp[libraryProps.viewBy].type.includes("%<")) this.multiProcess = true;
+		this.folderView = libraryProps.viewBy == this.folder_view;
+
         if (!this.folderView) {
             if (this.multiProcess) {
-                if (this.grp[this.view_by].type.indexOf("$swapbranchprefix{%<") != -1) {
+                if (this.grp[libraryProps.viewBy].type.indexOf("$swapbranchprefix{%<") != -1) {
                     this.multi_swap = true;
                 }
                 // this.mv_sort = fb.TitleFormat((this.grp[this.view_by].type.indexOf("album artist") != -1 || this.grp[this.view_by].type.indexOf("%artist%") == -1 && this.grp[this.view_by].type.indexOf("%<artist>%") == -1 && this.grp[this.view_by].type.indexOf("$meta(artist") == -1 ? "%album artist%" : "%artist%") + "|%album%|[[%discnumber%.]%tracknumber%. ][%track artist% - ]%title%");
             }
-            this.grp_split = this.grp[this.view_by].type.replace(/^\s+/, "").split("|");
-            for (i = 0; i < this.grp_split.length; i++) {
-                this.multi_value[i] = this.grp_split[i].indexOf("%<") != -1 ? true : false;
+            // this.grp_split = this.grp[this.viewBy].type.replace(/^\s+/, "").split("|");
+            // for (i = 0; i < this.grp_split.length; i++) {
+            //     this.multi_value[i] = this.grp_split[i].indexOf("%<") != -1 ? true : false;
+            //     if (this.multi_value[i]) {
+            //         this.grp_split_orig[i] = this.grp_split[i].slice();
+            //         if (this.grp_split[i].indexOf("$swapbranchprefix{%<") != -1) {
+            //             var ip1 = this.grp_split[i].indexOf("$swapbranchprefix{%<"),
+            //                 ip2 = this.grp_split[i].indexOf(">%}", ip1) + 2;
+            //             this.grp_split[i] = replaceAt(this.grp_split[i], ip2, "");
+            //             this.grp_split_orig[i] = this.grp_split[i].replace(/\$swapbranchprefix{%</g, "%<");
+            //             this.grp_split[i] = this.grp_split[i].replace(/\$swapbranchprefix{%</g, "~%<");
+            //         }
+            //         this.grp_split[i] = this.grp_split[i].replace(/%<album artist>%/i,"$if3(%<#album artist#>%,%<#artist#>%,%<#composer#>%,%<#performer#>%)").replace(/%<album>%/i,"$if2(%<#album#>%,%<#venue#>%)").replace(/%<artist>%/i,"$if3(%<artist>%,%<album artist>%,%<composer>%,%<performer>%)").replace(/<#/g,"<").replace(/#>/g,">");
+            //         this.grp_split_clone[i] = this.grp_split[i].slice();
+            //         this.grp_split[i] = this.grp_split_orig[i].replace(/[<>]/g,"");
+            //     }
+            //     this.grp_sort += (this.grp_split[i] + "  |");
+            //     if (this.multi_value[i]) this.grp_split[i] = this.grp_split_clone[i].replace(/%</g, "#!#$meta_sep(").replace(/>%/g, "," + "@@)#!#");
+            //     this.view += (this.grp_split[i] + "|");
+            // }
+            this.grp_split = this.grp[libraryProps.viewBy].type.replace(/^\s+/, "").split("|");
+            this.grp_split.forEach((v, i) => {
+                this.multi_value[i] = v.includes("%<") ? true : false;
                 if (this.multi_value[i]) {
-                    this.grp_split_orig[i] = this.grp_split[i].slice();
-                    if (this.grp_split[i].indexOf("$swapbranchprefix{%<") != -1) {
-                        var ip1 = this.grp_split[i].indexOf("$swapbranchprefix{%<"),
-                            ip2 = this.grp_split[i].indexOf(">%}", ip1) + 2;
-                        this.grp_split[i] = replaceAt(this.grp_split[i], ip2, "");
-                        this.grp_split_orig[i] = this.grp_split[i].replace(/\$swapbranchprefix{%</g, "%<");
-                        this.grp_split[i] = this.grp_split[i].replace(/\$swapbranchprefix{%</g, "~%<");
+                    this.grp_split_orig[i] = v.slice();
+                    if (v.includes("$swapbranchprefix{%<")) {
+                        let ip1 = v.indexOf("$swapbranchprefix{%<"), ip2 = v.indexOf(">%}", ip1) + 2;
+                        v = s.replaceAt(v, ip2, "");
+                        this.grp_split_orig[i] = v.replace(/\$swapbranchprefix{%</g, "%<");
+                        v = v.replace(/\$swapbranchprefix{%</g, "~%<");
                     }
-                    this.grp_split[i] = this.grp_split[i].replace(/%<album artist>%/i,"$if3(%<#album artist#>%,%<#artist#>%,%<#composer#>%,%<#performer#>%)").replace(/%<album>%/i,"$if2(%<#album#>%,%<#venue#>%)").replace(/%<artist>%/i,"$if3(%<artist>%,%<album artist>%,%<composer>%,%<performer>%)").replace(/<#/g,"<").replace(/#>/g,">");
-                    this.grp_split_clone[i] = this.grp_split[i].slice();
-                    this.grp_split[i] = this.grp_split_orig[i].replace(/[<>]/g,"");
+                    v = v.replace(/%<album artist>%/i,"$if3(%<#album artist#>%,%<#artist#>%,%<#composer#>%,%<#performer#>%)").replace(/%<album>%/i,"$if2(%<#album#>%,%<#venue#>%)").replace(/%<artist>%/i,"$if3(%<artist>%,%<album artist>%,%<composer>%,%<performer>%)").replace(/<#/g,"<").replace(/#>/g,">");
+                    this.grp_split_clone[i] = v.slice();
+                    v = this.grp_split_orig[i].replace(/[<>]/g,"");
                 }
-                this.grp_sort += (this.grp_split[i] + "  |");
-                if (this.multi_value[i]) this.grp_split[i] = this.grp_split_clone[i].replace(/%</g, "#!#$meta_sep(").replace(/>%/g, "," + "@@)#!#");
-                this.view += (this.grp_split[i] + "|");
-            }
+                this.grp_sort += (v + this.sp_splitter);
+                if (this.multi_value[i]) v = this.grp_split_clone[i].replace(/%</g, "#!#$meta_sep(").replace(/>%/g, "," + "@@)#!#");
+                this.view += (v + this.splitter);
+            });
             let ix1, ix2;
             if (!this.multiProcess) this.view = this.view.replace(/\$nodisplay{.*?}/gi, "");
             else while(this.view.indexOf("$nodisplay{") != -1) {ix1 = this.view.indexOf("$nodisplay{"); ix2 = this.view.indexOf("}", ix1); this.view = replaceAt(this.view, ix2, " #@#"); this.view = this.view.replace("$nodisplay{", "#@#");}
             this.view = this.view.slice(0, -1);
             while(this.grp_sort.indexOf("$nodisplay{") != -1) {ix1 = this.grp_sort.indexOf("$nodisplay{"); ix2 = this.grp_sort.indexOf("}", ix1); this.grp_sort = replaceAt(this.grp_sort, ix2, " "); this.grp_sort = this.grp_sort.replace("$nodisplay{", "");}
-        } window.SetProperty("SYSTEM.Filter By", filter); window.SetProperty("SYSTEM.View By", view);
-        this.baseName = this.getBaseName();
-        this.f_menu = [];
-        this.menu = [];
-        for (i = 0; i < this.grp.length; i++) this.menu.push(this.grp[i].name);
-        for (i = 0; i < this.filt.length; i++) this.f_menu.push(this.filt[i].name);
+        }
+        // window.SetProperty("SYSTEM.Filter By", filter); window.SetProperty("SYSTEM.View By", view);
+        // this.baseName = this.getBaseName();
+        // this.f_menu = [];
+        // this.menu = [];
+        // for (i = 0; i < this.grp.length; i++) this.menu.push(this.grp[i].name);
+        // for (i = 0; i < this.filt.length; i++) this.f_menu.push(this.filt[i].name);
+        // this.calc_text();
+        this.setRootName();
+        this.f_menu = this.filt.map(name);
+        this.menu = this.grp.map(name);
         this.calc_text();
     }
-    this.fields(this.view_by, this.filterBy);
+    this.fields(libraryProps.viewBy, libraryProps.filterBy);
 
     var propCount = 0;
     for (i = 1; i < 100; i++) {
@@ -1131,7 +1201,7 @@ function panel_operations() {
     }
 
     this.on_size = () => {
-        this.filter_x1 = ui.x + ui.w - ui.margin - this.f_w[this.filter_by] - this.f_sw;
+        this.filter_x1 = ui.x + ui.w - ui.margin - this.f_w[libraryProps.filterBy] - this.f_sw;
         this.s_x = ui.x + Math.round(ui.margin + ui.row_h);
         this.s_y = ui.y;
         this.s_w1 = ui.w - ui.margin;
@@ -1178,6 +1248,23 @@ function panel_operations() {
         if (libraryProps.searchMode || libraryProps.sbarShow) but.refresh(true); sbar.reset();
         window.Repaint();
     }
+
+    this.set = (n, i) => {
+		switch (n) {
+			case 'itemCounts': libraryProps.nodeItemCounts = i; /*library_tree.set();*/ lib_manager.rootNodes(1, true); break;
+			case 'rootNode':
+                libraryProps.rootNode = i; /*library_tree.set();*/ this.setRootName(); lib_manager.rootNodes(1);
+                // this.pn_h_auto = ppt.pn_h_auto && libraryProps.rootNode; if (this.pn_h_auto) {window.MaxHeight = window.MinHeight = ppt.pn_h;}
+                break;
+			case 'view': lib_manager.time.Reset();
+                if (this.s_txt) lib_manager.upd_search = true;
+                this.fields(i < this.grp.length ? i : libraryProps.viewBy, i < this.grp.length ? libraryProps.filterBy : i - this.grp.length);
+                library_tree.subCounts =  {"standard": {}, "search": {}, "filter": {}};
+                lib_manager.getLibrary(); lib_manager.rootNodes();
+                // if (this.pn_h_auto && ppt.pn_h == ppt.pn_h_min && pop.tree[0]) library_tree.clear_child(library_tree.tree[0]);
+                break;
+		}
+	}
 }
 if ('DlgCode' in window) { window.DlgCode = 4; }
 
@@ -1315,7 +1402,7 @@ class Library {
             console.log('errored in library_manager.treeState');
         }
         if (!handleList) {
-            this.get_library();
+            this.getLibrary();
             this.rootNodes(1, this.process);
         } else {
             switch (handleType) {
@@ -1361,7 +1448,7 @@ class Library {
                             break;
                     }
                     if (upd_done) break;
-                    if (p.filterBy > 0 && p.searchShow > 1) { // filter: check if not done
+                    if (libraryProps.filterBy > 0 && p.searchShow > 1) { // filter: check if not done
                         let startFilter = this.list.Clone(),
                             newFilterItems = s.query(handleList, this.filterQuery),
                             newFilter = this.list.Clone();
@@ -1379,7 +1466,7 @@ class Library {
                         let startSearch = p.list.Clone(), newSearchItems = new FbMetadbHandleList();
                         this.validSearch = true; try {newSearchItems = fb.GetQueryItems(handleList, p.s_txt);} catch (e) {this.validSearch = false;}
                         newSearchItems.Sort();
-                        if (p.filterBy > 0 && p.searchShow > 1) {let newFilt = this.list.Clone(); newFilt.Sort(); newSearchItems.MakeIntersection(newFilt);}
+                        if (libraryProps.filterBy > 0 && p.searchShow > 1) {let newFilt = this.list.Clone(); newFilt.Sort(); newSearchItems.MakeIntersection(newFilt);}
                         let newSearch = p.list.Clone();
                         newSearch.InsertRange(newSearch.Count, newSearchItems);
                         startSearch.Sort(); newSearch.Sort(); newSearch.MakeDifference(startSearch);
@@ -1410,14 +1497,14 @@ class Library {
     }
 
     getFilterQuery() {
-        this.filterQuery = p.filt[p.filterBy].type;
+        this.filterQuery = p.filt[libraryProps.filterBy].type;
             while (this.filterQuery.includes("$nowplaying{")) {
                 const q = this.filterQuery.match(/\$nowplaying{(.+?)}/);
                 this.filterQuery = this.filterQuery.replace(q[0], this.eval(q[1]));
             }
     }
 
-    get_library() {
+    getLibrary() {
         this.empty = "";
         p.list = null;
         this.time.Reset();
@@ -1425,7 +1512,7 @@ class Library {
         this.list = fb.GetLibraryItems();
         this.full_list = this.list.Clone();
         if (!this.list.Count || !fb.IsLibraryEnabled()) {library_tree.tree = []; sbar.set_rows(0); this.empty = "Nothing to show\n\nConfigure Media Library first\n\nFile>Preferences>Media library"; p.tree_paint(); return;}
-        if (p.filterBy > 0 && libraryProps.searchMode > 1) {
+        if (libraryProps.filterBy > 0 && libraryProps.searchMode > 1) {
             this.getFilterQuery();
             this.filterQueryID = this.filterQuery;
             this.list = s.query(this.list, this.filterQuery);
@@ -1470,9 +1557,9 @@ class Library {
         };
         let n_o = "#get_node#",
             nU = "";
-        // pop.getNowplaying();	// do we need this?
+        library_tree.getNowplaying();
         if (libraryProps.rootNode) {
-            this.root[0] = {name: p.getBaseName() /*p.rootName*/, sel:false, child:[], item:[]};
+            this.root[0] = {name: p.rootName, sel:false, child:[], item:[]};
             this.node.forEach((v, l) => this.root[0].item[l] = l);
         } else switch (p.multiProcess) {
             case false:
@@ -1566,7 +1653,7 @@ class Library {
         switch (addType) {
             case 0:
                 this.full_list.InsertRange(this.full_list.Count, handleList); this.full_list_need_sort = true;
-                if (p.filterBy > 0 && p.searchShow > 1) {
+                if (libraryProps.filterBy > 0 && p.searchShow > 1) {
                     const newFilterItems = s.query(handleList, this.filterQuery);
                     this.list.InsertRange(this.list.Count, newFilterItems); p.sort(this.list);
                 }
@@ -1611,7 +1698,7 @@ class Library {
                 } else p.list = this.list;
                 break;
             case 1:
-                let lis = p.filterBy > 0 && p.searchShow > 1 ? s.query(handleList, this.filterQuery) : handleList; p.sort(lis);
+                let lis = libraryProps.filterBy > 0 && p.searchShow > 1 ? s.query(handleList, this.filterQuery) : handleList; p.sort(lis);
                 this.binaryInsert(p.folderView, lis, this.list, this.otherNode);
                 if (this.list.Count) this.empty = "";
                 if (p.s_txt) {
@@ -1752,7 +1839,7 @@ class Library {
 
     removed(handleList) {
         let i, j = handleList.Count; while (j--) {i = this.list.Find(handleList[j]); if (i != -1) {this.list.RemoveById(i); this.otherNode.splice(i, 1);}}
-        if (p.filterBy > 0 && p.searchShow > 1) {
+        if (libraryProps.filterBy > 0 && p.searchShow > 1) {
             j = handleList.Count;
             if (this.full_list_need_sort) p.sort(this.full_list);
             this.full_list_need_sort = false;
@@ -1789,6 +1876,17 @@ const ObjType = {
 
 /** called Populate() in other version */
 function LibraryTree() {
+    this.setActions = (n, i) => {
+		switch (n) {
+			case 'click': libraryProps.clickAction = i; break;
+			case 'key': libraryProps.keyAction = i; break;
+			case 'dblClick': libraryProps.dblClickAction = i; return;
+			case 'send': this.autoPlay.send = !this.autoPlay.send; pptDefault.autoPlay = this.autoPlay.send; return;
+		}
+		this.autoPlay = {click: libraryProps.clickAction < 2 ? false : libraryProps.clickAction, send: pptDefault.autoPlay}
+		this.autoFill = {mouse: libraryProps.clickAction == 1 ? true : false, key: libraryProps.keyAction}
+	};
+    this.setActions();
     var get_pos = -1,
         handles = null,
         is_focused = false,
@@ -1809,7 +1907,11 @@ function LibraryTree() {
         tt_c = 0,
         tt_y = 0,
         tt_id = -1;
-    var autoplay = true; // window.GetProperty(" Playlist: Play On Enter Or Send From Menu", false);
+    // let autoplay = true; // window.GetProperty(" Playlist: Play On Enter Or Send From Menu", false);
+    let clicked_on = ObjType.NoObj;
+    let dbl_clicked = false;
+    let selList = null;
+    let showNowplaying = pptDefault.showNowplaying;
     // var btn_pl  = window.GetProperty(" Playlist Use: 0 or 1", "General,1,Alt+LeftBtn,1,MiddleBtn,1").replace(/\s+/g, "").split(",");
     // if (btn_pl[0] == "LeftBtn") window.SetProperty(" Playlist Use: 0 or 1", "General," + btn_pl[1] + ",Alt+LeftBtn," + btn_pl[3] + ",MiddleBtn," + btn_pl[5]);
     var alt_lbtn_pl = !libraryProps.sendToCurrent; //btn_pl[3] == 1 ? true : false,
@@ -1825,7 +1927,7 @@ function LibraryTree() {
     // 	var tf_customSort = fb.TitleFormat(libraryProps.playlistCustomSort);
     // }
     const tf_customSort = fb.TitleFormat(settings.defaultSortString);	// TODO: Do we still need this?
-    // var libraryProps.doubleClickAction = window.GetProperty(" Text Double-Click: ExplorerStyle-0 Play-1 Send-2", 1);
+    // var libraryProps.dblClickAction = window.GetProperty(" Text Double-Click: ExplorerStyle-0 Play-1 Send-2", 1);
     // var lib_playlist = window.GetProperty(" Playlist", "Library View");
     // libraryProps.autoFill = window.GetProperty(" Playlist: AutoFill", true);
     var selection_holder = fb.AcquireUiSelectionHolder(), symb = window.CreateThemeManager("TREEVIEW");
@@ -1839,13 +1941,14 @@ function LibraryTree() {
         ui.node_win = 0;
     }
     im.ReleaseGraphics(g);
-    this.line_l = 0; this.rows = 0; this.sel_items = []; this.subCounts =  {"standard": {}, "filter": {}, "search": {}}; this.tree = [];
+    this.line_l = 0; this.nowp = -1; this.rows = 0; this.sel_items = []; this.subCounts =  {"standard": {}, "filter": {}, "search": {}}; this.tree = [];
     // if (!window.GetProperty("SYSTEM.Playlist Checked", false))
     // 	fb.ShowPopupMessage("Default playlist: Library View.\n\nChange in panel properties if required.", "Library Tree");
     // window.SetProperty("SYSTEM.Playlist Checked", true);
     var arr_contains = function(arr, item) {for (var i = 0; i < arr.length; i++) if (arr[i] == item) return true; return false;}
     var arr_index = function(arr, item) {var n = -1; for (var i = 0; i < arr.length; i++) if (arr[i] == item) {n = i; break;} return n;}
     var check_node = function(gr) {if (sbar.draw_timer || !ui.node_win) return; try {symb.SetPartAndStateID(2, 1); symb.SetPartAndStateID(2, 2); symb.DrawThemeBackground(gr, -ui.node_sz, -ui.node_sz, ui.node_sz, ui.node_sz);} catch (e) {ui.node_win = 0;}}
+    const clickedOn = (x, y, item) => x < ui.x + Math.round(ui.pad * item.tr) + ui.icon_w + ui.margin ? ObjType.Node : this.check_ix(item, x, y, false) ? ObjType.Item : ObjType.NoObj;
     var draw_node = function (gr, j, x, y) {
         switch (ui.node_win) {
             case 0:
@@ -1861,9 +1964,8 @@ function LibraryTree() {
                 break;
         }
     }
-    var num_sort = function (a, b) {
-        return a - b;
-    }
+    const getItems = list => {let handleList = new FbMetadbHandleList(); list.some(v => {if (v >= p.list.Count) return true; handleList.Add(p.list[v]);}); return handleList;}
+    const numSort = (a, b) => a - b;
     var sort = function (a, b) {return a.srt.replace(/^\?/,"").replace(/(\d+)/g, function (n) {return ('0000' + n).slice(-5)}).localeCompare(b.srt.replace(/^\?/,"").replace(/(\d+)/g, function (n) {return ('0000' + n).slice(-5)}));}
     var uniq = function(a) {
         return [... new Set(a)];
@@ -1882,27 +1984,61 @@ function LibraryTree() {
             }
     }
     // libraryProps.autoCollapse = window.GetProperty(" Node: Auto Collapse", false);
-    this.branch_chg = function(br, unused1, unused2) {var new_br = 0; if (br.tr == 0) {for (var i = 0; i < lib_manager.root.length; i++) {new_br += lib_manager.root[i].child.length; lib_manager.root[i].child = [];}} else {var par = this.tree[br.par]; for (var i = 0; i < par.child.length; i++) {new_br += par.child[i].child.length; par.child[i].child = [];}} return new_br;}
-    this.check_row = function (x, y) {
-        m_br = -1;
-        var im = this.get_ix(x, y, true, false);
-        if (im >= this.tree.length || im < 0) return -1;
-        var item = this.tree[im];
-        if (x < Math.round(ui.pad * item.tr) + ui.icon_w + ui.margin + ui.x && (!item.track || libraryProps.rootNode && item.tr == 0)) m_br = im;
-        return im;
+    // this.branch_chg = function (br, unused1, unused2) {
+    //     var new_br = 0;
+    //     if (br.tr == 0) {
+    //         for (var i = 0; i < lib_manager.root.length; i++) {
+    //             new_br += lib_manager.root[i].child.length;
+    //             lib_manager.root[i].child = [];
+    //         }
+    //     } else {
+    //         var par = this.tree[br.par];
+    //         for (var i = 0; i < par.child.length; i++) {
+    //             new_br += par.child[i].child.length;
+    //             par.child[i].child = [];
+    //         }
+    //     }
+    //     return new_br;
+    // }
+    const branch_chg = (br) => {
+        const arr = br.tr == 0 ? lib_manager.root : this.tree[br.par].child;
+        let new_br = 0;
+        arr.forEach(v => {
+            new_br += v.child.length;
+            v.child = [];
+        });
+        return new_br;
     }
+    // this.check_row = function (x, y) {
+    //     m_br = -1;
+    //     var im = this.get_ix(x, y, true, false);
+    //     if (im >= this.tree.length || im < 0) return -1;
+    //     var item = this.tree[im];
+    //     if (x < Math.round(ui.pad * item.tr) + ui.icon_w + ui.margin + ui.x && (!item.track || libraryProps.rootNode && item.tr == 0)) m_br = im;
+    //     return im;
+    // }
+    const checkRow = (x, y) => {m_br = -1; const im = this.get_ix(x, y, true, false); if (im >= this.tree.length || im < 0) return -1; const item = this.tree[im]; if (x < Math.round(ui.pad * item.tr) + ui.icon_w + ui.margin + ui.x && (!item.track || libraryProps.rootNode && item.tr == 0)) m_br = im; return im;}
     this.clear = function () {
         for (var i = 0; i < this.tree.length; i++) this.tree[i].sel = false;
     }
     this.clear_child = function(br) {br.child = []; this.buildTree(lib_manager.root, 0, true, true);}
     this.deActivate_tooltip = function() {tt_c = 0; tt.Text = ""; tt.TrackActivate = false; tt.Deactivate(); p.tree_paint();}
-    this.expandNodes = function (obj, isRoot) {
-        this.branch(obj, isRoot, true, true);
+    // this.expandNodes = function (obj, isRoot) {
+    //     this.branch(obj, isRoot, true, true);
+    //     if (obj.child)
+    //         for (var k = 0; k < obj.child.length; k++)
+    //             if (!obj.child[k].track)
+    //                 this.expandNodes(obj.child[k], false);
+    // }
+    this.expandNodes = (obj, am) => {   // am was isRoot?
+        this.branch(obj, am, true, true);
         if (obj.child)
-            for (var k = 0; k < obj.child.length; k++)
-                if (!obj.child[k].track)
-                    this.expandNodes(obj.child[k], false);
+            obj.child.forEach(v => {
+                if (!v.track)
+                    this.expandNodes(v, false);
+            });
     }
+    this.getNowplaying = (handle, stop) => {if (!showNowplaying) return; if (stop) return this.nowp = -1; if (!handle && fb.IsPlaying) handle = fb.GetNowPlaying(); if (!handle) return this.nowp = -1; this.nowp = p.list.Find(handle); p.tree_paint();}
     this.gen_pl = !libraryProps.sendToCurrent;
     this.get_sel_items = () => {
         p.tree_paint();
@@ -1915,12 +2051,14 @@ function LibraryTree() {
         this.sel_items = uniq(this.sel_items);
     }
 
-    this.getHandles = function(n) {if (n) this.get_sel_items(); var handle_list = fb.CreateHandleList(); try {for (var i = 0; i < this.sel_items.length; i++) handle_list.Add(p.list[this.sel_items[i]]);} catch (e) {} return handle_list;}
+    // this.getHandles = function(n) {if (n) this.get_sel_items(); var handle_list = new FbMetadbHandleList(); try {for (var i = 0; i < this.sel_items.length; i++) handle_list.Add(p.list[this.sel_items[i]]);} catch (e) {} return handle_list;}
     this.leave = function(){if (men.r_up || tt.Text) return; m_br = -1; row_o = 0; m_i = -1; ix_o = 0; p.tree_paint();}
     this.mbtn_up = function(x, y) {this.add(x, y, mbtn_pl);}
-    this.on_char = function(code) {if (p.s_search || code != vk.copy) return; var handle_list = this.getHandles(true); fb.CopyHandleListToClipboard(handle_list); }
+    this.nowPlayingShow = () => {if (this.nowp != -1) {let np_i = -1; this.tree.forEach((v, i) => {if ((!libraryProps.rootNode || libraryProps.rootNode && v.tr) && v.item.includes(this.nowp)) np_i = i;}); if (np_i != -1) {sbar.check_scroll(np_i  * ui.row_h - Math.round(sbar.rows_drawn / 2 - 1) * ui.row_h);}}}
+    this.on_char = function(code) {if (p.s_search || code != vk.copy) return; var handle_list = this.selected(true); fb.CopyHandleListToClipboard(handle_list); }
     this.on_focus = function(p_is_focused) {is_focused = p_is_focused; if (p_is_focused && handles && handles.Count) selection_holder.SetSelection(handles);}
     this.row = function(y) {return Math.round((y - p.s_h - ui.row_h * 0.5) / ui.row_h);}
+    this.selected = n => {if (n) this.get_sel_items(); return getItems(this.sel_items);}
     this.setGetPos = function(pos) {m_i = get_pos = pos;}
 
     this.create_tooltip = function() {
@@ -2100,7 +2238,7 @@ function LibraryTree() {
             }
         }
         const br_l = br.length, par = this.tree.length - 1; if (tr == 0) this.tree = []; let type;
-        if (libraryProps.nodeItemCounts == 2) type = p.s_txt ? "search" : p.filterBy > 0 && p.searchShow > 1 ? "filter" : "standard";
+        if (libraryProps.nodeItemCounts == 2) type = p.s_txt ? "search" : libraryProps.filterBy > 0 && p.searchShow > 1 ? "filter" : "standard";
         br.forEach((v, i) => {
             j = this.tree.length; this.tree[j] = v;
             this.tree[j].top = !i ? true : false; this.tree[j].bot = i == br_l - 1 ? true : false;
@@ -2252,11 +2390,10 @@ function LibraryTree() {
         }
     }
 
-    this.tracking = function(list, type) {
-        if (type) {handles = fb.CreateHandleList(); try {for (var i = 0; i < list.length; i++) handles.Add(p.list[list[i]]);} catch (e) {}}
-        else handles = list.Clone();
-        handles.OrderByFormat(tf_customSort, 1);
-        selection_holder.SetSelection(handles);
+    const tracking = list => {
+        selList = getItems(list);
+        // if (ppt.customSort.length) selList.OrderByFormat(tf_cs, 1);
+        selection_holder.SetSelection(selList);
     }
 
     this.load = function(list, type, add, send, def_pl, insert) {
@@ -2316,7 +2453,7 @@ function LibraryTree() {
             var f_ix = !insert || plman.GetPlaylistFocusItemIndex(pln) == -1 ? plman.PlaylistItemCount(pln) - items.Count : plman.GetPlaylistFocusItemIndex(pln) - items.Count;
             plman.SetPlaylistFocusItem(pln, f_ix); plman.EnsurePlaylistItemVisible(pln, f_ix);
         }
-        if (autoplay && send) {
+        if (pptDefault.autoplay && send) {
             var c = (plman.PlaybackOrder === 3 || plman.PlaybackOrder === 4) ? Math.ceil(plman.PlaylistItemCount(pln) * Math.random() - 1) : 0;
             plman.ExecutePlaylistDefaultAction(pln, c);
         }
@@ -2513,18 +2650,41 @@ function LibraryTree() {
         } catch (e) {}
     }
 
-    this.send = function(item, x, y) {
+	const nodeExpandCollapse = (x, y, item, ix) => {
+		const expanded = item.child.length > 0 ? 1 : 0;
+		switch (expanded) {
+			case 0:
+				if (libraryProps.autoCollapse) branch_chg(item);
+				const row = this.row(y);
+				this.branch(item, !libraryProps.rootNode || ix ? false : true, true); if (!ix) p.setHeight(true);
+				if (libraryProps.autoCollapse) ix = item.ix;
+				if (row + 1 + item.child.length > this.rows) {
+					if (item.child.length > (this.rows - 2)) sbar.check_scroll(ix * ui.row_h);
+					else sbar.check_scroll(Math.min(ix * ui.row_h,(ix + 1 - sbar.rows_drawn + item.child.length) * ui.row_h));
+				} break;
+			case 1: this.clear_child(item); if (!ix && this.tree.length == 1) p.setHeight(false); break;
+		}
+		if (sbar.scroll > ix * ui.row_h) sbar.check_scroll(ix * ui.row_h); checkRow(x, y);
+	}
+
+    // this.send = function(item, x, y) {
+    //     if (!this.check_ix(item, x, y, false)) return;
+    //     if (vk.k('ctrl')) this.load(this.sel_items, true, false, false, this.gen_pl, false);
+    //     else if (vk.k('shift')) this.load(this.sel_items, true, false, false, this.gen_pl, false);
+    //     else this.load(item.item, true, false, false, this.gen_pl, false);
+    // }
+    const send = (item, x, y) => {
         if (!this.check_ix(item, x, y, false)) return;
         if (vk.k('ctrl')) this.load(this.sel_items, true, false, false, this.gen_pl, false);
         else if (vk.k('shift')) this.load(this.sel_items, true, false, false, this.gen_pl, false);
-        else this.load(item.item, true, false, false, this.gen_pl, false);
+		else this.load(/* range(item.item) */item.item, true, false, this.autoPlay.click, this.gen_pl, false);
     }
 
-    this.track = function(item, x, y) {
+    const track = (item, x, y) => {
         if (!this.check_ix(item, x, y, false)) return;
-        if (vk.k('ctrl')) this.tracking(this.sel_items, true);
-        else if (vk.k('shift')) this.tracking(this.sel_items, true);
-        else this.tracking(item.item, true);
+        if (vk.k('ctrl')) tracking(this.sel_items);
+        else if (vk.k('shift')) tracking(this.sel_items);
+		else tracking(item.item);
     }
 
     this.lbtn_dn = (x, y) => {
@@ -2535,35 +2695,39 @@ function LibraryTree() {
         p.pos = ix;
         if (ix >= this.tree.length || ix < 0)
             return get_selection(-1);
-        var item = this.tree[ix],
-            clickedOn = x < Math.round(ui.pad * item.tr) + ui.icon_w + ui.margin + ui.x ? ObjType.Node : this.check_ix(item, x, y, false) ? ObjType.Item : ObjType.NoObj,
-            expanded = item.child.length > 0;
-        switch (clickedOn) {
+        // var item = this.tree[ix],
+        //     clickedOn = x < Math.round(ui.pad * item.tr) + ui.icon_w + ui.margin + ui.x ? ObjType.Node : this.check_ix(item, x, y, false) ? ObjType.Item : ObjType.NoObj,
+        //     expanded = item.child.length > 0;
+        // switch (clickedOn) {
+        const item = this.tree[ix];
+        clicked_on = clickedOn(x, y, item);
+        switch (clicked_on) {
             case ObjType.Node:
-                if (expanded) {
-                    this.clear_child(item);
-                    // if (!ix && this.tree.length == 1) {
-                    // 	p.setHeight(false);
-                    // }
-                } else {
-                    if (libraryProps.autoCollapse)
-                        this.branch_chg(item, false, true);
-                    var row = this.row(y);
-                    this.branch(item, !libraryProps.rootNode || ix ? false : true, true);
-                    // if (!ix) p.setHeight(true);
-                    if (libraryProps.autoCollapse)
-                        ix = item.ix
-                    if (row + 1 + item.child.length > sbar.rows_drawn) {
-                        if (item.child.length > (sbar.rows_drawn - 2)) {
-                            sbar.check_scroll(ix * ui.row_h);
-                        } else {
-                            sbar.check_scroll(Math.min(ix * ui.row_h, (ix + 1 - sbar.rows_drawn + item.child.length) * ui.row_h));
-                        }
-                    }
-                }
-                if (sbar.scroll > ix * ui.row_h)
-                    sbar.check_scroll(ix * ui.row_h);
-                this.check_row(x, y);
+                // if (expanded) {
+                //     this.clear_child(item);
+                //     // if (!ix && this.tree.length == 1) {
+                //     // 	p.setHeight(false);
+                //     // }
+                // } else {
+                //     if (libraryProps.autoCollapse)
+                //         this.branch_chg(item, false, true);
+                //     var row = this.row(y);
+                //     this.branch(item, !libraryProps.rootNode || ix ? false : true, true);
+                //     // if (!ix) p.setHeight(true);
+                //     if (libraryProps.autoCollapse)
+                //         ix = item.ix
+                //     if (row + 1 + item.child.length > sbar.rows_drawn) {
+                //         if (item.child.length > (sbar.rows_drawn - 2)) {
+                //             sbar.check_scroll(ix * ui.row_h);
+                //         } else {
+                //             sbar.check_scroll(Math.min(ix * ui.row_h, (ix + 1 - sbar.rows_drawn + item.child.length) * ui.row_h));
+                //         }
+                //     }
+                // }
+                // if (sbar.scroll > ix * ui.row_h)
+                //     sbar.check_scroll(ix * ui.row_h);
+                // this.check_row(x, y);
+                nodeExpandCollapse(x, y, item, ix);
                 break;
             case ObjType.Item:
                 // only use for this code is drag/drop which doesn't work in Georgia since there's no place to drop to
@@ -2574,6 +2738,7 @@ function LibraryTree() {
                 // if (!item.sel && !vk.k('ctrl')) get_selection(ix, item.sel);
 
                 // allows drag/selection
+                if (vk.k('alt') && this.autoFill.mouse) return;
                 if (vk.k('shift')) get_selection(ix, item.sel);
                 break;
         }
@@ -2581,7 +2746,6 @@ function LibraryTree() {
     }
 
     this.lbtn_up = function(x, y) {
-        // x -= ui.x; y -= ui.y;  // Mordred: fix mouse offsets
         last_pressed_coord = {x: undefined, y: undefined};
         lbtn_dn = false;
         if (y < p.s_h || sent || but.Dn) return;
@@ -2589,9 +2753,8 @@ function LibraryTree() {
         p.pos = ix;
         if (ix >= this.tree.length || ix < 0)
             return get_selection(-1);
-        var item = this.tree[ix],
-            clickedOn = x < Math.round(ui.pad * item.tr) + ui.icon_w + ui.margin ? ObjType.Node : this.check_ix(item, x, y, false) ? ObjType.Item : ObjType.NoObj;
-        if (clickedOn !== ObjType.Item) return;
+        const item = this.tree[ix];
+        if (clicked_on != ObjType.Item) return;
         if (vk.k('alt') && libraryProps.autoFill) {
             return this.add(x, y, alt_lbtn_pl);
         }
@@ -2601,8 +2764,13 @@ function LibraryTree() {
         get_selection(ix, item.sel);
         p.tree_paint();
         lib_manager.treeState(false, libraryProps.rememberTree);
-        if (libraryProps.autoFill) this.send(item, x, y);
-        else this.track(item, x, y);
+        if (this.autoFill.mouse || this.autoPlay.click) {
+            window.Repaint(true);
+            send(item, x, y);
+        } else {
+            p.tree_paint();
+            track(item, x, y);
+        }
     }
 
     this.dragDrop = function(x, y) {
@@ -2610,56 +2778,68 @@ function LibraryTree() {
         if (!lbtn_dn) return;
         if (Math.sqrt((Math.pow(last_pressed_coord.x - x, 2) + Math.pow(last_pressed_coord.y - y, 2))) > 7) {
             last_pressed_coord = {x: undefined, y: undefined}
-            var handle_list = this.getHandles();
+            const handle_list = this.selected();
             fb.DoDragDrop(window.ID, handle_list, handle_list.Count ? 0|1 : 0);
             lbtn_dn = false;
         }
     }
 
     this.lbtn_dblclk = function(x, y) {
-        sent = true;
-        if (y < p.s_h)
-            return;
-        var ix = this.get_ix(x, y, true, false);
-        if (ix >= this.tree.length || ix < 0)
-            return;
-        var item = this.tree[ix];
-        if (!libraryProps.autoFill) this.send(item, x, y);
-        if (!this.check_ix(item, x, y, false) || libraryProps.doubleClickAction == 2) return;
-        var mp = 1;
-        if (!libraryProps.doubleClickAction) {
-            if (item.child.length) mp = 0;
-            switch (mp) {
-                case 0:
-                    this.clear_child(item);
-                    // if (!ix && this.tree.length == 1) p.setHeight(false);
-                    break;
-                case 1:
-                    if (libraryProps.autoCollapse) this.branch_chg(item, false, true);
-                    // if (!ix) p.setHeight(true);
-                    var row = this.row(y);
-                    this.branch(item, !libraryProps.rootNode || ix ? false : true, true);
-                    if (libraryProps.autoCollapse) ix = item.ix
-                    if (row + 1 + item.child.length > sbar.rows_drawn) {
-                        if (item.child.length > (sbar.rows_drawn - 2)) sbar.check_scroll(ix * ui.row_h);
-                        else sbar.check_scroll(Math.min(ix * ui.row_h,(ix + 1 - sbar.rows_drawn + item.child.length) * ui.row_h));
+        if (this.autoPlay.click > 2) return;
+        dbl_clicked = true;
+        if (y < p.s_h) return;
+        let ix = this.get_ix(x, y, true, false);
+        if (ix >= this.tree.length || ix < 0) return;
+        const item = this.tree[ix];
+
+        // if (!libraryProps.autoFill) this.send(item, x, y);
+        // if (!this.check_ix(item, x, y, false) || libraryProps.dblClickAction == 2) return;
+        // var mp = 1;
+        // if (!libraryProps.dblClickAction) {
+        //     if (item.child.length) mp = 0;
+        //     switch (mp) {
+        //         case 0:
+        //             this.clear_child(item);
+        //             // if (!ix && this.tree.length == 1) p.setHeight(false);
+        //             break;
+        //         case 1:
+        //             if (libraryProps.autoCollapse) branch_chg(item);
+        //             // if (!ix) p.setHeight(true);
+        //             var row = this.row(y);
+        //             this.branch(item, !libraryProps.rootNode || ix ? false : true, true);
+        //             if (libraryProps.autoCollapse) ix = item.ix
+        //             if (row + 1 + item.child.length > sbar.rows_drawn) {
+        //                 if (item.child.length > (sbar.rows_drawn - 2)) sbar.check_scroll(ix * ui.row_h);
+        //                 else sbar.check_scroll(Math.min(ix * ui.row_h,(ix + 1 - sbar.rows_drawn + item.child.length) * ui.row_h));
+        //             }
+        //             break;
+        //     }
+        //     if (sbar.scroll > ix * ui.row_h) sbar.check_scroll(ix * ui.row_h);
+        //     lib_manager.treeState(false, libraryProps.rememberTree);
+        // }
+        switch (clicked_on) {
+            case ObjType.Node: nodeExpandCollapse(x, y, item, ix); break;
+			case ObjType.Item:
+                if (!this.check_ix(item, x, y, false)) return;
+                console.log(libraryProps.dblClickAction, this.autoPlay.click)
+				if (libraryProps.dblClickAction == 2 && !this.autoFill.mouse && !this.autoPlay.click) return send(item, x, y);
+				if (!libraryProps.dblClickAction && !item.track) {nodeExpandCollapse(x, y, item, ix); lib_manager.treeState(false, libraryProps.rememberTree);}
+				if (libraryProps.dblClickAction == 2 || this.autoPlay.click == 2) return;
+                if (libraryProps.dblClickAction || !libraryProps.dblClickAction && !item.child.length) {
+                    console.log('here')
+                    if (!this.autoFill.mouse) send(item, x, y);
+                    var playlistIndex = plman.FindOrCreatePlaylist(libraryProps.libPlaylistName, false);
+                    if (!this.gen_pl)
+                        playlistIndex = plman.ActivePlaylist;
+                    plman.ActivePlaylist = playlistIndex;
+                    var itemIndex = 0;
+                    if (plman.PlaybackOrder === PlaybackOrder.Random || plman.PlaybackOrder === PlaybackOrder.ShuffleTracks) {
+                        itemIndex = Math.ceil(plman.PlaylistItemCount(playlistIndex) * Math.random() - 1);
                     }
-                    break;
-            }
-            if (sbar.scroll > ix * ui.row_h) sbar.check_scroll(ix * ui.row_h);
-            lib_manager.treeState(false, libraryProps.rememberTree);
-        }
-        if (libraryProps.doubleClickAction || !libraryProps.doubleClickAction && mp == 1 && !item.child.length) {
-            var playlistIndex = plman.FindOrCreatePlaylist(libraryProps.libPlaylistName, false);
-            if (!this.gen_pl)
-                playlistIndex = plman.ActivePlaylist;
-            plman.ActivePlaylist = playlistIndex;
-            var itemIndex = 0;
-            if (plman.PlaybackOrder === PlaybackOrder.Random || plman.PlaybackOrder === PlaybackOrder.ShuffleTracks) {
-                itemIndex = Math.ceil(plman.PlaylistItemCount(playlistIndex) * Math.random() - 1);
-            }
-            library_tree.load(library_tree.sel_items, true, false, true, false, false); // replace current playlist
-            plman.ExecutePlaylistDefaultAction(playlistIndex, itemIndex);
+                    library_tree.load(library_tree.sel_items, true, false, true, false, false); // replace current playlist
+                    plman.ExecutePlaylistDefaultAction(playlistIndex, itemIndex);
+                }
+                break;
         }
     }
 
@@ -2681,7 +2861,7 @@ function LibraryTree() {
     this.move = function(x, y) {
         if (but.Dn) return;
         var ix = this.get_ix(x, y, false, false);
-        get_pos = this.check_row(x, y);
+        get_pos = checkRow(x, y);
         m_i = -1;
         if (ix !== -1) {
             m_i = ix;
@@ -2719,6 +2899,14 @@ function LibraryTree() {
 
     this.on_key_down = function(vkey) {
         if (p.s_search) return;
+        if (vk.k('enter')) {
+            if (!this.sel_items.length) return;
+            switch (true) {
+               case vk.k('shift'): return this.load(this.sel_items, true, true, false, false, false);
+               case vk.k('ctrl'): return this.load(this.sel_items, true, true, false, false, true);
+               default: return this.load(this.sel_items, true, false, this.autoPlay.send, false, false);
+            }
+        }
         switch(vkey) {
             case vk.left:
                 if (!(p.pos >= 0) && get_pos != -1) p.pos = get_pos;
@@ -2728,17 +2916,17 @@ function LibraryTree() {
                 if (this.tree[p.pos].child.length > 0) {var item = this.tree[p.pos]; this.clear_child(item); get_selection(item.ix); m_i = p.pos = item.ix;}
                 else {try {var item = this.tree[this.tree[p.pos].par]; this.clear_child(item); get_selection(item.ix); m_i = p.pos = item.ix;} catch (e) {return;};}
                 p.tree_paint();
-                if (libraryProps.autoFill) this.load(this.sel_items, true, false, false, this.gen_pl, false);
+                if (this.autoFill.key) this.load(this.sel_items, true, false, false, this.gen_pl /*ppt.sendPlaylist*/, false);
                 sbar.set_rows(this.tree.length); if (sbar.scroll > p.pos * ui.row_h) sbar.check_scroll(p.pos * ui.row_h); lib_manager.treeState(false, libraryProps.rememberTree);
                 break;
             case vk.right:
                 if (!(p.pos >= 0) && get_pos != -1) p.pos = get_pos
                 else p.pos = p.pos + this.tree.length % this.tree.length;
                 p.pos = Math.max(Math.min(p.pos, this.tree.length - 1), 0); get_pos = -1; m_i = -1;
-                var item = this.tree[p.pos]; if (libraryProps.autoCollapse) this.branch_chg(item, false, true);
+                var item = this.tree[p.pos]; if (libraryProps.autoCollapse) branch_chg(item);
                 this.branch(item, libraryProps.rootNode && p.pos == 0 ? true : false, true);
                 get_selection(item.ix); p.tree_paint(); m_i = p.pos = item.ix;
-                if (libraryProps.autoFill) this.load(this.sel_items, true, false, false, this.gen_pl, false);
+                if (this.autoFill.key) this.load(this.sel_items, true, false, false, this.gen_pl /*ppt.sendPlaylist*/, false);
                 sbar.set_rows(this.tree.length);
                 var row = (p.pos * ui.row_h - sbar.scroll) / ui.row_h;
                 if (row + item.child.length > sbar.rows_drawn) {
@@ -2747,11 +2935,11 @@ function LibraryTree() {
                 }
                 lib_manager.treeState(false, libraryProps.rememberTree);
                 break;
-            case vk.pgUp: if (this.tree.length == 0) break; p.pos = Math.max(Math.round(sbar.scroll / ui.row_h + 0.4) - Math.floor(p.rows) + 1, !libraryProps.rootNode ? 0 : 1); sbar.page_throttle(1); get_selection(this.tree[p.pos].ix); p.tree_paint(); if (libraryProps.autoFill) this.load(this.sel_items, true, false, false, this.gen_pl, false); lib_manager.treeState(false, libraryProps.rememberTree); break;
-            case vk.pgDn: if (this.tree.length == 0) break; p.pos = Math.round(sbar.scroll / ui.row_h + 0.4); p.pos = p.pos + Math.floor(p.rows) * 2 - 2; p.pos = this.tree.length < p.pos ? this.tree.length - 1 : p.pos; sbar.page_throttle(-1); get_selection(this.tree[p.pos].ix); p.tree_paint(); if (libraryProps.autoFill) this.load(this.sel_items, true, false, false, this.gen_pl, false); lib_manager.treeState(false, libraryProps.rememberTree); break;
-            case vk.pgDn: if (this.tree.length == 0) break; p.pos = Math.min(Math.round(sbar.scroll / ui.row_h + 0.4) + Math.floor(p.rows) * 2 - 2, this.tree.length - 1); sbar.page_throttle(-1); get_selection(this.tree[p.pos].ix); p.tree_paint(); if (libraryProps.autoFill) this.load(this.sel_items, true, false, false, this.gen_pl, false); lib_manager.treeState(false, libraryProps.rememberTree); break;
-            case vk.home: if (this.tree.length == 0) break; p.pos = !libraryProps.rootNode ? 0 : 1; sbar.check_scroll(0); get_selection(this.tree[p.pos].ix); p.tree_paint(); if (libraryProps.autoFill) this.load(this.sel_items, true, false, false, this.gen_pl, false); lib_manager.treeState(false, libraryProps.rememberTree); break;
-            case vk.end: if (this.tree.length == 0) break; p.pos = this.tree.length - 1; sbar.check_scroll((this.tree.length) * ui.row_h); get_selection(this.tree[p.pos].ix); p.tree_paint(); if (libraryProps.autoFill) this.load(this.sel_items, true, false, false, this.gen_pl, false); lib_manager.treeState(false, libraryProps.rememberTree); break;
+            case vk.pgUp: if (this.tree.length == 0) break; p.pos = Math.max(Math.round(sbar.scroll / ui.row_h + 0.4) - Math.floor(p.rows) + 1, !libraryProps.rootNode ? 0 : 1); sbar.page_throttle(1); get_selection(this.tree[p.pos].ix); p.tree_paint(); if (this.autoFill.key) this.load(this.sel_items, true, false, false, this.gen_pl /*ppt.sendPlaylist*/, false); lib_manager.treeState(false, libraryProps.rememberTree); break;
+            case vk.pgDn: if (this.tree.length == 0) break; p.pos = Math.round(sbar.scroll / ui.row_h + 0.4); p.pos = p.pos + Math.floor(p.rows) * 2 - 2; p.pos = this.tree.length < p.pos ? this.tree.length - 1 : p.pos; sbar.page_throttle(-1); get_selection(this.tree[p.pos].ix); p.tree_paint(); if (this.autoFill.key) this.load(this.sel_items, true, false, false, this.gen_pl /*ppt.sendPlaylist*/, false); lib_manager.treeState(false, libraryProps.rememberTree); break;
+            case vk.pgDn: if (this.tree.length == 0) break; p.pos = Math.min(Math.round(sbar.scroll / ui.row_h + 0.4) + Math.floor(p.rows) * 2 - 2, this.tree.length - 1); sbar.page_throttle(-1); get_selection(this.tree[p.pos].ix); p.tree_paint(); if (this.autoFill.key) this.load(this.sel_items, true, false, false, this.gen_pl /*ppt.sendPlaylist*/, false); lib_manager.treeState(false, libraryProps.rememberTree); break;
+            case vk.home: if (this.tree.length == 0) break; p.pos = !libraryProps.rootNode ? 0 : 1; sbar.check_scroll(0); get_selection(this.tree[p.pos].ix); p.tree_paint(); if (this.autoFill.key) this.load(this.sel_items, true, false, false, this.gen_pl /*ppt.sendPlaylist*/, false); lib_manager.treeState(false, libraryProps.rememberTree); break;
+            case vk.end: if (this.tree.length == 0) break; p.pos = this.tree.length - 1; sbar.check_scroll((this.tree.length) * ui.row_h); get_selection(this.tree[p.pos].ix); p.tree_paint(); if (this.autoFill.key) this.load(this.sel_items, true, false, false, this.gen_pl /*ppt.sendPlaylist*/, false); lib_manager.treeState(false, libraryProps.rememberTree); break;
             case vk.enter: if (!this.sel_items.length) return; this.load(this.sel_items, true, false, true, this.gen_pl, false); break;
             case vk.dn: case vk.up:
                 if (this.tree.length == 0) break;
@@ -2764,8 +2952,7 @@ function LibraryTree() {
                 if (sbar.rows_drawn - row < 3) sbar.check_scroll((p.pos + 3) * ui.row_h - sbar.rows_drawn * ui.row_h);
                 else if (row < 2 && vkey == vk.up) sbar.check_scroll((p.pos - 1) * ui.row_h);
                 m_i = p.pos; get_selection(p.pos); p.tree_paint();
-                if (libraryProps.autoFill)
-                    this.load(this.sel_items, true, false, false, this.gen_pl, false);
+                if (this.autoFill.key) this.load(this.sel_items, true, false, false, this.gen_pl /*ppt.sendPlaylist*/, false);
                 lib_manager.treeState(false, libraryProps.rememberTree);
                 break;
         }
@@ -3074,7 +3261,7 @@ function searchLibrary() {
             if (libraryProps.searchMode > 1) {
                 var l_x = p.filter_x1 - 8 - ui.l_width,
                     l_y = p.s_y;
-                gr.GdiDrawText(p.filt[p.filterBy].name, p.filterFont, ui.col.txt_box, p.filter_x1, ui.y, p.f_w[p.filterBy], p.s_sp, p.cc);
+                gr.GdiDrawText(p.filt[libraryProps.filterBy].name, p.filterFont, ui.col.txt_box, p.filter_x1, ui.y, p.f_w[libraryProps.filterBy], p.s_sp, p.cc);
                 gr.FillSolidRect(l_x, l_y, ui.l_width, p.s_sp, ui.s_linecol);
             }
         } catch (e) {
@@ -3113,15 +3300,15 @@ function JumpSearch() {
             timer.reset(timer.jsearch);
             timer.jsearch = setTimeout(function () {
                 for (i = 0; i < library_tree.tree.length; i++) {
-                    if (library_tree.tree[i].name != p.baseName && library_tree.tree[i].name.substring(0, jSearch.length).toLowerCase() == jSearch.toLowerCase()) {
+                    if (/*library_tree.tree[i].name != p.baseName &&*/ library_tree.tree[i].name.substring(0, jSearch.length).toLowerCase() == jSearch.toLowerCase()) {
                         found = true;
                         pos = i;
                         library_tree.tree[i].sel = true;
                         p.pos = pos;
                         library_tree.setGetPos(pos);
-                        if (libraryProps.autoFill)
+                        if (library_tree.autoFill.key)
                             library_tree.get_sel_items();
-                            lib_manager.treeState(false, libraryProps.rememberTree);
+                        lib_manager.treeState(false, libraryProps.rememberTree);
                         break;
                     }
                 }
@@ -3133,8 +3320,9 @@ function JumpSearch() {
 
             timer.reset(timer.clear_jsearch);
             timer.clear_jsearch = setTimeout(function () {
-                if (found && libraryProps.autoFill)
-                    library_tree.load(library_tree.sel_items, true, false, false, library_tree.gen_pl, false); jSearch = "";
+                if (found && library_tree.autoFill.key)
+                    library_tree.load(library_tree.sel_items, true, false, false, library_tree.gen_pl, false);
+                jSearch = "";
                 window.RepaintRect(ui.x, j_y, ui.w, j_h + 1);
                 timer.clear_jsearch = false;
             }, 1200);
@@ -3390,7 +3578,7 @@ function Buttons() {
             b_x = p.sbar_x;
             byUp = sbar.y;
             byDn = sbar.y + sbar.h - ui.but_h;
-            fw = p.f_w[p.filterBy] + p.f_sw + 12;
+            fw = p.f_w[libraryProps.filterBy] + p.f_sw + 12;
             qx = ui.x + ui.margin;
             qy = ui.y + (p.s_sp - ui.row_h * 0.6) / 2;
             qh = ui.row_h * 0.6;
@@ -3411,7 +3599,7 @@ function Buttons() {
         if (pptDefault.searchShow) this.btns.s_img = new Btn(qx, qy, qh, qh, 4, "", "", "", {normal: s_img}, pptDefault.searchShow > 1 && p.s_txt, "", () => {let fn = fb.FoobarPath + "doc\\Query Syntax Help.html"; if (!s.file(fn)) fn = fb.FoobarPath + "Query Syntax Help.html"; s.browser("\"" + fn);}, "Open Query Syntax Help", true, "s_img");
         if (pptDefault.searchShow == 2) {
             this.btns.cross2 = new Btn(qx - bh * 0.2, by, bh, bh, 5, "", "", "", {normal: 85, hover: 192}, !p.s_txt, "", () => {sL.clear();}, "Clear Search Text", true, "cross2");
-            this.btns.filter = new Btn(p.filter_x1 - 12, by, fw, p.s_sp, 6, p.filterBtnFont, "▼", "", {normal: !ui.local ? (ui.col.txt_box & 0x99ffffff) : ui.col.txt_box, hover: ui.col.txt_box & 0xe4ffffff}, pptDefault.searchShow != 2, "", () => {men.button(p.filter_x1, p.s_h); but.btns.filter.x = p.filter_x1 - 12; but.btns.filter.w = p.f_w[p.filterBy] + p.f_sw + 12;}, "Filter", true, "filter");
+            this.btns.filter = new Btn(p.filter_x1 - 12, by, fw, p.s_sp, 6, p.filterBtnFont, "▼", "", {normal: !ui.local ? (ui.col.txt_box & 0x99ffffff) : ui.col.txt_box, hover: ui.col.txt_box & 0xe4ffffff}, pptDefault.searchShow != 2, "", () => {men.button(p.filter_x1, p.s_h); but.btns.filter.x = p.filter_x1 - 12; but.btns.filter.w = p.f_w[libraryProps.filterBy] + p.f_sw + 12;}, "Filter", true, "filter");
         }
         if (pptDefault.searchShow == 1) this.btns.cross1 = new Btn(bx, by, bh, bh, 5, "", "", "", {normal: 85, hover: 192}, pptDefault.searchShow != 1, "", () => {sL.clear();}, "Clear Search Text");
         transition = new Transition(this.btns, v => v.state !== 'normal');
@@ -3666,17 +3854,32 @@ function Buttons() {
 // }
 // var but = new button_manager();
 
-function menu_object() {
+function MenuItems() {
     var use_local = window.GetProperty("SYSTEM.Use Local", false),
-        expand_limit = use_local ? 6000 : Math.min(Math.max(window.GetProperty("ADV.Limit Menu Expand: 10-6000", 500), 10), 6000),
+        // expand_limit = use_local ? 6000 : Math.min(Math.max(window.GetProperty("ADV.Limit Menu Expand: 10-6000", 500), 10), 6000),
         i = 0,
         MenuMap = [],
         MF_GRAYED = 0x00000001,
         MF_SEPARATOR = 0x00000800,
-        MF_STRING = 0x00000000,
-        mtags_installed = utils.CheckComponent("foo_tags"),
-        xp = false;
-    this.NewMenuItem = function(index, type, value) {MenuMap[index] = [{type: ""},{value: 0}]; MenuMap[index].type = type; MenuMap[index].value = value;}; this.r_up = false;
+        MF_STRING = 0x00000000;
+    this.baseMenu = null;
+    this.clickMenu = null;
+    this.doubleClickMenu = null;
+    this.itemCountsMenu = null;
+    this.keyMenu = null;
+    this.menu = null;
+    this.modeMenu = null;
+    this.rootNodeMenu = null;
+    this.showMenu = null;
+    this.targetPlaylistMenu = null;
+    this.themeMenu = null;
+    this.viewMenu = null;
+    let expandable = false
+    this.treeExpandLimit = 500;
+    this.r_up = false;
+    // this.NewMenuItem = function(index, type, value) {MenuMap[index] = [{type: ""},{value: 0}]; MenuMap[index].type = type; MenuMap[index].value = value;};
+    const newMenuItem = (index, type, value) => {MenuMap[index] = {}; MenuMap[index].type = type; MenuMap[index].value = value;};
+    this.r_up = false;
     var box = function(n) {return n != null ? 'Unescape("' + encodeURIComponent(n + "") + '")' : "Empty";}
     var InputBox = function(prompt, title, msg) { vb.Language = "VBScript"; var tmp = vb.eval('InputBox(' + [box(prompt), box(title), box(msg)].join(",") + ')'); if (typeof tmp == "undefined") return; if (tmp.length == 254) fb.ShowPopupMessage("Your entry is too long and will be truncated.\n\nEntries are limited to 254 characters.", "Library Tree"); return tmp.trim();}
     var proceed = function(length) {var ns = InputBox("Create m-TAGS in selected music folders\n\nProceed?\n\nm-TAGS creator settings apply", "Create m-TAGS in Selected Folders", "Create " + length + " m-TAGS" + (length ? "" : ": NO FOLDERS SELECTED")); if (!ns) return false; return true;}
@@ -3695,110 +3898,201 @@ function menu_object() {
     this.OptionsTypeMenu = function (Menu, StartIndex) {
         var Index = StartIndex;
         for (i = 0; i < p.menu.length; i++) {
-            this.NewMenuItem(Index, "Options", i + 1);
+            newMenuItem(Index, "Options", i);
             Menu.AppendMenuItem(MF_STRING, Index, p.menu[i]);
             Index++;
             if (i == p.menu.length - 1 || i == p.menu.length - 2) Menu.AppendMenuItem(MF_SEPARATOR, 0, 0);
         }
-        Menu.CheckMenuRadioItem(StartIndex, StartIndex + p.grp.length - 1, StartIndex + p.view_by);
+        Menu.CheckMenuRadioItem(StartIndex, StartIndex + p.grp.length - 1, StartIndex + libraryProps.viewBy);
         return Index;
     }
-    this.PlaylistTypeMenu = function (Menu, StartIndex) {
-        var idx = StartIndex,
-            n = ["Send to Current Playlist", "Insert in Current Playlist", "Add to Current Playlist", "Copy", "Collapse All", "Expand"];
+    const baseTypeMenu = (Menu, StartIndex) => {let Index = StartIndex; return Index;}
+    const clickTypeMenu = (Menu, StartIndex) => {let Index = StartIndex; const n = ["Select", "Send to Playlist", "Send to Playlist && Play", "Send to Playlist && Play [Add if Playing]", "Send to Playlist && Play [Add if Content]"]; n.forEach((v, i) => {newMenuItem(Index, "Click", i); Menu.AppendMenuItem(MF_STRING, Index, v); if (i == 2) Menu.AppendMenuItem(MF_SEPARATOR, 0, 0); Index++;}); Menu.CheckMenuRadioItem(StartIndex, Index, StartIndex + libraryProps.clickAction); return Index;}
+    const doubleClickTypeMenu = (Menu, StartIndex) => {
+        let Index = StartIndex;
+        const n = ["Expand / Collapse", "Send to Playlist && Play", "Send to Playlist"];
+        if (library_tree.autoPlay.click > 2) n.unshift("N/A With Dual Mode Single-Click Actions");
+        n.forEach((v, i) => {
+            newMenuItem(Index, "DoubleClick", i);
+            Menu.AppendMenuItem(library_tree.autoPlay.click < 3 ? MF_STRING : MF_GRAYED, Index, v);
+            if (library_tree.autoPlay.click > 2 && i == 0) Menu.AppendMenuItem(MF_SEPARATOR, 0, 0); Index++;
+        });
+        Menu.CheckMenuRadioItem(StartIndex, Index, StartIndex + libraryProps.dblClickAction + (library_tree.autoPlay.click < 3 ? 0 : 1));
+        return Index;
+    }
+    const itemCountsTypeMenu = (Menu, StartIndex) => {let Index = StartIndex; const n = ["Hide", "# Tracks", "# Sub-Items"]; n.forEach((v, i) => {newMenuItem(Index, "ItemCounts", i); Menu.AppendMenuItem(MF_STRING, Index, v); Index++;}); Menu.CheckMenuRadioItem(StartIndex, Index, StartIndex + libraryProps.nodeItemCounts); return Index;}
+	const keyTypeMenu = (Menu, StartIndex) => {let Index = StartIndex; const n = ["Select", "Send to Playlist"]; n.forEach((v, i) => {newMenuItem(Index, "Key", i); Menu.AppendMenuItem(MF_STRING, Index, v); Index++;}); Menu.CheckMenuRadioItem(StartIndex, Index, StartIndex + libraryProps.keyAction); return Index;}
+    const nowPlayingTypeMenu = (Menu, StartIndex) => {let Index = StartIndex; newMenuItem(Index, "Nowplaying", 0); Menu.AppendMenuItem(library_tree.nowp != -1 ? MF_STRING : MF_GRAYED, Index, "Show Nowplaying"); Index++; return Index;}
+    // this.PlaylistTypeMenu = function (Menu, StartIndex) {
+    //     var idx = StartIndex,
+    //         n = ["Send to Current Playlist", "Insert in Current Playlist", "Add to Current Playlist", "Copy", "Collapse All", "Expand"];
+    //     for (i = 0; i < 6; i++) {
+    //         this.NewMenuItem(idx, "Playlist", i + 1);
+    //         Menu.AppendMenuItem(i < 3 && !plman.IsPlaylistLocked(plman.ActivePlaylist) || i == 3 || i == 4 || i == 5 ? MF_STRING : MF_GRAYED, idx, n[i]);
+    //         if (i == 3) Menu.AppendMenuItem(MF_SEPARATOR, 0, 0);
+    //         idx++;
+    //     }
+    //     return idx;
+    // }
+    const playlistTypeMenu = (Menu, StartIndex) => {
+        let idx = StartIndex;
+        const n = ["Send to Current Playlist" + "\tEnter", "Insert in Current Playlist" + "\tCtrl+Enter", "Add to Current Playlist" + "\tShift+Enter", "Copy" + "\tCtrl+C", "Collapse All", "Expand"];
         for (i = 0; i < 6; i++) {
-            this.NewMenuItem(idx, "Playlist", i + 1);
-            Menu.AppendMenuItem(i < 3 && !plman.IsPlaylistLocked(plman.ActivePlaylist) || i == 3 || i == 4 || i == 5 ? MF_STRING : MF_GRAYED, idx, n[i]);
+            newMenuItem(idx, "Playlist", i);
+            Menu.AppendMenuItem(i < 3 && !plman.IsPlaylistLocked(plman.ActivePlaylist) || i == 3 || i == 4 || i == 5 && expandable ? MF_STRING : MF_GRAYED, idx, n[i]);
             if (i == 3) Menu.AppendMenuItem(MF_SEPARATOR, 0, 0);
             idx++;
         }
         return idx;
     }
-    this.TagTypeMenu = function(Menu, StartIndex) {var Index = StartIndex; this.NewMenuItem(Index, "Tag", 1); Menu.AppendMenuItem(mtags_installed && p.view.replace(/^\s+/, "") == "$directory_path(%path%)|%filename_ext%" ? MF_STRING : MF_GRAYED, Index, "Create m-TAGS..." + (mtags_installed ? (p.view.replace(/^\s+/, "").toLowerCase() == "$directory_path(%path%)|%filename_ext%" ? "" : " N/A Requires View by Path // $directory_path(%path%)|%filename_ext%$nodisplay{%subsong%}") : " N/A m-TAGS Not Installed")); Index++; return Index;}
-    this.ThemeTypeMenu = function (Menu, StartIndex) {
-        var Index = StartIndex,
-            c = [!pptDefault.blurDark && !pptDefault.blurBlend && !pptDefault.blurLight && !ui.imgBg, pptDefault.blurDark, pptDefault.blurBlend, pptDefault.blurLight, ui.imgBg, false],
-            n = ["None", "Dark", "Blend", "Light", "Cover", "Reload"];
-        for (var i = 0; i < n.length; i++) {
-            this.NewMenuItem(Index, "Theme", i + 1);
-            Menu.AppendMenuItem(MF_STRING, Index, n[i]);
-            Index++;
-            Menu.CheckMenuRadioItem(StartIndex + i, StartIndex + i, StartIndex + i + 1 - c[i]);
-            if (!i || i == 4) Menu.AppendMenuItem(MF_SEPARATOR, 0, 0);
-        }
-        return Index;
-    }
+    const rootNodeTypeMenu = (Menu, StartIndex) => {let Index = StartIndex; const n = ["Hide", "All Music", "View Name"]; n.forEach((v, i) => {newMenuItem(Index, "RootNode", i); Menu.AppendMenuItem(MF_STRING, Index, v); Index++;}); Menu.CheckMenuRadioItem(StartIndex, Index, StartIndex + libraryProps.rootNode); return Index;}
+    // this.TagTypeMenu = function(Menu, StartIndex) {var Index = StartIndex; newMenuItem(Index, "Tag", 1); Menu.AppendMenuItem(mtags_installed && p.view.replace(/^\s+/, "") == "$directory_path(%path%)|%filename_ext%" ? MF_STRING : MF_GRAYED, Index, "Create m-TAGS..." + (mtags_installed ? (p.view.replace(/^\s+/, "").toLowerCase() == "$directory_path(%path%)|%filename_ext%" ? "" : " N/A Requires View by Path // $directory_path(%path%)|%filename_ext%$nodisplay{%subsong%}") : " N/A m-TAGS Not Installed")); Index++; return Index;}
+    // this.ThemeTypeMenu = function (Menu, StartIndex) {
+    //     var Index = StartIndex,
+    //         c = [!pptDefault.blurDark && !pptDefault.blurBlend && !pptDefault.blurLight && !ui.imgBg, pptDefault.blurDark, pptDefault.blurBlend, pptDefault.blurLight, ui.imgBg, false],
+    //         n = ["None", "Dark", "Blend", "Light", "Cover", "Reload"];
+    //     for (var i = 0; i < n.length; i++) {
+    //         this.NewMenuItem(Index, "Theme", i + 1);
+    //         Menu.AppendMenuItem(MF_STRING, Index, n[i]);
+    //         Index++;
+    //         Menu.CheckMenuRadioItem(StartIndex + i, StartIndex + i, StartIndex + i + 1 - c[i]);
+    //         if (!i || i == 4) Menu.AppendMenuItem(MF_SEPARATOR, 0, 0);
+    //     }
+    //     return Index;
+    // }
+    const viewTypeMenu = (Menu, StartIndex) => {let Index = StartIndex; p.menu.forEach((v, i) => {newMenuItem(Index, "View", i); Menu.AppendMenuItem(MF_STRING, Index, v); Index++; if (i == p.menu.length - 2) Menu.AppendMenuItem(MF_SEPARATOR, 0, 0);}); Menu.CheckMenuRadioItem(StartIndex, StartIndex + p.grp.length - 1, StartIndex + libraryProps.viewBy); return Index;}
 
-    this.FilterMenu = function(Menu, StartIndex) {
-        var Index = StartIndex;
+    // this.FilterMenu = function(Menu, StartIndex) {
+    //     var Index = StartIndex;
+    //     for (i = 0; i < p.f_menu.length + 1; i++) {
+    //         this.NewMenuItem(Index, "Filter", i + 1);
+    //         Menu.AppendMenuItem(MF_STRING, Index, i != p.f_menu.length ? (!i ? "No " : "") + p.f_menu[i] : "Always Reset Scroll");
+    //         if (i == p.f_menu.length) Menu.CheckMenuItem(Index++, p.reset); else Index++;
+    //         if (i == p.f_menu.length - 1) Menu.AppendMenuItem(MF_SEPARATOR, 0, 0);
+    //     }
+    //     Menu.CheckMenuRadioItem(StartIndex, StartIndex + p.f_menu.length - 1, StartIndex + libraryProps.filterBy);
+    //     return Index;
+    // }
+
+    const filterMenu = (Menu, StartIndex) => {
+        let Index = StartIndex;
         for (i = 0; i < p.f_menu.length + 1; i++) {
-            this.NewMenuItem(Index, "Filter", i + 1);
+            newMenuItem(Index, "Filter", i);
             Menu.AppendMenuItem(MF_STRING, Index, i != p.f_menu.length ? (!i ? "No " : "") + p.f_menu[i] : "Always Reset Scroll");
             if (i == p.f_menu.length) Menu.CheckMenuItem(Index++, p.reset); else Index++;
             if (i == p.f_menu.length - 1) Menu.AppendMenuItem(MF_SEPARATOR, 0, 0);
         }
-        Menu.CheckMenuRadioItem(StartIndex, StartIndex + p.f_menu.length - 1, StartIndex + p.filterBy);
+        Menu.CheckMenuRadioItem(StartIndex, StartIndex + p.f_menu.length - 1, StartIndex + libraryProps.filterBy);
         return Index;
     }
 
-    this.button = function(x, y) {
-        var menu = window.CreatePopupMenu(),
-            idx;
-        const Index = this.FilterMenu(menu, 1);
-        menu_down = true;
-        idx = menu.TrackPopupMenu(x, y);
-        menu_down = false;
-        if (idx >= 1 && idx <= Index) {i = MenuMap[idx].value; library_tree.subCounts.filter = {}; library_tree.subCounts.search = {};
-            switch (i) {
-                case p.f_menu.length + 1: p.reset = !p.reset; if (p.reset) {p.search_paint(); lib_manager.treeState(true, 2);} window.SetProperty("SYSTEM.Reset Tree", p.reset); break;
-                default: p.filterBy = i - 1; p.calc_text(); p.search_paint(); lib_manager.treeState(true, 2); window.SetProperty("SYSTEM.Filter By", p.filterBy); break;
-            }
-            // if (p.pn_h_auto && p.pn_h == p.pn_h_min && library_tree.tree[0]) library_tree.clear_child(library_tree.tree[0]);
-        }
-    }
+    // this.button = function(x, y) {
+    //     var menu = window.CreatePopupMenu(),
+    //         idx;
+    //     const Index = this.FilterMenu(menu, 1);
+    //     menu_down = true;
+    //     idx = menu.TrackPopupMenu(x, y);
+    //     menu_down = false;
+    //     if (idx >= 1 && idx <= Index) {i = MenuMap[idx].value; library_tree.subCounts.filter = {}; library_tree.subCounts.search = {};
+    //         switch (i) {
+    //             case p.f_menu.length + 1: p.reset = !p.reset; if (p.reset) {p.search_paint(); lib_manager.treeState(true, 2);} window.SetProperty("SYSTEM.Reset Tree", p.reset); break;
+    //             default: p.filterBy = i - 1; p.calc_text(); p.search_paint(); lib_manager.treeState(true, 2); window.SetProperty("SYSTEM.Filter By", p.filterBy); break;
+    //         }
+    //         // if (p.pn_h_auto && p.pn_h == p.pn_h_min && library_tree.tree[0]) library_tree.clear_child(library_tree.tree[0]);
+    //     }
+    // }
 
-    this.search = function(Menu, StartIndex, s, f, paste) {
-        var Index = StartIndex, n = ["Copy", "Cut", "Paste"];
-        for (i = 0; i < 3; i++) {
-            this.NewMenuItem(Index, "Search", i + 1);
-            Menu.AppendMenuItem(s == f && i < 2 || i == 2 && !paste ? MF_GRAYED : MF_STRING, Index, n[i]); Index++;
-            if (i == 1) Menu.AppendMenuItem(MF_SEPARATOR, 0, 0);
-        }
-        return Index;
-    }
-
-    this.search_menu = function(x, y, s, f, paste) {
-        var menu = window.CreatePopupMenu(), idx;
-        const Index = this.search(menu, 1, s, f, paste);
+    this.button = (x, y) => {
+        const menu = window.CreatePopupMenu();
+        let idx, Index = 1;
+        Index = filterMenu(menu, Index);
         menu_down = true;
         idx = menu.TrackPopupMenu(x, y);
         menu_down = false;
         if (idx >= 1 && idx <= Index) {
+			i = MenuMap[idx].value; library_tree.subCounts.filter = {}; library_tree.subCounts.search = {};
+			switch (i) {
+				case p.f_menu.length: p.reset = !p.reset; if (p.reset) {p.search_paint(); lib_manager.treeState(true, 2);} window.SetProperty("SYSTEM.Reset Tree", p.reset); break;
+				default:
+                    libraryProps.filterBy = i; p.calc_text(); p.search_paint();
+                    lib_manager.treeState(false, libraryProps.rememberTree); // if (!libraryProps.rememberTree && !p.reset) lib.logTree();
+                    lib_manager.getLibrary();
+                    lib_manager.rootNodes(!p.reset ? 1 : 0, true);
+                    break;
+			}
+			// library_tree.checkAutoHeight();
+		}
+    }
+
+    // this.search = function(Menu, StartIndex, s, f, paste) {
+    //     var Index = StartIndex, n = ["Copy", "Cut", "Paste"];
+    //     for (i = 0; i < 3; i++) {
+    //         this.NewMenuItem(Index, "Search", i + 1);
+    //         Menu.AppendMenuItem(s == f && i < 2 || i == 2 && !paste ? MF_GRAYED : MF_STRING, Index, n[i]); Index++;
+    //         if (i == 1) Menu.AppendMenuItem(MF_SEPARATOR, 0, 0);
+    //     }
+    //     return Index;
+    // }
+    const search = (Menu, StartIndex, b, f, paste) => {
+        let Index = StartIndex; const n = ["Copy", "Cut", "Paste"];
+        n.forEach((v, i) => {
+            newMenuItem(Index, "Search", i);
+            Menu.AppendMenuItem(b == f && i < 2 || i == 2 && !paste ? MF_GRAYED : MF_STRING, Index, v); Index++;
+            if (i == 1) Menu.AppendMenuItem(MF_SEPARATOR, 0, 0);
+        });
+        return Index;
+    }
+
+    // this.search_menu = function(x, y, s, f, paste) {
+    //     var menu = window.CreatePopupMenu(), idx;
+    //     const Index = this.search(menu, 1, s, f, paste);
+    //     menu_down = true;
+    //     idx = menu.TrackPopupMenu(x, y);
+    //     menu_down = false;
+    //     if (idx >= 1 && idx <= Index) {
+    //         i = MenuMap[idx].value;
+    //         switch (i) {
+    //             case 1: sL.on_char(vk.copy); break;
+    //             case 2: sL.on_char(vk.cut); break;
+    //             case 3: sL.on_char(vk.paste, true); break;
+    //         }
+    //     }
+    // }
+    this.search_menu = (x, y, b, f, paste) => {
+        const menu = window.CreatePopupMenu();
+        let idx, Index = 1;
+        Index = search(menu, Index, b, f, paste);
+        idx = menu.TrackPopupMenu(x, y);
+        if (idx >= 1 && idx <= Index) {
             i = MenuMap[idx].value;
             switch (i) {
-                case 1: sL.on_char(vk.copy); break;
-                case 2: sL.on_char(vk.cut); break;
-                case 3: sL.on_char(vk.paste, true); break;
+                case 0: sL.on_char(vk.copy); break;
+                case 1: sL.on_char(vk.cut); break;
+                case 2: sL.on_char(vk.paste, true); break;
             }
         }
     }
 
     this.rbtn_up = (x, y) => {
         this.r_up = true;
-        var Context = fb.CreateContextMenuManager(),
-            FilterMenu = window.CreatePopupMenu(),
-            idx,
-            Index = 1,
-            menu = window.CreatePopupMenu(),
-            OptionsMenu = window.CreatePopupMenu(),
-            PlaylistMenu = window.CreatePopupMenu(),
-            // ThemeMenu = window.CreatePopupMenu(),
-            show_context = false;
+        // var Context = fb.CreateContextMenuManager(),
+        //     // FilterMenu = window.CreatePopupMenu(),
+        //     idx,
+        //     Index = 1,
+        //     menu = window.CreatePopupMenu(),
+        //     OptionsMenu = window.CreatePopupMenu(),
+        //     // PlaylistMenu = window.CreatePopupMenu(),
+        //     // ThemeMenu = window.CreatePopupMenu(),
+        //     show_context = false;
+
+        const Context = fb.CreateContextMenuManager();
+        const popupMenu = ["baseMenu", "clickMenu", "doubleClickMenu", "itemCountsMenu", "keyMenu", "menu", "modeMenu", "rootNodeMenu", "showMenu", "targetPlaylistMenu", "themeMenu", "viewMenu"];
+        let idx, Index = 1, items, show_context = false;
+        popupMenu.forEach(v => this[v] = window.CreatePopupMenu());
         var ix = library_tree.get_ix(x, y, true, false),
             item = library_tree.tree[ix],
             nm = "",
-            row = -1,
-            xp = false;
+            row = -1;
         if (y < p.s_h + p.sp + ui.y && library_tree.tree.length > ix && ix != -1 &&
                 (x < Math.round(ui.pad * item.tr) + ui.icon_w + ui.margin + ui.x &&
                 (!item.track || libraryProps.rootNode && item.tr == 0) ||
@@ -3808,83 +4102,117 @@ function menu_object() {
                 item.sel = true;
             }
             library_tree.get_sel_items();
-            xp = library_tree.tree[ix].item.length > expand_limit || library_tree.tree[ix].track ? false : true;
-            if (xp && library_tree.tree.length) {
-                var count = 0,
-                    m = 0;
-                for (m = 0; m < library_tree.tree.length; m++)
-                    if (m == ix || library_tree.tree[m].sel) {
+            expandable = library_tree.tree[ix].item.length > this.treeExpandLimit || library_tree.tree[ix].track ? false : true;
+            if (expandable && library_tree.tree.length) {
+                let count = 0;
+                library_tree.tree.forEach((v, m, arr) => {
+                    if (m == ix || v.sel) {
                         if (row == -1 || m < row) {
                             row = m;
-                            nm = (library_tree.tree[m].tr ? library_tree.tree[library_tree.tree[m].par].name : "") + library_tree.tree[m].name;
+                            nm = (v.tr ? arr[v.par].name : "") + v.name;
                             nm = nm.toUpperCase();
                         }
-                        count += library_tree.tree[m].item.length;
-                        xp = count <= expand_limit;
+                        count += v.item.length;
+                        expandable = count <= this.treeExpandLimit;
                     }
+                });
             }
-            Index = this.PlaylistTypeMenu(menu, Index);
-            menu.AppendMenuSeparator();
-            if (utils.IsKeyPressed(0x10)) {
-                Index = this.TagTypeMenu(menu, Index);
-                menu.AppendMenuSeparator();
-            }
+            Index = playlistTypeMenu(this.menu, Index);
+            this.menu.AppendMenuSeparator();
             show_context = true;
         }
         if (show_context) {
-            Index = this.OptionsTypeMenu(OptionsMenu, Index);
-            OptionsMenu.AppendTo(menu, MF_STRING, "Options");
-            // Index = this.ThemeTypeMenu(ThemeMenu, Index); ThemeMenu.AppendTo(OptionsMenu, MF_STRING, "Theme"); OptionsMenu.AppendMenuSeparator();
-            // Index = this.ConfigTypeMenu(OptionsMenu, Index);
-            menu.AppendMenuSeparator();
-            var items = library_tree.getHandles();
-            Context.InitContext(items);
-            Context.BuildMenu(menu, 5000);
-        } else {
-            Index = this.OptionsTypeMenu(menu, Index);
+            // Index = this.OptionsTypeMenu(OptionsMenu, Index);
+            // OptionsMenu.AppendTo(menu, MF_STRING, "Options");
+            // // Index = this.ThemeTypeMenu(ThemeMenu, Index); ThemeMenu.AppendTo(OptionsMenu, MF_STRING, "Theme"); OptionsMenu.AppendMenuSeparator();
+            // // Index = this.ConfigTypeMenu(OptionsMenu, Index);
+            // menu.AppendMenuSeparator();
+            // var items = library_tree.getHandles();
+            // Context.InitContext(items);
+            // Context.BuildMenu(menu, 5000);
+            if (pptDefault.showNowplaying) {
+                Index = nowPlayingTypeMenu(this.viewMenu, Index);
+                this.viewMenu.AppendMenuSeparator();
+            }
+            Index = viewTypeMenu(this.viewMenu, Index); this.viewMenu.AppendTo(this.menu, MF_STRING, "View");
+            Index = baseTypeMenu(this.baseMenu, Index); this.baseMenu.AppendTo(this.menu, MF_STRING, "Options");
+            this.menu.AppendMenuSeparator();
+	    } else {
+            // Index = this.OptionsTypeMenu(menu, Index);
             // Index = this.ThemeTypeMenu(ThemeMenu, Index);
             // ThemeMenu.AppendTo(menu, MF_STRING, "Theme");
             // menu.AppendMenuSeparator();
             // Index = this.ConfigTypeMenu(menu, Index);
-
+            if (pptDefault.showNowplaying) {
+                Index = nowPlayingTypeMenu(this.menu, Index);
+                this.menu.AppendMenuSeparator();
+            }
+            Index = viewTypeMenu(this.menu, Index);
+            this.menu.AppendMenuSeparator();
+            Index = baseTypeMenu(this.baseMenu, Index); this.baseMenu.AppendTo(this.menu, MF_STRING, "Options");
         }
+        Index = clickTypeMenu(this.clickMenu, Index); this.clickMenu.AppendTo(this.baseMenu, MF_STRING, "Single-Click Action");
+        Index = doubleClickTypeMenu(this.doubleClickMenu, Index); this.doubleClickMenu.AppendTo(this.baseMenu, MF_STRING, "Double-Click Action");
+        Index = keyTypeMenu(this.keyMenu, Index); this.keyMenu.AppendTo(this.baseMenu, MF_STRING, "Keyboard Action");
+		this.baseMenu.AppendMenuSeparator();
+        Index = itemCountsTypeMenu(this.itemCountsMenu, Index); this.itemCountsMenu.AppendTo(this.baseMenu, MF_STRING, "Item Counts");
+        Index = rootNodeTypeMenu(this.rootNodeMenu, Index); this.rootNodeMenu.AppendTo(this.baseMenu, MF_STRING, "Root Node");
+        // this.baseMenu.AppendMenuSeparator();
+
+		if (show_context) {
+            items = library_tree.selected();
+            Context.InitContext(items); Context.BuildMenu(this.menu, 5000);
+		}
+
         menu_down = true;
-        idx = menu.TrackPopupMenu(x, y);
+        idx = this.menu.TrackPopupMenu(x, y);
         menu_down = false;
         if (idx >= 1 && idx <= Index) {
             i = MenuMap[idx].value;
             switch (MenuMap[idx].type) {
-                case "Playlist":
+                case 'Playlist':
                     switch (i) {
-                        case 1: // Send to Current Playlist
+                        case 0: // Send to Current Playlist
                             library_tree.load(library_tree.sel_items, true, false, true, false, false);
                             p.tree_paint();
                             lib_manager.treeState(false, libraryProps.rememberTree);
                             break;
-                        case 4: fb.CopyHandleListToClipboard(items); lib_manager.treeState(false, libraryProps.rememberTree); break;
-                        case 5: library_tree.collapseAll(); break;
-                        case 6: library_tree.expand(ix, nm); break;
-                        default: // Insert or Add to Current Playlist
-                            library_tree.load(library_tree.sel_items, true, true, false, false, i == 2 ? true : false);
+                        case 1: // Insert or Add to Current Playlist
+                        case 2:
+                            library_tree.load(library_tree.sel_items, true, true, false, false, i == 1 ? true : false);
                             lib_manager.treeState(false, libraryProps.rememberTree);
+                            break;
+                        case 3: fb.CopyHandleListToClipboard(items); lib_manager.treeState(false, libraryProps.rememberTree); break;
+                        case 4: library_tree.collapseAll(); break;
+                        case 5: library_tree.expand(ix, nm); break;
+                        default:
+                            throw new ArgumentError('"Playlist" item index', i, 'in MenuItems.rbtn_up');
                             break;
                     }
                     break;
-                case "Tag":
-                    var r = !libraryProps.rootNode ? library_tree.tree[ix].tr : library_tree.tree[ix].tr - 1, list = [];
-                    if (libraryProps.rootNode && !ix || !r) library_tree.tree[ix].sel = true;
-                    if (libraryProps.rootNode && library_tree.tree[0].sel) for (var j = 0; j < library_tree.tree.length; j++) if (library_tree.tree[j].tr == 1) library_tree.tree[j].sel = true; p.tree_paint();
-                    for (j = 0; j < library_tree.tree.length; j++) if ((library_tree.tree[j].tr == (libraryProps.rootNode ? 1 : 0)) && library_tree.tree[j].sel) list.push(library_tree.tree[j].name);
-                    if (!proceed(list.length)) break;
-                    p.syncType = 1; for (j = 0; j < list.length; j++) _.runCmd("\"" + fb.FoobarPath + "\\foobar2000.exe\"" + " /m-TAGS \"" + list[j] + "\"");
-                    p.syncType = window.GetProperty(" Library Sync: Auto-0, Initialisation Only-1", 0); lib_manager.treeState(false, 2);
-                    break;
+                case "Nowplaying": library_tree.nowPlayingShow(); break;
+                case "View": p.set('view', i); break;
+                case "Click": library_tree.setActions('click', i); break;
+                case "DoubleClick": library_tree.setActions('dblClick', i); break;
+                case "Key": library_tree.setActions('key', i); break;
+                case "ItemCounts": p.set('itemCounts', i); break;
+				case "RootNode": p.set('rootNode', i); break;
+
+                // case "Tag":
+                //     var r = !libraryProps.rootNode ? library_tree.tree[ix].tr : library_tree.tree[ix].tr - 1, list = [];
+                //     if (libraryProps.rootNode && !ix || !r) library_tree.tree[ix].sel = true;
+                //     if (libraryProps.rootNode && library_tree.tree[0].sel) for (var j = 0; j < library_tree.tree.length; j++) if (library_tree.tree[j].tr == 1) library_tree.tree[j].sel = true; p.tree_paint();
+                //     for (j = 0; j < library_tree.tree.length; j++) if ((library_tree.tree[j].tr == (libraryProps.rootNode ? 1 : 0)) && library_tree.tree[j].sel) list.push(library_tree.tree[j].name);
+                //     if (!proceed(list.length)) break;
+                //     p.syncType = 1; for (j = 0; j < list.length; j++) _.runCmd("\"" + fb.FoobarPath + "\\foobar2000.exe\"" + " /m-TAGS \"" + list[j] + "\"");
+                //     p.syncType = window.GetProperty(" Library Sync: Auto-0, Initialisation Only-1", 0); lib_manager.treeState(false, 2);
+                //     break;
                 case "Options":
                     lib_manager.time.Reset();
                     if (p.s_txt) lib_manager.upd_search = true;
-                    p.fields(i < p.grp.length + 1 ? i - 1 : p.view_by, i - 1 < p.grp.length ? p.filterBy : i - 1 - p.grp.length);
+                    p.fields(i < p.grp.length + 1 ? i - 1 : libraryProps.viewBy, i - 1 < p.grp.length ? libraryProps.filterBy : i - 1 - p.grp.length);
                     library_tree.subCounts =  {"standard": {}, "search": {}, "filter": {}};
-                    lib_manager.get_library();
+                    lib_manager.getLibrary();
                     lib_manager.rootNodes();
                     // if (p.pn_h_auto && p.pn_h == p.pn_h_min && library_tree.tree[0]) library_tree.clear_child(library_tree.tree[0]);
                     break;
@@ -3932,7 +4260,7 @@ class Timers {
         setTimeout(() => {
             if ((ui.w < 1 || !window.IsVisible) && libraryProps.rememberTree)
                 lib_manager.init = true;
-            lib_manager.get_library();
+            lib_manager.getLibrary();
             lib_manager.rootNodes(libraryProps.rememberTree ? 1 : 0, lib_manager.process);
         }, 5);
     }
@@ -4032,7 +4360,7 @@ let ui;
 let sbar;
 /** @type {panel_operations} */
 let p;
-/** @type {v_keys} */
+/** @type {Vkeys} */
 let vk;
 /** @type {Library} */
 let lib_manager;
@@ -4066,7 +4394,7 @@ function initLibraryPanel() {
         libraryPanel = new LibraryPanel();
         // but = new button_manager();
         but = new Buttons();
-        men = new menu_object();
+        men = new MenuItems();
         timer = new Timers();
         timer.lib();
         library = new LibraryCallbacks();
