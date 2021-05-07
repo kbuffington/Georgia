@@ -98,17 +98,21 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
             this.shift_page(direction);
         } else {
             var newScroll = this.nearestScroll(direction);
-            if (this.desiredScrollPosition === undefined) {
-                this.desiredScrollPosition = newScroll + direction * 2;
+            if (!pref.smoothScrolling) {
+                this.scroll_to(newScroll + direction * 2);
             } else {
-                this.desiredScrollPosition += (direction * 2);
+                if (this.desiredScrollPosition === undefined) {
+                    this.desiredScrollPosition = newScroll + direction * 2;
+                } else {
+                    this.desiredScrollPosition += (direction * 2);
+                }
+                if (direction === -1 && this.desiredScrollPosition < 0) {
+                    this.desiredScrollPosition = 0;
+                } else if (direction === 1 && this.desiredScrollPosition > this.scrollable_lines) {
+                    this.desiredScrollPosition = this.scrollable_lines;
+                }
+                this.smooth_scroll_to(this.desiredScrollPosition);
             }
-            if (direction === -1 && this.desiredScrollPosition < 0) {
-                this.desiredScrollPosition = 0;
-            } else if (direction === 1 && this.desiredScrollPosition > this.scrollable_lines) {
-                this.desiredScrollPosition = this.scrollable_lines;
-            }
-            this.smooth_scroll_to(this.desiredScrollPosition);
         }
     };
 
