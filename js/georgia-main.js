@@ -1457,6 +1457,7 @@ function on_playback_dynamic_info_track() {
  * @param {FbMetadbHandle} metadb
  */
 function on_playback_new_track(metadb) {
+	if (!metadb) return;	// solve weird corner case
 	let newTrackProfiler = null;
 	debugLog('in on_playback_new_track()');
 	if (timings.showDebugTiming) newTrackProfiler = fb.CreateProfiler('on_playback_new_track');
