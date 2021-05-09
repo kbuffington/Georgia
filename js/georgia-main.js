@@ -1450,6 +1450,9 @@ function on_playback_dynamic_info_track() {
 	if (displayPlaylist) {
 		playlist.on_playback_dynamic_info_track();
 	}
+	if (displayLyrics) { // no need to try retrieving them if we aren't going to display them now
+		initLyrics();
+	}
 }
 
 /**

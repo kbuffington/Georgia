@@ -1387,7 +1387,7 @@ let utils = {
     EditTextFile: function (path) { }, // (uint)
 
     /**
-     * @param {number} path Path to file
+     * @param {string} path Path to file
      * @return {boolean} true, if file exists.
      */
     FileExists: function (path) { },

@@ -6,7 +6,11 @@ const SCROLL_TIME = 300;	// max time in ms for new line to scroll
 const SCROLL_WHEEL_TIME_OFFSET = 500;	// amount of time (ms) to adjust lyrics when scrolling
 const OFFSET_DISPLAY_TIME = 5000;	// time in ms to display scroll offset at the top of the lyrics area
 const LYRICS_PADDING = 24;	// padding between edge of artwork and the lyrics
-const NO_LYRICS_STRING = 'No lyrics found';	// what to show when no lyrics exist
+const NO_LYRICS_STRING = 'No lyrics found';    // what to show when no lyrics exist
+const LYRICS_NOT_FOUND_STRING = 'Search completed\n \nNo lyrics were found';    // what to show when no lyrics exist
+const SEARCHING_LYRICS_STRING = 'Searching for lyrics... \n \nPlease wait...';  // what to show when searching for lyrics
+
+const lyricShow3loaded = utils.CheckComponent("foo_uie_lyrics3");
 
 /**
  * @typedef {Object} LineObj
@@ -82,29 +86,32 @@ class Lyrics {
 	 * @param {?*} lyrics User specified lyrics
 	 */
 	constructor(metadb, lyrics = undefined) {
-		this.songLength = parseInt(len_seconds.Eval());
-		/** @type {Line[]} */
-		this.lines = [];
 		this.metadb = metadb;
-		this.lyricsType = LyricsType.None;
 		this.fileName = '';
-		this.activeLine = -1;	// index into this.lines
-		this.scrolling = false;
-		this.scrollOffset = 0;
-		this.scrollStep = 0;	// when scrolling to a new value, how much should we scroll
 		this.x = 0;
 		this.y = 0;
 		this.w = 0;
 		this.h = 0;
-		this.timeOffset = 0;
-		this.lineSpacing = scaleForDisplay(10);
-		this.lineHeight = 0;
-		this.getLyrics();
-		/** @protected */
-		this.timerId = 0;
-		this.loadingTimerId = 0;	// timer when loading embedded lyrics
-		this.showOffsetTimerId = 0; // timer to hide offset
-		this.showOffset = false;
+		this.lyricsType = LyricsType.None;
+
+		/** @protected */ this.songLength = parseInt(len_seconds.Eval());
+		/** @protected {Line[]} */
+		this.lines = [];
+		/** @protected */ this.activeLine = -1;	// index into this.lines
+		/** @protected */ this.scrolling = false;
+		/** @protected */ this.scrollOffset = 0;
+		/** @protected */ this.scrollStep = 0;	// when scrolling to a new value, how much should we scroll
+		/** @protected */ this.timeOffset = 0;
+		/** @protected */ this.lineSpacing = scaleForDisplay(10);
+		/** @protected */ this.lineHeight = 0;
+		/** @protected */ this.timerId = 0;
+		/** @protected */ this.loadingTimerId = 0;	// timer when loading embedded lyrics
+		/** @protected */ this.showOffsetTimerId = 0; // timer to hide offset
+		/** @protected */ this.showOffset = false;
+		/** @protected */ this.lyricsSearchTimer = 0;
+		/** @protected */ this.searchTimeoutTimer = 0;
+
+		this.loadLyrics();
 		if (fb.IsPlaying) {
 			this.seek();
 			if (!fb.IsPaused) {
@@ -176,22 +183,17 @@ class Lyrics {
 		this.timerId = setInterval(() => { this.timerTick(); }, LYRICS_TIMER_INTERVAL);
 	}
 
-	// Methods
-	getLyrics() {
+	/**
+	 * Searches through config file's list of lyric paths and file patterns to find lyrics files
+	 * @returns {boolean}
+	 */
+	findLyrics() {
+		let foundLyrics = false;
 		const tpath = [];
 		const tfilename = [];
-		let foundLyrics = false;
 
 		const stripReservedChars = (filename) => {
-			return filename.replace(/:/g, '_')
-						   .replace(/\\/g, '_')
-						   .replace(/\//g, '_')
-						   .replace(/\?/g, '_')
-						   .replace(/</g, '_')
-						   .replace(/>/g, '_')
-						   .replace(/\*/g, '_')
-						   .replace(/"/g, '_')
-						   .replace(/\|/g, '_');
+			return filename.replace(/[<>:"/\\|?*]/g, "_")
 		}
 
 		tf.lyr_path.forEach(path => {
@@ -201,16 +203,21 @@ class Lyrics {
 			tfilename.push(stripReservedChars($(filename)));
 		});
 
-		let i = 0;
-		while (!foundLyrics && i < tpath.length) {
-			let j = 0;
-			while(!foundLyrics && j < tfilename.length) {
+		for (let i = 0; i < tpath.length && !foundLyrics; i++) {
+			for (let j = 0; j < tfilename.length; j++) {
 				foundLyrics = this.checkFile(tpath[i], tfilename[j]);
-				j++;
+				if (foundLyrics) {
+					break;
+				}
 			}
-			i++;
 		}
+
+		return foundLyrics;
+	}
+
+	loadLyrics() {
 		let rawLyrics = [];
+		const foundLyrics = this.findLyrics();
 		if (foundLyrics) {
 			console.log('Found Lyrics:', this.fileName);
 			rawLyrics = utils.ReadTextFile(this.fileName, 65001).split('\n');
@@ -233,9 +240,42 @@ class Lyrics {
 		if (rawLyrics.length) {
 			this.processLyrics(rawLyrics);
 		} else {
-			// no lyrics found
-			this.processLyrics([NO_LYRICS_STRING]);
+			// no lyrics found locally
+			if (lyricShow3loaded) {
+				this.searchingLyrics();
+			} else {
+				this.processLyrics([NO_LYRICS_STRING]);
+			}
 		}
+	}
+
+	searchingLyrics() {
+		this.processLyrics([SEARCHING_LYRICS_STRING]);
+		this.lyricShow3save(fb.GetNowPlaying());
+		clearTimeout(this.searchTimeout);
+		this.searchTimeout = setTimeout(() => {
+			if (!this.findLyrics()) {
+				this.processLyrics([LYRICS_NOT_FOUND_STRING]);
+				this.on_size(albumart_size.x, albumart_size.y, albumart_size.w, albumart_size.h);
+			}
+			clearInterval(this.lyricsSearchTimer);
+		}, 15000);
+	}
+
+	// Automatic Lyric Show 3 File Saver
+	lyricShow3save(metadb) {
+		if (!lyricShow3loaded) return;
+		clearInterval(this.lyricsSearchTimer);
+		if (!metadb)
+			return;
+		this.lyricsSearchTimer = setInterval(() => {
+			if (this.findLyrics()) {
+				clearInterval(this.lyricsSearchTimer);
+				initLyrics();
+			} else {
+				fb.RunMainMenuCommand('View/Lyrics Show 3/Save');
+			}
+		}, 1000);
 	}
 
 	/**
@@ -253,6 +293,7 @@ class Lyrics {
 	}
 
 	/**
+	 * Checks if lyrics file exists at path+filename and sets this.fileName if it does
 	 * @param {string} path
 	 * @param {string} filename
 	 */
@@ -384,7 +425,7 @@ function initLyrics() {
 	gLyrics = new Lyrics(fb.GetNowPlaying());
 	if (gLyrics.lyricsType === LyricsType.None) {
 		this.loadingTimerId = setTimeout(() => {
-			gLyrics.getLyrics();
+			gLyrics.loadLyrics();
 			gLyrics.seek();
 			gLyrics.on_size(albumart_size.x, albumart_size.y, albumart_size.w, albumart_size.h);
 		}, 500);
