@@ -1773,13 +1773,12 @@ function on_mouse_lbtn_up(x, y, m) {
 
 	if (!volume_btn.on_mouse_lbtn_up(x, y, m)) {
 		// not handled by volume_btn
-		if (displayPlaylist && playlist.mouse_in_this(x, y)) {
+		if (displayPlaylist) { // && playlist.mouse_in_this(x, y)) {
 			trace_call && console.log(qwr_utils.function_name());
-
 			playlist.on_mouse_lbtn_up(x, y, m);
 
 			qwr_utils.EnableSizing(m);
-		} else if (displayLibrary && library.mouse_in_this(x, y)) {
+		} else if (displayLibrary) { // && library.mouse_in_this(x, y)) {
 			trace_call && console.log(qwr_utils.function_name());
 			library.on_mouse_lbtn_up(x, y, m);
 		} else {
