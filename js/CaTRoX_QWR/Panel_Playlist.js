@@ -1187,6 +1187,7 @@ class Playlist extends List {
 	on_playback_new_track(metadb) {
 		if (this.playing_item) {
 			this.playing_item.is_playing = false;
+			this.playing_item.clear_title_text();
 			this.playing_item = undefined;
 		}
 
