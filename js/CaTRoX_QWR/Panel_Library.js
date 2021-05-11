@@ -755,141 +755,6 @@ function Scrollbar() {
     this.scroll_to_end = () => this.check_scroll(max_scroll);
 }
 
-// function Scrollbar() {
-// 	var prefix = GetPropertyPrefix();
-// 	var smoothness = 1 - 0.70; //window.GetProperty("ADV.Scroll: Smooth Scroll Level 0-1", 0.6561);
-// 	smoothness = Math.max(Math.min(smoothness, 0.99), 0.01);
-// 	this.bar_timer = false;
-// 	this.count = -1;
-// 	this.draw_timer = false;
-// 	this.hover = false;
-// 	this.s1 = 0;
-// 	this.s2 = 0;
-// 	// this.scroll_step = libraryProps.pageScroll;
-// 	this.smooth = window.GetProperty(prefix + "Scroll: Smooth Scroll", true);
-// 	this.timer_but = false;
-// 	this.alpha = !ui.scr_col ? 75 : (!ui.sbarType ? 68 : 51);
-// 	this.init = true;
-// 	var alpha1 = this.alpha,
-// 		alpha2 = !ui.scr_col ? 128 : (!ui.sbarType ? 119 : 85),
-// 		inStep = ui.sbarType && ui.scr_col ? 12 : 18;
-// 	this.x = 0;
-// 	this.y = 0;
-// 	this.w = 0;
-// 	this.h = 0;
-// 	this.bar_ht = 0; this.but_h = 0; this.bar_y = 0; this.row_count = 0; this.scroll = 0; this.delta = 0; this.ratio = 1; this.rows_drawn = 0; this.row_h = 0; this.scrollbar_height = 0; this.scrollable_lines = 0; this.scrollbar_travel = 0; this.stripe_w = 0; this.tree_w = 0;
-// 	this.b_is_dragging = false; this.drag_distance_per_row; this.initial_drag_y = 0; // dragging
-// 	this.leave = function() {if (this.b_is_dragging) return; this.hover = !this.hover; this.paint(); this.hover = false; this.hover_o = false;}
-// 	this.nearest = function(y) {y = (y - this.but_h) / this.scrollbar_height * this.scrollable_lines * this.row_h; y = y / this.row_h; y = Math.round(y) * this.row_h; return y;}
-// 	this.reset = function() {this.delta = this.scroll = this.s1 = this.s2 = 0; this.metrics(this.x, this.y, this.w, this.h, this.rows_drawn, this.row_h);}
-// 	this.scroll_timer = function() {var that = this; this.draw_timer = setInterval(function() {if (ui.w < 1 || !window.IsVisible) return; that.smooth_scroll();}, 16);}
-// 	this.set_rows = row_count => {if (!row_count) this.item_y = p.s_h; this.row_count = row_count; this.metrics(this.x, this.y, this.w, this.h, this.rows_drawn, this.row_h);}
-// 	this.wheel = function(step, pgkey) {this.check_scroll(this.scroll + step * - (libraryProps.pageScroll || pgkey ? this.rows_drawn - 1 : 3) * this.row_h);}
-
-// 	this.metrics = (x, y, w, h, rows_drawn, row_h) => {
-// 		this.x = x;
-// 		this.y = Math.round(y);
-// 		this.w = w;
-// 		this.h = h;
-// 		this.rows_drawn = Math.floor(rows_drawn);
-// 		this.row_h = row_h;
-// 		this.but_h = ui.but_h;
-// 		// draw info
-// 		this.scrollbar_height = Math.round(this.h - this.but_h * 2);
-// 		this.bar_ht = Math.max(Math.round(this.scrollbar_height * this.rows_drawn / this.row_count), Math.max(Math.min(this.scrollbar_height / 2, ui.grip_h), 5));
-// 		this.scrollbar_travel = this.scrollbar_height - this.bar_ht;
-// 		// scrolling info
-// 		this.scrollable_lines = this.rows_drawn > 0 ? this.row_count - this.rows_drawn : 0;
-//         this.ratio = this.row_count / this.scrollable_lines;
-// 		this.bar_y = this.but_h + this.scrollbar_travel * (this.delta * this.ratio) / (this.row_count * this.row_h);
-// 		this.drag_distance_per_row = this.scrollbar_travel / this.scrollable_lines;
-// 		// panel info
-// 		this.tree_w = ui.w - Math.max(libraryProps.showScrollbar && this.scrollable_lines > 0 ? ui.sbar_sp + ui.sel : ui.sel, ui.margin);
-// 		if (ui.alternate) this.stripe_w = libraryProps.showScrollbar && this.scrollable_lines > 0 ? ui.w - ui.sbar_sp : ui.w;
-// 		but.set_scroll_btns_hide();
-// 	}
-
-// 	this.draw = function(gr) {if (this.scrollable_lines > 0) {try {
-// 		switch (ui.sbarType) {
-// 			case 0:
-// 				switch (ui.scr_col) {
-// 					case 0: gr.FillSolidRect(this.x, this.y + this.bar_y, this.w, this.bar_ht, RGBA(ui.col.t, ui.col.t, ui.col.t, !this.hover && !this.b_is_dragging ? this.alpha : this.hover && !this.b_is_dragging ? this.alpha : 192)); break;
-// 					case 1: gr.FillSolidRect(this.x, this.y + this.bar_y, this.w, this.bar_ht, ui.textcol & (!this.hover && !this.b_is_dragging ? RGBA(255, 255, 255, this.alpha) : this.hover && !this.b_is_dragging ? RGBA(255, 255, 255, this.alpha) : 0x99ffffff)); break;
-// 				}
-// 				break;
-// 			case 1:
-// 				switch (ui.scr_col) {
-// 					case 0: gr.FillSolidRect(this.x, this.y - p.sbar_o, this.w, this.h + p.sbar_o * 2, RGBA(ui.col.t, ui.col.t, ui.col.t, 15)); gr.FillSolidRect(this.x, this.y + this.bar_y, this.w, this.bar_ht, RGBA(ui.col.t, ui.col.t, ui.col.t, !this.hover && !this.b_is_dragging ? this.alpha : this.hover && !this.b_is_dragging ? this.alpha : 192)); break;
-// 					case 1: gr.FillSolidRect(this.x, this.y - p.sbar_o, this.w, this.h + p.sbar_o * 2, ui.textcol & 0x15ffffff); gr.FillSolidRect(this.x, this.y + this.bar_y, this.w, this.bar_ht, ui.textcol & (!this.hover && !this.b_is_dragging ? RGBA(255, 255, 255, this.alpha) : this.hover && !this.b_is_dragging ? RGBA(255, 255, 255, this.alpha) : 0x99ffffff)); break;
-// 				}
-// 				break;
-// 			case 2:
-// 				ui.theme.SetPartAndStateID(6, 1);
-// 				ui.theme.DrawThemeBackground(gr, this.x, this.y, this.w, this.h);
-// 				ui.theme.SetPartAndStateID(3, !this.hover && !this.b_is_dragging ? 1 : this.hover && !this.b_is_dragging ? 2 : 3);
-// 				ui.theme.DrawThemeBackground(gr, this.x, this.y + this.bar_y, this.w, this.bar_ht);
-// 				break;
-// 		}} catch (e) {}}
-// 	}
-
-// 	this.paint = () => {
-// 		if (this.hover) this.init = false; if (this.init) return; this.alpha = this.hover ? alpha1 : alpha2; var that = this
-// 		clearTimeout(this.bar_timer); this.bar_timer = false;
-// 		this.bar_timer = setInterval(function() {that.alpha = that.hover ? Math.min(that.alpha += inStep, alpha2) : Math.max(that.alpha -= 3, alpha1); window.RepaintRect(that.x, that.y, that.w, that.h);
-// 			if (that.hover && that.alpha == alpha2 || !that.hover && that.alpha == alpha1) {that.hover_o = that.hover; clearTimeout(that.bar_timer); that.bar_timer = false;}}, 25);
-// 	}
-
-// 	this.lbtn_up = (p_x, p_y) => {
-// 		var x = p_x - this.x; var y = p_y - this.y;
-// 		if (!this.hover && this.b_is_dragging) this.paint(); else window.RepaintRect(this.x, this.y, this.w, this.h); if (this.b_is_dragging) {this.b_is_dragging = false; but.Dn = false;} this.initial_drag_y = 0;
-// 		if (this.timer_but) {clearTimeout(this.timer_but); this.timer_but = false;}; this.count = -1;
-// 	}
-
-// 	this.lbtn_dn = (p_x, p_y) => {
-// 		var x = p_x - this.x; var y = p_y - this.y;
-// 		if (x < 0 || x > this.w || y < 0 || y > this.h || this.row_count <= this.rows_drawn) return;
-// 		if (y < this.but_h || y > this.h - this.but_h) return;
-// 		if (y < this.bar_y) var dir = 1; // above bar
-// 		else if (y > this.bar_y + this.bar_ht) var dir = -1; // below bar
-// 		if (y < this.bar_y || y > this.bar_y + this.bar_ht)
-// 			this.check_scroll(this.nearest(y));
-// 		else { // on bar
-// 			this.b_is_dragging = true; but.Dn = true; window.RepaintRect(this.x, this.y, this.w, this.h);
-// 			this.initial_drag_y = y - this.bar_y;
-// 		}
-// 	}
-
-// 	this.move = (p_x, p_y) => {
-// 		var x = p_x - this.x; var y = p_y - this.y;
-// 		if (x < 0 || x > this.w || y > this.bar_y + this.bar_ht || y < this.bar_y || but.Dn) this.hover = false; else this.hover = true;
-// 		if (this.hover != this.hover_o && !this.bar_timer) this.paint();
-// 		if (!this.b_is_dragging || this.row_count <= this.rows_drawn) return;
-// 		this.check_scroll(Math.round((y - this.initial_drag_y - this.but_h) / this.drag_distance_per_row) * this.row_h);
-// 	}
-
-// 	this.check_scroll = (new_scroll) => {
-// 		var s = Math.max(0, Math.min(new_scroll, this.scrollable_lines * this.row_h));
-// 		if (s == this.scroll) return; this.scroll = s;
-// 		if (this.smooth) {if (!this.draw_timer) this.scroll_timer();}
-// 		if (!this.smooth) {this.delta = this.scroll; this.bar_y = this.but_h + this.scrollbar_travel * (this.delta * this.ratio) / (this.row_count * this.row_h); p.tree_paint(); lib_manager.treeState(false, libraryProps.rememberTree);}
-// 	}
-
-// 	this.smooth_scroll = () => {
-// 		if (this.delta <= 0.5) {this.delta = 0; this.bar_y = this.but_h + this.scrollbar_travel * (this.delta * this.ratio) / (this.row_count * this.row_h); p.tree_paint();}
-// 		if (Math.abs(this.scroll - this.delta) > 0.5) {
-// 			this.s1 += (this.scroll - this.s1) * smoothness; this.s2 += (this.s1 - this.s2) * smoothness; this.delta += (this.s2 - this.delta) * smoothness;
-// 			this.bar_y = this.but_h + this.scrollbar_travel * (this.delta * this.ratio) / (this.row_count * this.row_h); p.tree_paint();
-// 		} else if (this.draw_timer) {clearTimeout(this.draw_timer); this.draw_timer = false; lib_manager.treeState(false, libraryProps.rememberTree);}
-// 	}
-
-// 	this.but = (dir) => {
-// 		this.check_scroll(this.scroll + (dir * -this.row_h));
-// 		if (!this.timer_but) {var that = this; this.timer_but = setInterval(function() {if (that.count > 6) {that.check_scroll(that.scroll + (dir * -that.row_h));} else that.count++;}, 40);}
-// 	}
-
-// 	this.scroll_round = () => {if (this.item_y == p.s_h) return; this.check_scroll((this.item_y < p.s_h ? Math.floor(this.scroll / this.row_h) : Math.ceil(this.scroll / this.row_h)) * this.row_h);}
-//     this.scroll_to_end = () => this.check_scroll(max_scroll);
-// }
 
 function Bezier(){const i=4,c=.001,o=1e-7,v=10,l=11,s=1/(l-1),n=typeof Float32Array==="function";function e(r,n){return 1-3*n+3*r}function u(r,n){return 3*n-6*r}function a(r){return 3*r}function w(r,n,t){return((e(n,t)*r+u(n,t))*r+a(n))*r}function y(r,n,t){return 3*e(n,t)*r*r+2*u(n,t)*r+a(n)}function h(r,n,t,e,u){let a,f,i=0;do{f=n+(t-n)/2;a=w(f,e,u)-r;if(a>0){t=f}else{n=f}}while(Math.abs(a)>o&&++i<v);return f}function A(r,n,t,e){for(let u=0;u<i;++u){const a=y(n,t,e);if(a===0){return n}const f=w(n,t,e)-r;n-=f/a}return n}function f(r){return r}function bezier(i,t,o,e){if(!(0<=i&&i<=1&&0<=o&&o<=1)){throw new Error("Bezier x values must be in [0, 1] range")}if(i===t&&o===e){return f}const v=n?new Float32Array(l):new Array(l);for(let r=0;r<l;++r){v[r]=w(r*s,i,o)}function u(r){const e=l-1;let n=0,t=1;for(;t!==e&&v[t]<=r;++t){n+=s}--t;const u=(r-v[t])/(v[t+1]-v[t]),a=n+u*s,f=y(a,i,o);if(f>=c){return A(r,a,i,o)}else if(f===0){return a}else{return h(r,n,n+s,i,o)}}return function r(n){if(n===0){return 0}if(n===1){return 1}return w(u(n),t,e)}} this.scroll = bezier(0.25, 0.1, 0.25, 1); this.bar = bezier(0.165,0.84,0.44,1); this.barFast = bezier(0.19, 1, 0.22, 1); this.inertia = bezier(0.23, 1, 0.32, 1);}; const ease = new Bezier();
 
@@ -1885,6 +1750,7 @@ function LibraryTree() {
 		}
 		this.autoPlay = {click: libraryProps.clickAction < 2 ? false : libraryProps.clickAction, send: pptDefault.autoPlay}
 		this.autoFill = {mouse: libraryProps.clickAction == 1 ? true : false, key: libraryProps.keyAction}
+        // console.log(`clickAction: ${libraryProps.clickAction}, autoPlay = {click: ${this.autoPlay.click}, send: ${this.autoPlay.send}}, autoFill = {mouse: ${this.autoFill.mouse}, key: ${this.autoFill.key}}`);
 	};
     this.setActions();
     var get_pos = -1,
@@ -2396,65 +2262,68 @@ function LibraryTree() {
         selection_holder.SetSelection(selList);
     }
 
-    this.load = function(list, type, add, send, def_pl, insert) {
-        var i = 0,
-            np_item = -1,
-            pid = -1,
-            pln = plman.FindOrCreatePlaylist(libraryProps.libPlaylistName, false);
-        let items;
+    this.load = function(list, isArray, add, autoPlay, def_pl, insert) {
+        let np_item = -1, pid = -1, pln = plman.FindOrCreatePlaylist(libraryProps.libPlaylistName, false);
         if (!def_pl) pln = plman.ActivePlaylist;
         else plman.ActivePlaylist = pln;
-        if (type) {
-            items = fb.CreateHandleList();
-            for (i = 0; i < list.length; i++)
-                items.Add(p.list[list[i]]);
-        } else items = list.Clone();
+        const items = isArray ? getItems(list) : list.Clone();
         // if (p.multi_process && !libraryProps.playlistCustomSort) items.OrderByFormat(p.mv_sort, 1);
         // if (libraryProps.playlistCustomSort) items.OrderByFormat(tf_customSort, 1);
         handles = items.Clone();
         selection_holder.SetSelection(handles);
         if (fb.IsPlaying && !add && fb.GetNowPlaying()) {
-            for (i = 0; i < items.Count; i++)
-                if (fb.GetNowPlaying().Compare(items[i])) {
-                    np_item = i;
-                    break;
+            np_item = items.Find(fb.GetNowPlaying());
+            let pl_chk = true, np;
+            if (np_item != -1) {
+                np = plman.GetPlayingItemLocation();
+                if (np.IsValid) {
+                    if (np.PlaylistIndex != pln) pl_chk = false; else pid = np.PlaylistItemIndex;
                 }
-            var pl_chk = true;
-            if (np_item != -1) { var np = plman.GetPlayingItemLocation(); if (np.IsValid) { if (np.PlaylistIndex != pln) pl_chk = false; else pid = np.PlaylistItemIndex; } }
-            if (np_item != -1 && pl_chk && pid == -1 && items.Count < 5000) {
-                if (ui.dui) plman.SetActivePlaylistContext();
-                for (i = 0; i < 20; i++) {
-                    fb.RunMainMenuCommand("Edit/Undo");
-                    var np = plman.GetPlayingItemLocation();
-                    if (np.IsValid) {
-                        pid = np.PlaylistItemIndex;
-                        if (pid != -1) break;
+                if (pl_chk && pid == -1 && items.Count < 5000) {
+                    if (ui.dui) plman.SetActivePlaylistContext();
+                    const start = Date.now();
+                    for (let i = 0; i < 20; i++) {
+                        if (Date.now() - start > 300) break;
+                        fb.RunMainMenuCommand("Edit/Undo"); np = plman.GetPlayingItemLocation();
+                        if (np.IsValid) {
+                            pid = np.PlaylistItemIndex;
+                            if (pid != -1) break;
+                        }
                     }
                 }
             }
-            if (np_item != -1 && pid != -1) {
+
+            if (pid != -1) {
                 plman.ClearPlaylistSelection(pln); plman.SetPlaylistSelectionSingle(pln, pid, true); plman.RemovePlaylistSelection(pln, true);
-                var it = items.Clone(); items.RemoveRange(np_item, items.Count); it.RemoveRange(0, np_item + 1);
+                const it = items.Clone(); items.RemoveRange(np_item, items.Count); it.RemoveRange(0, np_item + 1);
                 if (plman.PlaylistItemCount(pln) < 5000)
                     plman.UndoBackup(pln);
                 plman.InsertPlaylistItems(pln, 0, items);
                 plman.InsertPlaylistItems(pln, plman.PlaylistItemCount(pln), it);
+            } else if (autoPlay === 3) {   // add to playlist if already playing
+                pid = plman.ActivePlaylist;
+                if (plman.PlaylistItemCount(pln) < 5000)
+                    plman.UndoBackup(pln);
+                plman.InsertPlaylistItems(pln, plman.PlaylistItemCount(pln), items);
             } else {
                 if (plman.PlaylistItemCount(pln) < 5000)
                     plman.UndoBackup(pln);
                 plman.ClearPlaylist(pln);
                 plman.InsertPlaylistItems(pln, 0, items);
             }
+            if (autoPlay === 3) {
+                autoPlay = false;   // add to playlist if already playing
+            }
         } else if (!add) {
             if (plman.PlaylistItemCount(pln) < 5000) plman.UndoBackup(pln); plman.ClearPlaylist(pln); plman.InsertPlaylistItems(pln, 0, items);
         } else {
             if (plman.PlaylistItemCount(pln) < 5000) plman.UndoBackup(pln);
             plman.InsertPlaylistItems(pln, !insert ? plman.PlaylistItemCount(pln) : plman.GetPlaylistFocusItemIndex(pln), items, true);
-            var f_ix = !insert || plman.GetPlaylistFocusItemIndex(pln) == -1 ? plman.PlaylistItemCount(pln) - items.Count : plman.GetPlaylistFocusItemIndex(pln) - items.Count;
+            const f_ix = !insert || plman.GetPlaylistFocusItemIndex(pln) == -1 ? plman.PlaylistItemCount(pln) - items.Count: plman.GetPlaylistFocusItemIndex(pln) - items.Count;
             plman.SetPlaylistFocusItem(pln, f_ix); plman.EnsurePlaylistItemVisible(pln, f_ix);
         }
-        if (pptDefault.autoplay && send) {
-            var c = (plman.PlaybackOrder === 3 || plman.PlaybackOrder === 4) ? Math.ceil(plman.PlaylistItemCount(pln) * Math.random() - 1) : 0;
+        if (autoPlay) {
+            const c = (plman.PlaybackOrder === PlaybackOrder.Random || plman.PlaybackOrder === PlaybackOrder.ShuffleTracks) ? Math.ceil(plman.PlaylistItemCount(pln) * Math.random() - 1) : 0;
             plman.ExecutePlaylistDefaultAction(pln, c);
         }
     }
@@ -2748,22 +2617,24 @@ function LibraryTree() {
     this.lbtn_up = function(x, y) {
         last_pressed_coord = {x: undefined, y: undefined};
         lbtn_dn = false;
-        if (y < p.s_h || sent || but.Dn) return;
-        var ix = this.get_ix(x, y, true, false);
+        if (y < p.s_h || x < ui.x || sent || but.Dn) return;
+        const ix = this.get_ix(x, y, true, false);
         p.pos = ix;
         if (ix >= this.tree.length || ix < 0)
-            return get_selection(-1);
+            return; // get_selection(-1);
         const item = this.tree[ix];
         if (clicked_on != ObjType.Item) return;
-        if (vk.k('alt') && libraryProps.autoFill) {
+        if (vk.k('alt')) {
             return this.add(x, y, alt_lbtn_pl);
         }
         if (!vk.k('ctrl')) {
             this.clear();	// clear selected items unless ctrl key is down
+            if (!item.sel) get_selection(ix, item.sel);
+        } else {
+            get_selection(ix, item.sel);
         }
-        get_selection(ix, item.sel);
-        p.tree_paint();
-        lib_manager.treeState(false, libraryProps.rememberTree);
+        // p.tree_paint();
+        // lib_manager.treeState(false, libraryProps.rememberTree);
         if (this.autoFill.mouse || this.autoPlay.click) {
             window.Repaint(true);
             send(item, x, y);
@@ -2785,7 +2656,7 @@ function LibraryTree() {
     }
 
     this.lbtn_dblclk = function(x, y) {
-        if (this.autoPlay.click > 2) return;
+        if (this.autoPlay.click > 2) return;    // already handled in click
         dbl_clicked = true;
         if (y < p.s_h) return;
         let ix = this.get_ix(x, y, true, false);
@@ -2821,12 +2692,10 @@ function LibraryTree() {
             case ObjType.Node: nodeExpandCollapse(x, y, item, ix); break;
 			case ObjType.Item:
                 if (!this.check_ix(item, x, y, false)) return;
-                console.log(libraryProps.dblClickAction, this.autoPlay.click)
-				if (libraryProps.dblClickAction == 2 && !this.autoFill.mouse && !this.autoPlay.click) return send(item, x, y);
+                if (libraryProps.dblClickAction == 2 && !this.autoFill.mouse && !this.autoPlay.click) return send(item, x, y);
 				if (!libraryProps.dblClickAction && !item.track) {nodeExpandCollapse(x, y, item, ix); lib_manager.treeState(false, libraryProps.rememberTree);}
 				if (libraryProps.dblClickAction == 2 || this.autoPlay.click == 2) return;
                 if (libraryProps.dblClickAction || !libraryProps.dblClickAction && !item.child.length) {
-                    console.log('here')
                     if (!this.autoFill.mouse) send(item, x, y);
                     var playlistIndex = plman.FindOrCreatePlaylist(libraryProps.libPlaylistName, false);
                     if (!this.gen_pl)
@@ -3084,13 +2953,6 @@ function searchLibrary() {
     // 	}, 530);
     // }
 
-    // this.searchFocus = function() {
-    // 	p.search_paint();
-    // 	p.s_search = true;
-    // 	this.reset_cursor_timer();
-    // 	p.search_paint();
-    // 	p.tree_paint();
-    // }
     this.searchFocus = () => {
         p.search_paint();
         p.s_search = true;
@@ -3109,7 +2971,7 @@ function searchLibrary() {
         p.s_cursor = false;
         p.pos = -1;
         switch (code) {
-            case vk.enter: if (p.s_txt.length < 3) break; var items = fb.CreateHandleList(); try {items = fb.GetQueryItems(lib_manager.list, p.s_txt)} catch (e) {} library_tree.load(items, false, false, false, library_tree.gen_pl, false); break;
+            case vk.enter: if (p.s_txt.length < 3) break; var items = fb.CreateHandleList(); try {items = fb.GetQueryItems(lib_manager.list, p.s_txt)} catch (e) {} library_tree.load(items, false, false, library_tree.autoPlay.send, library_tree.gen_pl, false); break;
             case vk.redo: lg.push(p.s_txt); if (lg.length > 30) lg.shift(); if (log.length > 0) {p.s_txt = log.pop() + ""; cx++} break;
             case vk.undo: log.push(p.s_txt); if (log.length > 30) lg.shift(); if (lg.length > 0) p.s_txt = lg.pop() + ""; break;
             case vk.selAll:
@@ -3907,7 +3769,7 @@ function MenuItems() {
         return Index;
     }
     const baseTypeMenu = (Menu, StartIndex) => {let Index = StartIndex; return Index;}
-    const clickTypeMenu = (Menu, StartIndex) => {let Index = StartIndex; const n = ["Select", "Send to Playlist", "Send to Playlist && Play", "Send to Playlist && Play [Add if Playing]", "Send to Playlist && Play [Add if Content]"]; n.forEach((v, i) => {newMenuItem(Index, "Click", i); Menu.AppendMenuItem(MF_STRING, Index, v); if (i == 2) Menu.AppendMenuItem(MF_SEPARATOR, 0, 0); Index++;}); Menu.CheckMenuRadioItem(StartIndex, Index, StartIndex + libraryProps.clickAction); return Index;}
+    const clickTypeMenu = (Menu, StartIndex) => {let Index = StartIndex; const n = ["Select", "Send to Playlist", "Send to Playlist && Play", "Send to Playlist && Play [Add if Playing]"/*, "Send to Playlist && Play [Add if Content]"*/]; n.forEach((v, i) => {newMenuItem(Index, "Click", i); Menu.AppendMenuItem(MF_STRING, Index, v); if (i == 2) Menu.AppendMenuItem(MF_SEPARATOR, 0, 0); Index++;}); Menu.CheckMenuRadioItem(StartIndex, Index, StartIndex + libraryProps.clickAction); return Index;}
     const doubleClickTypeMenu = (Menu, StartIndex) => {
         let Index = StartIndex;
         const n = ["Expand / Collapse", "Send to Playlist && Play", "Send to Playlist"];
@@ -4173,7 +4035,7 @@ function MenuItems() {
                 case 'Playlist':
                     switch (i) {
                         case 0: // Send to Current Playlist
-                            library_tree.load(library_tree.sel_items, true, false, true, false, false);
+                            library_tree.load(library_tree.sel_items, true, false, library_tree.autoPlay.send, false, false);
                             p.tree_paint();
                             lib_manager.treeState(false, libraryProps.rememberTree);
                             break;
