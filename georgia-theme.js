@@ -8,17 +8,21 @@ function loadAsyncFile(filePath) {
         setTimeout(() => {
             include(filePath);
             resolve();
-        }, 1);
+        }, 0);
     })
 }
 
 const loadAsync = window.GetProperty('Load Theme Asynchronously', true);
 async function includeFiles(fileList) {
     if (loadAsync) {
+        let startTime = Date.now();
+        const refreshTime = 16; // ~60Hz
         for (let i = 0; i < fileList.length; i++) {
             loadStrs.fileName = fileList[i] + ' ...';
             loadStrs.fileIndex = i;
-            if (i % 3 === 0) {
+            const currentTime = Date.now();
+            if (currentTime - startTime > refreshTime) {
+                startTime = currentTime;
                 window.Repaint();
             }
             await loadAsyncFile(basePath + fileList[i]);
@@ -33,7 +37,7 @@ const loadStrs = {
     fileName: '',
     fileIndex: 0,
 };
-const startTime = new Date().getTime();
+const startTime = Date.now();
 const fileList = [
     'js\\CaTRoX_QWR\\lodash.min.js',
     'js\\configuration.js',   // reads/write from config file. The actual configuration values are specified in globals.js
@@ -58,7 +62,7 @@ const fileList = [
     'js\\georgia-main.js'
 ];
 includeFiles(fileList).then(() => {
-    console.log(`Georgia loaded in ${new Date().getTime() - startTime}ms`);
+    console.log(`Georgia loaded in ${Date.now() - startTime}ms`);
 
     if (pref.checkForUpdates) {
         scheduleUpdateCheck(0);
@@ -124,5 +128,5 @@ function on_paint(gr) {
     gr.DrawString(loadStrs.loading, ft_lower_bold, col.now_playing, progressBar.x, lowerBarTop, progressBar.w, titleMeasurements.Height);
 	gr.DrawString(loadStrs.fileName, ft_lower, col.now_playing, progressBar.x + loadingWidth + scaleForDisplay(20), lowerBarTop, progressBar.w, titleMeasurements.Height);
     gr.FillSolidRect(progressBar.x, progressBar.y, progressBar.w, progressBar.h, col.menu_bg);
-    gr.FillSolidRect(progressBar.x, progressBar.y, progressBar.w * (loadStrs.fileIndex + 1) / fileList.length, progressBar.h, col.progressFill)
+    gr.FillSolidRect(progressBar.x, progressBar.y, progressBar.w * (loadStrs.fileIndex + 1) / fileList.length, progressBar.h, col.progressFill);
 }
