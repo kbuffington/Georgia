@@ -52,7 +52,7 @@ const titleFormatSchema = new ConfigurationObjectSchema('title_format_strings', 
 // Info grid visible when a song is playing.
 // NOTE: If you wish to make changes to this, edit it in your georgia-config.jsonc file and NOT here.
 /** @type {MetadataGridEntry[]} */
-let metadataGrid = [
+const defaultMetadataGrid = [
 	{ label: 'Disc',           val: `$if(${tf.disc_subtitle},[Disc %discnumber% \u2013 ]${tf.disc_subtitle})` },
 	{ label: 'Release Type',   val: '$if($strstr(%releasetype%,Album),,[%releasetype%])' },
 	{ label: 'Year',           val: '$puts(d,'+tf.date+')$if($strcmp($year($get(d)),$get(d)),$get(d),)', comment: '\'Year\' is shown if the date format is YYYY' },
@@ -75,8 +75,6 @@ let metadataGrid = [
 	{ label: 'Rating', 	       val: '$if(%rating%,$repeat(\u2605 ,%rating%))' },
 	{ label: 'Mood',           val: '$if(%mood%,$puts(X,5)$puts(Y,$mul(5,%mood%))$repeat($repeat(I,$get(X))   ,$div($get(Y),$get(X)))$repeat(I,$mod($get(Y),$get(X)))$replace(%mood%,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9))' },
 ];
-/** @type {MetadataGridEntry[]} */
-const defaultMetadataGrid = _.clone(metadataGrid);
 const gridSchema = new ConfigurationObjectSchema('metadataGrid', ConfigurationObjectType.Array, [
 	{ name: 'label' },
 	{ name: 'val' },	// todo: change this to 'value'?

@@ -123,7 +123,8 @@ class List {
         gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
 
         if (this.items_to_draw.length) {
-            _.forEachRight(this.items_to_draw, (item) => {
+            // replaced _.forEachRight -- seems okay?
+            this.items_to_draw.forEach(item => {
                 item.draw(gr);
             });
 
@@ -363,9 +364,7 @@ class List {
      * @protected
      */
     get_item_under_mouse(x, y) {
-        return _.find(this.items_to_draw, function (item) {
-            return item.trace(x, y);
-        });
+        return this.items_to_draw.find(item => item.trace(x, y));
     }
 
     /**

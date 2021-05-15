@@ -108,7 +108,7 @@ class Volume {
      * @param {string} type Either 'h' or 'w' for vertical or horizontal volume bars
      */
     fillSize(type) {
-        return _.ceil((type === "h" ? this.h : this.w) * (Math.pow(10, fb.Volume / 50) - 0.01) / 0.99);
+        return Math.ceil((type === "h" ? this.h : this.w) * (Math.pow(10, fb.Volume / 50) - 0.01) / 0.99);
     }
 }
 

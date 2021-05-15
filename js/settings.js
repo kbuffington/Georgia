@@ -6,7 +6,8 @@ let settings = {};
 let globals = {};
 /** @type {*} */
 let transport = {};
-
+/** @type {MetadataGridEntry[]} */
+let metadataGrid;
 
 const currentVersion = '2.0.3-dev';
 let configVersion = currentVersion;	// will be overwritten when loaded from config file

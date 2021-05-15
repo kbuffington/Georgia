@@ -259,47 +259,6 @@ function _alpha_timer(items_arg, hover_predicate_arg) {
 }
 
 
-const g_callbacks = {
-	/**
-	 * @param {string} event_name
-	 * @param {...*} var_args
-	 */
-	invoke:                 function (event_name, var_args) {
-		this.validate_event_name(event_name);
-
-		var callbacks = this[event_name];
-		if (!callbacks || !_.isArray(callbacks)) {
-			return;
-		}
-
-		var args = _.drop([].slice.call(arguments));
-		_.over(callbacks)(args);
-	},
-	register:               function (event_name, callback) {
-		if (!_.isFunction(callback)) {
-			throw Error('Type Error: callback is not a function');
-		}
-
-		this.validate_event_name(event_name);
-
-		if (!this[event_name]) {
-			this[event_name] = [];
-		}
-		this[event_name].push(callback);
-	},
-	validate_event_name: function (event_name) {
-		if (!_.isString(event_name)) {
-			throw Error('Type Error: event name is not a string');
-		}
-
-		if (event_name === 'invoke'
-			|| event_name === 'register'
-			|| event_name === 'unregister') {
-			throw Error('Argument Error: event name is occupied "' + event_name + '"');
-		}
-	}
-};
-
 // TODO: why do these still exist?
 const g_theme = {};
 g_theme.script_folder = 'georgia\\';
@@ -699,38 +658,38 @@ var qwr_utils = {
 
 		var saved_key;
 	},
-	/**
-	 * @return {IWindow}
-	 */
-	get_fb2k_window:      _.once(function () {
-		// fb2k main window class
-		// Can't use UIHacks.MainWindowID, since it might be uninitialized during fb2k start-up
-		var ret_wnd = qwr_utils.GetWndByHandle(window.id);
-		while (ret_wnd && ret_wnd.GetAncestor(1) && ret_wnd.className !== '{E7076D1C-A7BF-4f39-B771-BCBE88F2A2A8}') {// We might have multiple instances of fb2k, thus getting the parent one instead of global search
-			ret_wnd = ret_wnd.GetAncestor(1);
-		}
+	// /**
+	//  * @return {IWindow}
+	//  */
+	// get_fb2k_window:      _.once(function () {
+	// 	// fb2k main window class
+	// 	// Can't use UIHacks.MainWindowID, since it might be uninitialized during fb2k start-up
+	// 	var ret_wnd = qwr_utils.GetWndByHandle(window.id);
+	// 	while (ret_wnd && ret_wnd.GetAncestor(1) && ret_wnd.className !== '{E7076D1C-A7BF-4f39-B771-BCBE88F2A2A8}') {// We might have multiple instances of fb2k, thus getting the parent one instead of global search
+	// 		ret_wnd = ret_wnd.GetAncestor(1);
+	// 	}
 
-		if (!ret_wnd || ret_wnd.className !== '{E7076D1C-A7BF-4f39-B771-BCBE88F2A2A8}') {
-			throw new LogicError('Failed to get top theme window')
-		}
+	// 	if (!ret_wnd || ret_wnd.className !== '{E7076D1C-A7BF-4f39-B771-BCBE88F2A2A8}') {
+	// 		throw new LogicError('Failed to get top theme window')
+	// 	}
 
-		return ret_wnd;
-	}),
-	/**
-	 * @return {IWindow}
-	 */
-	get_top_theme_window: _.once(function () {
-		var ret_wnd = qwr_utils.GetWndByHandle(window.id);
-		while (ret_wnd && ret_wnd.GetAncestor(1) && ret_wnd.GetAncestor(1).id !== qwr_utils.get_fb2k_window().id) {
-			ret_wnd = ret_wnd.GetAncestor(1);
-		}
+	// 	return ret_wnd;
+	// }),
+	// /**
+	//  * @return {IWindow}
+	//  */
+	// get_top_theme_window: _.once(function () {
+	// 	var ret_wnd = qwr_utils.GetWndByHandle(window.id);
+	// 	while (ret_wnd && ret_wnd.GetAncestor(1) && ret_wnd.GetAncestor(1).id !== qwr_utils.get_fb2k_window().id) {
+	// 		ret_wnd = ret_wnd.GetAncestor(1);
+	// 	}
 
-		if (!ret_wnd || ret_wnd.GetAncestor(1).id !== qwr_utils.get_fb2k_window().id) {
-			throw new LogicError('Failed to get top theme window')
-		}
+	// 	if (!ret_wnd || ret_wnd.GetAncestor(1).id !== qwr_utils.get_fb2k_window().id) {
+	// 		throw new LogicError('Failed to get top theme window')
+	// 	}
 
-		return ret_wnd;
-	}),
+	// 	return ret_wnd;
+	// }),
 	/**
 	 * @return {string}
 	 */

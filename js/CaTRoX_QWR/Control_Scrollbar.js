@@ -13,14 +13,15 @@ g_properties.add_properties(
 function ScrollBar(x, y, w, h, row_h, fn_redraw) {
     this.paint = function (gr) {
         gr.FillSolidRect(this.x, this.y, this.w, this.h, RGB(37, 37, 37));
-        _.forEach(this.sb_parts, function (item, i) {
+        for (let part in this.sb_parts) {
+            const item = this.sb_parts[part];
             var x = item.x,
                 y = item.y,
                 w = item.w,
                 h = item.h;
 
             gr.DrawImage(item.img_normal, x, y, w, h, 0, 0, w, h, 0, 255);
-            switch (i) {
+            switch (part) {
                 case 'lineUp':
                 case 'lineDown':
                     gr.DrawImage(item.img_hot, x, y, w, h, 0, 0, w, h, 0, item.hot_alpha);
@@ -35,7 +36,7 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
 
                     break;
             }
-        });
+        };
     };
 
     this.repaint = function () {
@@ -120,9 +121,9 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
         this.in_sbar = false;
         cur_part_key = null;
 
-        _.forEach(this.sb_parts, function (item) {
-            item.cs('normal');
-        });
+        for (let part in this.sb_parts) {
+            this.sb_parts[part].cs('normal');
+        }
         alpha_timer.start();
     };
 
@@ -292,7 +293,7 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
      * @param {number} shift_amount number of rows to shift
      */
     this.start_shift_timer = (shift_amount) => {
-        if (_.isNil(timer_shift)) {
+        if (timer_shift == null) {
             timer_shift_count = 0;
             timer_shift = setInterval(() => {
                 if (this.thumb_y <= this.btn_h || this.thumb_y + this.thumb_h >= this.h - this.btn_h) {
@@ -324,7 +325,7 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
     };
 
     this.stop_shift_timer = function () {
-        if (!_.isNil(timer_shift)) {
+        if (timer_shift != null) {
             clearInterval(timer_shift);
             timer_shift = undefined;
         }
@@ -433,9 +434,9 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
 
     this.set_x = (x) => {
         this.x = x;
-        _.forEach(this.sb_parts, function (item) {
-            item.x = x;
-        });
+        for (let part in this.sb_parts) {
+            this.sb_parts[part].x = x;
+        }
     };
 
     // private:
@@ -483,7 +484,8 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
 
         scrollbar_images = [];
 
-        _.forEach(btn, function (item, i) {
+        for (let i in btn) {
+            const item = btn[i];
             var w = item.w,
                 h = item.h;
 
@@ -527,7 +529,7 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
                     pressed: stateImages[2],
                     hot:     stateImages[3]
                 };
-        });
+        }
     }
 
     function create_dynamic_scrollbar_images(thumb_w, thumb_h) {
@@ -623,12 +625,13 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
 
             if (!alpha_timer_internal) {
                 alpha_timer_internal = setInterval(() => {
-                    _.forEach(that.sb_parts, function (item, i) {
+                    for (let part in that.sb_parts) {
+                        const item = that.sb_parts[part];
                         switch (item.state) {
                             case 'normal':
                                 item.hover_alpha = Math.max(0, item.hover_alpha -= hoverOutStep);
                                 item.hot_alpha = Math.max(0, item.hot_alpha -= hoverOutStep);
-                                if (i === 'thumb') {
+                                if (part === 'thumb') {
                                     item.pressed_alpha = Math.max(0, item.pressed_alpha -= hoverOutStep);
                                 }
                                 else {
@@ -657,7 +660,7 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
                         }
                         //console.log(i, item.state, item.hover_alpha , item.pressed_alpha , item.hot_alpha);
                         //item.repaint();
-                    });
+                    }
 
                     that.repaint();
 

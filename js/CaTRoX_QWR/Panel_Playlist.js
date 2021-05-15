@@ -615,10 +615,10 @@ class Playlist extends List {
 
 		if (this.items_to_draw.length) {
 			// Mordred - Passing top, bottom for clipping purposes
-			var that = this;
-			_.forEachRight(this.items_to_draw, (item) => {
-				item.draw(gr, that.y, that.y + that.h);
-			}, that);
+			// was originally forEachRight
+			this.items_to_draw.forEach(item => {
+				item.draw(gr, this.y, this.y + this.h);
+			});
 
 			// Hide rows that shouldn't be visible
 			gr.FillSolidRect(this.x-1, this.y + this.h, this.w+1, g_properties.row_h * 2, col.bg);
@@ -1123,7 +1123,7 @@ class Playlist extends List {
 
 	on_playlist_switch() {
 		if (this.cur_playlist_idx !== plman.ActivePlaylist) {
-			g_properties.scroll_pos = _.isNil(this.scroll_pos_list[plman.ActivePlaylist]) ? 0 : this.scroll_pos_list[plman.ActivePlaylist];
+			g_properties.scroll_pos = this.scroll_pos_list[plman.ActivePlaylist] == null ? 0 : this.scroll_pos_list[plman.ActivePlaylist];
 		}
 
 		this.initialize_and_repaint_list();
@@ -1676,7 +1676,7 @@ class Playlist extends List {
 
 	reinitialize() {
 		if (this.cur_playlist_idx !== plman.ActivePlaylist) {
-			g_properties.scroll_pos = _.isNil(this.scroll_pos_list[plman.ActivePlaylist]) ? 0 : this.scroll_pos_list[plman.ActivePlaylist];
+			g_properties.scroll_pos = this.scroll_pos_list[plman.ActivePlaylist] == null ? 0 : this.scroll_pos_list[plman.ActivePlaylist];
 		}
 		this.row_h = scaleForDisplay(g_properties.row_h);
 		this.header_h_in_rows = this.calcHeaderRows();
@@ -2372,7 +2372,7 @@ class Playlist extends List {
 					neighbour_item = direction > 0 ? this.cnt_helper.get_next_visible_item(neighbour_item) : this.cnt_helper.get_prev_visible_item(neighbour_item);
 				} while (neighbour_item && !this.cnt_helper.is_item_navigateable(neighbour_item));
 
-				assert(!_.isNil(neighbour_item),
+				assert(neighbour_item != null,
 					LogicError, 'Failed to get navigateable neighbour');
 
 				if (visible_to_item !== neighbour_item) {
@@ -2826,7 +2826,7 @@ class PlaylistContent extends ListRowContent {
 		}
 
 		var first_item = iterate_level(this.sub_items);
-		assert(!_.isNil(first_item),
+		assert(first_item != null,
 			LogicError, 'first_item_to_draw can\'t be null!');
 
 		return first_item;
@@ -3216,7 +3216,7 @@ class BaseHeader extends ListItem {
 
 		var row_h = playlist_geo.row_h;
 		var h_in_rows = Math.round(this.sub_items[0].h / row_h) * this.sub_items.length;
-		_.forEach(this.sub_items, (item) => {
+		this.sub_items.forEach((item) => {
 			if (!item.is_collapsed) {
 				h_in_rows += item.get_sub_items_total_h_in_rows();
 			}
@@ -3266,12 +3266,12 @@ class BaseHeader extends ListItem {
 		var duration_in_seconds = 0;
 
 		if (this.sub_items[0] instanceof Row) {
-			_.forEach(this.sub_items, (item) => {
+			this.sub_items.forEach((item) => {
 				duration_in_seconds += item.metadb.Length;
 			});
 		}
 		else {
-			_.forEach(this.sub_items, (item) => {
+			this.sub_items.forEach((item) => {
 				duration_in_seconds += item.get_duration();
 			});
 		}
@@ -4461,7 +4461,7 @@ class Row extends ListItem {
 
 		//---> LENGTH
 		{
-			if (_.isNil(this.length_text)) {
+			if (this.length_text == null) {
 				this.length_text = _.tf('[%length%]', this.metadb);
 			}
 
@@ -4487,7 +4487,7 @@ class Row extends ListItem {
 
 		//---> COUNT
 		if (g_properties.show_playcount) {
-			if (_.isNil(this.count_text)) {
+			if (this.count_text == null) {
 				if (is_radio) {
 					this.count_text = '';
 				}
@@ -4519,12 +4519,12 @@ class Row extends ListItem {
 
 		//---> QUEUE
 		let queueText = '';
-		if (g_properties.show_queue_position && !_.isNil(this.queue_indexes)) {
+		if (g_properties.show_queue_position && this.queue_indexes != null) {
 			queueText = '  [' + this.queue_indexes + ']';
 		}
 
 		//---> TITLE init
-		if (_.isNil(this.title_text)) {
+		if (this.title_text == null) {
 			var track_num_query = '$if2(%tracknumber%,$pad_right(' + (this.idx_in_header + 1) + ',2,0)).';
 			if (pref.use_vinyl_nums) {
 				track_num_query = tf.vinyl_track;
@@ -4537,7 +4537,7 @@ class Row extends ListItem {
 		}
 
 		//---> TITLE ARTIST init
-		if (_.isNil(this.title_artist_text)) {
+		if (this.title_artist_text == null) {
 			var pattern = '^' + _.tf('%album artist%', this.metadb).replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&") + ' ';
 			var regex = new RegExp(pattern);
 			this.title_artist_text = _.tf('[$if($strcmp(' + tf.artist + ',%artist%),$if(%album artist%,$if(%track artist%,%track artist%,),),' + tf.artist + ')]', this.metadb);
@@ -4728,7 +4728,7 @@ function Rating(x, y, max_w, h, metadb) {
 	 * @return {number}
 	 */
 	this.get_rating = () => {
-		if (_.isNil(rating)) {
+		if (rating == null) {
 			var current_rating;
 			if (g_properties.use_rating_from_tags) {
 				var file_info = this.metadb.GetFileInfo();
@@ -4799,7 +4799,7 @@ function SelectionHandler(cnt_arg, cur_playlist_idx_arg) {
 	 * @param {boolean=} [shift_pressed=false]
 	 */
 	this.update_selection = function (item, ctrl_pressed, shift_pressed) {
-		assert(!_.isNil(item),
+		assert(item != null,
 			LogicError, 'update_selection was called with undefined item');
 
 		if (!ctrl_pressed && !shift_pressed) {
@@ -4935,7 +4935,7 @@ function SelectionHandler(cnt_arg, cur_playlist_idx_arg) {
 	 * @param {boolean} is_above
 	 */
 	this.drag = function (hover_row, is_above) {
-		if (_.isNil(hover_row)) {
+		if (hover_row == null) {
 			clear_last_hover_row();
 			return;
 		}
@@ -5221,7 +5221,7 @@ function SelectionHandler(cnt_arg, cur_playlist_idx_arg) {
 		var a = 0,
 			b = 0;
 
-		if (_.isNil(last_single_selected_index)) {
+		if (last_single_selected_index == null) {
 			last_single_selected_index = plman.GetPlaylistFocusItemIndex(cur_playlist_idx);
 			if (-1 === last_single_selected_index) {
 				last_single_selected_index = 0;
@@ -6050,7 +6050,7 @@ function GroupingHandler() {
 			cur_group = settings.group_presets[group_by_name.indexOf(group_name)];
 		}
 
-		assert(!_.isNil(cur_group),
+		assert(cur_group != null,
 			ArgumentError, 'group_name', group_name);
 	};
 
@@ -6385,11 +6385,11 @@ GroupingHandler.Settings.Group = function (name, description, group_query, title
 	/** @type {string} */
 	this.description = description;
 	/** @type {string} */
-	this.group_query = !_.isNil(group_query) ? group_query : '';
+	this.group_query = group_query ? group_query : '';
 	/** @type {string} */
-	this.title_query = !_.isNil(title_query) ? title_query : '[%album artist%]';
+	this.title_query = title_query ? title_query : '[%album artist%]';
 	/** @type {string} */
-	this.sub_title_query = !_.isNil(sub_title_query) ? sub_title_query : '[%album%[ \'(\'%albumsubtitle%\')\']][ - \'[\'%edition%\']\']';
+	this.sub_title_query = sub_title_query ? sub_title_query : '[%album%[ \'(\'%albumsubtitle%\')\']][ - \'[\'%edition%\']\']';
 	/** @type {boolean} */
 	this.show_date = !!(options && options.show_date);
 	/** @type {boolean} */
