@@ -3,21 +3,21 @@
 // @author 'TheQwertiest'
 // ==/PREPROCESSOR==
 
-_.mixin({
-	tf:                   function (t, metadb) {
-		if (!metadb) {
-			return '';
-		}
-		var tfo = fb.TitleFormat(t);
-		var str = tfo.EvalWithMetadb(metadb);
-		return str;
-	},
-	tfe:                  function (t, force) {
-		var tfo = fb.TitleFormat(t);
-		var str = tfo.Eval(force);
-		return str;
-	},
-});
+// _.mixin({
+// 	tf:                   function (t, metadb) {
+// 		if (!metadb) {
+// 			return '';
+// 		}
+// 		var tfo = fb.TitleFormat(t);
+// 		var str = tfo.EvalWithMetadb(metadb);
+// 		return str;
+// 	},
+// 	tfe:                  function (t, force) {
+// 		var tfo = fb.TitleFormat(t);
+// 		var str = tfo.Eval(force);
+// 		return str;
+// 	},
+// });
 
 //--->
 // Used in SetTextRenderingHint()
