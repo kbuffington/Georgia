@@ -398,7 +398,8 @@ class List {
         if (this.scrollbar) {
             this.scrollbar.reset();
         }
-        this.scrollbar = new ScrollBar(scrollbar_x, scrollbar_y, playlist_geo.scrollbar_w, scrollbar_h, this.row_h, _.bind(this.scrollbar_redraw_callback,this));
+        // this.scrollbar = new ScrollBar(scrollbar_x, scrollbar_y, playlist_geo.scrollbar_w, scrollbar_h, this.row_h, _.bind(this.scrollbar_redraw_callback,this));
+        this.scrollbar = new ScrollBar(scrollbar_x, scrollbar_y, playlist_geo.scrollbar_w, scrollbar_h, this.row_h, this.scrollbar_redraw_callback.bind(this));
     }
 
     /**

@@ -2441,7 +2441,7 @@ class Playlist extends List {
 			invisible_part: item_to_check.h / this.row_h
 		};
 
-		_.forEach(this.items_to_draw, (item) => {
+		this.items_to_draw.forEach((item) => {
 			if (item === item_to_check) {
 				if (item.y < this.list_y && item.y + item.h > this.list_y) {
 					item_state.visibility = visibility_state.partial_top;
@@ -3307,7 +3307,7 @@ class DiscHeader extends BaseHeader {
 		}
 
 		var first_data = rows_with_data[0][1];
-		_.forEach(rows_with_data, (item, i) => {
+		rows_with_data.forEach((item, i) => {
 			if (first_data !== item[1]) {
 				return false;
 			}
@@ -3542,7 +3542,7 @@ class Header extends BaseHeader {
 		else {
 			this.sub_items = owned_rows;
 
-			_.forEach(owned_rows, (item, i) => {
+			owned_rows.forEach((item, i) => {
 				item.idx_in_header = i;
 				if (g_properties.show_header) {
 					// noinspection JSBitwiseOperatorUsage
@@ -3603,7 +3603,7 @@ class Header extends BaseHeader {
 		if (this.sub_items[0] instanceof DiscHeader) {
 			track_count = 0;
 			has_discs = true;
-			_.forEach(this.sub_items, discHeader => {
+			this.sub_items.forEach(discHeader => {
 				track_count += discHeader.sub_items.length
 			});
 		}
@@ -4495,7 +4495,7 @@ class Row extends ListItem {
 					this.count_text = _.tf('%play_count%', this.metadb);
 					if (this.count_text != '0') {
 						this.count_text = _.tf('[$max(%play_count%, %lastfm_play_count%)]', this.metadb);
-						this.count_text = !_.toNumber(this.count_text) ? '' : (this.count_text + ' |');
+						this.count_text = !Number(this.count_text) ? '' : (this.count_text + ' |');
 					} else {
 						// don't want to show lastfm play count if track hasn't been played locally
 						this.count_text = '';
@@ -4708,7 +4708,7 @@ function Rating(x, y, max_w, h, metadb) {
 
 		if (g_properties.use_rating_from_tags) {
 			if (!_.startsWith(this.metadb.RawPath, 'http')) {
-				var handle = fb.CreateHandleList();
+				var handle = new FbMetadbHandleList();
 				handle.Add(this.metadb);
 				handle.UpdateFileInfoFromJSON(
 					JSON.stringify({
@@ -4738,7 +4738,7 @@ function Rating(x, y, max_w, h, metadb) {
 			else {
 				current_rating = _.tf('%rating%', this.metadb);
 			}
-			rating = _.toNumber(current_rating);
+			rating = Number(current_rating);
 		}
 		return rating;
 	};
@@ -4786,7 +4786,7 @@ function Rating(x, y, max_w, h, metadb) {
 function SelectionHandler(cnt_arg, cur_playlist_idx_arg) {
 	this.initialize_selection = function () {
 		selected_indexes = [];
-		_.forEach(rows, (item, i) => {
+		rows.forEach((item, i) => {
 			if (plman.IsPlaylistItemSelected(cur_playlist_idx, item.idx)) {
 				selected_indexes.push(i);
 			}
@@ -4866,10 +4866,20 @@ function SelectionHandler(cnt_arg, cur_playlist_idx_arg) {
 
 		var effect = fb.DoDragDrop(window.ID, cur_playlist_selection, g_drop_effect.copy | g_drop_effect.move | g_drop_effect.link);
 
+		function arraysEqual(a, b) {
+			if (a === b) return true;
+			if (a == null || b == null || a.length !== b.length) return false;
+
+			for (let i = 0; i < a.length; ++i) {
+				if (a[i] !== b[i]) return false;
+			}
+			return true;
+		}
+
 		function can_handle_move_drop() {
 			// We can handle the 'move drop' properly only when playlist is still in the same state
 			return cur_playlist_size === plman.PlaylistItemCount(cur_playlist_idx)
-				&& _.isEqual(cur_selected_indexes, selected_indexes);
+				&& arraysEqual(cur_selected_indexes, selected_indexes);
 		}
 
 		if (g_drop_effect.none === effect && can_handle_move_drop()) {
@@ -4879,7 +4889,7 @@ function SelectionHandler(cnt_arg, cur_playlist_idx_arg) {
 
 			var items_to_remove = [];
 			var playlist_items = plman.GetPlaylistItems(cur_playlist_idx);
-			_.forEach(cur_selected_indexes, (idx) => {
+			cur_selected_indexes.forEach((idx) => {
 				var cur_item = playlist_items[idx];
 				if (_.startsWith(cur_item.RawPath, 'file://') && !fso.FileExists(cur_item.Path)) {
 					items_to_remove.push(idx);
@@ -5153,14 +5163,10 @@ function SelectionHandler(cnt_arg, cur_playlist_idx_arg) {
 			plman.SetPlaylistSelection(cur_playlist_idx, selected_indexes, true);
 		}
 		else if (ctrl_pressed) {
-			var is_selected = _.find(selected_indexes, function (idx) {
-				return row.idx === idx;
-			});
+			const is_selected = selected_indexes.find((idx) => row.idx === idx);
 
 			if (is_selected) {
-				_.remove(selected_indexes, function (idx) {
-					return idx === row.idx;
-				});
+				selected_indexes = selected_indexes.filter(idx => idx != row.idx);
 			}
 			else {
 				selected_indexes.push(row.idx);
@@ -5281,9 +5287,7 @@ function SelectionHandler(cnt_arg, cur_playlist_idx_arg) {
 			plman.MovePlaylistSelection(cur_playlist_idx, move_delta);
 		}
 		else {
-			var item_count_before_drop_idx = _.count(selected_indexes, function (idx) {
-				return idx < new_idx;
-			});
+			var item_count_before_drop_idx = selected_indexes.filter(idx => idx < new_idx).length;
 
 			move_delta = -(plman.PlaylistItemCount(cur_playlist_idx) - selected_indexes.length - (new_idx - item_count_before_drop_idx));
 
@@ -5298,7 +5302,7 @@ function SelectionHandler(cnt_arg, cur_playlist_idx_arg) {
 	 */
 	function is_selection_contiguous() {
 		var is_contiguous = true;
-		_.forEach(selected_indexes, (item, i) => {
+		selected_indexes.forEach((item, i) => {
 			if (i === 0) {
 				return true;
 			}
@@ -5402,7 +5406,7 @@ function CollapseHandler(cnt_arg) {
 
 	this.collapse_all = function () {
 		this.changed = false;
-		_.forEach(headers, (item) => {
+		headers.forEach((item) => {
 			this.changed = set_collapsed_state_recursive(item, true) || this.changed;
 		});
 
@@ -5411,7 +5415,7 @@ function CollapseHandler(cnt_arg) {
 
 	this.collapse_all_but_now_playing = function () {
 		this.changed = false;
-		_.forEach(headers, (item) => {
+		headers.forEach((item) => {
 			if (item.is_playing()) {
 				this.changed = set_collapsed_state_recursive(item, false) || this.changed;
 				return;
@@ -5424,7 +5428,7 @@ function CollapseHandler(cnt_arg) {
 
 	this.expand_all = function () {
 		this.changed = false;
-		_.forEach(headers, (item) => {
+		headers.forEach((item) => {
 			this.changed = set_collapsed_state_recursive(item, false) || this.changed;
 		});
 
@@ -5458,7 +5462,7 @@ function CollapseHandler(cnt_arg) {
 			return changed;
 		}
 
-		_.forEach(sub_items, item => {
+		sub_items.forEach(item => {
 			changed = set_collapsed_state_recursive(item, is_collapsed) || changed;
 		});
 
@@ -6233,17 +6237,18 @@ function GroupingHandler() {
 	}
 
 	function cleanup_settings() {
-		_.forEach(settings.playlist_group_data, (item, i) => {
+		for (let i in settings.playlist_group_data) {
+			console.log(i);
 			if (!playlists.includes(i)) {
 				delete settings.playlist_group_data[i];
 			}
-		});
+		}
 
-		_.forEach(settings.playlist_custom_group_data, (item, i) => {
+		for (let i in settings.playlist_custom_group_data) {
 			if (!playlists.includes(i)) {
 				delete settings.playlist_custom_group_data[i];
 			}
-		});
+		}
 
 		settings.save();
 	}

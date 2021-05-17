@@ -402,7 +402,7 @@ class ContextMainMenu extends ContextMenu {
     }
 }
 
-_.mixin(qwr_utils, {
+Object.assign(qwr_utils, {
     /**
      * @param {ContextMenu} cm
      */

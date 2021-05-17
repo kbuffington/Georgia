@@ -664,7 +664,7 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
 
                     that.repaint();
 
-                    var alpha_in_progress = _.some(that.sb_parts, function (item) {
+                    var alpha_in_progress = Object.values(that.sb_parts).some((item) => {
                         return (item.hover_alpha > 0 && item.hover_alpha < 255)
                             || (item.pressed_alpha > 0 && item.pressed_alpha < 255)
                             || (item.hot_alpha > 0 && item.hot_alpha < 255);
@@ -712,10 +712,10 @@ function ScrollBarPart(x, y, w, h, img_src) {
             return;
         }
 
-        this.img_normal = _.isString(imgs.normal) ? _.img(imgs.normal) : imgs.normal;
-        this.img_hover = imgs.hover ? (_.isString(imgs.hover) ? _.img(imgs.hover) : imgs.hover) : this.img_normal;
-        this.img_pressed = imgs.pressed ? (_.isString(imgs.pressed) ? _.img(imgs.pressed) : imgs.pressed) : this.img_normal;
-        this.img_hot = imgs.hot ? (_.isString(imgs.hot) ? _.img(imgs.hot) : imgs.hot) : this.img_normal;
+        this.img_normal = /*_.isString(imgs.normal) ? _.img(imgs.normal) :*/ imgs.normal;
+        this.img_hover = imgs.hover ? /*(_.isString(imgs.hover) ? _.img(imgs.hover) :*/ imgs.hover/*)*/ : this.img_normal;
+        this.img_pressed = imgs.pressed ? /*(_.isString(imgs.pressed) ? _.img(imgs.pressed) :*/ imgs.pressed/*)*/ : this.img_normal;
+        this.img_hot = imgs.hot ? /*(_.isString(imgs.hot) ? _.img(imgs.hot) :*/ imgs.hot/*)*/ : this.img_normal;
     };
 
     this.x = x;
