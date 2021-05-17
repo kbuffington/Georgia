@@ -123,10 +123,9 @@ class List {
         gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
 
         if (this.items_to_draw.length) {
-            // replaced _.forEachRight -- seems okay?
-            this.items_to_draw.forEach(item => {
-                item.draw(gr);
-            });
+            for(let i = this.items_to_draw.length - 1; i >= 0; --i) {
+                this.items_to_draw[i].draw(gr);
+            }
 
             // Hide items that shouldn't be visible
             gr.FillSolidRect(this.x, this.y, this.w, this.list_y - this.y, this.background_color);

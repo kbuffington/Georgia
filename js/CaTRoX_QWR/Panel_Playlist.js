@@ -616,9 +616,9 @@ class Playlist extends List {
 		if (this.items_to_draw.length) {
 			// Mordred - Passing top, bottom for clipping purposes
 			// was originally forEachRight
-			this.items_to_draw.forEach(item => {
-				item.draw(gr, this.y, this.y + this.h);
-			});
+			for(let i = this.items_to_draw.length - 1; i >= 0; --i) {
+				this.items_to_draw[i].draw(gr, this.y, this.y + this.h);
+			}
 
 			// Hide rows that shouldn't be visible
 			gr.FillSolidRect(this.x-1, this.y + this.h, this.w+1, g_properties.row_h * 2, col.bg);
