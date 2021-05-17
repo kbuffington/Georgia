@@ -615,7 +615,6 @@ class Playlist extends List {
 
 		if (this.items_to_draw.length) {
 			// Mordred - Passing top, bottom for clipping purposes
-			// was originally forEachRight
 			for(let i = this.items_to_draw.length - 1; i >= 0; --i) {
 				this.items_to_draw[i].draw(gr, this.y, this.y + this.h);
 			}
@@ -3349,7 +3348,7 @@ class DiscHeader extends BaseHeader {
 		}
 
 		var disc_header_text_format = g_string_format.v_align_center | g_string_format.trim_ellipsis_char | g_string_format.no_wrap;
-		var disc_text = this.disc_title; //_.tf('[Disc %discnumber% $if('+ tf.disc_subtitle+', \u2014 ,) ]['+ tf.disc_subtitle +']', that.sub_items[0].metadb);
+		var disc_text = this.disc_title; //$('[Disc %discnumber% $if('+ tf.disc_subtitle+', \u2014 ,) ]['+ tf.disc_subtitle +']', that.sub_items[0].metadb);
 		gr.DrawString(disc_text, title_font, title_color, cur_x, this.y, this.w, this.h, disc_header_text_format);
 		var disc_w = Math.ceil(gr.MeasureString(disc_text, title_font, 0, 0, 0, 0).Width + 5);
 
@@ -3565,30 +3564,30 @@ class Header extends BaseHeader {
 	}
 
 	getGroupInfoString(is_radio, hasGenreTags) {
-		var bitspersample = _.tf('$Info(bitspersample)', this.metadb);
-		var samplerate = _.tf('$Info(samplerate)', this.metadb);
-		var sample = ((bitspersample > 16 || samplerate > 44100 || settings.playlistAlwaysShowBitrate) ? _.tf(' [$Info(bitspersample)bit/]', this.metadb) + samplerate / 1000 + 'khz' : '');
-		var codec = _.tf('$ext(%path%)', this.metadb);
+		var bitspersample = Number($('$info(bitspersample)', this.metadb));
+		var samplerate = Number($('$info(samplerate)', this.metadb));
+		var sample = ((bitspersample > 16 || samplerate > 44100 || settings.playlistAlwaysShowBitrate) ? $(' [$info(bitspersample)bit/]', this.metadb) + samplerate / 1000 + 'khz' : '');
+		var codec = $('$lower($if2(%codec%,$ext(%path%)))', this.metadb);
 
-		if (codec == "dca (dts coherent acoustics)") {
+		if (codec === "dca (dts coherent acoustics)") {
 			codec = "dts";
 		}
 		if (codec === 'cue') {
-			codec = _.tf('$ext($Info(referenced_file))', this.metadb);
+			codec = $('$ext($info(referenced_file))', this.metadb);
 		}
 		else if (codec === 'mpc') {
-			codec += _.tf('[-$Info(codec_profile)]', this.metadb).replace('quality ', 'q');
+			codec += $('[-$info(codec_profile)]', this.metadb).replace('quality ', 'q');
 		}
 		else if (codec === 'dts' || codec === 'ac3' || codec === 'atsc a/52') {
-			codec += _.tf("[ $replace($replace($replace($info(channel_mode), + LFE,),' front, ','/'),' rear surround channels',$if($strstr($info(channel_mode),' + LFE'),.1,.0))] %bitrate%", this.metadb) + ' kbps';
+			codec += $("[ $replace($replace($replace($info(channel_mode), + LFE,),' front, ','/'),' rear surround channels',$if($strstr($info(channel_mode),' + LFE'),.1,.0))] %bitrate%", this.metadb) + ' kbps';
 			codec = codec.replace('atsc a/52', 'Dolby Digital');
 		}
-		else if (_.tf('$Info(encoding)', this.metadb) === 'lossy') {
-			if (_.tf('$Info(codec_profile)', this.metadb) === 'CBR') {
-				codec += _.tf('[-%bitrate% kbps]', this.metadb);
+		else if ($('$info(encoding)', this.metadb) === 'lossy') {
+			if ($('$info(codec_profile)', this.metadb) === 'CBR') {
+				codec += $('[-%bitrate% kbps]', this.metadb);
 			}
 			else {
-				codec += _.tf('[-$Info(codec_profile)]', this.metadb);
+				codec += $('[-$info(codec_profile)]', this.metadb);
 			}
 		}
 		if (codec) {
@@ -3608,11 +3607,11 @@ class Header extends BaseHeader {
 			});
 		}
 
-		var disc_number = (!this.grouping_handler.show_cd() && _.tf('[%totaldiscs%]', this.metadb) !== '1') ? _.tf('[ | Disc: %discnumber%[/%totaldiscs%]]', this.metadb) : '';
+		var disc_number = (!this.grouping_handler.show_cd() && $('[%totaldiscs%]', this.metadb) !== '1') ? $('[ | Disc: %discnumber%[/%totaldiscs%]]', this.metadb) : '';
 		var track_text = is_radio ? '' : ' | ' +
 				(this.grouping_handler.show_cd() && has_discs ? this.sub_items.length + ' Discs - ' : '') +
 				track_count + (track_count === 1 ? ' Track' : ' Tracks');
-		var info_text = _.tf(codec + disc_number + '[ | %replaygain_album_gain%]', this.metadb) + track_text;
+		var info_text = $(codec + disc_number + '[ | %replaygain_album_gain%]', this.metadb) + track_text;
 		if (hasGenreTags) {
 			info_text = ' | ' + info_text;
 		}
@@ -3774,7 +3773,7 @@ class Header extends BaseHeader {
 			//---> DATE
 			if (this.grouping_handler.show_date()) {
 				const date_query = pref.showPlaylistFulldate ? tf.date : tf.year;
-				const date_text = _.tf(date_query, this.metadb);
+				const date_text = $(date_query, this.metadb);
 				if (date_text && date_text !== '0000') {
 					var date_w = Math.ceil(gr.MeasureString(date_text, date_font, 0, 0, 0, 0).Width + 5);
 					var date_x = this.w - date_w - 5;
@@ -3793,7 +3792,7 @@ class Header extends BaseHeader {
 
 			//---> TITLE
 			if (this.grouping_handler.get_title_query()) {
-				var artist_text = _.tf(this.grouping_handler.get_title_query(), this.metadb);
+				var artist_text = $(this.grouping_handler.get_title_query(), this.metadb);
 				if (!artist_text && is_radio) {
 					artist_text = 'Radio Stream';
 				}
@@ -3818,7 +3817,7 @@ class Header extends BaseHeader {
 
 			//---> SUB TITLE
 			if (this.grouping_handler.get_sub_title_query()) {
-				var album_text = _.tf(this.grouping_handler.get_sub_title_query(), this.metadb);
+				var album_text = $(this.grouping_handler.get_sub_title_query(), this.metadb);
 				if (album_text) {
 					var album_h = part_h;
 					var album_y = part_h;
@@ -3868,7 +3867,7 @@ class Header extends BaseHeader {
 				var genreX = info_x;
 				if (!is_radio && this.grouping_handler.get_query_name() !== 'artist') {
 					if (!this.hyperlinks.genre0) {
-						var genre_text = _.tf('[%genre%]', this.metadb).replace(/, /g,' \u2022 ');
+						var genre_text = $('[%genre%]', this.metadb).replace(/, /g,' \u2022 ');
 						genre_text_w = Math.ceil(gr.MeasureString(genre_text, g_pl_fonts.info, 0, 0, 0, 0).Width + extraGenreSpacing);
 						grClip.DrawString(genre_text, g_pl_fonts.info, info_color, genreX, info_y, info_w, info_h, info_text_format);
 					} else {
@@ -4018,7 +4017,7 @@ class Header extends BaseHeader {
 		//---> DATE
 		if (this.grouping_handler.show_date()) {
 			const date_query = pref.showPlaylistFulldate ? tf.date : tf.year;
-			var date_text = _.tf(date_query, this.metadb);
+			var date_text = $(date_query, this.metadb);
 			if (date_text) {
 				var date_w = Math.ceil(gr.MeasureString(date_text, date_font, 0, 0, 0, 0).Width + 5);
 				var date_x = this.w - date_w - 5;
@@ -4035,7 +4034,7 @@ class Header extends BaseHeader {
 
 		//---> TITLE
 		if (this.grouping_handler.get_title_query()) {
-			var artist_text = _.tf(this.grouping_handler.get_title_query(), this.metadb);
+			var artist_text = $(this.grouping_handler.get_title_query(), this.metadb);
 			if (!artist_text) {
 				artist_text = is_radio ? 'Radio Stream' : '?';
 			}
@@ -4058,7 +4057,7 @@ class Header extends BaseHeader {
 		//---> SUB TITLE
 		if (this.grouping_handler.get_sub_title_query()) {
 
-			var album_text = _.tf(this.grouping_handler.get_sub_title_query(), this.metadb);
+			var album_text = $(this.grouping_handler.get_sub_title_query(), this.metadb);
 			if (album_text) {
 				album_text = ' - ' + album_text;
 
@@ -4121,7 +4120,7 @@ class Header extends BaseHeader {
 		var artist_font = g_pl_fonts.artist_normal;
 
 		const date_query = pref.showPlaylistFulldate ? tf.date : tf.year;
-		const date_text = _.tf(date_query, this.metadb);
+		const date_text = $(date_query, this.metadb);
 		if (date_text) {
 			var date_w = Math.ceil(gr.MeasureString(date_text, date_font, 0, 0, 0, 0).Width + 5);
 			var date_x = -date_w - right_edge;
@@ -4139,7 +4138,7 @@ class Header extends BaseHeader {
 
 		if (!_.startsWith(this.metadb.RawPath, 'http')) {
 			// don't create for radio
-			var artist_text = _.tf(this.grouping_handler.get_title_query(), this.metadb);
+			var artist_text = $(this.grouping_handler.get_title_query(), this.metadb);
 			if (artist_text) {
 				var artist_x = left_pad;
 
@@ -4148,7 +4147,7 @@ class Header extends BaseHeader {
 		}
 
 		var album_y = part_h + scaleForDisplay(3);
-		var album_text = _.tf(this.grouping_handler.get_sub_title_query(), this.metadb);
+		var album_text = $(this.grouping_handler.get_sub_title_query(), this.metadb);
 		if (album_text) {
 			this.hyperlinks.album = new Hyperlink(album_text, g_pl_fonts.album, 'album', left_pad, album_y, this.w, true);
 		}
@@ -4455,14 +4454,14 @@ class Row extends ListItem {
 		var right_pad = scaleForDisplay(10);
 		var testRect = false;
 
-		if (_.tf('$ifgreater(%totaldiscs%,1,true,false)', this.metadb) != 'false') {
+		if ($('$ifgreater(%totaldiscs%,1,true,false)', this.metadb) != 'false') {
 			cur_x += scaleForDisplay(20);
 		}
 
 		//---> LENGTH
 		{
 			if (this.length_text == null) {
-				this.length_text = _.tf('[%length%]', this.metadb);
+				this.length_text = $('[%length%]', this.metadb);
 			}
 
 			var length_w = is_4k ? 80 : 50;
@@ -4492,9 +4491,9 @@ class Row extends ListItem {
 					this.count_text = '';
 				}
 				else {
-					this.count_text = _.tf('%play_count%', this.metadb);
+					this.count_text = $('%play_count%', this.metadb);
 					if (this.count_text != '0') {
-						this.count_text = _.tf('[$max(%play_count%, %lastfm_play_count%)]', this.metadb);
+						this.count_text = $('[$max(%play_count%, %lastfm_play_count%)]', this.metadb);
 						this.count_text = !Number(this.count_text) ? '' : (this.count_text + ' |');
 					} else {
 						// don't want to show lastfm play count if track hasn't been played locally
@@ -4533,14 +4532,14 @@ class Row extends ListItem {
 				track_num_query = '      ';
 			}
 			var title_query = track_num_query + '  %title%[ \'(\'%original artist%\' cover)\']';
-			this.title_text = (fb.IsPlaying && this.is_playing && is_radio) ? _.tfe(title_query) : _.tf(title_query, this.metadb);
+			this.title_text = (fb.IsPlaying && this.is_playing && is_radio) ? $(title_query) : $(title_query, this.metadb);
 		}
 
 		//---> TITLE ARTIST init
 		if (this.title_artist_text == null) {
-			var pattern = '^' + _.tf('%album artist%', this.metadb).replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&") + ' ';
+			var pattern = '^' + $('%album artist%', this.metadb).replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&") + ' ';
 			var regex = new RegExp(pattern);
-			this.title_artist_text = _.tf('[$if($strcmp(' + tf.artist + ',%artist%),$if(%album artist%,$if(%track artist%,%track artist%,),),' + tf.artist + ')]', this.metadb);
+			this.title_artist_text = $('[$if($strcmp(' + tf.artist + ',%artist%),$if(%album artist%,$if(%track artist%,%track artist%,),),' + tf.artist + ')]', this.metadb);
 			if (this.title_artist_text.length) {
 				// if tf.artist evaluates to something different than %album artist% strip %artist% from the start of the string
 				// i.e. tf.artist = "Metallica feat. Iron Maiden" then we want this.title_artist_text = "feat. Iron Maiden"
@@ -4736,7 +4735,7 @@ function Rating(x, y, max_w, h, metadb) {
 				current_rating = rating_meta_idx !== -1 ? file_info.MetaValue(rating_meta_idx, 0) : 0;
 			}
 			else {
-				current_rating = _.tf('%rating%', this.metadb);
+				current_rating = $('%rating%', this.metadb);
 			}
 			rating = Number(current_rating);
 		}
