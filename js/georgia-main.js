@@ -1590,6 +1590,10 @@ function on_playback_new_track(metadb) {
 }
 
 // tag content changed
+/**
+ * @param {FbMetadbHandleList=} handle_list Can be undefined when called manually from on_playback_new_track
+ * @param {boolean=} fromhook
+ */
 function on_metadb_changed(handle_list, fromhook) {
 	console.log(`on_metadb_changed(): ${handle_list ? handle_list.Count : '0'} handles, fromhook: ${fromhook}`);
 	if (fb.IsPlaying) {
