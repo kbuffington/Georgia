@@ -64,6 +64,8 @@ pref.add_properties({
 
 	lyrics_normal_color: ['Lyrics: Text Color', 'RGBA(255, 255, 255, 255);'],
 	lyrics_focus_color: ['Lyrics: Text Highlite Color', 'RGBA(255, 241, 150, 255);'],
+	lyricsRememberDisplay: ['Lyrics: Remember toggle setting', false], // true: show lyrics on startup if they were displayed when theme last reloaded
+	displayLyrics: ['Lyrics: Show lyrics', false], // true: shows lyrics, always set to false at startup unless lyricsRememberDisplay is true
 
 	showPlaylistFulldate: ['Playlist: Show full date', false],
 	hyperlinks_ctrl: ['Playlist: Hyperlinks require CTRL Key', false], // true: clicking on hyperlinks only works if CTRL key is held down
@@ -72,7 +74,7 @@ pref.add_properties({
 
 	font_size_playlist: ['Font Size: Playlist', 12],
 	font_size_playlist_header: ['Font Size: Playlist Header', 15],
-	lyrics_font_size: ['Font Size: Lyrics', 20],
+	lyricsFontSize: ['Font Size: Lyrics', 20],
 });
 
 // Lyrics variables
@@ -176,6 +178,10 @@ pref.vinyl_path = '$directory_path(%path%)\\vinyl.png' // vinyl cdart named viny
 pref.cdartdisc_path = '$directory_path(%path%)\\' + settings.cdArtBasename + '$ifgreater(%totaldiscs%,1,%discnumber%,).png'; // cdart named cd1.png, cd2.png, etc.
 pref.cdart_path = '$directory_path(%path%)\\' + settings.cdArtBasename + '.png'; // cdart named cd.png (or whatever custom value was specified). This is the most common single disc case.
 pref.cdart_amount = 0.48; // show 48% of the CD image if it will fit on the screen
+
+if (!pref.lyricsRememberDisplay) {
+	pref.displayLyrics = false;
+}
 
 function migrateCheck(version, storedVersion) {
 	/**

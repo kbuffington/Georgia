@@ -129,7 +129,7 @@ function createFonts() {
 	ft.Marlett = font('Marlett', 13, 0);
 	ft.SegoeUi = font('Segoe Ui Semibold', pref.menu_font_size, 0);
 	ft.library_tree = font('Segoe UI', libraryProps.baseFontSize, 0);
-	ft.lyrics = font(fontRegular, pref.lyrics_font_size || 20, 1);
+	ft.lyrics = font(fontRegular, pref.lyricsFontSize || 20, 1);
 }
 
 
@@ -316,7 +316,6 @@ let lastLeftEdge = 0; // the left edge of the record labels. Saved so we don't h
 let lastLabelHeight = 0;
 let displayPlaylist = false;
 let displayLibrary = false;
-let displayLyrics = false;
 
 var tl_firstPlayedRatio = 0;
 var tl_lastPlayedRatio = 0;
@@ -444,7 +443,7 @@ function draw_ui(gr) {
 			// gr.DrawRect(-geo.aa_shadow, albumart_size.y - geo.aa_shadow, shadow_image.Width, shadow_image.Height, 1, RGBA(0,0,255,125));	// viewing border line
 		}
 		if (albumart && albumart_scaled) {
-			if (!pref.cdart_ontop || displayLyrics) {
+			if (!pref.cdart_ontop || pref.displayLyrics) {
 				if (rotatedCD && !displayPlaylist && !displayLibrary) {
 					drawCdArt(gr);
 				}
@@ -455,7 +454,7 @@ function draw_ui(gr) {
 					drawCdArt(gr);
 				}
 			}
-			if (displayLyrics && albumart_scaled && fb.IsPlaying) {
+			if (pref.displayLyrics && albumart_scaled && fb.IsPlaying) {
 				gr.FillSolidRect(albumart_size.x - 1, albumart_size.y - 1, albumart_size.w + 1, albumart_size.h + 1, RGBA(0, 0, 0, 155));
 				gLyrics && gLyrics.drawLyrics(gr);
 			}
@@ -1290,6 +1289,27 @@ function onOptionsMenu(x, y) {
 
 	menu.addSeparator();
 
+	const lyricsMenu = new Menu('Lyrics Settings');
+	lyricsMenu.addToggleItem('Remember lyrics setting after restart', pref, 'lyricsRememberDisplay');
+	lyricsMenu.createRadioSubMenu('Lyrics font size', ['-1', '16px', '18px', '20px (default)', '22px', '24px', '26px', '+1'], pref.lyricsFontSize,
+		[-1, 16, 18, 20, 22, 24, 26, 999],
+		(size) => {
+			if (size === -1) {
+				pref.lyricsFontSize--;
+			} else if (size === 999) {
+				pref.lyricsFontSize++;
+			} else {
+				pref.lyricsFontSize = size;
+			}
+			pref.lyricsFontSize = Math.max(6, pref.lyricsFontSize);
+			createFonts();
+			pref.displayLyrics && initLyrics();
+			// window.Repaint();
+		});
+	lyricsMenu.appendTo(menu);
+
+	menu.addSeparator();
+
 	const debugMenu = new Menu('Debug Settings');
 	debugMenu.addToggleItem('Enable debug output', settings, 'showDebugLog');
 	debugMenu.addItem('Enable theme debug output', settings.showThemeLog, () => {
@@ -1443,7 +1463,7 @@ function on_playback_dynamic_info_track() {
 	if (displayPlaylist) {
 		playlist.on_playback_dynamic_info_track();
 	}
-	if (displayLyrics) { // no need to try retrieving them if we aren't going to display them now
+	if (pref.displayLyrics) { // no need to try retrieving them if we aren't going to display them now
 		initLyrics();
 	}
 }
@@ -1576,7 +1596,7 @@ function on_playback_new_track(metadb) {
 	}
 
 	// Lyrics stuff
-	if (displayLyrics) { // no need to try retrieving them if we aren't going to display them now
+	if (pref.displayLyrics) { // no need to try retrieving them if we aren't going to display them now
 		initLyrics();
 	}
 	if (timings.showDebugTiming) newTrackProfiler.Print();
@@ -1729,7 +1749,7 @@ function on_playback_order_changed(this_pb) {
 
 function on_playback_seek() {
 	progressBar.progressMoved = true;
-	if (displayLyrics) {
+	if (pref.displayLyrics) {
 		gLyrics.seek();
 	}
 	on_playback_time();
@@ -1885,7 +1905,7 @@ function on_mouse_wheel(delta) {
 		refresh_seekbar();
 		return;
 	}
-	if (displayLyrics && state.mouse_x > albumart_size.x && state.mouse_x <= albumart_size.x + albumart_size.w &&
+	if (pref.displayLyrics && state.mouse_x > albumart_size.x && state.mouse_x <= albumart_size.x + albumart_size.w &&
 		                 state.mouse_y > albumart_size.y && state.mouse_y <= albumart_size.y + albumart_size.h) {
 		gLyrics.on_mouse_wheel(delta);
 	} else if (displayPlaylist) {
@@ -2068,7 +2088,7 @@ function on_playback_pause(pausing) {
 	}
 
 	pauseBtn.repaint();
-	if (albumart && displayLyrics) { // if we are displaying lyrics we need to refresh all the lyrics to avoid tearing at the edges of the pause button
+	if (albumart && pref.displayLyrics) { // if we are displaying lyrics we need to refresh all the lyrics to avoid tearing at the edges of the pause button
 		gLyrics.on_playback_pause(pausing);
 	}
 
@@ -2100,7 +2120,7 @@ function on_playback_stop(reason) {
 	}
     bandLogo = null;
     invertedBandLogo = null;
-	if (displayLyrics && gLyrics) {
+	if (pref.displayLyrics && gLyrics) {
 		gLyrics.on_playback_stop(reason);
 	}
 

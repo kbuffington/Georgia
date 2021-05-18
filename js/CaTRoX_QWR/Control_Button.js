@@ -281,10 +281,10 @@ function btnActionHandler(btn) {
 			onRatingMenu(btn.x, btn.y + btn.h);
 			break;
 		case 'Lyrics':
-			displayLyrics = !displayLyrics;
-			btn.enable = displayLyrics;
+			pref.displayLyrics = !pref.displayLyrics;
+			btn.enable = pref.displayLyrics;
 			if ((fb.IsPlaying || fb.IsPaused) && albumart_scaled) {
-				if (displayLyrics) {
+				if (pref.displayLyrics) {
 					initLyrics();
 				}
 				window.RepaintRect(albumart_size.x, albumart_size.y, albumart_size.w, albumart_size.h);
