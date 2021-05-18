@@ -226,7 +226,7 @@ function PlaylistPanel(x, y) {
 				x, y + (g_properties.show_playlist_info ? playlist_info_and_gap_h : 0));
 		playlist_info.set_xywh(x, y, this.w);
 
-		is_activated = window.IsVisible;
+		is_activated = window.IsVisible && displayPlaylist;
 	};
 
 	this.on_mouse_move = function (x, y, m) {
@@ -1240,8 +1240,29 @@ class Playlist extends List {
 		this.is_in_focus = is_focused;
 	}
 
+	/**
+	 * @param {FbMetadbHandleList} handles
+	 * @param {boolean} fromhook
+	 */
 	on_metadb_changed(handles, fromhook) {
-		this.on_playback_dynamic_info_track();
+		handles.Sort();
+		const len = this.cnt.sub_items.length;
+		for (let i = 0; i < len; i++) {
+			const item = this.cnt.sub_items[i];
+			// only need to update the header data if it's already been drawn/cached
+			if (item instanceof Header && (item.header_image || item.hyperlinks_initialized)) {
+				const metadb = item.get_first_row().metadb;
+				if (handles.BSearch(metadb) !== -1)  {
+					item.header_image = null;
+					item.reset_hyperlinks();
+				}
+			}
+		}
+
+		// is there a more efficient way to do this?
+		this.cnt.rows.forEach(function (item) {
+			item.reset_queried_data();
+		});
 	}
 
 	on_get_album_art_done(metadb, art_id, image, image_path) {
@@ -3127,8 +3148,8 @@ class BaseHeader extends ListItem {
 		 */
 		this.idx = idx;
 
-		/** @type {boolean} */
-		this.is_collapsed = false;
+		/** @type {boolean} */ this.is_collapsed = false;
+		/** @type {boolean} currently only updated at draw time */ this.hasSelection = false;
 
 		/**
 		 * @type {number}
@@ -3644,9 +3665,13 @@ class Header extends BaseHeader {
 		if (this.was_playing !== this.is_playing()) {
 			this.was_playing = this.is_playing();
 			cache_header = false;
-			if (this.header_image) {
-				this.header_image = null;
-			}
+			this.clearCachedHeaderImg();
+		}
+		const hasSelection = this.has_selected_items();
+		if (this.hasSelection !== hasSelection) {
+			this.hasSelection = hasSelection;
+			cache_header = false;
+			this.clearCachedHeaderImg();
 		}
 		if (!cache_header || !this.header_image) {
 			var artist_color = g_pl_colors.artist_normal;
@@ -3665,7 +3690,7 @@ class Header extends BaseHeader {
 				line_color = g_pl_colors.line_playing;
 				artist_font = g_pl_fonts.artist_playing;
 			}
-			if (this.has_selected_items()) {
+			if (this.hasSelection) {
 				line_color = g_pl_colors.line_selected;
 				artist_color = album_color = date_color = info_color = g_pl_colors.group_title_selected;
 			}
@@ -3674,13 +3699,13 @@ class Header extends BaseHeader {
 			var grClip = clipImg.GetGraphics();
 
 			grClip.FillSolidRect(0, 0, this.w, this.h, g_pl_colors.background); // Solid background for ClearTypeGridFit text rendering
-			if (this.has_selected_items()) {
+			if (this.hasSelection) {
 				grClip.FillSolidRect(0, 0, this.w, this.h, g_pl_colors.row_selected);
 			}
 
 			if (this.is_playing()) {
 				var p = scaleForDisplay(6);  // from art below
-				if (this.has_selected_items()) {
+				if (this.hasSelection) {
 					grClip.FillSolidRect(0, p, scaleForDisplay(8), this.h - p * 2, col.accent);
 				} else {
 					grClip.FillSolidRect(0, p, scaleForDisplay(8), this.h - p * 2, col.darkAccent);
@@ -4209,9 +4234,7 @@ class Header extends BaseHeader {
 		}
 
 		if (needs_redraw) {
-			if (this.header_image) {
-				this.header_image = null;
-			}
+			this.clearCachedHeaderImg();
 			this.repaint();
 		}
 
@@ -4257,6 +4280,9 @@ class Header extends BaseHeader {
 		this.hyperlinks = {};
 	}
 
+	clearCachedHeaderImg() {
+		this.header_image = null;
+	}
 }
 
 // Header.prototype = Object.create(BaseHeader.prototype);
