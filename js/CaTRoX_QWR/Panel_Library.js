@@ -3078,7 +3078,7 @@ function searchLibrary() {
             cx = Math.min(Math.max(cx, 0), p.s_txt.length);
             // divider line
             gr.DrawLine(ui.x + ui.margin, ui.y + p.s_sp, ui.x + p.s_w1, ui.y + p.s_sp, ui.l_width, ui.s_linecol);
-            if (p.s_txt) {
+            if (p.s_txt) {  // has search text
                 const selColor = drawsel(gr);
                 get_offset(gr);
                 var txt_col = ui.col.search;
@@ -3315,7 +3315,7 @@ function Buttons() {
     this.create_tooltip();
     this.lbtn_dn = (x, y) => {this.move(x, y); if (!cur_btn || cur_btn.hide) {this.Dn = false; return false} else this.Dn = cur_btn.name; cur_btn.down = true; cur_btn.cs("down"); cur_btn.lbtn_dn(x, y); return true;}
     this.leave = () => {if (cur_btn) {cur_btn.cs("normal"); if (!cur_btn.hide) transition.start();} cur_btn = null;}
-    this.on_script_unload = () => tt("");
+    this.on_script_unload = () => tt.stop();
     this.draw = gr => Object.values(this.btns).forEach(v => {if (!v.hide) v.draw(gr);});
     this.reset = () => transition.stop();
     this.set_scroll_btns_hide = (force) => {if (!this.btns || (!pptDefault.sbarShow && !force)) return; scrBtns.forEach((v, i) => {if (this.btns[v]) this.btns[v].hide = sbar.scrollable_lines < 1 || !pptDefault.sbarShow;});}
@@ -3342,7 +3342,7 @@ function Buttons() {
         this.repaint = () => {const expXY = 2, expWH = 4; window.RepaintRect(this.x - expXY, this.y - expXY, this.w + expWH, this.h + expWH);}
         this.trace = (x, y) => {return x > this.x && x < this.x + this.w && y > this.y && y < this.y + this.h;}
 
-        this.x = x; this.y = y; this.w = w; this.h = h; this.type = type; this.hide = hide; this.l_dn = l_dn; this.l_up = l_up; this.tt = new _.tt_handler; this.tiptext = tiptext; this.transition_factor = 0; this.state = "normal"; this.hand = hand; this.name = name;
+        this.x = x; this.y = y; this.w = w; this.h = h; this.type = type; this.hide = hide; this.l_dn = l_dn; this.l_up = l_up; this.tt = new TooltipHandler(); this.tiptext = tiptext; this.transition_factor = 0; this.state = "normal"; this.hand = hand; this.name = name;
 
         const drawCross = gr => {
             let a; if (this.state !== "down") {const b = im.normal, c = im.hover - b; a = Math.min(b + c * this.transition_factor, im.hover);} else a = im.hover;

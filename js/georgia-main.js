@@ -328,7 +328,7 @@ var currentLastPlayed = '';
 
 /** @type {FbTooltip} */
 let g_tooltip;
-const tt = new _.tt_handler;
+const tt = new TooltipHandler();
 
 // MENU STUFF
 let menu_down = false;

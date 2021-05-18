@@ -871,3 +871,97 @@ try {
 	DPI = WshShell.RegRead('HKCU\\Control Panel\\Desktop\\WindowMetrics\\AppliedDPI');
 } catch (e) {
 }
+
+class TooltipTimer {
+	constructor() {
+		this.tooltip_timer = undefined;
+		this.tt_caller = undefined;
+	}
+
+	start(id, text) {
+		var old_caller = this.tt_caller;
+		this.tt_caller = id;
+
+		if (!this.tooltip_timer && g_tooltip.Text) {
+			this.tt(text, old_caller !== this.tt_caller );
+		}
+		else {
+			if (this.tooltip_timer) {
+				this.force_stop(); /// < There can be only one tooltip present at all times, so we can kill the timer w/o any worries
+			}
+
+			if (!this.tooltip_timer) {
+				this.tooltip_timer = setTimeout(() => {
+					this.tt(text);
+					this.tooltip_timer = null;
+				}, 300);
+			}
+		}
+	}
+
+	stop(id) {
+		if (this.tt_caller === id) {// Do not stop other callers
+			this.force_stop();
+		}
+	}
+
+	force_stop() {
+		this.tt('');
+		if (this.tooltip_timer) {
+			clearTimeout(this.tooltip_timer);
+			this.tooltip_timer = null;
+			this.tt_caller = null;
+		}
+	}
+
+	/**
+	 * Actually displays the tooltip
+	 * @param {string} text The text to show in the tooltip
+	 * @param {boolean=} force Activate the tooltip whether or not text has changed
+	 */
+	tt(text, force) {
+		if (g_tooltip.Text !== text.toString() || force) {
+			g_tooltip.Text = text;
+			g_tooltip.Activate();
+		}
+	};
+}
+
+const gTooltipTimer = new TooltipTimer();
+class TooltipHandler {
+	constructor() {
+		this.id = Math.ceil(Math.random() * 10000);
+		this.timer = gTooltipTimer;
+	}
+
+	/**
+	 * Show tooltip after delay (300ms)
+	 * @param {string} text
+	 */
+	showDelayed(text) {
+		this.timer.start(this.id, text);
+	}
+
+	/**
+	 * Show tooltip now
+	 * @param {string} text
+	 */
+	showImmediate(text) {
+		this.timer.stop(this.id);
+		this.timer.tt(text);
+	}
+
+	/**
+	 * Clear this tooltip if this handler created it
+	 */
+	clear() {
+		this.timer.stop(this.id);
+	}
+
+	/**
+	 * Clear tooltip regardless of which handler created it
+	 */
+	stop() {
+		this.timer.force_stop();
+	}
+}

@@ -10,7 +10,7 @@ class Volume {
         this.clickY = 0;
         this.drag = false;
         this.drag_vol = 0;
-        this.tt = new _.tt_handler;
+        this.tt = new TooltipHandler();
     }
 
     /**
