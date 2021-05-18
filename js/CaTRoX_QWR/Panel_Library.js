@@ -3006,37 +3006,11 @@ function searchLibrary() {
                 }
                 break;
         }
-        // if (code == vk.copy || code == vk.selAll) return;
-        // if (!timer.search_cursor) timer.search_cursor = setInterval(function() {p.s_cursor = !p.s_cursor; p.search_paint();}, 530);
-        // p.search_paint();
-        // lib_manager.upd_search = true;
-        // timer.reset(timer.search);
-        // timer.search = setTimeout(function() {
-        // 	lib_manager.time.Reset();
-        // 	library_tree.subCounts.search = {};
-        // 	lib_manager.treeState(false, libraryProps.rememberTree);
-        // 	lib_manager.rootNodes();
-        // 	// p.setHeight(true);
-        // 	if (libraryProps.searchAutoExpand) {
-        // 		if (!library_tree.tree.length) return timer.search = false;
-        // 		var count = 0, m = libraryProps.rootNode ? 1 : 0;
-        // 		for (m; m < library_tree.tree.length; m++) count += library_tree.tree[m].item.length;
-        // 		if (count > expand_limit) return timer.search = false; var n = false;
-        // 		if (libraryProps.rootNode && library_tree.tree.length > 1) n = true;
-        // 		m = library_tree.tree.length;
-        // 		while (m--) {
-        // 			library_tree.expandNodes(library_tree.tree[m], !!libraryProps.rootNode && !m);
-        // 			if (n && m == 1) break;
-        // 		}
-        // 		if (libraryProps.rootNode && library_tree.tree.length == 1) library_tree.line_l = 0;
-        // 		sbar.set_rows(library_tree.tree.length); p.tree_paint(); lib_manager.treeState(false, libraryProps.rememberTree);
-        // 	}
-        // 	timer.search = false;
-        // }, 160);
         if (code == vk.copy || code == vk.selAll) return;
         if (!timer.search_cursor) timer.search_cursor.id = setInterval(() => {p.s_cursor = !p.s_cursor; p.search_paint();}, 530);
         but.set_search_btns_hide(); p.search_paint(); lib_manager.upd_search = true; timer.clear(timer.search);
-        timer.search.id = setTimeout(() => {lib_manager.time.Reset(); library_tree.subCounts.search = {}; lib_manager.treeState(false, libraryProps.rememberTree); lib_manager.rootNodes();
+        timer.search.id = setTimeout(() => {
+            lib_manager.time.Reset(); library_tree.subCounts.search = {}; lib_manager.treeState(false, libraryProps.rememberTree); lib_manager.rootNodes();
             // p.setHeight(true);
         }, 160);
     }
@@ -3108,14 +3082,22 @@ function searchLibrary() {
                 const selColor = drawsel(gr);
                 get_offset(gr);
                 var txt_col = ui.col.search;
-                if (selStart === 0 && selEnd === p.s_txt.length) {
-                    if (new Color(selColor).brightness > 180) {
-                        txt_col = rgb(0,0,0);
+                if (selStart !== selEnd && new Color(selColor).brightness > 180) {
+                    const darkColor = rgb(0,0,0);
+                    if (selStart === 0 && selEnd === p.s_txt.length) {
+                        gr.GdiDrawText(p.s_txt.substr(offsetChars), ui.font, darkColor, p.s_x, p.s_y, p.s_w2, p.s_sp, p.l);
                     } else {
-                        txt_col = ui.col.textsel;
+                        // unselected text
+                        gr.GdiDrawText(p.s_txt.substr(offsetChars), ui.font, txt_col, p.s_x, p.s_y, p.s_w2, p.s_sp, p.l);
+                        const selectedText = p.s_txt.substr(offsetChars).substr(selStart - offsetChars, selEnd - selStart);
+                        drawsel(gr);
+                        // selected text
+                        gr.GdiDrawText(selectedText, ui.font, darkColor, p.s_x + get_cursor_x(selStart), p.s_y, p.s_x + get_cursor_x(selEnd), p.s_sp, p.l);
                     }
+                } else {
+                    // don't need to adjust colors
+                    gr.GdiDrawText(p.s_txt.substr(offsetChars), ui.font, txt_col, p.s_x, p.s_y, p.s_w2, p.s_sp, p.l);
                 }
-                gr.GdiDrawText(p.s_txt.substr(offsetChars), ui.font, txt_col, p.s_x, p.s_y, p.s_w2, p.s_sp, p.l);
             } else {
                 gr.GdiDrawText('Search', ui.searchFont, ui.col.txt_box, p.s_x, p.s_y, p.s_w2, p.s_sp, p.l);
             }
@@ -3131,7 +3113,6 @@ function searchLibrary() {
         }
     }
 }
-// if (libraryProps.searchMode) var sL = new searchLibrary();
 
 function JumpSearch() {
     // this is the quick-type search
