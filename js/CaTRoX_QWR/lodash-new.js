@@ -956,6 +956,25 @@ let _exports = (() => {
 	}
 
 	/**
+	 * Appends the elements of `values` to `array`.
+	 *
+	 * @private
+	 * @param {Array} array The array to modify.
+	 * @param {Array} values The values to append.
+	 * @returns {Array} Returns `array`.
+	 */
+	function arrayPush(array, values) {
+		var index = -1,
+			length = values.length,
+			offset = array.length;
+
+		while (++index < length) {
+		array[offset + index] = values[index];
+		}
+		return array;
+	}
+
+	/**
 	 * Assigns `value` to `key` of `object` if the existing value is not equivalent
 	 * using [`SameValueZero`](http://ecma-international.org/ecma-262/7.0/#sec-samevaluezero)
 	 * for equality comparisons.
@@ -1057,9 +1076,9 @@ let _exports = (() => {
 	 */
 	function baseClone(value, bitmask, customizer, key, object, stack) {
 		var result,
-				isDeep = !!(bitmask & CLONE_DEEP_FLAG),
-				isFlat = !!(bitmask & CLONE_FLAT_FLAG),
-				isFull = !!(bitmask & CLONE_SYMBOLS_FLAG);
+			isDeep = !!(bitmask & CLONE_DEEP_FLAG),
+			isFlat = !!(bitmask & CLONE_FLAT_FLAG),
+			isFull = !!(bitmask & CLONE_SYMBOLS_FLAG);
 
 		if (customizer) {
 			result = object ? customizer(value, key, object, stack) : customizer(value);
@@ -1078,7 +1097,7 @@ let _exports = (() => {
 			}
 		} else {
 			var tag = getTag(value),
-					isFunc = tag == funcTag || tag == genTag;
+				isFunc = tag == funcTag || tag == genTag;
 
 			// if (isBuffer(value)) {
 			//   return cloneBuffer(value, isDeep);
@@ -1222,7 +1241,7 @@ let _exports = (() => {
 	 */
 	function baseGetAllKeys(object, keysFunc, symbolsFunc) {
 		var result = keysFunc(object);
-		return isArray(object) ? result : result.push(...symbolsFunc(object));
+		return isArray(object) ? result : arrayPush(result, symbolsFunc(object));
 	}
 
 	/**
@@ -3684,25 +3703,25 @@ _.tt = function (text, force) {
 		g_tooltip.Activate();
 	}
 };
-/** @constructor */
-_.tt_handler = function () {
-	this.showDelayed = function (text) {
-		tt_timer.start(this.id, text);
-	};
-	this.showImmediate = function (text) {
-		tt_timer.stop(this.id);
-		_.tt(text);
-	};
-	this.clear = function () {
-		tt_timer.stop(this.id);
-	};
-	this.stop = function () {
-		tt_timer.force_stop();
-	};
-	this.id = Math.ceil(Math.random() * 10000);
+// /** @constructor */
+// _.tt_handler = function () {
+// 	this.showDelayed = function (text) {
+// 		tt_timer.start(this.id, text);
+// 	};
+// 	this.showImmediate = function (text) {
+// 		tt_timer.stop(this.id);
+// 		_.tt(text);
+// 	};
+// 	this.clear = function () {
+// 		tt_timer.stop(this.id);
+// 	};
+// 	this.stop = function () {
+// 		tt_timer.force_stop();
+// 	};
+// 	this.id = Math.ceil(Math.random() * 10000);
 
-	var tt_timer = new TooltipTimer();
-};
+// 	var tt_timer = new TooltipTimer();
+// };
 
 class TooltipTimer {
 	constructor() {
@@ -3744,5 +3763,34 @@ class TooltipTimer {
 			this.tooltip_timer = null;
 			this.tt_caller = null;
 		}
+	}
+}
+
+const gTooltipTimer = new TooltipTimer();
+class TooltipHandler {
+	constructor() {
+		this.id = Math.ceil(Math.random() * 10000);
+		this.timer = gTooltipTimer;
+	}
+
+	showDelayed(text) {
+		this.timer.start(this.id, text);
+	}
+
+	/**
+	 * Show tooltip now
+	 * @param {string} text
+	 */
+	showImmediate(text) {
+		this.timer.stop(this.id);
+		_.tt(text);
+	}
+
+	clear() {
+		this.timer.stop(this.id);
+	}
+
+	stop() {
+		this.timer.force_stop();
 	}
 }
