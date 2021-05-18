@@ -50,6 +50,7 @@ pref.add_properties({
 	show_progress_bar: ['Show Progress Bar', true], // true: show progress bar, otherwise hide it (useful is using another panel for this)
 	transport_buttons_size: ['Transport: Button size', 32], // size in pixels of the buttons
 	transport_buttons_spacing: ['Transport: Button spacing', 5], // size in pixels of the spacing between buttons
+	showTitleInGrid: ['Display song title in info grid', true], // false: don't show title at top of info grid, and move album title above timeline
 
 	show_timeline_tooltips: ['Show timeline tooltips', true], // true: show tooltips when hovering over the timeline that show information on plays
 

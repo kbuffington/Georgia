@@ -515,10 +515,11 @@ function draw_ui(gr) {
 		if (gridSpace > 120) {
 			/** @type {MeasureStringInfo} */
 			let txtRec;
-			if (str.title) {
+			function drawTitle(top) {
+				if (!str.title) return 0;
 				ft.title = ft.title_lrg;
 				ft.tracknum = ft.tracknum_lrg;
-				var title_spacing = scaleForDisplay(8);
+				let title_spacing = scaleForDisplay(8);
 				var trackNumWidth = 0;
 				if (str.tracknum) {
 					trackNumWidth = gr.MeasureString(str.tracknum, ft.tracknum, 0, 0, 0, 0).Width + title_spacing;
@@ -527,6 +528,7 @@ function draw_ui(gr) {
 				if (txtRec.Lines > 2) {
 					ft.title = ft.title_med;
 					ft.tracknum = ft.tracknum_med;
+					title_spacing = scaleForDisplay(7);
 					if (str.tracknum) {
 						trackNumWidth = gr.MeasureString(str.tracknum, ft.tracknum, 0, 0, 0, 0).Width + title_spacing;
 					}
@@ -534,6 +536,7 @@ function draw_ui(gr) {
 					if (txtRec.Lines > 2) {
 						ft.title = ft.title_sml;
 						ft.tracknum = ft.tracknum_sml;
+						title_spacing = scaleForDisplay(6);
 						if (str.tracknum) {
 							trackNumWidth = gr.MeasureString(str.tracknum, ft.tracknum, 0, 0, 0, 0).Width + title_spacing;
 						}
@@ -547,50 +550,45 @@ function draw_ui(gr) {
 
 				trackNumWidth = Math.ceil(trackNumWidth);
 				gr.DrawString(str.tracknum, ft.tracknum, col.info_text, textLeft, top - heightAdjustment, trackNumWidth, height);
-                // gr.DrawRect(textLeft, top, trackNumWidth, height, 1, rgb(255,0,0));
                 if (is_4k) {
                     gr.SetTextRenderingHint(TextRenderingHint.AntiAliasGridFit);
                 } else {
                     gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit); // thicker fonts can use anti-alias
                 }
 				gr.DrawString(str.title, ft.title, col.info_text, textLeft + trackNumWidth, top, text_width - trackNumWidth, height, g_string_format.trim_ellipsis_word);
-				// gr.DrawRect(textLeft, top, text_width - trackNumWidth, height, 1, rgb(255,0,0));
 
-				top += height + scaleForDisplay(12);
 				gr.SetTextRenderingHint(TextRenderingHint.AntiAliasGridFit);
+				return height + scaleForDisplay(12);
 			}
 
-			//Timeline playcount bars
-			if (fb.IsPlaying && str.timeline) {
-				str.timeline.setSize(0, top, albumart_size.x);
-				str.timeline.draw(gr);
-			}
 
-			top += geo.timeline_h + scaleForDisplay(12);
-
-			if (str.album) {
+			function drawAlbumTitle(top, maxLines) {
 				let height = 0;
+				if (!str.album) return height;
 				let font_array = [ft.album_lrg, ft.album_med, ft.album_sml];
 				if (str.album.indexOf('Á') !== -1) {
 					// some fonts don't work correctly with this character
 					font_array = [ft.album_lrg_alt, ft.album_med_alt, ft.album_sml_alt];
 				}
 				var subtitlefont_array = [ft.album_substitle_lrg, ft.album_substitle_med, ft.album_substitle_sml];
-				if (str.album_subtitle.length) {
-					top += drawMultipleLines(gr, text_width, textLeft, top, col.info_text, str.album, font_array,
-						str.album_subtitle, subtitlefont_array, 2);
-				} else {
-					var ft_album = chooseFontForWidth(gr, text_width, str.album, font_array, 2);
-					txtRec = gr.MeasureString(str.album, ft_album, 0, 0, text_width, wh);
-					var numLines = txtRec.Lines;
-					var lineHeight = txtRec.Height / numLines;
-					if (numLines > 2) {
-						numLines = 2;
-					}
-					height = lineHeight * numLines;
-					gr.DrawString(str.album, ft_album, col.info_text, textLeft, top, text_width, height, g_string_format.trim_ellipsis_word);
-				}
-				top += height + scaleForDisplay(10);
+				height = drawMultipleLines(gr, text_width, textLeft, top, col.info_text, str.album, font_array,
+					str.album_subtitle, subtitlefont_array, maxLines);
+				return height + scaleForDisplay(10);
+			}
+
+			if (pref.showTitleInGrid) {
+				top += drawTitle(top);
+			} else {
+				top += drawAlbumTitle(top, 3);
+			}
+			//Timeline playcount bars
+			if (fb.IsPlaying && str.timeline) {
+				str.timeline.setSize(0, top, albumart_size.x);
+				str.timeline.draw(gr);
+			}
+			top += geo.timeline_h + scaleForDisplay(12);
+			if (pref.showTitleInGrid) {
+				top += drawAlbumTitle(top, 2);
 			}
 
 			// Tag grid
@@ -1081,10 +1079,7 @@ function onOptionsMenu(x, y) {
 		ResizeArtwork(true);
 		RepaintWindow();
 	});
-	cdArtMenu.addItem('Display cdArt above cover', pref.cdart_ontop, () => {
-		pref.cdart_ontop = !pref.cdart_ontop;
-		RepaintWindow();
-	}, !pref.display_cdart);
+	cdArtMenu.addToggleItem('Display cdArt above cover', pref, 'cdart_ontop', () => RepaintWindow(), !pref.display_cdart);
 	cdArtMenu.addToggleItem('Filter out cd/vinyl .jpgs from artwork', pref, 'filterCdJpgsFromAlbumArt');
 	cdArtMenu.addToggleItem('Spin cdArt while songs play (increases memory and CPU)', pref, 'spinCdart', () => {
 		if (pref.spinCdart) {
@@ -1102,10 +1097,8 @@ function onOptionsMenu(x, y) {
 	}, !pref.rotate_cdart || pref.spinCdart);
 	cdArtMenu.appendTo(menu);
 
-	menu.addItem('Draw label art on background', pref.labelArtOnBg, () => {
-		pref.labelArtOnBg = !pref.labelArtOnBg;
-		RepaintWindow();
-	});
+	menu.addToggleItem('Draw label art on background', pref, 'labelArtOnBg', () => RepaintWindow());
+	menu.addToggleItem('Display song title in info grid', pref, 'showTitleInGrid', () => RepaintWindow());
 
 	menu.addSeparator();
 	const menuFontMenu = new Menu('Menu font size');

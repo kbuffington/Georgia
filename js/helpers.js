@@ -167,27 +167,38 @@ function chooseFontForWidth(gr, availableWidth, text, fontList, maxLines) {
  *  in the maximum number of lines available, using the largest font where all of the text
  *  will fit. Where text1 ends and text2 begins will be on the same line if possible, switching
  *  fonts in between.
- *  Returns the height of the drawn text
-*/
+ * @param {GdiGraphics} gr
+ * @param {number} availableWidth The maximum width a line of text can occupy.
+ * @param {number} left X-coordinate to draw text at
+ * @param {number} top Y-coordinate to draw text at
+ * @param {number} color Color of the text to be drawn
+ * @param {string} text1 First text snippet to draw
+ * @param {GdiFont[]} fontList1 Array of fonts to try to fit text1 within availableWidth and maxLines
+ * @param {string=} text2 Second text snippet to draw if supplied
+ * @param {GdiFont[]=} fontList2 Array of fonts to try to fit text2 within availableWidth and maxLines after drawing text1
+ * @param {number} [maxLines=2] Max number of lines to attempt to draw text1 & text2 in. If text doesn't fit ellipses will be added
+ * @returns {number} The height of the drawn text
+ */
 function drawMultipleLines(gr, availableWidth, left, top, color, text1, fontList1, text2, fontList2, maxLines) {
 	maxLines = (typeof maxLines !== 'undefined') ? maxLines : 2;
 	var textArray;
 	var lineHeight;
 	let continuation;
-
-	for (var fontIndex = 0; fontIndex < fontList1.length && fontIndex < fontList2.length; fontIndex++) {
+	for (let fontIndex = 0; fontIndex < fontList1.length && (!text2 || fontIndex < fontList2.length); fontIndex++) {
 		textArray = [];
 		lineHeight = Math.max(gr.CalcTextHeight(text1, fontList1[fontIndex]),
-							  gr.CalcTextHeight(text2, fontList2[fontIndex]))
+							 (text2 ? gr.CalcTextHeight(text2, fontList2[fontIndex]) : 0))
 		continuation = false;	// does font change on same line
+		/** @type {any[]} */
 		var lineText = gr.EstimateLineWrap(text1, fontList1[fontIndex], availableWidth);
 		for (var i = 0; i < lineText.length; i += 2) {
-			textArray.push({ text: lineText[i], x_offset: 0, font: fontList1[fontIndex] });
+			textArray.push({ text: lineText[i].trim(), x_offset: 0, font: fontList1[fontIndex] });
 		}
-		if (textArray.length <= maxLines) {
+		if (textArray.length <= maxLines && text2) {
 			var lastLineWidth = lineText[lineText.length - 1];
+			/** @type {any[]} */
 			var secondaryText = gr.EstimateLineWrap(text2, fontList2[fontIndex], availableWidth - lastLineWidth - 5);
-			let firstSecondaryLine = secondaryText[0];
+			let firstSecondaryLine = secondaryText[0];	// need to subtract the contination of the previous line from text2
 			let textRemainder = text2.substr(firstSecondaryLine.length).trim();
 			if (firstSecondaryLine.trim().length) {
 				textArray.push({ text: firstSecondaryLine, x_offset: lastLineWidth + 5, font: fontList2[fontIndex] });
