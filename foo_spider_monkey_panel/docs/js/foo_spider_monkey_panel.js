@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @typedef {number} float
  */
