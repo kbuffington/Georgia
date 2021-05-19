@@ -1175,7 +1175,7 @@ class Library {
         this.full_list = undefined;
         this.full_list_need_sort = false;	// TODO: can we remove this and all references?
         this.noListUpd = false;
-        // this.otherNode = []; // why does this exist???
+        this.otherNode = []; // why does this exist???
         this.searchNodes = []; // think this is only populated from search?
         this.scr = [];	// maybe scroll position? I can't figure this out
         this.sel = [];	// selected item(s)
@@ -1263,10 +1263,10 @@ class Library {
         if (!state) return;
         p.search_paint();
         p.tree_paint();
-        this.process = false;
+        libraryProps.process = false;
         if (!reset) this.logTree();
         if (libraryProps.rememberTree) { libraryProps.searchText = p.s_txt; if (state == 1) return };
-        if (!handleList) {this.getLibrary(); this.rootNodes(1, this.process);}
+        if (!handleList) {this.getLibrary(); this.rootNodes(1, libraryProps.process);}
         else {
             this.noListUpd = false;
             switch (handleType) {
@@ -1279,7 +1279,7 @@ class Library {
                             handleList.Convert().some((h, j) => {
                                 i = this.list.Find(h);
                                 if (i != -1) {
-                                    if (!arraysEqual(this.node[i], items[j].split(p.splitter))) {
+                                    if (!arraysEqual(this.otherNode[i], items[j].split(p.splitter))) {
                                         this.removed(handleList); this.added(handleList); if (ui.w < 1 || !window.IsVisible) this.upd = 2; else this.lib_update();
                                         return upd_done = true;
                                     }
@@ -1291,7 +1291,7 @@ class Library {
                             handleList.Convert().some((h, j) => {
                                 i = this.list.Find(h);
                                 if (i != -1) {
-                                    if (!arraysEqual(this.node[i], items[j].split("\\"))) {
+                                    if (!arraysEqual(this.otherNode[i], items[j].split("\\"))) {
                                         this.removed(handleList); this.added(handleList); if (ui.w < 1 || !window.IsVisible) this.upd = 2; else this.lib_update();
                                         return upd_done = true;
                                     }
