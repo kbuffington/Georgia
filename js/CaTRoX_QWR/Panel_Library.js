@@ -18,7 +18,11 @@ const s = {
     // fs : new ActiveXObject("Scripting.FileSystemObject"),
     gr: (w, h, im, func) => {let i = gdi.CreateImage(w, h), g = i.GetGraphics(); func(g, i); i.ReleaseGraphics(g); g = null; if (im) return i; else i = null;},
     // padNumber : (num, len, base) => {if (!base) base = 10; return ('000000' + num.toString(base)).substr(-len);},
-    query: (h, q) => {let l = new FbMetadbHandleList(); try {l = fb.GetQueryItems(h, q);} catch (e) {} return l;},
+    query: (h, q) => {let l = new FbMetadbHandleList(); try {
+        if ('audio'.includes(q.toLowerCase())) q = `ARTIST HAS "${q}" OR ALBUM HAS "${q}" OR TITLE HAS "${q} OR LABEL HAS "${q}"`;
+        console.log(q);
+        l = fb.GetQueryItems(h, q);
+    } catch (e) {} return l;},
     run: c => _.runCmd(c),
     scale: $$.getDpi(),
     throttle: (e,i,t) => {var n=!0,r=!0;if("function"!=typeof e)throw new TypeError(FUNC_ERROR_TEXT);return s.isObject(t)&&(n="leading"in t?!!t.leading:n,r="trailing"in t?!!t.trailing:r),s.debounce(e,i,{leading:n,maxWait:i,trailing:r})},
@@ -69,6 +73,13 @@ libraryProps.add_properties({
     zoomFont: [prefix + 'Zoom Font Size (%)', 100],
     zoomNode: [prefix + 'Zoom Node Size (%)', 100],
     baseFontSize: [systemPrefix + 'Font Size', 18],
+    searchEnter: ['Library: Search only on enter', false],
+    searchSend: ['Library: Send Search to Playlist', 1],
+    exp: ['SYSTEM.Remember.Exp', '[]'],
+    process: ['SYSTEM.Remember.Proc', false],
+    sel: ['SYSTEM.Remember.Sel', '[]'],
+    scr: ['SYSTEM.Remember.Scr', '[]'],
+    searchText: ['SYSTEM.Remember.Search Text', ''],
 });
 
 /** @type {*} setting defaults to avoid changing a bunch of crap */
@@ -838,7 +849,7 @@ function panel_operations() {
     this.pos = -1;
     this.rootName = "";
     this.s_cursor = false;
-    this.s_search = false;
+    this.search = false;
     this.s_txt = "";
     this.s_x = 0;
     this.s_h = 0;
@@ -861,7 +872,6 @@ function panel_operations() {
     this.setFilterFont();
 
     // this.filterBy = window.GetProperty("SYSTEM.Filter By", 0);
-    this.searchShow = 2; // show search and filter // TODO: can remove these because it's always true
     // this.pn_h_auto = window.GetProperty("ADV.Height Auto [Expand/Collapse With Root]", false) && libraryProps.rootNode; this.init = true;
     // this.pn_h_max = window.GetProperty("ADV.Height Auto-Expand", 578);
     // this.pn_h_min = window.GetProperty("ADV.Height Auto-Collapse", 100);
@@ -888,7 +898,7 @@ function panel_operations() {
     var paint_y = Math.floor(libraryProps.searchMode || !libraryProps.showScrollbar ? this.s_h : 0);
     this.search_paint = () => {window.RepaintRect(ui.x + ui.margin, ui.y, ui.w - ui.margin, this.s_h);}
     this.setHeight = n => {}//if (!this.pn_h_auto) return; ppt.pn_h = n ? ppt.pn_h_max : ppt.pn_h_min; window.MaxHeight = window.MinHeight = ppt.pn_h;}
-	this.setRootName = () => {this.rootName = libraryProps.rootNode == 2 ? this.grp[libraryProps.viewBy].name : "All Music";}
+    this.setRootName = () => {this.rootName = libraryProps.rootNode == 2 ? this.grp[libraryProps.viewBy].name : "All Music";}
     this.tree_paint = function() {window.RepaintRect(ui.x, ui.y + paint_y, ui.w, ui.h - paint_y + 1);}
     // this.viewBy = window.GetProperty("SYSTEM.View By", 1);
     this.calc_text = () => {
@@ -972,7 +982,7 @@ function panel_operations() {
         this.grp[this.grp.length] = {name: def_ppt.split("//")[0].trim(), type: ""}
         this.folder_view = this.grp.length - 1; libraryProps.filterBy = Math.min(libraryProps.filterBy, this.filt.length - 1); libraryProps.viewBy = Math.min(libraryProps.viewBy, this.grp.length - 1);
         if (this.grp[libraryProps.viewBy].type.includes("%<")) this.multiProcess = true;
-		this.folderView = libraryProps.viewBy == this.folder_view;
+        this.folderView = libraryProps.viewBy == this.folder_view;
 
         if (!this.folderView) {
             if (this.multiProcess) {
@@ -1115,28 +1125,28 @@ function panel_operations() {
     }
 
     this.set = (n, i) => {
-		switch (n) {
-			case 'itemCounts': libraryProps.nodeItemCounts = i; /*library_tree.set();*/ lib_manager.rootNodes(1, true); break;
-			case 'rootNode':
+        switch (n) {
+            case 'itemCounts': libraryProps.nodeItemCounts = i; /*library_tree.set();*/ lib_manager.rootNodes(1, true); break;
+            case 'rootNode':
                 libraryProps.rootNode = i; /*library_tree.set();*/ this.setRootName(); lib_manager.rootNodes(1);
                 // this.pn_h_auto = ppt.pn_h_auto && libraryProps.rootNode; if (this.pn_h_auto) {window.MaxHeight = window.MinHeight = ppt.pn_h;}
                 break;
-			case 'view': lib_manager.time.Reset();
+            case 'view': lib_manager.time.Reset();
                 if (this.s_txt) lib_manager.upd_search = true;
                 this.fields(i < this.grp.length ? i : libraryProps.viewBy, i < this.grp.length ? libraryProps.filterBy : i - this.grp.length);
                 library_tree.subCounts =  {"standard": {}, "search": {}, "filter": {}};
                 lib_manager.getLibrary(); lib_manager.rootNodes();
                 // if (this.pn_h_auto && ppt.pn_h == ppt.pn_h_min && pop.tree[0]) library_tree.clear_child(library_tree.tree[0]);
                 break;
-		}
-	}
+        }
+    }
 }
 if ('DlgCode' in window) { window.DlgCode = 4; }
 
 function Vkeys() {
-	// ppt.zoomKey = s.clamp(ppt.zoomKey, 0, 4);
+    // ppt.zoomKey = s.clamp(ppt.zoomKey, 0, 4);
     let zoomKey = 0; if (zoomKey != 0) zoomKey = [, 0x11, 0x12, 0x1B, 0x09][zoomKey];
-    this.selAll = 1; this.copy = 3; this.back = 8; this.enter = 13; this.shift = 16; this.paste = 22; this.cut = 24; this.redo = 25; this.undo = 26; this.pgUp = 33; this.pgDn = 34; this.end = 35; this.home = 36; this.left = 37; this.up = 38; this.right = 39; this.dn = 40; this.del = 46;
+    this.selAll = 1; this.copy = 3; this.back = 8; this.enter = 13; this.shift = 16; this.paste = 22; this.cut = 24; this.redo = 25; this.undo = 26; this.escape = 27; this.pgUp = 33; this.pgDn = 34; this.end = 35; this.home = 36; this.left = 37; this.up = 38; this.right = 39; this.dn = 40; this.del = 46;
     this.k = n => {switch (n) {case 'enter': return utils.IsKeyPressed(0x0D); break; case 'shift': return utils.IsKeyPressed(0x10); break; case 'ctrl': return utils.IsKeyPressed(0x11); break; case 'alt': return utils.IsKeyPressed(0x12); break; case 'zoom': return !zoomKey ? utils.IsKeyPressed(0x11) && utils.IsKeyPressed(0x12) : utils.IsKeyPressed(zoomKey); break;}}
 }
 
@@ -1165,7 +1175,7 @@ class Library {
         this.full_list = undefined;
         this.full_list_need_sort = false;	// TODO: can we remove this and all references?
         this.noListUpd = false;
-        this.otherNode = []; // why does this exist???
+        // this.otherNode = []; // why does this exist???
         this.searchNodes = []; // think this is only populated from search?
         this.scr = [];	// maybe scroll position? I can't figure this out
         this.sel = [];	// selected item(s)
@@ -1183,21 +1193,58 @@ class Library {
 
         this.swapPrefix = window.GetProperty("ADV.$swapbranchprefix. Prefixes to Swap (| Separator)", "A|The").split("|");
         if (libraryProps.rememberTree) {
-            this.exp = JSON.parse(window.GetProperty("SYSTEM.Remember.Exp", JSON.stringify(this.exp)));
-            this.process = window.GetProperty("SYSTEM.Remember.Proc", false);
-            this.scr = JSON.parse(window.GetProperty("SYSTEM.Remember.Scr", JSON.stringify(this.scr)));
-            this.sel = JSON.parse(window.GetProperty("SYSTEM.Remember.Sel", JSON.stringify(this.sel)));
-            p.s_txt = window.GetProperty("SYSTEM.Remember.Search Text", "");
+            this.exp = JSON.parse(libraryProps.exp)
+            this.process = libraryProps.process;
+            this.scr = JSON.parse(libraryProps.scr)
+            this.sel = JSON.parse(libraryProps.sel)
+            p.s_txt = libraryProps.searchText;
         } else {
-            window.SetProperty("SYSTEM.Remember.Exp", JSON.stringify(this.exp));
-            window.SetProperty("SYSTEM.Remember.Scr", JSON.stringify(this.scr));
-            window.SetProperty("SYSTEM.Remember.Sel", JSON.stringify(this.sel));
-            window.SetProperty("SYSTEM.Remember.Search Text", "");
+            libraryProps.exp = JSON.stringify(this.exp);
+            libraryProps.process = false;
+            libraryProps.scr = JSON.stringify(this.scr);
+            libraryProps.sel = JSON.stringify(this.sel);
+            libraryProps.searchText = '';
         }
 
+        this.search = _.debounce(() => {
+            this.time.Reset(); library_tree.subCounts.search = {}; this.treeState(false, libraryProps.rememberTree); this.rootNodes(); p.setHeight(true);
+            if (libraryProps.searchSend != 2) return;
+            if (p.s_txt) library_tree.load(p.list, false, false, false, true, false);
+            else plman.ClearPlaylist(plman.FindOrCreatePlaylist(libraryProps.libPlaylistName, false));
+        }, 333);
+
+        this.search500 = _.debounce(() => {
+            this.time.Reset(); library_tree.subCounts.search = {}; this.treeState(false, libraryProps.rememberTree); this.rootNodes(); p.setHeight(true);
+            if (libraryProps.searchSend != 2) return;
+            library_tree.load(p.list, false, false, false, true, false);
+        }, 500);
+
+        this.lib_update = _.debounce(() => {this.time.Reset(); library_tree.subCounts =  {"standard": {}, "search": {}, "filter": {}}; this.searchCache = {}; this.rootNodes(2, this.process);}, 500);
     }
 
-    checkTree() {if (!this.upd && !(this.init && libraryProps.rememberTree)) return; this.init = false; timer.reset(timer.update); this.time.Reset(); library_tree.subCounts =  {"standard": {}, "search": {}, "filter": {}}; this.rootNodes(this.upd == 2 ? 2 : 1, this.process); this.upd = 0;}
+    logTree() {
+        let i = 0, ix = -1, tr = 0;
+        this.exp = [];
+        this.sel = [];
+        this.scr = [];
+        const tr_sort = data => {data.sort((a, b) => parseFloat(a.tr) - parseFloat(b.tr)); return data;}
+        libraryProps.process = true;
+        library_tree.tree.forEach(v => {
+            tr = !libraryProps.rootNode ? v.tr : v.tr - 1; if (v.child.length) this.exp.push({tr:tr, a:tr < 1 ? v.name : library_tree.tree[v.par].name, b:tr < 1 ? "" : v.name});
+            tr = v.tr; if (v.sel == true) this.sel.push({tr:tr, a:v.name, b:tr != 0 ? library_tree.tree[v.par].name : "", c:tr > 1 ? library_tree.tree[library_tree.tree[v.par].par].name : ""});
+        });
+        ix = library_tree.get_ix(0, sbar.item_y + ui.row_h / 2, true, false); tr = 0; let l = Math.min(Math.floor(ix + p.rows), library_tree.tree.length);
+        if (ix != -1) {for (i = ix; i < l; i++) {tr = library_tree.tree[i].tr; this.scr.push({tr:tr, a:library_tree.tree[i].name, b:tr != 0 ? library_tree.tree[library_tree.tree[i].par].name : "", c:tr > 1 ? library_tree.tree[library_tree.tree[library_tree.tree[i].par].par].name : ""})}}
+        tr_sort(this.exp);
+        if (libraryProps.rememberTree) {
+            libraryProps.exp = JSON.stringify(this.exp);
+            libraryProps.scr = JSON.stringify(this.scr);
+            libraryProps.sel = JSON.stringify(this.sel);
+        }
+    }
+
+
+    checkTree() {if (!this.upd && !(this.init && libraryProps.rememberTree)) return; this.init = false; timer.reset(timer.update); this.time.Reset(); library_tree.subCounts =  {"standard": {}, "search": {}, "filter": {}}; this.rootNodes(this.upd == 2 ? 2 : 1, libraryProps.process); this.upd = 0;}
     eval(n) {if (!n || !fb.IsPlaying) return ""; const tfo = fb.TitleFormat(n); if (fb.IsPlaying && fb.PlaybackLength <= 0) return tfo.Eval(); const handle = fb.GetNowPlaying(); return handle ? tfo.EvalWithMetadb(handle) : "";}
     removed_f(handle_list) {var j = handle_list.Count; while (j--) {var i = this.list.Find(handle_list[j]); if (i != -1) {this.list.RemoveById(i); this.otherNode.splice(i, 1);}}}
     removed_s(handle_list) {var j = handle_list.Count; while (j--) {var i = p.list.Find(handle_list[j]); if (i != -1) {p.list.RemoveById(i); this.searchNodes.splice(i, 1);}}}
@@ -1216,82 +1263,24 @@ class Library {
         if (!state) return;
         p.search_paint();
         p.tree_paint();
-        try {
-            var i = 0, ix = -1, tr = 0; this.process = false;
-            if (library_tree.tree.length && (!reset || reset && !p.reset)) {
-                tr = 0; this.exp = []; this.process = true; this.sel = [];
-                for (i = 0; i < library_tree.tree.length; i++) {
-                    tr = !libraryProps.rootNode ? library_tree.tree[i].tr : library_tree.tree[i].tr - 1;
-                    if (library_tree.tree[i].child.length) this.exp.push({
-                        tr: tr,
-                        a: tr < 1 ? library_tree.tree[i].name : library_tree.tree[library_tree.tree[i].par].name,
-                        b: tr < 1 ? "" : library_tree.tree[i].name
-                    });
-                    tr = library_tree.tree[i].tr;
-                    if (library_tree.tree[i].sel == true) this.sel.push({
-                        tr: tr,
-                        a: library_tree.tree[i].name,
-                        b: tr != 0 ? library_tree.tree[library_tree.tree[i].par].name : "",
-                        c: tr > 1 ? library_tree.tree[library_tree.tree[library_tree.tree[i].par].par].name : ""
-                    });
-                }
-                ix = library_tree.get_ix(0, p.s_h + ui.row_h / 2, true, false);
-                tr = 0;
-                var l = Math.min(Math.floor(ix + p.rows), library_tree.tree.length);
-                if (ix != -1) {
-                    this.scr = [];
-                    for (i = ix; i < l; i++) {
-                        tr = library_tree.tree[i].tr;
-                        this.scr.push({tr:tr, a:library_tree.tree[i].name, b:tr != 0 ? library_tree.tree[library_tree.tree[i].par].name : "", c:tr > 1 ? library_tree.tree[library_tree.tree[library_tree.tree[i].par].par].name : ""})
-                        // console.log(this.scr);
-                    }
-                }
-
-                const tr_sort = function(data) {
-                    data.sort((a, b) => {
-                        return parseFloat(a.tr) - parseFloat(b.tr)
-                    });
-                    return data;
-                }
-
-                tr_sort(this.exp);
-                if (libraryProps.rememberTree) {
-                    window.SetProperty("SYSTEM.Remember.Exp",JSON.stringify(this.exp));
-                    window.SetProperty("SYSTEM.Remember.Proc", this.process);
-                    window.SetProperty("SYSTEM.Remember.Scr",JSON.stringify(this.scr));
-                    window.SetProperty("SYSTEM.Remember.Sel",JSON.stringify(this.sel));
-                }
-            }
-            if (!reset || reset && !p.reset && libraryProps.rememberTree) {window.SetProperty("SYSTEM.Remember.Search Text", p.s_txt); if (state == 1) return;}
-        } catch (e) {
-            console.log('errored in library_manager.treeState');
-        }
-        if (!handleList) {
-            this.getLibrary();
-            this.rootNodes(1, this.process);
-        } else {
+        this.process = false;
+        if (!reset) this.logTree();
+        if (libraryProps.rememberTree) { libraryProps.searchText = p.s_txt; if (state == 1) return };
+        if (!handleList) {this.getLibrary(); this.rootNodes(1, this.process);}
+        else {
+            this.noListUpd = false;
             switch (handleType) {
-                case 0:
-                    this.added(handleList);
-                    if (ui.w < 1 || !window.IsVisible)
-                        this.upd = 2;
-                    else
-                        timer.lib_update();
-                    break;
+                case 0: this.added(handleList); if (this.noListUpd) break; if (ui.w < 1 || !window.IsVisible) this.upd = 2; else this.lib_update(); break;
                 case 1:
-                    var upd_done = false, tree_type = !p.folderView ? 0 : 1;
-                    let items;
+                    let i, items, upd_done = false, tree_type = !p.folderView ? 0 : 1;
                     switch (tree_type) { // check for changes to items; any change updates all
                         case 0:
                             let tfo = fb.TitleFormat(p.view); items = tfo.EvalWithMetadbs(handleList);
                             handleList.Convert().some((h, j) => {
                                 i = this.list.Find(h);
                                 if (i != -1) {
-                                    if (!arraysEqual(this.otherNode[i], items[j].split(p.splitter))) {
-                                        this.removed(handleList);
-                                        this.added(handleList);
-                                        if (ui.w < 1 || !window.IsVisible) this.upd = 2;
-                                        else timer.lib_update();
+                                    if (!arraysEqual(this.node[i], items[j].split(p.splitter))) {
+                                        this.removed(handleList); this.added(handleList); if (ui.w < 1 || !window.IsVisible) this.upd = 2; else this.lib_update();
                                         return upd_done = true;
                                     }
                                 }
@@ -1302,10 +1291,8 @@ class Library {
                             handleList.Convert().some((h, j) => {
                                 i = this.list.Find(h);
                                 if (i != -1) {
-                                    if (!arraysEqual(this.otherNode[i], items[j].split("\\"))) {
-                                        this.removed(handleList);
-                                        this.added(handleList); if (ui.w < 1 || !window.IsVisible) this.upd = 2;
-                                        else timer.lib_update();
+                                    if (!arraysEqual(this.node[i], items[j].split("\\"))) {
+                                        this.removed(handleList); this.added(handleList); if (ui.w < 1 || !window.IsVisible) this.upd = 2; else this.lib_update();
                                         return upd_done = true;
                                     }
                                 }
@@ -1313,52 +1300,114 @@ class Library {
                             break;
                     }
                     if (upd_done) break;
-                    if (libraryProps.filterBy > 0 && p.searchShow > 1) { // filter: check if not done
-                        let startFilter = this.list.Clone(),
-                            newFilterItems = s.query(handleList, this.filterQuery),
-                            newFilter = this.list.Clone();
-                        newFilter.InsertRange(newFilter.Count, newFilterItems);
-                        startFilter.Sort(); newFilter.Sort(); newFilter.MakeDifference(startFilter);
-                        if (newFilter.Count) {
-                            this.removed_f(handleList);
-                            this.added_f(newFilterItems);
-                            if (!p.s_txt) p.list = this.list;
-                            if (ui.w < 1 || !window.IsVisible) this.upd = 2;
-                            else timer.lib_update();
-                        }
+                    if (libraryProps.filterBy > 0 && pptDefault.searchShow > 1) { // filter: check if not done
+                        let newFilterItems = s.query(handleList, this.filterQuery), origFilter = this.list.Clone();
+                        // addns
+                        origFilter.Sort();
+                        newFilterItems.Sort();
+                        newFilterItems.MakeDifference(origFilter);
+                        if (newFilterItems.Count) this.added_f(newFilterItems);
+                        // removals
+                        let removeFilterItems = handleList.Clone();
+                        removeFilterItems.Sort();
+                        removeFilterItems.MakeIntersection(origFilter); // handles in this.list
+                        let handlesInFilter = s.query(removeFilterItems, this.filterQuery); // handles in this.list & filter
+                        handlesInFilter.Sort();
+                        removeFilterItems.MakeDifference(handlesInFilter); // handles to remove
+                        if (removeFilterItems.Count) this.removed_f(removeFilterItems);
+                        if (newFilterItems.Count || removeFilterItems.Count) {if (!p.s_txt) p.list = this.list; if (ui.w < 1 || !window.IsVisible) this.upd = 2; else this.lib_update();}
                     }
                     if (p.s_txt) { // search: check if not done
-                        let startSearch = p.list.Clone(), newSearchItems = new FbMetadbHandleList();
-                        this.validSearch = true; try {newSearchItems = fb.GetQueryItems(handleList, p.s_txt);} catch (e) {this.validSearch = false;}
+                        let handlesInSearch = new FbMetadbHandleList(), newSearchItems = new FbMetadbHandleList(), origSearch = p.list.Clone();
+                        // addns
+                        this.validSearch = true; try {newSearchItems = s.query(handleList, p.s_txt);} catch (e) {this.validSearch = false;}
+                        origSearch.Sort();
                         newSearchItems.Sort();
-                        if (libraryProps.filterBy > 0 && p.searchShow > 1) {let newFilt = this.list.Clone(); newFilt.Sort(); newSearchItems.MakeIntersection(newFilt);}
-                        let newSearch = p.list.Clone();
-                        newSearch.InsertRange(newSearch.Count, newSearchItems);
-                        startSearch.Sort(); newSearch.Sort(); newSearch.MakeDifference(startSearch);
-                        if (newSearch.Count) {
-                            this.removed_s(handleList);
-                            this.added_s(newSearchItems);
-                            this.node = this.searchNodes.slice();
-                            if (!p.list.Count) {
-                                library_tree.tree = [];
-                                sbar.set_rows(0);
-                                this.none = this.validSearch ? "Nothing found" : "Invalid search expression";
-                                p.tree_paint();
-                                break;
-                            }
-                            if (ui.w < 1 || !window.IsVisible) this.upd = 2; else timer.lib_update();
+                        if (libraryProps.filterBy > 0 && pptDefault.searchShow > 1) {let newFilt = this.list.Clone(); newFilt.Sort(); newSearchItems.MakeIntersection(newFilt);}
+                        newSearchItems.MakeDifference(origSearch);
+                        if (newSearchItems.Count) this.added_s(newSearchItems);
+                        // removals
+                        let removeSearchItems = handleList.Clone();
+                        removeSearchItems.Sort();
+                        removeSearchItems.MakeIntersection(origSearch); // handles in origSearch (present in any filter)
+                        this.validSearch = true; try {handlesInSearch = s.query(removeSearchItems, p.s_txt);} catch (e) {this.validSearch = false;}
+                        handlesInSearch.Sort();
+                        removeSearchItems.MakeDifference(handlesInSearch); // handles to remove
+                        if (removeSearchItems.Count) this.removed_s(removeSearchItems);
+                        if (newSearchItems.Count || removeSearchItems.Count){
+                            if (!p.list.Count) {library_tree.tree = []; sbar.set_rows(0); this.none = this.validSearch ? "Nothing found" : "Invalid search expression"; p.tree_paint(); break;}
+                            if (ui.w < 1 || !window.IsVisible) this.upd = 2; else this.lib_update();
                         }
                     }
                     break;
                 case 2:
                     this.removed(handleList);
+                    if (this.noListUpd) break;
                     if (ui.w < 1 || !window.IsVisible)
                         this.upd = 2;
                     else
-                        timer.lib_update();
+                        this.lib_update();
                     break;
             }
         }
+        //             if (upd_done) break;
+        //             if (libraryProps.filterBy > 0 && pptDefault.searchShow > 1) { // filter: check if not done
+        //                 let startFilter = this.list.Clone(),
+        //                     newFilterItems = s.query(handleList, this.filterQuery),
+        //                     newFilter = this.list.Clone();
+        //                 newFilter.InsertRange(newFilter.Count, newFilterItems);
+        //                 startFilter.Sort(); newFilter.Sort(); newFilter.MakeDifference(startFilter);
+        //                 if (newFilter.Count) {
+        //                     this.removed_f(handleList);
+        //                     this.added_f(newFilterItems);
+        //                     if (!p.s_txt) p.list = this.list;
+        //                     if (ui.w < 1 || !window.IsVisible) this.upd = 2;
+        //                     else timer.lib_update();
+        //                 }
+        //             }
+        //             if (p.s_txt) { // search: check if not done
+        //                 let startSearch = p.list.Clone(), newSearchItems = new FbMetadbHandleList();
+        //                 this.validSearch = true;
+        //                 try {
+        //                     let searchText = p.s_txt;
+        //                     if (searchText.length > 1 && 'audio'.includes(searchText.toLowerCase())) {
+        //                         // any search with a portion of "audio" in it will return all results:
+        //                         searchText = `ARTIST HAS "${searchText}" OR ALBUM HAS "${searchText}" OR TITLE HAS "${searchText} OR LABEL HAS "${searchText}"`;
+        //                     }
+        //                     console.log(searchText);
+        //                     newSearchItems = fb.GetQueryItems(handleList, searchText);
+        //                 } catch (e) {
+        //                     this.validSearch = false;
+        //                 }
+        //                 newSearchItems.Sort();
+        //                 if (libraryProps.filterBy > 0 && pptDefault.searchShow > 1) {let newFilt = this.list.Clone(); newFilt.Sort(); newSearchItems.MakeIntersection(newFilt);}
+        //                 let newSearch = p.list.Clone();
+        //                 newSearch.InsertRange(newSearch.Count, newSearchItems);
+        //                 startSearch.Sort(); newSearch.Sort(); newSearch.MakeDifference(startSearch);
+        //                 if (newSearch.Count) {
+        //                     this.removed_s(handleList);
+        //                     this.added_s(newSearchItems);
+        //                     this.node = this.searchNodes.slice();
+        //                     if (!p.list.Count) {
+        //                         library_tree.tree = [];
+        //                         sbar.set_rows(0);
+        //                         this.none = this.validSearch ? "Nothing found" : "Invalid search expression";
+        //                         p.tree_paint();
+        //                         break;
+        //                     }
+        //                     if (ui.w < 1 || !window.IsVisible) this.upd = 2; else timer.lib_update();
+        //                 }
+        //             }
+        //             break;
+        //         case 2:
+        //             this.removed(handleList);
+        //             if (ui.w < 1 || !window.IsVisible)
+        //                 this.upd = 2;
+        //             else
+        //                 timer.lib_update();
+        //             break;
+        //     }
+        // }
     }
 
     getFilterQuery() {
@@ -1412,7 +1461,7 @@ class Library {
         if (p.s_txt && (this.upd_search || lib_update == 1)) {
             this.validSearch = true;
             this.none = "";
-            try {p.list = fb.GetQueryItems(this.list, p.s_txt);} catch (e) {this.list = this.list.Clone(); p.list.RemoveAll(); this.validSearch = false;}
+            try {p.list = s.query(this.list, p.s_txt);} catch (e) {this.list = this.list.Clone(); p.list.RemoveAll(); this.validSearch = false;}
             if (!p.list.Count) {library_tree.tree = []; sbar.set_rows(0); this.none = this.validSearch ? "Nothing found" : "Invalid search expression"; p.tree_paint(); return;}
             this.rootNames(p.list, 1);
             this.node = this.searchNodes.slice(); this.upd_search = false;
@@ -1471,24 +1520,50 @@ class Library {
         console.log("Library Initialized in: " + this.time.Time / 1000 + " seconds");
         if (lib_update && process) {
             try {
-                var exp_l = this.exp.length, scr_l = this.scr.length, sel_l = this.sel.length, tree_l = library_tree.tree.length;
-                let h;
-                for (h = 0; h < exp_l; h++) {
-                    if (this.exp[h].tr == 0) {for (let j = 0; j < tree_l; j++) if (library_tree.tree[j].name.toUpperCase() == this.exp[h].a.toUpperCase()) {library_tree.branch(library_tree.tree[j]); tree_l = library_tree.tree.length; break;}}
-                    else if (this.exp[h].tr > 0) {for (let j = 0; j < tree_l; j++) if (library_tree.tree[j].name.toUpperCase() == this.exp[h].b.toUpperCase() && library_tree.tree[library_tree.tree[j].par].name.toUpperCase() == this.exp[h].a.toUpperCase()) {library_tree.branch(library_tree.tree[j]); tree_l = library_tree.tree.length; break;}}
-                }
-                for (h = 0; h < sel_l; h++) {
-                    if (this.sel[h].tr == 0) {for (let j = 0; j < tree_l; j++) if (library_tree.tree[j].name.toUpperCase() == this.sel[h].a.toUpperCase()) {library_tree.tree[j].sel = true; break;}}
-                    else if (this.sel[h].tr == 1) {for (let j = 0; j < tree_l; j++) if (library_tree.tree[j].name.toUpperCase() == this.sel[h].a.toUpperCase() && library_tree.tree[library_tree.tree[j].par].name.toUpperCase() == this.sel[h].b.toUpperCase()) {library_tree.tree[j].sel = true; break;}}
-                    else if (this.sel[h].tr > 1) {for (let j = 0; j < tree_l; j++) if (library_tree.tree[j].name.toUpperCase() == this.sel[h].a.toUpperCase() && library_tree.tree[library_tree.tree[j].par].name.toUpperCase() == this.sel[h].b.toUpperCase() && library_tree.tree[library_tree.tree[library_tree.tree[j].par].par].name.toUpperCase() == this.sel[h].c.toUpperCase()) {library_tree.tree[j].sel = true; break;}}
-                }
-                var scr_pos = false; h = 0;
-                while (h < scr_l && !scr_pos) {
-                    if (this.scr[h].tr == 0) {for (let j = 0; j < tree_l; j++) if (library_tree.tree[j].name.toUpperCase() == this.scr[h].a.toUpperCase()) {sbar.check_scroll(!h ? j * ui.row_h : (j - 3) * ui.row_h); scr_pos = true; break;}}
-                    else if (this.scr[h].tr == 1 && !scr_pos) {for (let j = 0; j < tree_l; j++) if (library_tree.tree[j].name.toUpperCase() == this.scr[h].a.toUpperCase() && library_tree.tree[library_tree.tree[j].par].name.toUpperCase() == this.scr[h].b.toUpperCase()) {sbar.check_scroll(!h ? j * ui.row_h : (j - 3) * ui.row_h); scr_pos = true; break;}}
-                    else if (this.scr[h].tr > 1 && !scr_pos) {for (let j = 0; j < tree_l; j++) if (library_tree.tree[j].name.toUpperCase() == this.scr[h].a.toUpperCase() && library_tree.tree[library_tree.tree[j].par].name.toUpperCase() == this.scr[h].b.toUpperCase() && library_tree.tree[library_tree.tree[library_tree.tree[j].par].par].name.toUpperCase() == this.scr[h].c.toUpperCase()) {sbar.check_scroll(!h ? j * ui.row_h : (j - 3) * ui.row_h); scr_pos = true; break;}}
-                    h++;
-                }
+                const match = (a, b) =>  a && a.name.toUpperCase() == b.toUpperCase();
+                this.exp.forEach(v => {
+                    if (v.tr == 0) {
+                        library_tree.tree.some(w => { // some ~5x faster than for...of
+                            if (match(w, v.a)) {library_tree.branch(w); return true;}
+                        });
+                    } else if (v.tr > 0) {
+                        library_tree.tree.some(w => {
+                            if (match(w, v.b) && match(library_tree.tree[w.par], v.a)) {library_tree.branch(w); return true;}
+                        });
+                    }
+                });
+                this.sel.forEach(v => {
+                    if (v.tr == 0) {
+                        library_tree.tree.some(w => {
+                            if (match(w, v.a)) return w.sel = true;
+                        });
+                    } else if (v.tr == 1) {
+                        library_tree.tree.some(w => {
+                            if (match(w, v.a) && match(library_tree.tree[w.par], v.b)) return w.sel = true;
+                        });
+                    } else if (v.tr > 1) {
+                        library_tree.tree.some(w => {
+                            if (match(w, v.a) && match(library_tree.tree[w.par], v.b) && match(library_tree.tree[library_tree.tree[w.par].par], v.c)) return w.sel = true;
+                        });
+                    }
+                });
+                let scr_pos = false;
+                this.scr.some((v, h) => {
+                    if (scr_pos) return true;
+                    if (v.tr == 0) {
+                        library_tree.tree.some((w, j) => {
+                            if (match(w, v.a)) {sbar.check_scroll(!h ? j * ui.row_h : (j - 3) * ui.row_h); return scr_pos = true;}
+                        });
+                    } else if (v.tr == 1) {
+                        library_tree.tree.some((w, j) => {
+                            if (match(w, v.a) && match(library_tree.tree[w.par], v.b)) {sbar.check_scroll(!h ? j * ui.row_h : (j - 3) * ui.row_h); return scr_pos = true;}
+                        });
+                    } else if (v.tr > 1) {
+                        library_tree.tree.some((w, j) => {
+                            if (match(w, v.a) && match(library_tree.tree[w.par], v.b) && match(library_tree.tree[library_tree.tree[w.par].par], v.c)) {sbar.check_scroll(!h ? j * ui.row_h : (j - 3) * ui.row_h); return scr_pos = true;}
+                        });
+                    }
+                });
                 if (!scr_pos) {sbar.reset(); p.tree_paint();}
             } catch (e) {};
         } else this.treeState(false, libraryProps.rememberTree);
@@ -1518,7 +1593,7 @@ class Library {
         switch (addType) {
             case 0:
                 this.full_list.InsertRange(this.full_list.Count, handleList); this.full_list_need_sort = true;
-                if (libraryProps.filterBy > 0 && p.searchShow > 1) {
+                if (libraryProps.filterBy > 0 && pptDefault.searchShow > 1) {
                     const newFilterItems = s.query(handleList, this.filterQuery);
                     this.list.InsertRange(this.list.Count, newFilterItems); p.sort(this.list);
                 }
@@ -1542,7 +1617,7 @@ class Library {
                 if (this.list.Count) this.empty = "";
                 if (p.s_txt) {
                     let newSearchItems = new FbMetadbHandleList();
-                    this.validSearch = true; try {newSearchItems = fb.GetQueryItems(handleList, p.s_txt);} catch(e) {this.validSearch = false;}
+                    this.validSearch = true; try {newSearchItems = s.query(handleList, p.s_txt);} catch(e) {this.validSearch = false;}
                     p.list.InsertRange(p.list.Count, newSearchItems); p.sort(p.list); p.sort(newSearchItems);
                     switch (tree_type) {
                         case 0:
@@ -1563,12 +1638,12 @@ class Library {
                 } else p.list = this.list;
                 break;
             case 1:
-                let lis = libraryProps.filterBy > 0 && p.searchShow > 1 ? s.query(handleList, this.filterQuery) : handleList; p.sort(lis);
+                let lis = libraryProps.filterBy > 0 && pptDefault.searchShow > 1 ? s.query(handleList, this.filterQuery) : handleList; p.sort(lis);
                 this.binaryInsert(p.folderView, lis, this.list, this.otherNode);
                 if (this.list.Count) this.empty = "";
                 if (p.s_txt) {
                     let newSearchItems = new FbMetadbHandleList();
-                    this.validSearch = true; try {newSearchItems = fb.GetQueryItems(handleList, p.s_txt);} catch(e) {this.validSearch = false;}
+                    this.validSearch = true; try {newSearchItems = s.query(handleList, p.s_txt);} catch(e) {this.validSearch = false;}
                     this.binaryInsert(p.folderView, newSearchItems, p.list, this.searchNodes);
                     this.node = this.searchNodes.slice();
                     if (!p.list.Count) {
@@ -1583,7 +1658,7 @@ class Library {
         // 	case handle_list.Count < 100:
         // 		/** @type {FbMetadbHandleList} */
         // 		let lis;
-        // 		if (p.filterBy > 0 && p.searchShow > 1) {
+        // 		if (p.filterBy > 0 && pptDefault.searchShow > 1) {
         // 			try {
         // 				lis = fb.GetQueryItems(handle_list, p.filt[p.filterBy].type);
         // 			} catch (e) {}
@@ -1606,7 +1681,7 @@ class Library {
         // 	default:
         // 		this.full_list.InsertRange(this.full_list.Count, handle_list);
         // 		this.full_list_need_sort = true;
-        // 		if (p.filterBy > 0 && p.searchShow > 1) {
+        // 		if (p.filterBy > 0 && pptDefault.searchShow > 1) {
         // 			var newFilterItems = fb.CreateHandleList();
         // 			try {newFilterItems = fb.GetQueryItems(handle_list, p.filt[p.filterBy].type);} catch (e) {}
         // 			this.list.InsertRange(this.list.Count, newFilterItems);
@@ -1704,7 +1779,7 @@ class Library {
 
     removed(handleList) {
         let i, j = handleList.Count; while (j--) {i = this.list.Find(handleList[j]); if (i != -1) {this.list.RemoveById(i); this.otherNode.splice(i, 1);}}
-        if (libraryProps.filterBy > 0 && p.searchShow > 1) {
+        if (libraryProps.filterBy > 0 && pptDefault.searchShow > 1) {
             j = handleList.Count;
             if (this.full_list_need_sort) p.sort(this.full_list);
             this.full_list_need_sort = false;
@@ -1742,16 +1817,16 @@ const ObjType = {
 /** called Populate() in other version */
 function LibraryTree() {
     this.setActions = (n, i) => {
-		switch (n) {
-			case 'click': libraryProps.clickAction = i; break;
-			case 'key': libraryProps.keyAction = i; break;
-			case 'dblClick': libraryProps.dblClickAction = i; return;
-			case 'send': this.autoPlay.send = !this.autoPlay.send; pptDefault.autoPlay = this.autoPlay.send; return;
-		}
-		this.autoPlay = {click: libraryProps.clickAction < 2 ? false : libraryProps.clickAction, send: pptDefault.autoPlay}
-		this.autoFill = {mouse: libraryProps.clickAction == 1 ? true : false, key: libraryProps.keyAction}
+        switch (n) {
+            case 'click': libraryProps.clickAction = i; break;
+            case 'key': libraryProps.keyAction = i; break;
+            case 'dblClick': libraryProps.dblClickAction = i; return;
+            case 'send': this.autoPlay.send = !this.autoPlay.send; pptDefault.autoPlay = this.autoPlay.send; return;
+        }
+        this.autoPlay = {click: libraryProps.clickAction < 2 ? false : libraryProps.clickAction, send: pptDefault.autoPlay}
+        this.autoFill = {mouse: libraryProps.clickAction == 1 ? true : false, key: libraryProps.keyAction}
         // console.log(`clickAction: ${libraryProps.clickAction}, autoPlay = {click: ${this.autoPlay.click}, send: ${this.autoPlay.send}}, autoFill = {mouse: ${this.autoFill.mouse}, key: ${this.autoFill.key}}`);
-	};
+    };
     this.setActions();
     var get_pos = -1,
         handles = null,
@@ -1836,9 +1911,9 @@ function LibraryTree() {
     var uniq = function(a) {
         return [... new Set(a)];
     }
-    this.add = function (x, y, pl) {
+    this.add = (x, y, pl) => {
         if (y < p.s_h) return;
-        var ix = this.get_ix(x, y, true, false);
+        const ix = this.get_ix(x, y, true, false);
         p.pos = ix;
         if (ix < this.tree.length && ix >= 0)
             if (this.check_ix(this.tree[ix], x, y, true)) {
@@ -1884,9 +1959,7 @@ function LibraryTree() {
     //     return im;
     // }
     const checkRow = (x, y) => {m_br = -1; const im = this.get_ix(x, y, true, false); if (im >= this.tree.length || im < 0) return -1; const item = this.tree[im]; if (x < Math.round(ui.pad * item.tr) + ui.icon_w + ui.margin + ui.x && (!item.track || libraryProps.rootNode && item.tr == 0)) m_br = im; return im;}
-    this.clear = function () {
-        for (var i = 0; i < this.tree.length; i++) this.tree[i].sel = false;
-    }
+    this.clear = () => {this.tree.forEach(v => v.sel = false);}
     this.clear_child = function(br) {br.child = []; this.buildTree(lib_manager.root, 0, true, true);}
     this.deActivate_tooltip = function() {tt_c = 0; tt.Text = ""; tt.TrackActivate = false; tt.Deactivate(); p.tree_paint();}
     // this.expandNodes = function (obj, isRoot) {
@@ -1921,7 +1994,7 @@ function LibraryTree() {
     this.leave = function(){if (men.r_up || tt.Text) return; m_br = -1; row_o = 0; m_i = -1; ix_o = 0; p.tree_paint();}
     this.mbtn_up = function(x, y) {this.add(x, y, mbtn_pl);}
     this.nowPlayingShow = () => {if (this.nowp != -1) {let np_i = -1; this.tree.forEach((v, i) => {if ((!libraryProps.rootNode || libraryProps.rootNode && v.tr) && v.item.includes(this.nowp)) np_i = i;}); if (np_i != -1) {sbar.check_scroll(np_i  * ui.row_h - Math.round(sbar.rows_drawn / 2 - 1) * ui.row_h);}}}
-    this.on_char = function(code) {if (p.s_search || code != vk.copy) return; var handle_list = this.selected(true); fb.CopyHandleListToClipboard(handle_list); }
+    this.on_char = function(code) {if (p.search || code != vk.copy) return; var handle_list = this.selected(true); fb.CopyHandleListToClipboard(handle_list); }
     this.on_focus = function(p_is_focused) {is_focused = p_is_focused; if (p_is_focused && handles && handles.Count) selection_holder.SetSelection(handles);}
     this.row = function(y) {return Math.round((y - p.s_h - ui.row_h * 0.5) / ui.row_h);}
     this.selected = n => {if (n) this.get_sel_items(); return getItems(this.sel_items);}
@@ -2104,7 +2177,7 @@ function LibraryTree() {
             }
         }
         const br_l = br.length, par = this.tree.length - 1; if (tr == 0) this.tree = []; let type;
-        if (libraryProps.nodeItemCounts == 2) type = p.s_txt ? "search" : libraryProps.filterBy > 0 && p.searchShow > 1 ? "filter" : "standard";
+        if (libraryProps.nodeItemCounts == 2) type = p.s_txt ? "search" : libraryProps.filterBy > 0 && pptDefault.searchShow > 1 ? "filter" : "standard";
         br.forEach((v, i) => {
             j = this.tree.length; this.tree[j] = v;
             this.tree[j].top = !i ? true : false; this.tree[j].bot = i == br_l - 1 ? true : false;
@@ -2196,7 +2269,8 @@ function LibraryTree() {
                 i = b.length; while (i--) {if (i != 0 && b[i].name.toUpperCase() == b[i - 1].name.toUpperCase()) b.splice(i, 1);}
                 break;
         }
-        this.subCounts[type][key] = b.length; return b.length;
+        this.subCounts[type][key] = b.length;
+        return b.length;
     }
 
     this.create_images = function() {
@@ -2519,22 +2593,22 @@ function LibraryTree() {
         } catch (e) {}
     }
 
-	const nodeExpandCollapse = (x, y, item, ix) => {
-		const expanded = item.child.length > 0 ? 1 : 0;
-		switch (expanded) {
-			case 0:
-				if (libraryProps.autoCollapse) branch_chg(item);
-				const row = this.row(y);
-				this.branch(item, !libraryProps.rootNode || ix ? false : true, true); if (!ix) p.setHeight(true);
-				if (libraryProps.autoCollapse) ix = item.ix;
-				if (row + 1 + item.child.length > this.rows) {
-					if (item.child.length > (this.rows - 2)) sbar.check_scroll(ix * ui.row_h);
-					else sbar.check_scroll(Math.min(ix * ui.row_h,(ix + 1 - sbar.rows_drawn + item.child.length) * ui.row_h));
-				} break;
-			case 1: this.clear_child(item); if (!ix && this.tree.length == 1) p.setHeight(false); break;
-		}
-		if (sbar.scroll > ix * ui.row_h) sbar.check_scroll(ix * ui.row_h); checkRow(x, y);
-	}
+    const nodeExpandCollapse = (x, y, item, ix) => {
+        const expanded = item.child.length > 0 ? 1 : 0;
+        switch (expanded) {
+            case 0:
+                if (libraryProps.autoCollapse) branch_chg(item);
+                const row = this.row(y);
+                this.branch(item, !libraryProps.rootNode || ix ? false : true, true); if (!ix) p.setHeight(true);
+                if (libraryProps.autoCollapse) ix = item.ix;
+                if (row + 1 + item.child.length > this.rows) {
+                    if (item.child.length > (this.rows - 2)) sbar.check_scroll(ix * ui.row_h);
+                    else sbar.check_scroll(Math.min(ix * ui.row_h,(ix + 1 - sbar.rows_drawn + item.child.length) * ui.row_h));
+                } break;
+            case 1: this.clear_child(item); if (!ix && this.tree.length == 1) p.setHeight(false); break;
+        }
+        if (sbar.scroll > ix * ui.row_h) sbar.check_scroll(ix * ui.row_h); checkRow(x, y);
+    }
 
     // this.send = function(item, x, y) {
     //     if (!this.check_ix(item, x, y, false)) return;
@@ -2546,14 +2620,14 @@ function LibraryTree() {
         if (!this.check_ix(item, x, y, false)) return;
         if (vk.k('ctrl')) this.load(this.sel_items, true, false, false, this.gen_pl, false);
         else if (vk.k('shift')) this.load(this.sel_items, true, false, false, this.gen_pl, false);
-		else this.load(/* range(item.item) */item.item, true, false, this.autoPlay.click, this.gen_pl, false);
+        else this.load(/* range(item.item) */item.item, true, false, this.autoPlay.click, this.gen_pl, false);
     }
 
     const track = (item, x, y) => {
         if (!this.check_ix(item, x, y, false)) return;
         if (vk.k('ctrl')) tracking(this.sel_items);
         else if (vk.k('shift')) tracking(this.sel_items);
-		else tracking(item.item);
+        else tracking(item.item);
     }
 
     this.lbtn_dn = (x, y) => {
@@ -2597,6 +2671,7 @@ function LibraryTree() {
                 //     sbar.check_scroll(ix * ui.row_h);
                 // this.check_row(x, y);
                 nodeExpandCollapse(x, y, item, ix);
+                lib_manager.treeState(false, libraryProps.rememberTree);
                 break;
             case ObjType.Item:
                 // only use for this code is drag/drop which doesn't work in Georgia since there's no place to drop to
@@ -2611,17 +2686,16 @@ function LibraryTree() {
                 if (vk.k('shift')) get_selection(ix, item.sel);
                 break;
         }
-        lib_manager.treeState(false, libraryProps.rememberTree);
     }
 
-    this.lbtn_up = function(x, y) {
+    this.lbtn_up = (x, y) => {
         last_pressed_coord = {x: undefined, y: undefined};
         lbtn_dn = false;
-        if (y < p.s_h || x < ui.x || sent || but.Dn) return;
+        if (y < p.s_h || x < ui.x || dbl_clicked || but.Dn) return;
         const ix = this.get_ix(x, y, true, false);
         p.pos = ix;
-        if (ix >= this.tree.length || ix < 0)
-            return; // get_selection(-1);
+        if (ix >= this.tree.length || ix < 0) return;
+        // if (ppt.touchControl && (this.autoFill.mouse || this.autoPlay.click) && ui.touch_dn_id != ix) return;
         const item = this.tree[ix];
         if (clicked_on != ObjType.Item) return;
         if (vk.k('alt')) {
@@ -2633,8 +2707,6 @@ function LibraryTree() {
         } else {
             get_selection(ix, item.sel);
         }
-        // p.tree_paint();
-        // lib_manager.treeState(false, libraryProps.rememberTree);
         if (this.autoFill.mouse || this.autoPlay.click) {
             window.Repaint(true);
             send(item, x, y);
@@ -2642,6 +2714,7 @@ function LibraryTree() {
             p.tree_paint();
             track(item, x, y);
         }
+        lib_manager.treeState(false, libraryProps.rememberTree);
     }
 
     this.dragDrop = function(x, y) {
@@ -2690,11 +2763,11 @@ function LibraryTree() {
         // }
         switch (clicked_on) {
             case ObjType.Node: nodeExpandCollapse(x, y, item, ix); break;
-			case ObjType.Item:
+            case ObjType.Item:
                 if (!this.check_ix(item, x, y, false)) return;
                 if (libraryProps.dblClickAction == 2 && !this.autoFill.mouse && !this.autoPlay.click) return send(item, x, y);
-				if (!libraryProps.dblClickAction && !item.track) {nodeExpandCollapse(x, y, item, ix); lib_manager.treeState(false, libraryProps.rememberTree);}
-				if (libraryProps.dblClickAction == 2 || this.autoPlay.click == 2) return;
+                if (!libraryProps.dblClickAction && !item.track) {nodeExpandCollapse(x, y, item, ix); lib_manager.treeState(false, libraryProps.rememberTree);}
+                if (libraryProps.dblClickAction == 2 || this.autoPlay.click == 2) return;
                 if (libraryProps.dblClickAction || !libraryProps.dblClickAction && !item.child.length) {
                     if (!this.autoFill.mouse) send(item, x, y);
                     var playlistIndex = plman.FindOrCreatePlaylist(libraryProps.libPlaylistName, false);
@@ -2767,7 +2840,7 @@ function LibraryTree() {
     }
 
     this.on_key_down = function(vkey) {
-        if (p.s_search) return;
+        if (p.search) return;
         if (vk.k('enter')) {
             if (!this.sel_items.length) return;
             switch (true) {
@@ -2846,7 +2919,7 @@ function searchLibrary() {
         cursor_width = scaleForDisplay(1);
     const calc_text = () => {s.gr(1, 1, false, g => txt_w = g.CalcTextWidth(p.s_txt.substr(offsetChars), ui.font));}
     var drawcursor = (gr) => {
-        if (p.s_search && p.s_cursor && selStart == selEnd && cx >= offsetChars) {
+        if (p.search && p.s_cursor && selStart == selEnd && cx >= offsetChars) {
             var x1 = p.s_x + get_cursor_x(cx);
             gr.DrawLine(x1, p.s_y + p.s_sp * 0.1, x1, p.s_y + p.s_sp * 0.85, cursor_width, ui.col.text);
         }
@@ -2856,15 +2929,15 @@ function searchLibrary() {
      * @param {GdiGraphics} gr
      * @return {number} bgColor drawn
      */
-    var drawsel = function(gr) {
+    const drawsel = gr => {
         if (selStart == selEnd) return;
-        var cursor_y = Math.round(p.s_sp / 2 + ui.y);
-        var clamp = p.s_x + p.s_w2;
-        var selcol = col.primary;
+        const cursor_y = Math.round(p.s_sp / 2 + ui.y);
+        const clamp = p.s_x + p.s_w2;
+        const selcol = col.primary;
         gr.DrawLine(Math.min(p.s_x + get_cursor_x(selStart), clamp), cursor_y, Math.min(p.s_x + get_cursor_x(selEnd), clamp), cursor_y, ui.row_h - 3, selcol);
         return selcol;
     }
-    var get_cursor_pos = function (x) {var im = gdi.CreateImage(1, 1), g = im.GetGraphics(), nx = x - p.s_x, pos = 0; for (i = offsetChars; i < p.s_txt.length; i++) {pos += g.CalcTextWidth(p.s_txt.substr(i,1), ui.font); if (pos >= nx + 3) break;} im.ReleaseGraphics(g); return i;}
+    const get_cursor_pos = x => {s.gr(1, 1, false, g => {const nx = x - p.s_x; let pos = 0; for (i = offsetChars; i < p.s_txt.length; i++) {pos += g.CalcTextWidth(p.s_txt.substr(i, 1), ui.font); if (pos >= nx + 3) break;}}); return i;}
     const get_cursor_x = pos => {
         let x = 0;
         s.gr(1, 1, false, g => {
@@ -2883,42 +2956,19 @@ function searchLibrary() {
     const record = () => {lg.push(p.s_txt); log = []; if (lg.length > 30) lg.shift();}
 
     this.clear = () => {
-        lib_manager.time.Reset(); library_tree.subCounts.search = {}; offsetChars = selStart = selEnd = cx = 0; p.s_cursor = false; p.s_search = false; p.s_txt = "";
+        lib_manager.time.Reset(); library_tree.subCounts.search = {}; offsetChars = selStart = selEnd = cx = 0; p.s_cursor = false; p.search = false; p.s_txt = "";
         but.set_search_btns_hide();
         p.search_paint(); timer.reset(timer.search_cursor); lib_manager.rootNodes();
         // library_tree.checkAutoHeight();
     }
-    this.on_key_up = vkey => {if (!p.s_search) return; if (vkey == vk.shift) {shift = false; shift_x = cx;}}
+    this.on_key_up = vkey => {if (!p.search) return; if (vkey == vk.shift) {shift = false; shift_x = cx;}}
     this.lbtn_up = (x, y) => {if (selStart != selEnd) timer.reset(timer.search_cursor); lbtn_dn = false;}
     this.move = (x, y) => {if (y > p.s_h || !lbtn_dn) return; const t = get_cursor_pos(x), t_x = get_cursor_x(t); let l; calc_text(); if (t < selStart) {if (t < selEnd) {if (t_x < p.s_x) if (offsetChars > 0) offsetChars--;} else if (t > selEnd) {if (t_x + p.s_x > p.s_x + p.s_w2) {l = (txt_w > p.s_w2) ? txt_w - p.s_w2 : 0; if (l > 0) offsetChars++;}} selEnd = t;} else if (t > selStart) {if (t_x + p.s_x > p.s_x + p.s_w2) {l = (txt_w > p.s_w2) ? txt_w - p.s_w2 : 0; if (l > 0) offsetChars++;} selEnd = t;} cx = t; p.search_paint();}
     this.rbtn_up = (x, y) => {men.search_menu(x, y, selStart, selEnd, doc.parentWindow.clipboardData.getData('text') ? true : false);}
 
-    // this.lbtn_dn = function(x, y) {
-    // 	var hadFocus = p.s_search;
-    // 	p.search_paint();
-    // 	lbtn_dn = p.s_search = (y < p.s_y + p.s_h && x >= p.s_x && x < p.s_x + p.s_w2);
-    // 	if (!lbtn_dn) {
-    // 		offsetChars = selStart = selEnd = cx = 0;
-    // 		timer.reset(timer.search_cursor);
-    // 		return;
-    // 	} else {
-    // 		if (shift) {
-    // 			selStart = cx;
-    // 			selEnd = cx = get_cursor_pos(x);
-    // 		} else {
-    // 			cx = get_cursor_pos(x);
-    // 			selStart = selEnd = cx;
-    // 		}
-    // 		if (!hadFocus) {
-    // 			this.searchFocus();
-    // 		}
-    // 		this.reset_cursor_timer();
-    // 	}
-    // 	p.search_paint();
-    // }
     this.lbtn_dn = (x, y) => {
         p.search_paint();
-        lbtn_dn = p.s_search = (y < p.s_y + p.s_h && x >= p.s_x && x < p.s_x + p.s_w2);
+        lbtn_dn = p.search = (y < p.s_y + p.s_h && x >= p.s_x && x < p.s_x + p.s_w2);
         if (!lbtn_dn) {
             offsetChars = selStart = selEnd = cx = 0;
             timer.clear(timer.search_cursor);
@@ -2944,18 +2994,9 @@ function searchLibrary() {
         }
     }
 
-    // this.reset_cursor_timer = function () {
-    // 	timer.clear(timer.search_cursor);
-    // 	p.s_cursor = true;
-    // 	timer.search_cursor = setInterval(function() {
-    // 		p.s_cursor = !p.s_cursor;
-    // 		p.search_paint();
-    // 	}, 530);
-    // }
-
     this.searchFocus = () => {
         p.search_paint();
-        p.s_search = true;
+        p.search = true;
         shift = false;
         selStart = selEnd = cx = p.s_x;
         timer.clear(timer.search_cursor);
@@ -2964,14 +3005,16 @@ function searchLibrary() {
         p.search_paint();
     }
 
-    this.on_char = function(code, force) {
-        var text = String.fromCharCode(code);
-        if (force) p.s_search = true;
-        if (!p.s_search) return;
+    this.on_char = (code, force) => {
+        let done = false;
+        let text = String.fromCharCode(code);
+        if (force) p.search = true;
+        if (!p.search) return;
         p.s_cursor = false;
         p.pos = -1;
         switch (code) {
-            case vk.enter: if (p.s_txt.length < 3) break; var items = fb.CreateHandleList(); try {items = fb.GetQueryItems(lib_manager.list, p.s_txt)} catch (e) {} library_tree.load(items, false, false, library_tree.autoPlay.send, library_tree.gen_pl, false); break;
+            case vk.enter: if (libraryProps.searchEnter || libraryProps.searchSend == 1) {lib_manager.upd_search = true; lib_manager.time.Reset(); library_tree.subCounts.search = {}; lib_manager.treeState(false, libraryProps.rememberTree); lib_manager.rootNodes(); p.setHeight(true); lib_manager.search.cancel(); done = true;} if (libraryProps.searchSend == 1) library_tree.load(p.list, false, false, library_tree.autoPlay.send, library_tree.gen_pl, false); break;
+            case vk.escape: this.clear(); return;
             case vk.redo: lg.push(p.s_txt); if (lg.length > 30) lg.shift(); if (log.length > 0) {p.s_txt = log.pop() + ""; cx++} break;
             case vk.undo: log.push(p.s_txt); if (log.length > 30) lg.shift(); if (lg.length > 0) p.s_txt = lg.pop() + ""; break;
             case vk.selAll:
@@ -3008,15 +3051,19 @@ function searchLibrary() {
         }
         if (code == vk.copy || code == vk.selAll) return;
         if (!timer.search_cursor) timer.search_cursor.id = setInterval(() => {p.s_cursor = !p.s_cursor; p.search_paint();}, 530);
-        but.set_search_btns_hide(); p.search_paint(); lib_manager.upd_search = true; timer.clear(timer.search);
-        timer.search.id = setTimeout(() => {
-            lib_manager.time.Reset(); library_tree.subCounts.search = {}; lib_manager.treeState(false, libraryProps.rememberTree); lib_manager.rootNodes();
-            // p.setHeight(true);
-        }, 160);
+        but.set_search_btns_hide(); p.search_paint();
+        // lib_manager.upd_search = true; timer.clear(timer.search);
+        // timer.search.id = setTimeout(() => {
+        //     lib_manager.time.Reset(); library_tree.subCounts.search = {}; lib_manager.treeState(false, libraryProps.rememberTree); lib_manager.rootNodes();
+        //     // p.setHeight(true);
+        // }, 160);
+        if (libraryProps.searchEnter || done) return;
+        if ((libraryProps.searchSend == 2 || lib_manager.list.Count > 200000) && p.s_txt && p.s_txt.length < 4) {lib_manager.upd_search = true; lib_manager.search500();}
+        else {lib_manager.search500.cancel(); lib_manager.upd_search = true; lib_manager.search();}
     }
 
     this.on_key_down = function(vkey) {
-        if (!p.s_search) return;
+        if (!p.search) return;
         switch(vkey) {
             case vk.left:
             case vk.right:
@@ -3128,7 +3175,7 @@ function JumpSearch() {
     this.on_char = function(code) {
         if (utils.IsKeyPressed(0x09) || utils.IsKeyPressed(0x11) || utils.IsKeyPressed(0x1B)) return;
         var text = String.fromCharCode(code);
-        if (!p.s_search) {
+        if (!p.search) {
             var found = false, i = 0, pos = -1;
             switch(code) {
                 case vk.back: jSearch = jSearch.substr(0, jSearch.length - 1); break;
@@ -3764,7 +3811,7 @@ function MenuItems() {
         return Index;
     }
     const itemCountsTypeMenu = (Menu, StartIndex) => {let Index = StartIndex; const n = ["Hide", "# Tracks", "# Sub-Items"]; n.forEach((v, i) => {newMenuItem(Index, "ItemCounts", i); Menu.AppendMenuItem(MF_STRING, Index, v); Index++;}); Menu.CheckMenuRadioItem(StartIndex, Index, StartIndex + libraryProps.nodeItemCounts); return Index;}
-	const keyTypeMenu = (Menu, StartIndex) => {let Index = StartIndex; const n = ["Select", "Send to Playlist"]; n.forEach((v, i) => {newMenuItem(Index, "Key", i); Menu.AppendMenuItem(MF_STRING, Index, v); Index++;}); Menu.CheckMenuRadioItem(StartIndex, Index, StartIndex + libraryProps.keyAction); return Index;}
+    const keyTypeMenu = (Menu, StartIndex) => {let Index = StartIndex; const n = ["Select", "Send to Playlist"]; n.forEach((v, i) => {newMenuItem(Index, "Key", i); Menu.AppendMenuItem(MF_STRING, Index, v); Index++;}); Menu.CheckMenuRadioItem(StartIndex, Index, StartIndex + libraryProps.keyAction); return Index;}
     const nowPlayingTypeMenu = (Menu, StartIndex) => {let Index = StartIndex; newMenuItem(Index, "Nowplaying", 0); Menu.AppendMenuItem(library_tree.nowp != -1 ? MF_STRING : MF_GRAYED, Index, "Show Nowplaying"); Index++; return Index;}
     // this.PlaylistTypeMenu = function (Menu, StartIndex) {
     //     var idx = StartIndex,
@@ -3803,6 +3850,7 @@ function MenuItems() {
     //     }
     //     return Index;
     // }
+    const searchTypeMenu = (Menu, StartIndex) => {let Index = StartIndex; const c = [pptDefault.searchShow == 1, pptDefault.searchShow == 2, libraryProps.searchEnter, libraryProps.searchSend == 1, libraryProps.searchSend == 2], n = ["Show Search Bar", "Show Search Bar + Filter", "Require Enter to Search", "Send Results to Playlist on Enter", "Auto-Send Results to Playlist"]; n.forEach((v, i) => {newMenuItem(Index, "SearchMode", i); Menu.AppendMenuItem(i < 2 || pptDefault.searchShow && (!libraryProps.searchEnter || i == 2 || i == 3) ? MF_STRING : MF_GRAYED, Index, v); Menu.CheckMenuItem(Index++, c[i]); if (i == 1) Menu.AppendMenuItem(MF_SEPARATOR, 0, 0);}); return Index;}
     const viewTypeMenu = (Menu, StartIndex) => {let Index = StartIndex; p.menu.forEach((v, i) => {newMenuItem(Index, "View", i); Menu.AppendMenuItem(MF_STRING, Index, v); Index++; if (i == p.menu.length - 2) Menu.AppendMenuItem(MF_SEPARATOR, 0, 0);}); Menu.CheckMenuRadioItem(StartIndex, StartIndex + p.grp.length - 1, StartIndex + libraryProps.viewBy); return Index;}
 
     // this.FilterMenu = function(Menu, StartIndex) {
@@ -3853,18 +3901,19 @@ function MenuItems() {
         idx = menu.TrackPopupMenu(x, y);
         menu_down = false;
         if (idx >= 1 && idx <= Index) {
-			i = MenuMap[idx].value; library_tree.subCounts.filter = {}; library_tree.subCounts.search = {};
-			switch (i) {
-				case p.f_menu.length: p.reset = !p.reset; if (p.reset) {p.search_paint(); lib_manager.treeState(true, 2);} window.SetProperty("SYSTEM.Reset Tree", p.reset); break;
-				default:
+            i = MenuMap[idx].value; library_tree.subCounts.filter = {}; library_tree.subCounts.search = {};
+            switch (i) {
+                case p.f_menu.length: p.reset = !p.reset; if (p.reset) {p.search_paint(); lib_manager.treeState(true, 2);} window.SetProperty("SYSTEM.Reset Tree", p.reset); break;
+                default:
                     libraryProps.filterBy = i; p.calc_text(); p.search_paint();
-                    lib_manager.treeState(false, libraryProps.rememberTree); // if (!libraryProps.rememberTree && !p.reset) lib.logTree();
+                    // lib_manager.treeState(false, libraryProps.rememberTree);
+                    if (!libraryProps.rememberTree && !p.reset) lib_manager.logTree();
                     lib_manager.getLibrary();
                     lib_manager.rootNodes(!p.reset ? 1 : 0, true);
                     break;
-			}
-			// library_tree.checkAutoHeight();
-		}
+            }
+            // library_tree.checkAutoHeight();
+        }
     }
 
     // this.search = function(Menu, StartIndex, s, f, paste) {
@@ -3980,7 +4029,7 @@ function MenuItems() {
             Index = viewTypeMenu(this.viewMenu, Index); this.viewMenu.AppendTo(this.menu, MF_STRING, "View");
             Index = baseTypeMenu(this.baseMenu, Index); this.baseMenu.AppendTo(this.menu, MF_STRING, "Options");
             this.menu.AppendMenuSeparator();
-	    } else {
+        } else {
             // Index = this.OptionsTypeMenu(menu, Index);
             // Index = this.ThemeTypeMenu(ThemeMenu, Index);
             // ThemeMenu.AppendTo(menu, MF_STRING, "Theme");
@@ -3997,15 +4046,15 @@ function MenuItems() {
         Index = clickTypeMenu(this.clickMenu, Index); this.clickMenu.AppendTo(this.baseMenu, MF_STRING, "Single-Click Action");
         Index = doubleClickTypeMenu(this.doubleClickMenu, Index); this.doubleClickMenu.AppendTo(this.baseMenu, MF_STRING, "Double-Click Action");
         Index = keyTypeMenu(this.keyMenu, Index); this.keyMenu.AppendTo(this.baseMenu, MF_STRING, "Keyboard Action");
-		this.baseMenu.AppendMenuSeparator();
+        this.baseMenu.AppendMenuSeparator();
         Index = itemCountsTypeMenu(this.itemCountsMenu, Index); this.itemCountsMenu.AppendTo(this.baseMenu, MF_STRING, "Item Counts");
         Index = rootNodeTypeMenu(this.rootNodeMenu, Index); this.rootNodeMenu.AppendTo(this.baseMenu, MF_STRING, "Root Node");
         // this.baseMenu.AppendMenuSeparator();
 
-		if (show_context) {
+        if (show_context) {
             items = library_tree.selected();
             Context.InitContext(items); Context.BuildMenu(this.menu, 5000);
-		}
+        }
 
         menu_down = true;
         idx = this.menu.TrackPopupMenu(x, y);
@@ -4039,7 +4088,7 @@ function MenuItems() {
                 case "DoubleClick": library_tree.setActions('dblClick', i); break;
                 case "Key": library_tree.setActions('key', i); break;
                 case "ItemCounts": p.set('itemCounts', i); break;
-				case "RootNode": p.set('rootNode', i); break;
+                case "RootNode": p.set('rootNode', i); break;
 
                 // case "Tag":
                 //     var r = !libraryProps.rootNode ? library_tree.tree[ix].tr : library_tree.tree[ix].tr - 1, list = [];
@@ -4115,18 +4164,18 @@ class Timers {
         }, 5000);
     }
 
-    lib_update() {
-        clearTimeout(this.update);
-        this.update = setTimeout(() => {
-            lib_manager.time.Reset();
-            library_tree.subCounts = {
-                standard: {},
-                search: {},
-                filter: {}
-            };
-            lib_manager.rootNodes(2, lib_manager.process);
-        }, 500);
-    }
+    // lib_update() {
+    //     clearTimeout(this.update);
+    //     this.update = setTimeout(() => {
+    //         lib_manager.time.Reset();
+    //         library_tree.subCounts = {
+    //             standard: {},
+    //             search: {},
+    //             filter: {}
+    //         };
+    //         lib_manager.rootNodes(2, lib_manager.process);
+    //     }, 500);
+    // }
 }
 
 class LibraryCallbacks {
