@@ -20,7 +20,7 @@ const s = {
     // padNumber : (num, len, base) => {if (!base) base = 10; return ('000000' + num.toString(base)).substr(-len);},
     query: (h, q) => {let l = new FbMetadbHandleList(); try {
         if ('audio'.includes(q.toLowerCase())) q = `ARTIST HAS "${q}" OR ALBUM HAS "${q}" OR TITLE HAS "${q} OR LABEL HAS "${q}"`;
-        console.log(q);
+        debugLog(`Querying library: ${q}`);
         l = fb.GetQueryItems(h, q);
     } catch (e) {} return l;},
     run: c => _.runCmd(c),
@@ -2469,7 +2469,7 @@ function LibraryTree() {
         if (sbar.scroll > h * ui.row_h) {scrollChk = true; sbar.check_scroll(h * ui.row_h);} if (!scrollChk) sbar.scroll_round(); lib_manager.treeState(false, libraryProps.rememberTree);
     }
 
-    this.draw = function(gr) {
+    this.draw = gr => {
         try {
             // ui.linecol = rgb(0,0,255);
             if (lib_manager.empty)
@@ -2486,6 +2486,7 @@ function LibraryTree() {
                 sel_w = 0;
             var lineWidth = scaleForDisplay(1);
             check_node(gr);
+            this.rows = 0;
             var depthRows = [];
             for (var j = 0; j <= this.tree[start_row].tr; j++) {
                 // first row in the tree needs start_row set for all depths (in case expanded and scrolled tree)
@@ -2594,6 +2595,7 @@ function LibraryTree() {
 
     const nodeExpandCollapse = (x, y, item, ix) => {
         const expanded = item.child.length > 0 ? 1 : 0;
+        let recheckScroll = false;
         switch (expanded) {
             case 0:
                 if (libraryProps.autoCollapse) branch_chg(item);
@@ -2604,17 +2606,18 @@ function LibraryTree() {
                     if (item.child.length > (this.rows - 2)) sbar.check_scroll(ix * ui.row_h);
                     else sbar.check_scroll(Math.min(ix * ui.row_h,(ix + 1 - sbar.rows_drawn + item.child.length) * ui.row_h));
                 } break;
-            case 1: this.clear_child(item); if (!ix && this.tree.length == 1) p.setHeight(false); break;
+            case 1:
+                const childLength = item.child.length;
+                this.clear_child(item);
+                if (!ix && this.tree.length == 1) p.setHeight(false);
+                if (childLength + this.tree.length > this.rows && this.tree.length < this.rows) {
+                    recheckScroll = true;
+                }
+                break;
         }
-        if (sbar.scroll > ix * ui.row_h) sbar.check_scroll(ix * ui.row_h); checkRow(x, y);
+        if (sbar.scroll >= ix * ui.row_h || recheckScroll) sbar.check_scroll(ix * ui.row_h); checkRow(x, y);
     }
 
-    // this.send = function(item, x, y) {
-    //     if (!this.check_ix(item, x, y, false)) return;
-    //     if (vk.k('ctrl')) this.load(this.sel_items, true, false, false, this.gen_pl, false);
-    //     else if (vk.k('shift')) this.load(this.sel_items, true, false, false, this.gen_pl, false);
-    //     else this.load(item.item, true, false, false, this.gen_pl, false);
-    // }
     const send = (item, x, y) => {
         if (!this.check_ix(item, x, y, false)) return;
         if (vk.k('ctrl')) this.load(this.sel_items, true, false, false, this.gen_pl, false);
@@ -2838,7 +2841,7 @@ function LibraryTree() {
             : (x >= Math.round(ui.pad * br.tr + ui.margin) + ui.icon_w) && x < Math.min(Math.round(ui.pad * br.tr + ui.margin) + ui.icon_w + br.w, sbar.tree_w);
     }
 
-    this.on_key_down = function(vkey) {
+    this.on_key_down = vkey => {
         if (p.search) return;
         if (vk.k('enter')) {
             if (!this.sel_items.length) return;
@@ -2848,32 +2851,36 @@ function LibraryTree() {
                default: return this.load(this.sel_items, true, false, this.autoPlay.send, false, false);
             }
         }
+        let item = {}, row = -1;
         switch(vkey) {
             case vk.left:
                 if (!(p.pos >= 0) && get_pos != -1) p.pos = get_pos;
                 else p.pos = p.pos + this.tree.length % this.tree.length;
-                p.pos = Math.max(Math.min(p.pos, this.tree.length - 1), 0); get_pos = -1; m_i = -1;
+                p.pos = s.clamp(p.pos, 0, this.tree.length - 1); get_pos = -1; m_i = -1;
                 if ((this.tree[p.pos].tr == (libraryProps.rootNode ? 1 : 0)) && this.tree[p.pos].child.length < 1) break;
-                if (this.tree[p.pos].child.length > 0) {var item = this.tree[p.pos]; this.clear_child(item); get_selection(item.ix); m_i = p.pos = item.ix;}
-                else {try {var item = this.tree[this.tree[p.pos].par]; this.clear_child(item); get_selection(item.ix); m_i = p.pos = item.ix;} catch (e) {return;};}
+                if (this.tree[p.pos].child.length > 0) {item = this.tree[p.pos]; this.clear_child(item); get_selection(item.ix); m_i = p.pos = item.ix;}
+                else {item = this.tree[this.tree[p.pos].par]; this.clear_child(item); get_selection(item.ix); m_i = p.pos = item.ix;}
                 p.tree_paint();
                 if (this.autoFill.key) this.load(this.sel_items, true, false, false, this.gen_pl /*ppt.sendPlaylist*/, false);
-                sbar.set_rows(this.tree.length); if (sbar.scroll > p.pos * ui.row_h) sbar.check_scroll(p.pos * ui.row_h); lib_manager.treeState(false, libraryProps.rememberTree);
+                sbar.set_rows(this.tree.length);
+                if (sbar.scroll > p.pos * ui.row_h) sbar.check_scroll(p.pos * ui.row_h);
+                else sbar.scroll_round();
+                lib_manager.treeState(false, libraryProps.rememberTree);
                 break;
             case vk.right:
-                if (!(p.pos >= 0) && get_pos != -1) p.pos = get_pos
+                if (!(p.pos >= 0) && get_pos != -1) p.pos = get_pos;
                 else p.pos = p.pos + this.tree.length % this.tree.length;
-                p.pos = Math.max(Math.min(p.pos, this.tree.length - 1), 0); get_pos = -1; m_i = -1;
-                var item = this.tree[p.pos]; if (libraryProps.autoCollapse) branch_chg(item);
+                p.pos = s.clamp(p.pos, 0, this.tree.length - 1); get_pos = -1; m_i = -1;
+                item = this.tree[p.pos]; if (libraryProps.autoCollapse) branch_chg(item);
                 this.branch(item, libraryProps.rootNode && p.pos == 0 ? true : false, true);
                 get_selection(item.ix); p.tree_paint(); m_i = p.pos = item.ix;
                 if (this.autoFill.key) this.load(this.sel_items, true, false, false, this.gen_pl /*ppt.sendPlaylist*/, false);
                 sbar.set_rows(this.tree.length);
-                var row = (p.pos * ui.row_h - sbar.scroll) / ui.row_h;
-                if (row + item.child.length > sbar.rows_drawn) {
+                row = (p.pos * ui.row_h - sbar.scroll) / ui.row_h;
+                if (row + 1 + item.child.length > sbar.rows_drawn) {
                     if (item.child.length > (sbar.rows_drawn - 2)) sbar.check_scroll(p.pos * ui.row_h);
-                    else sbar.check_scroll(Math.min(p.pos * ui.row_h,(p.pos + 1 - sbar.rows_drawn + item.child.length) * ui.row_h));
-                }
+                    else sbar.check_scroll(Math.min(p.pos * ui.row_h, (p.pos + 1 - sbar.rows_drawn + item.child.length) * ui.row_h));
+                } else sbar.scroll_round();
                 lib_manager.treeState(false, libraryProps.rememberTree);
                 break;
             case vk.pgUp: if (this.tree.length == 0) break; p.pos = Math.max(Math.round(sbar.scroll / ui.row_h + 0.4) - Math.floor(p.rows) + 1, !libraryProps.rootNode ? 0 : 1); sbar.page_throttle(1); get_selection(this.tree[p.pos].ix); p.tree_paint(); if (this.autoFill.key) this.load(this.sel_items, true, false, false, this.gen_pl /*ppt.sendPlaylist*/, false); lib_manager.treeState(false, libraryProps.rememberTree); break;
@@ -2889,7 +2896,7 @@ function LibraryTree() {
                 else p.pos = p.pos + this.tree.length % this.tree.length;
                 get_pos = -1; m_i = -1; if (vkey == vk.dn) p.pos++; if (vkey == vk.up) p.pos--;
                 p.pos = s.clamp(p.pos, !libraryProps.rootNode ? 0 : 1, this.tree.length - 1);
-                var row = (p.pos * ui.row_h - sbar.scroll) / ui.row_h;
+                row = (p.pos * ui.row_h - sbar.scroll) / ui.row_h;
                 if (sbar.rows_drawn - row < 3) sbar.check_scroll((p.pos + 3) * ui.row_h - sbar.rows_drawn * ui.row_h);
                 else if (row < 2 && vkey == vk.up) sbar.check_scroll((p.pos - 1) * ui.row_h);
                 m_i = p.pos; get_selection(p.pos); p.tree_paint();
