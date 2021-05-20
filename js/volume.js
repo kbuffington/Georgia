@@ -157,13 +157,15 @@ class VolumeBtn {
             gr.DrawRect(x, y, w, h - lineThickness, lineThickness, col.progress_bar);
             const volume = fb.Volume.toFixed(2) + ' dB';
             const volFont = ft.album_sml;
-            // const volMeasurements = gr.MeasureString(volume, volFont, 0, 0, 0, 0);
-            // const volHeight = volMeasurements.Height;
-            // const volWidth = volMeasurements.Width + 1;
+            const volMeasurements = gr.MeasureString(volume, volFont, 0, 0, 0, 0);
+            const volHeight = volMeasurements.Height;
+            const volWidth = volMeasurements.Width + 1;
+            const border = scaleForDisplay(3);
             let txtY = y;
             if (transport.displayBelowArtwork) {
                 txtY = this.y - this.h - this.volTextH - scaleForDisplay(2);
             }
+            gr.FillSolidRect(x - border, txtY + h, volWidth + border * 2, volHeight + border, rgba(0, 0, 0, 128));
             gr.DrawString(volume, volFont, rgb(0,0,0), x - 1, txtY - 1 + h, this.volTextW, this.volTextH);
             gr.DrawString(volume, volFont, rgb(0,0,0), x - 1, txtY + 1 + h, this.volTextW, this.volTextH);
             gr.DrawString(volume, volFont, rgb(0,0,0), x + 1, txtY - 1 + h, this.volTextW, this.volTextH);
@@ -173,14 +175,14 @@ class VolumeBtn {
     }
 
     repaint() {
-        const xyPadding = 3, whPadding = xyPadding * 2;
+        const xyPadding = scaleForDisplay(3), whPadding = xyPadding * 2;
         window.RepaintRect(this.x - xyPadding, this.volume_bar.y - xyPadding, this.volume_bar.w + whPadding, this.volume_bar.h + whPadding);
 
         let txtY = this.y + this.h;
         if (transport.displayBelowArtwork) {
             txtY = this.y - this.volTextH;
         }
-        window.RepaintRect(this.x, txtY, this.volTextW, this.volTextH);
+        window.RepaintRect(this.x - xyPadding, txtY, this.volTextW + xyPadding, this.volTextH + xyPadding);
     }
 
     setPosition(x, y, btnWidth) {
