@@ -1842,7 +1842,6 @@ function LibraryTree() {
         m_br = -1,
         nd = [],
         row_o = 0,
-        sent = false,
         tt = g_tooltip,
         //tooltip = window.GetProperty(" Tooltips", false),
         tt_c = 0,
@@ -2632,7 +2631,7 @@ function LibraryTree() {
 
     this.lbtn_dn = (x, y) => {
         lbtn_dn = false;
-        sent = false;
+        dbl_clicked = false;
         if (y < p.s_h) return;
         var ix = this.get_ix(x, y, true, false);
         p.pos = ix;
@@ -3129,17 +3128,20 @@ function searchLibrary() {
                 const selColor = drawsel(gr);
                 get_offset(gr);
                 var txt_col = ui.col.search;
-                if (selStart !== selEnd && new Color(selColor).brightness > 180) {
-                    const darkColor = rgb(0,0,0);
+                if (selStart !== selEnd) {
+                    let selectedTextCol = rgb(230,230,230);
+                    if (new Color(selColor).brightness > 180) {
+                        selectedTextCol = rgb(0,0,0);
+                    }
                     if (selStart === 0 && selEnd === p.s_txt.length) {
-                        gr.GdiDrawText(p.s_txt.substr(offsetChars), ui.font, darkColor, p.s_x, p.s_y, p.s_w2, p.s_sp, p.l);
+                        gr.GdiDrawText(p.s_txt.substr(offsetChars), ui.font, selectedTextCol, p.s_x, p.s_y, p.s_w2, p.s_sp, p.l);
                     } else {
                         // unselected text
                         gr.GdiDrawText(p.s_txt.substr(offsetChars), ui.font, txt_col, p.s_x, p.s_y, p.s_w2, p.s_sp, p.l);
                         const selectedText = p.s_txt.substr(offsetChars).substr(selStart - offsetChars, selEnd - selStart);
                         drawsel(gr);
                         // selected text
-                        gr.GdiDrawText(selectedText, ui.font, darkColor, p.s_x + get_cursor_x(selStart), p.s_y, p.s_x + get_cursor_x(selEnd), p.s_sp, p.l);
+                        gr.GdiDrawText(selectedText, ui.font, selectedTextCol, p.s_x + get_cursor_x(selStart), p.s_y, p.s_x + get_cursor_x(selEnd), p.s_sp, p.l);
                     }
                 } else {
                     // don't need to adjust colors
