@@ -1,6 +1,7 @@
 # Changelog
 
 #### Table of Contents
+- [v2.0.3](#v203---2020-05-22)
 - [v2.0.2](#v202---2020-03-26)
 - [v2.0.1](#v201---2020-03-02)
 - [v2.0.0](#v200---2020-03-01)
@@ -16,6 +17,29 @@
 - [v1.1.0](#v110---2019-08-10)
 - [v1.0.1](#v101---2019-01-23)
 - [v1.0.0](#v100---2018-11-03)
+
+## v2.0.3 - 2020-05-22
+
+### Added
+ - Added new options for spinning cdArt including # of images to cache and how frequently to update. Be warned: Setting these numbers to high can drastically increase memory and CPU usage. Also if you are attempting to display lyrics and have a very high setting for redraw speed, the theme *may* become unresponsive.
+ - If you have a Lyric Show 3 panel in your theme (recommended to add it hidden), lyrics will automatically be downloaded and will be displayed in the theme as soon as they are available.
+ - New option to *not* show the song title above the timeline bar, and instead show the album title there.
+ - Lyrics settings added to options menu
+
+### Changed
+ - Playlist smooth scrolling can now be disabled in the Options menu
+ - Library Panel has been (mostly) updated to a newer version of the code that should be slightly easier to maintain
+ - Improved scrollbar functionality in library and playlist
+ - Scrollbars in library now look much more like the nicer library scrollbars
+ - Replaced lodash with a slimmed down copy which is 25% of the size (4k lines vs 18k), and also switched from lodash functions to native functions whenever possible. Hope is this will be faster at both load and runtime.
+ - Partially selected text in library search now more legible
+ - Library search for a string fully contained in the word "audio" (i.e. "Dio", "io", "audio", etc.) no longer retuns your entire library
+ - No longer crashing if your files contain DATE fields not in standard YYYY-MM-DD format (i.e. YYYY-DD-MM or MM-DD-YYYY)
+
+### Fixed
+ - Smooth scrolling in the playlist had several issues which have been addressed and fixed
+ - The play/pause button in the playlist at times could be visible over the tracknumber
+ - Stopped some crashes that could occur in weird (and hard to reproduce situations)
 
 
 ## v2.0.2 - 2020-03-26
