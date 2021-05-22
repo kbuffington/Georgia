@@ -2,9 +2,9 @@
 //
 // Description  a fullscreen theme for foo_spider_monkey_panel
 // Author 		Mordred
-// Version 		2.0.2
+// Version 		2.0.3
 // Dev. Started 2017-12-22
-// Last change  2021-03-26
+// Last change  2021-05-22
 // --------------------------------------------------------------------------------------
 
 // CONFIGURATION //////////////////////////////////////

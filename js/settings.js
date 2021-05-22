@@ -9,7 +9,7 @@ let transport = {};
 /** @type {MetadataGridEntry[]} */
 let metadataGrid;
 
-const currentVersion = '2.0.3-dev';
+const currentVersion = '2.0.3';
 let configVersion = currentVersion;	// will be overwritten when loaded from config file
 let updateAvailable = false;
 let updateHyperlink;
@@ -243,9 +243,9 @@ function migrateCheck(version, storedVersion) {
 
 			case '2.0.2':
 			case '2.0.3-dev':
-				window.setProperty('ADV.Limit Menu Expand: 10-6000', undefined);
-				window.setProperty('SYSTEM: Filter By', undefined);
-				window.setProperty('SYSTEM: View By', undefined);
+				window.SetProperty('ADV.Limit Menu Expand: 10-6000', undefined);
+				window.SetProperty('SYSTEM: Filter By', undefined);
+				window.SetProperty('SYSTEM: View By', undefined);
 
 				// this block should appear after all previous versions have fallen through
 				console.log('> Upgrading Georgia Theme settings from', storedVersion);
