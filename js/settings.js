@@ -42,7 +42,7 @@ pref.add_properties({
 	cdart_ontop: ['Art: Show CD art above front cover', false], // true: display cdArt above front cover
 	spinCdart: ['Art: Spin CD art', false], // true: cdArt will spin while the song plays
 	spinCdArtImageCount: ['Art: # of images to create while spinning', 60], // higher numbers will increase memory usage, and slow down spin
-	spinCdArtRedrawInterval: ['Art: Spin CD draw interval', 200], // speed in ms with which to attempt redraw. Lower numbers will increase CPU
+	spinCdArtRedrawInterval: ['Art: Spin CD draw interval', 150], // speed in ms with which to attempt redraw. Lower numbers will increase CPU
 	filterCdJpgsFromAlbumArt: ['Art: Filter out cd/vinyl .jpgs from showing as artwork', false],
 	labelArtOnBg: ['Art: Draw label art on background', false], // true: don't show the theme color background behind label art
 	show_flags: ['Show country flags', true], // true: show the artist country flags
@@ -241,6 +241,12 @@ function migrateCheck(version, storedVersion) {
 				replaceGridEntry(grid, 'Release Country', 7);
 				config.addConfigurationObject(gridSchema, grid);
 
+			case '2.0.2':
+			case '2.0.3-dev':
+				window.setProperty('ADV.Limit Menu Expand: 10-6000', undefined);
+				window.setProperty('SYSTEM: Filter By', undefined);
+				window.setProperty('SYSTEM: View By', undefined);
+
 				// this block should appear after all previous versions have fallen through
 				console.log('> Upgrading Georgia Theme settings from', storedVersion);
 				const fileName = `georgia\\georgia-config-${storedVersion}.jsonc`;
@@ -249,8 +255,7 @@ function migrateCheck(version, storedVersion) {
 				config.writeConfiguration();
 				window.Reload();
 
-			case '2.0.2':
-			case '2.0.3-dev':
+			case '2.0.3':
 
 			default:
 				break;

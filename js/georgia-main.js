@@ -1100,7 +1100,7 @@ function onOptionsMenu(x, y) {
 		cdartArray = [];
 		RepaintWindow();
 	}, !pref.spinCdart);
-	cdArtMenu.createRadioSubMenu('Spinning cdArt redraw speed', ['250ms (lower CPU)', '200ms (default)', '150ms', '125ms', '100ms', '75ms (higher CPU)'], pref.spinCdArtRedrawInterval, [250, 200, 150, 125, 100, 75], interval => {
+	cdArtMenu.createRadioSubMenu('Spinning cdArt redraw speed', ['250ms (lower CPU)', '200ms', '150ms (default)', '125ms', '100ms', '75ms', '50ms (higher CPU)'], pref.spinCdArtRedrawInterval, [250, 200, 150, 125, 100, 75, 50], interval => {
 		pref.spinCdArtRedrawInterval = interval;
 		setupRotationTimer();
 	}, !pref.spinCdart)
