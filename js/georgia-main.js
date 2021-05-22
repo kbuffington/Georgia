@@ -2479,7 +2479,7 @@ function disposeCDImg(cdImage) {
 function rotateImg(img, w, h, degrees) {
 	/** @type {GdiBitmap} */ let rotatedImg;
 	if (degrees === 0) {
-		rotatedImg = img.Clone(0, 0, img.Width, img.Height);
+		rotatedImg = img.Clone(0, 0, img.Width, img.Height).Resize(w, h);
 	} else {
 		rotatedImg = gdi.CreateImage(w, h);
 		const gotGraphics = rotatedImg.GetGraphics();
