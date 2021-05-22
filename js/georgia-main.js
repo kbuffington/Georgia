@@ -412,7 +412,7 @@ function draw_ui(gr) {
 				drawnInfo = array.join(' | ');
 				infoSize = gr.MeasureString(drawnInfo, infoFont, 0, 0, 0, 0);
 			}
-			if (drawnInfo.length) {
+			if (drawnInfo.length && maxInfoWidth) {
 				trackInfoHeight = Math.ceil(infoSize.Height + 1);
 				gr.DrawString(drawnInfo, infoFont, col.artist, infoLeft, geo.top_bg_h - trackInfoHeight - scaleForDisplay(15), maxInfoWidth, trackInfoHeight, StringFormat(2));
 				gr.SetTextRenderingHint(TextRenderingHint.AntiAliasGridFit);
@@ -966,8 +966,8 @@ window.RepaintRect = (x, y, w, h, force = undefined) => {
 let rotatedCdIndex = 0;	// global index of current cdartArray img to draw
 function setupRotationTimer() {
 	clearInterval(cdartRotationTimer);
-	console.log(`creating ${pref.spinCdArtImageCount} rotated cd images, shown every ${pref.spinCdArtRedrawInterval}ms`);
 	if (pref.display_cdart && cdart && fb.IsPlaying && !fb.IsPaused && pref.spinCdart && !displayLibrary && !displayPlaylist) {
+		console.log(`creating ${pref.spinCdArtImageCount} rotated cd images, shown every ${pref.spinCdArtRedrawInterval}ms`);
 		cdartRotationTimer = setInterval(() => {
 			rotatedCdIndex++;
 			rotatedCdIndex %= pref.spinCdArtImageCount;
@@ -1429,7 +1429,7 @@ function on_size() {
 		if (fb.IsPlaying) {
 			loadCountryFlags(); // wrong size flag gets loaded on 4k systems
 		}
-		rescalePlaylist();
+		rescalePlaylist(true);
 		initPlaylist();
 		volume_btn = new VolumeBtn();
         sizeInitialized = true;

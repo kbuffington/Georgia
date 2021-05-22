@@ -113,6 +113,7 @@ class ProgressBar {
         this.y = 0;
         this.w = 0.95 * windowWidth;
         this.h = geo.prog_bar_h;
+        this.progressMoved = true;
     }
 
     on_mouse_lbtn_down(x, y) {
