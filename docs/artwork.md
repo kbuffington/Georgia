@@ -33,7 +33,9 @@ If you have Cycle Through All Artwork enabled, it will first show folder.jpg and
 
 Georgia can display cdArt if it is found in the same or parent folder as the currently playing file. Currently Georgia only supports .png files as transparency is required to make things look correctly. By default, cdArt is expected to be titled either `cd.png` or `cd1.png`, `cd2.png`, etc., if you have individual artwork to display for each disc in the album. If your cdArt is named differently (e.g. "disc.png") you can change `settings.cdArtBasename` in the [config file](configuration.html). Any cdArt found will be removed from the list of Album Art cycled through.
 
-In v2.0.2 a new [experimental option to spin cdArt](https://user-images.githubusercontent.com/2282004/112576303-0316df80-8dc0-11eb-822d-398bba2603d0.png) was added. This will increase CPU usage, and depending on your monitor resolution can increase foobar's memory footprint up to 1GB or more. Use at your own risk.
+In v2.0.2 a new [option to spin cdArt](https://user-images.githubusercontent.com/2282004/112576303-0316df80-8dc0-11eb-822d-398bba2603d0.png) was added. This will increase CPU usage, and depending on your monitor resolution can increase foobar's memory footprint up to 1GB or more. As of 2.0.3, there are a number of options available that will change your CPU/RAM usage. I added a video to demonstrate the different settings available:
+
+[![spinning cdArt options demo](https://img.youtube.com/vi/_jplUBlRNos/0.jpg)](https://www.youtube.com/watch?v=_jplUBlRNos)
 
 Be aware that cdArt is *NOT* downloaded automatically for you. They can be obtained from [fanart.tv](https://fanart.tv), and this theme follows the standards that site uses. I recommend using [AlbumArtDownloader](https://sourceforge.net/projects/album-art/) for saving this artwork.
 
