@@ -951,12 +951,14 @@ function draw_ui(gr) {
 	}
 }
 
+let repaintRectCount = 0;
 window.oldRepaintRect = window.RepaintRect;
 window.RepaintRect = (x, y, w, h, force = undefined) => {
 	if (timings.drawRepaintRects) {
 		repaintRects.push({ x, y, w, h });
 		window.Repaint();
 	} else {
+		repaintRectCount++;
 		window.oldRepaintRect(x, y, w, h, force);
 	}
 }
@@ -970,18 +972,17 @@ function setupRotationTimer() {
 			rotatedCdIndex++;
 			rotatedCdIndex %= pref.spinCdArtImageCount;
 			if (!cdartArray[rotatedCdIndex] && cdart && cdart_size.w) {
-				debugLog(`creating cdImg: ${rotatedCdIndex} (${cdart_size.w}x${cdart_size.h}) with rotation: ${360/pref.spinCdArtImageCount * rotatedCdIndex} degrees`);
+				// debugLog(`creating cdImg: ${rotatedCdIndex} (${cdart_size.w}x${cdart_size.h}) with rotation: ${360/pref.spinCdArtImageCount * rotatedCdIndex} degrees`);
 				cdartArray[rotatedCdIndex] = rotateImg(cdart, cdart_size.w, cdart_size.h, 360/pref.spinCdArtImageCount * rotatedCdIndex)
 			}
 			const cdLeftEdge = pref.cdart_ontop ? cdart_size.x : albumart_size.x + albumart_size.w; // the first line of cdImage that will be drawn
-			window.RepaintRect(cdLeftEdge, cdart_size.y, cdart_size.w - (cdLeftEdge - cdart_size.x), cdart_size.h);
+			window.RepaintRect(cdLeftEdge, cdart_size.y, cdart_size.w - (cdLeftEdge - cdart_size.x), cdart_size.h, !pref.cdart_ontop);
 		}, pref.spinCdArtRedrawInterval);
 	}
 }
 
 function drawCdArt(gr) {
 	if (pref.display_cdart && cdart_size.y >= albumart_size.y && cdart_size.h <= albumart_size.h) {
-		let drawCdProfiler = null;
 		// if (timings.showExtraDrawTiming) drawCdProfiler = fb.CreateProfiler('on_paint -> cdart');
 		const cdImg = cdartArray[rotatedCdIndex] || rotatedCD;
 		gr.DrawImage(cdImg, cdart_size.x, cdart_size.y, cdart_size.w, cdart_size.h, 0, 0, cdImg.Width, cdImg.Height, 0);
@@ -990,14 +991,18 @@ function drawCdArt(gr) {
 }
 
 function on_paint(gr) {
-	let onPaintProfiler = null;
-	if (timings.showDrawTiming || timings.showExtraDrawTiming) onPaintProfiler = fb.CreateProfiler('on_paint');
+	const start = new Date();
 	draw_ui(gr);
 	if (transport.showVolume) {
 		volume_btn.on_paint(gr);
 	}
 
-	onPaintProfiler && onPaintProfiler.Print();
+	if (timings.showDrawTiming || timings.showExtraDrawTiming) {
+		const end = Date.now();
+		console.log(`${start.getHours()}:${leftPad(start.getMinutes(), 2, '0')}:${leftPad(start.getSeconds(), 2, '0')}.${leftPad(start.getMilliseconds(),3,'0')}: ` +
+			`on_paint took ${end - start.getTime()}ms ${repaintRectCount > 1 ? '- ' + repaintRectCount + ' repaintRect calls' : ''}`);
+	}
+	repaintRectCount = 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1520,8 +1525,11 @@ function on_playback_new_track(metadb) {
 			displayNextImage();
 		}, settings.artworkDisplayTime * 1000);
 	}
+	if (cdart) {
+		setupRotationTimer();
+	}
 	loadFromCache = true;
-	CreateRotatedCDImage(); // we need to always setup the rotated image because it rotates on every track
+	// CreateRotatedCDImage(); // we need to always setup the rotated image because it rotates on every track
 
 	/* code to retrieve record label logos */
 	let labelStrings = [];
@@ -2122,9 +2130,9 @@ function on_playback_stop(reason) {
 		refreshPlayButton();
 		loadFromCache = false;
 	}
-	progressBarTimer && clearInterval(progressBarTimer);
-	if (albumArtTimeout)
-		clearTimeout(albumArtTimeout);
+	clearInterval(cdartRotationTimer);
+	clearInterval(progressBarTimer);
+	clearTimeout(albumArtTimeout);
 	if (albumart && ((pref.cycleArt && albumArtIndex !== 0) || lastFolder == '')) {
 		debugLog("disposing artwork");
 		albumart = null;
@@ -2142,7 +2150,6 @@ function on_playback_stop(reason) {
 
 	if (reason === 0 || reason === 1) {	// Stop or end of playlist
 		cdart = disposeCDImg(cdart);
-		clearInterval(cdartRotationTimer);
 		cdartArray = [];	// clear Images
 		window.Repaint();
 	}
@@ -2248,7 +2255,7 @@ function on_playback_time() {
 }
 
 function refresh_seekbar() {
-	window.RepaintRect(0.025 * ww, wh - geo.lower_bar_h, 0.95 * ww, geo.lower_bar_h);
+	window.RepaintRect(0.025 * ww, wh - geo.lower_bar_h, 0.95 * ww, geo.lower_bar_h, true);
 }
 
 // TIMER Callback functions
