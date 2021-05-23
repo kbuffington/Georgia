@@ -372,6 +372,7 @@ function draw_ui(gr) {
 	gr.FillSolidRect(0, geo.top_bg_h, ww, wh - geo.top_bg_h, col.bg);
 	gr.FillSolidRect(0, 0, ww, geo.top_bg_h, col.menu_bg);
 	if ((fb.IsPaused || fb.IsPlaying) && (!albumart && cdart)) {
+		// info grid background drawn here before cdArt if no albumArt
 		gr.SetSmoothingMode(SmoothingMode.None);
 		gr.FillSolidRect(0, albumart_size.y, albumart_size.x, albumart_size.h, col.primary);
 		gr.DrawRect(-1, albumart_size.y, albumart_size.x, albumart_size.h - 1, 1, col.accent);
@@ -2096,7 +2097,6 @@ function on_playback_pause(pausing) {
 	if (pausing) {
 		clearInterval(progressBarTimer);
 		clearInterval(cdartRotationTimer);
-		progressBarTimer = 0;
 		window.RepaintRect(0.015 * ww, 0.12 * wh, Math.max(albumart_size.x - 0.015 * ww, 0.015 * ww), wh - geo.lower_bar_h - 0.12 * wh);
 	} else { // unpausing
 		clearInterval(progressBarTimer); // clear to avoid multiple progressTimers which can happen depending on the playback state when theme is loaded
@@ -2323,17 +2323,19 @@ function SetProgressBarRefresh() {
 		} else {
 			t_interval = 333; // for slow computers, only update 3x a second
 		}
+	} else {
+		t_interval = 1000;
+	}
 
-		if (timings.showDebugTiming)
-			console.log(`Progress bar will update every ${t_interval}ms or ${1000 / t_interval} times per second.`);
+	if (timings.showDebugTiming)
+		console.log(`Progress bar will update every ${t_interval}ms or ${1000 / t_interval} times per second.`);
 
-		progressBarTimer && clearInterval(progressBarTimer);
-		progressBarTimer = null;
-		if (!fb.IsPaused) { // only create progressTimer if actually playing
-			progressBarTimer = setInterval(() => {
-				refresh_seekbar();
-			}, t_interval);
-		}
+	progressBarTimer && clearInterval(progressBarTimer);
+	progressBarTimer = null;
+	if (!fb.IsPaused) { // only create progressTimer if actually playing
+		progressBarTimer = setInterval(() => {
+			refresh_seekbar();
+		}, t_interval);
 	}
 }
 
@@ -2763,8 +2765,13 @@ function fetchNewArtwork(metadb) {
 	if (isStreaming) {
 		cdart = disposeCDImg(cdart);
 		albumart = utils.GetAlbumArtV2(metadb);
-		getThemeColors(albumart);
-		ResizeArtwork(true);
+		if (albumart) {
+			getThemeColors(albumart);
+			ResizeArtwork(true);
+		} else {
+			noArtwork = true;
+			shadow_image = null;
+		}
 	} else {
 		aa_list = globals.imgPaths.map(path => utils.Glob($(path), FileAttributes.Directory | FileAttributes.Hidden)).flat();
 		const filteredFileTypes = pref.filterCdJpgsFromAlbumArt ? '(png|jpg)' : 'png';
