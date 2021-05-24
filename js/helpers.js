@@ -120,6 +120,17 @@ function calcBrightness(c) {
 	return Math.round(Math.sqrt( 0.299*r*r + 0.587*g*g + 0.114*b*b ));
 }
 
+/**
+ * Given a value, return value bound by range of min and max.
+ * @param {number} val
+ * @param {number} min
+ * @param {number} max
+ * @returns {number}
+ */
+function clamp(val, min, max) {
+	return Math.min(Math.max(val, min), max);
+}
+
 class ImageSize {
 	constructor(x, y, w, h) {
 		this.x = x;

@@ -60,7 +60,8 @@ const fileList = [
     'js\\image-caching.js',
     'js\\ui-components.js',
     'js\\lyrics.js',
-    'js\\georgia-main.js'
+    // 'js\\georgia-main.js'
+    'js\\settings-view.js'
 ];
 includeFiles(fileList).then(() => {
     console.log(`Georgia loaded in ${Date.now() - startTime}ms`);

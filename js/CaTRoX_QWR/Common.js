@@ -109,11 +109,15 @@ const MK_XBUTTON1 = 0x0020;
 const MK_XBUTTON2 = 0x0040;
 
 //--->
+const VK_SELECT_ALL = 0x01;
+const VK_COPY = 0x03;
 const VK_BACKSPACE = 0x08;
 const VK_SHIFT = 0x10;
 const VK_CONTROL = 0x11;
 const VK_MENU = 0x12; // ALT
 const VK_PAUSE = 0x13;
+const VK_PASTE = 0x16;
+const VK_CUT = 0x18;
 const VK_ESCAPE = 0x1B;
 const VK_SPACE = 0x20;
 const VK_DELETE = 0x2E;
@@ -171,6 +175,14 @@ const VK_KEY_Y = 0x59; //	Y
 const VK_KEY_Z = 0x5A; //	Z
 
 const VK_F1 = 0x70; // F1
+const VK_F2 = 0x71; // F2
+const VK_F3 = 0x72; // F3
+const VK_F4 = 0x73; // F4
+const VK_F5 = 0x74; // F5
+const VK_F6 = 0x75; // F6
+const VK_F7 = 0x76; // F7
+const VK_F8 = 0x77; // F8
+const VK_F9 = 0x78; // F9
 const VK_F10 = 0x79; // F10
 const VK_F11 = 0x7A; // F11
 const VK_F12 = 0x7B; // F12
@@ -181,19 +193,11 @@ const VK_F16 = 0x7F; // F16
 const VK_F17 = 0x80; // F17
 const VK_F18 = 0x81; // F18
 const VK_F19 = 0x82; // F19
-const VK_F2 = 0x71; // F2
 const VK_F20 = 0x83; // F20
 const VK_F21 = 0x84; // F21
 const VK_F22 = 0x85; // F22
 const VK_F23 = 0x86; // F23
 const VK_F24 = 0x87; // F24
-const VK_F3 = 0x72; // F3
-const VK_F4 = 0x73; // F4
-const VK_F5 = 0x74; // F5
-const VK_F6 = 0x75; // F6
-const VK_F7 = 0x76; // F7
-const VK_F8 = 0x77; // F8
-const VK_F9 = 0x78; // F9
 //--->
 
 const IDC_ARROW = 32512;
@@ -299,6 +303,13 @@ const g_string_format = {
 	line_limit:              0x00002000,
 	no_clip:                 0x00004000
 };
+
+const DrawTextFlags = {
+	top: 0x00000000,
+	left: 0x00000000,
+	center: 0x00000001,
+	right: 0x00000002,
+}
 
 /** @enum{number} */
 const g_font_style = {
