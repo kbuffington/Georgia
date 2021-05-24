@@ -112,6 +112,7 @@ const MK_XBUTTON2 = 0x0040;
 const VK_SELECT_ALL = 0x01;
 const VK_COPY = 0x03;
 const VK_BACKSPACE = 0x08;
+const VK_ENTER = 0x0D;
 const VK_SHIFT = 0x10;
 const VK_CONTROL = 0x11;
 const VK_MENU = 0x12; // ALT

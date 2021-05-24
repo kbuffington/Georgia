@@ -41,10 +41,11 @@ function on_mouse_move(x, y) {
 		state.mouse_x = x;
 		state.mouse_y = y;
 
-        let control;
         for (let i in controlList) {
             if (controlList[i].mouseInThis(x, y)) {
-                control = controlList[i];
+                if (hoveredControl) hoveredControl.hovered = false; // clear last hovered control
+                hoveredControl = controlList[i];
+                hoveredControl.hovered = true;
                 break;
             }
         }
@@ -59,7 +60,7 @@ function on_mouse_lbtn_up(x, y, m) {
         let found = false;
         for (let i in controlList) {
             if (controlList[i].mouseInThis(x, y)) {
-                if (activeControl) activeControl.focus = false;
+                if (activeControl) activeControl.clearFocus();
                 activeControl = controlList[i];
                 activeControl.clicked(x, y);
                 found = true;
@@ -113,13 +114,18 @@ function drawSettingsView(gr) {
 const ControlType = {
     TextBox: 1,
     Toggle: 2,
-    ColorPicker: 3,
-    DropDown: 4,
+    Checkbox: 3,
+    ColorPicker: 4,
+    DropDown: 5,
 };
 
 function initSettingsView() {
-    const test = new TextBoxControl('Text Input:', 'abcdefghijklmnopqrstuvwxyz', 20, 60, 150, 400, ft.value);
+    const test = new TextBoxControl('Text Input:', 'abcdefghijklmnopqrstuvwxyz', 20, 60, 200, 400, ft.value);
     controlList.push(test);
+
+    const toggle = new ToggleControl('Toggle Control:', false, 20, 120, 200, ft.label);
+    controlList.push(toggle);
+    controlList.push(new ToggleControl('Toggle Control:', true, 20, 180, 200, ft.label));
 }
 
 function calcTextHeight(font) {
@@ -135,6 +141,7 @@ class BaseControl {
     constructor(x, y, label) {
         /** @protected */ this.x = x;
         /** @protected */ this.y = y;
+        /** @protected */ this.label = label;
         this.focus = false;
         this.hovered = false;
         this.controlType = undefined;
@@ -145,6 +152,9 @@ class BaseControl {
     destructor() {
         this.i.ReleaseGraphics(this.g);
     }
+
+    /** @virtual */
+    onKey(vkey) {}
 }
 
 class TextBoxControl extends BaseControl {
@@ -156,7 +166,6 @@ class TextBoxControl extends BaseControl {
         /** @private */ this.inputW = inputWidth - this.padding * 2;    // subtract out padding
         /** @private */ this.font = font;
         /** @private */ this.h = calcTextHeight(font);
-        /** @private */ this.label = label;
         /** @private */ this.value = value;
         /** @private */ this.lineThickness = scaleForDisplay(1);
         /** @constant @private */ this.cursorRefreshInterval = 350; // ms
@@ -458,8 +467,81 @@ class TextBoxControl extends BaseControl {
 }
 
 class ToggleControl extends BaseControl {
-    constructor() {
-        super();
+    constructor(labelText, value, x, y, labelWidth, labelFont) {
+        super(x, y, labelText);
+        /** @private */ this.font = labelFont;
+        /** @private */ this.labelW = labelWidth;
+        /** @private */ this.toggleX = this.x + this.labelW;
+        /** @private */ this.value = !!value;
+        /** @private */ this.h = Math.floor(calcTextHeight(labelFont));
+
+        /** @private @const */ this.toggleW = 100;
+        /** @private @const */ this.knobH = this.h * 1.5;
+        /** @private {GdiBitmap} */ this.knobShadowImg = null;
+        console.log(this.knobH);
+
+        this.createKnobShadow();
+    }
+
+    /**
+     * @param {GdiGraphics} gr
+     */
+    draw(gr) {
+        gr.GdiDrawText(this.label, ft.label, rgb(0,0,0), this.x, this.y, this.labelW, this.h, DrawTextFlags.noPrefix);
+        let fillColor = this.value ? rgb(156, 97, 239) : rgb(172, 172, 172);
+        const halfHeight = Math.round(this.h / 2);
+        // gr.FillRoundRect(this.toggleX, this.y, this.toggleW, this.h, halfHeight, halfHeight, rgb(128,128,128));
+        gr.FillEllipse(this.toggleX + this.h * .25, this.y, this.h, this.h, fillColor);
+        gr.FillEllipse(this.toggleX + this.toggleW - this.h * .75, this.y, this.h, this.h, fillColor);
+        gr.FillSolidRect(this.toggleX + this.h * .75, this.y + 1, this.toggleW - this.h, this.h - 1, fillColor);
+        let knobX = this.value ? this.toggleX + this.toggleW - this.h : this.toggleX;
+        let knobCol = this.value ? rgb(96, 2, 238) : rgb(255,255,255);
+        gr.DrawImage(this.knobShadowImg, knobX - 1, this.y - this.h * .25 + 1, this.knobShadowImg.Width, this.knobShadowImg.Height, 0, 0, this.knobShadowImg.Width, this.knobShadowImg.Height);
+        gr.FillEllipse(knobX, this.y - this.h * .25, this.knobH, this.knobH, knobCol);
+
+        // gr.DrawRect(this.x, this.y - this.h * .25 - 1, this.toggleX - this.x + this.toggleW + this.knobH - this.h, this.knobShadowImg.Height, 1, rgb(255,0,0))
+
+    }
+
+    repaint() {
+        window.RepaintRect(this.x, this.y - this.h * .25 - 1, this.toggleX - this.x + this.toggleW + this.knobShadowImg.Height - this.h + 1, this.knobShadowImg.Height + 1)
+    }
+
+    mouseInThis(x, y) {
+        return (x >= this.toggleX && x <= this.toggleX + this.toggleW - this.h + this.knobH && y >= this.y - this.h * .25 && y <= this.y + this.knobH);
+    }
+
+    clicked(x, y) {
+        this.value = !this.value;
+        this.repaint();
+    }
+
+    onChar(code) {
+        switch (code) {
+            case VK_ENTER:
+            case VK_SPACE:
+                this.clicked(0, 0);
+                break;
+        }
+    }
+
+    clearFocus() {
+        this.focus = false;
+    }
+
+    /** @private */
+    createKnobShadow() {
+        const padding = scaleForDisplay(3);
+        this.knobShadowImg = gdi.CreateImage(this.knobH + padding * 2, this.knobH + padding * 2);
+        const shimg = this.knobShadowImg.GetGraphics();
+        shimg.FillEllipse(padding, padding, this.knobH, this.knobH, rgba(128, 128, 128, 128));
+        this.knobShadowImg.ReleaseGraphics(shimg);
+        this.knobShadowImg.StackBlur(6);
+    }
+
+    destructor() {
+        this.knobShadowImg = null;
+        super.destructor();
     }
 }
 
