@@ -51,22 +51,42 @@ function on_mouse_move(x, y) {
     }
 }
 
+const doubleClickTime = 200;
+let lastClickTime = null;
 function on_mouse_lbtn_up(x, y, m) {
-    let found = false;
-    for (let i in controlList) {
-        if (controlList[i].mouseInThis(x, y)) {
-            if (activeControl) activeControl.focus = false;
-            activeControl = controlList[i];
-            activeControl.clicked(x, y);
-            found = true;
-            break;
+    if (Date.now() - lastClickTime > doubleClickTime) {
+        lastClickTime = Date.now();
+        let found = false;
+        for (let i in controlList) {
+            if (controlList[i].mouseInThis(x, y)) {
+                if (activeControl) activeControl.focus = false;
+                activeControl = controlList[i];
+                activeControl.clicked(x, y);
+                found = true;
+                break;
+            }
         }
-    }
-    if (!found) {
-        activeControl.focus = false;
-        activeControl = undefined;
+        if (!found && activeControl) {
+            activeControl.clearFocus();
+            activeControl = undefined;
+        }
+    } else {
+        lastClickTime = Date.now();
+        activeControl.doubleClicked(x, y);
     }
 }
+
+// function on_mouse_lbtn_dblclk(x, y, m) {
+//     if (activeControl && activeControl.mouseInThis(x, y)) {
+//         doubleClicked = true;
+//         activeControl.doubleClicked(x, y);
+//         console.log('doublelcicked')
+//         setTimeout(() => {
+//             doubleClicked = false;
+//             console.log('clearing doubleclick');
+//         }, doubleClickTime * 2);
+//     }
+// }
 
 function on_mouse_wheel(delta) {
 }
@@ -98,7 +118,7 @@ const ControlType = {
 };
 
 function initSettingsView() {
-    const test = new TextBoxControl('Text Input:', '', 20, 60, 150, 400, ft.value);
+    const test = new TextBoxControl('Text Input:', 'abcdefghijklmnopqrstuvwxyz', 20, 60, 150, 400, ft.value);
     controlList.push(test);
 }
 
@@ -117,6 +137,7 @@ class BaseControl {
         /** @protected */ this.y = y;
         this.focus = false;
         this.hovered = false;
+        this.controlType = undefined;
         /** @protected @private */ this.i = gdi.CreateImage(1, 1);
         /** @protected */ this.g = this.i.GetGraphics();   // GdiBitmap used for MeasureString and other functions
     }
@@ -145,6 +166,8 @@ class TextBoxControl extends BaseControl {
         /** @private */ this.selAnchor = -1;
         /** @private */ this.cursorPos = 0;
         /** @private */ this.offsetChars = 0; // number of chars that are not visible in the textbox (scrolled to the left)
+
+        /** @constant */ this.controlType = ControlType.TextBox;
     }
 
     /**
@@ -159,18 +182,23 @@ class TextBoxControl extends BaseControl {
      * @param {GdiGraphics} gr
      */
     draw(gr) {
-        gr.GdiDrawText(this.label, ft.label, rgb(0,0,0), this.x, this.y, this.labelW, this.h);
+        gr.GdiDrawText(this.label, ft.label, rgb(0,0,0), this.x, this.y, this.labelW, this.h, DrawTextFlags.noPrefix);
         gr.FillSolidRect(this.inputX, this.y - this.padding, this.inputW + 2 * this.padding, this.h + this.padding * 2, rgb(255,255,255));
         gr.DrawRect(this.inputX, this.y - this.padding, this.inputW + 2 * this.padding, this.h + this.padding * 2, this.lineThickness, rgb(0,0,0));
+        gr.GdiDrawText(this.value.substr(this.offsetChars), ft.value, rgb(0,0,0), this.inputX + this.padding, this.y, this.inputW, this.h, DrawTextFlags.left | DrawTextFlags.noPrefix);
         if (this.hasSelection) {
-            let start = this.inputX + this.padding + this.getCursorX(this.selAnchor);
-            let end = this.inputX + this.padding + this.getCursorX(this.selEnd);
-            if (start > end) {
-                const tmp = start; start = end; end = tmp;
+            let selStartIndex = this.selAnchor;
+            let selEndIndex = this.selEnd;
+            if (selStartIndex > selEndIndex) {
+                let tmp = selStartIndex; selStartIndex = selEndIndex; selEndIndex = tmp;
             }
-            gr.FillSolidRect(start, this.y, end - start, this.h, rgb(128,128,255));
+            selStartIndex = Math.max(this.offsetChars, selStartIndex);
+            let start = this.inputX + this.padding + this.getCursorX(selStartIndex);
+            let end = this.inputX + this.padding + this.getCursorX(selEndIndex);
+            const maxWidth = Math.min(this.inputW, end - start)
+            gr.FillSolidRect(start, this.y, maxWidth, this.h, rgb(128,128,255));
+            gr.GdiDrawText(this.value.substr(selStartIndex, selEndIndex - selStartIndex), this.font, rgb(255,255,255), start, this.y, maxWidth, this.h, DrawTextFlags.noPrefix);
         }
-        gr.GdiDrawText(this.value, ft.value, rgb(0,0,0), this.inputX + this.padding, this.y, this.inputW, this.h, DrawTextFlags.left);
         if (this.showCursor) {
             const cursorPos = this.inputX + this.padding + this.getCursorX(this.cursorPos);
             gr.DrawLine(cursorPos, this.y, cursorPos, this.y + this.h, this.lineThickness, rgb(32,32,132));
@@ -201,7 +229,7 @@ class TextBoxControl extends BaseControl {
         const inputX = x - this.inputX; // x-position inside control
         let pos = this.padding;
         for (let i = this.offsetChars; i < this.value.length; i++) {
-            const charWidth = this.g.CalcTextWidth(this.value.substr(i, 1), ft.value);
+            const charWidth = this.g.CalcTextWidth(this.value.substr(i, 1), this.font);
             if (Math.round(pos + (charWidth / 2)) >= inputX) {
                 return i;
             }
@@ -210,8 +238,40 @@ class TextBoxControl extends BaseControl {
         return this.value.length;
     }
 
+    /**
+     * Calculte how many chars (offsetChars) to *not* draw on the left hand side of the text box
+     */
+    calcOffsetIndex() {
+        let width = this.g.CalcTextWidth(this.value.substr(this.offsetChars, this.cursorPos - this.offsetChars), this.font);
+        let j = 0;
+        while (width > this.inputW && j < 999) {
+            j++;
+            this.offsetChars++;
+            width = this.g.CalcTextWidth(this.value.substr(this.offsetChars, this.cursorPos - this.offsetChars), this.font);
+        }
+        if (j === 0) {
+            while (width < this.inputW && this.offsetChars >= 0) {
+                this.offsetChars--;
+                width = this.g.CalcTextWidth(this.value.substr(this.offsetChars, this.cursorPos - this.offsetChars), this.font);
+            }
+            this.offsetChars++;
+        }
+    }
+
     mouseInThis(x, y) {
         return x >= this.inputX && x <= this.inputX + this.inputW && y >= this.y - this.padding && y <= this.y + this.h + this.padding;
+    }
+
+    /**
+     * Remove focus from control, clear cursor, and reset offset chars, then redraw
+     */
+    clearFocus() {
+        clearTimeout(this.timerId);
+        this.focus = false;
+        this.showCursor = false;
+        this.offsetChars = 0;
+        this.selAnchor = -1;    // I think we want to do this?
+        this.repaint();
     }
 
     /**
@@ -222,17 +282,41 @@ class TextBoxControl extends BaseControl {
     flashCursor(showImmediate) {
         clearTimeout(this.timerId);
         this.showCursor = showImmediate ? true : !this.showCursor;
-        this.repaint();
         this.timerId = setTimeout(() => {
             this.flashCursor();
         }, this.cursorRefreshInterval);
+        this.repaint();
     }
 
     clicked(x, y) {
         if (!this.mouseInThis(x, y)) return;
         this.focus = true;
+        const oldCursor = this.cursorPos;
         this.cursorPos = this.getCursorIndex(x);
+        if (utils.IsKeyPressed(VK_SHIFT)) {
+            if (this.hasSelection) {
+                this.selAnchor = oldCursor;
+            }
+            this.selEnd = this.cursorPos;
+        } else {
+            this.selAnchor = -1;
+        }
         this.flashCursor(true);
+    }
+
+    doubleClicked(x, y) {
+        const clickPos = this.getCursorIndex(x);
+        if (this.hasSelection &&
+                Math.abs(this.selAnchor - this.selEnd) !== this.value.length &&
+                ((clickPos >= this.selAnchor && clickPos <= this.selEnd) ||
+                (clickPos <= this.selAnchor && clickPos >= this.selEnd))) {
+            this.onChar(VK_SELECT_ALL);
+        } else {
+            this.selAnchor = Math.max(0, this.value.substr(0, clickPos).lastIndexOf(' ') + 1);
+            this.selEnd = this.value.indexOf(' ', clickPos);
+            if (this.selEnd === -1) this.selEnd = this.value.length;
+            this.cursorPos = this.selEnd;
+        }
     }
 
     repaint() {
@@ -275,6 +359,13 @@ class TextBoxControl extends BaseControl {
                         this.cursorPos = this.strClamp(this.cursorPos + dir);
                     }
                 }
+                if (dir < 0 && this.cursorPos < this.offsetChars) {
+                    this.offsetChars--;
+                } else if (dir > 0) {
+                    while (this.getCursorX(this.cursorPos) > this.inputW) {
+                        this.offsetChars++;
+                    }
+                }
                 break;
             case VK_UP:
             case VK_DOWN:
@@ -290,6 +381,7 @@ class TextBoxControl extends BaseControl {
                     this.selAnchor = -1;
                 }
                 this.cursorPos = home ? 0 : this.value.length;
+                this.calcOffsetIndex();
                 break;
             case VK_DELETE:
                 this.onChar(VK_DELETE);
@@ -299,7 +391,7 @@ class TextBoxControl extends BaseControl {
     }
 
     onChar(code) {
-        console.log(code);
+        // console.log(code);
         let clearSelection = true;
         let text = String.fromCharCode(code);
         let start = this.hasSelection ? Math.min(this.cursorPos, this.selAnchor) : this.cursorPos;
@@ -314,6 +406,12 @@ class TextBoxControl extends BaseControl {
                     this.value = this.value.substring(0, Math.max(0, start - 1)) + this.value.substring(end);
                     this.cursorPos = Math.max(0, start - 1);
                 }
+                if (this.cursorPos === this.value.length) {
+                    // deleting text from end
+                    this.calcOffsetIndex();
+                } else if (this.cursorPos < this.offsetChars) {
+                    this.offsetChars = this.cursorPos;
+                }
                 break;
             case VK_CUT:
                 if (!this.hasSelection) return;
@@ -326,10 +424,14 @@ class TextBoxControl extends BaseControl {
                 } else {
                     this.value = this.value.substring(0, start) + this.value.substring(Math.min(end + 1, this.value.length));
                 }
+                this.calcOffsetIndex();
                 break;
             case VK_SELECT_ALL:
                 this.selAnchor = 0; this.cursorPos = this.selEnd = this.value.length;
+                this.calcOffsetIndex();
                 clearSelection = false;
+                break;
+            case VK_ESCAPE: // clears selection below
                 break;
             case VK_COPY:
                 if (this.hasSelection) {
@@ -343,20 +445,22 @@ class TextBoxControl extends BaseControl {
             default:
                 this.value = this.value.substring(0, start) + text + this.value.substring(end);
                 this.cursorPos = start + text.length;
+                if (this.cursorPos === this.value.length) { // inserting text at end
+                    this.calcOffsetIndex();
+                } else {
+                    while (this.getCursorX(this.cursorPos) > this.inputW) { // ensure new text does not push cursor past input edge
+                        this.offsetChars++;
+                    }
+                }
         }
         if (clearSelection) this.selAnchor = -1;    // always want to clear selection
-
-        // const textWidth = this.g.CalcTextWidth(this.value, this.font);
-        // if (textWidth > this.inputW) {
-        //     this.offsetChars = textWidth - this.inputW; // make this positive so we can subtract which makes more sense logically
-        //     console.log(textWidth, this.inputW, this.offsetChars);
-        // } else {
-        //     this.offsetChars = 0;
-        // }
-
     }
 }
 
-
+class ToggleControl extends BaseControl {
+    constructor() {
+        super();
+    }
+}
 
 on_init();

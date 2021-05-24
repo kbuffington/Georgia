@@ -309,6 +309,8 @@ const DrawTextFlags = {
 	left: 0x00000000,
 	center: 0x00000001,
 	right: 0x00000002,
+
+	noPrefix: 0x00000800,
 }
 
 /** @enum{number} */
