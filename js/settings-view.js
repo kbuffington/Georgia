@@ -7,21 +7,23 @@ let hoveredControl = undefined; // should i do something with this?
 
 // crap that can be stripped out once integrated into main theme
 ft = {};
+
+function font(name, size, style) {
+    var font;
+    try {
+        font = gdi.Font(name, Math.round(scaleForDisplay(size)), style);
+    } catch (e) {
+        console.log('Failed to load font >>>', name, size, style);
+    }
+    return font;
+}
+
 function on_init() {
     const labelFont = 'HelveticaNeueLT Pro 55 Roman';
     const textFont = 'HelveticaNeueLT Pro 65 Md';
-    function font(name, size, style) {
-		var font;
-		try {
-			font = gdi.Font(name, Math.round(scaleForDisplay(size)), style);
-		} catch (e) {
-			console.log('Failed to load font >>>', name, size, style);
-		}
-		return font;
-	}
 
-    ft.label = font(labelFont, 26, 0);
-    ft.value = font(textFont, 26, 0);
+    ft.label = font(labelFont, 22, 0);
+    ft.value = font(textFont, 22, 0);
     initSettingsView();
     window.Repaint();
 }
@@ -122,23 +124,41 @@ const ControlType = {
     Checkbox: 3,
     ColorPicker: 4,
     DropDown: 5,
+    TabGroup: 6,
 };
 
+const colors = {
+    blue: rgb(65,81,181),
+    black: rgb(0,0,0),
+    lightGrey: rgb(200,200,200),
+    red: rgb(255,0,0),
+    white: rgb(255,255,255),
+}
+
 function initSettingsView() {
-    const test = new TextBoxControl('Text Input:', 'abcdefghijklmnopqrstuvwxyz', 20, 60, 200, 400, ft.value);
+    let top = 0;
+    let controlPadding = 15;
+    const tabGroup = new TabGroup(0, top, window.Width, ['First', 'Second', 'Playlist'], ft.label);
+    controlList.push(tabGroup);
+    top += tabGroup.h + controlPadding * 2;
+    const test = new TextBoxControl('Text Input:', 'abcdefghijklmnopqrstuvwxyz', 20, top, 200, 400, ft.value);
     controlList.push(test);
 
-    const toggle = new ToggleControl('Toggle Control:', false, 20, 120, 200, ft.label);
+    controlList.push(new TextBoxControl('Text Input:', 'abcdefghijklmnopqrstuvwxyz', 20, top += controlList[controlList.length - 1].h + controlPadding, 200, 400, ft.value));
+    const toggle = new ToggleControl('Toggle Control:', false, 20, top += controlList[controlList.length - 1].h + controlPadding, 200, ft.label);
     controlList.push(toggle);
-    // controlList.push(new ToggleControl('Toggle Control:', true, 20, 180, 200, ft.label));
+    controlList.push(new ToggleControl('Toggle Control:', true, 20, top += controlList[controlList.length - 1].h + controlPadding, 200, ft.label));
+    controlList.push(new CheckboxControl('Click my checkbox!', false, 20, top += controlList[controlList.length - 1].h + controlPadding, 300, ft.label));
+    controlList.push(new CheckboxControl('Click my checkbox too!', true, 20, top += controlList[controlList.length - 1].h + controlPadding, 300, ft.label));
 }
 
 function calcTextHeight(font) {
     const img = gdi.CreateImage(100, 100);
     const g = img.GetGraphics();
 
-    const measurements = g.MeasureString('ABC', font, 0, 0, 0, 0);
-    return measurements.Height;
+    const height = g.CalcTextHeight('Ag', font);
+    img.ReleaseGraphics(g);
+    return height;
 }
 
 // Classes
@@ -148,6 +168,7 @@ class BaseControl {
         /** @protected */ this.y = y;
         /** @protected */ this.label = label;
         this.focus = false;
+        this.disabled = false;
         this._hovered = false;
         this.controlType = undefined;
         /** @protected @private */ this.i = gdi.CreateImage(1, 1);
@@ -166,12 +187,23 @@ class BaseControl {
      */
     set hovered(value) {
         this._hovered = value;
-        console.log(value);
         // if you need to repaint on hovered value changing do override this method in child class
     }
 
     get hovered() {
         return this._hovered;
+    }
+
+    clearFocus() {
+        this.focus = false;
+    }
+
+    calcTextWidth(text, font) {
+        return this.g.CalcTextWidth(text, font);
+    }
+
+    calcTextHeight(text, font) {
+        return this.g.CalcTextHeight(text, font);
     }
 }
 
@@ -183,7 +215,7 @@ class TextBoxControl extends BaseControl {
         /** @private */ this.padding = scaleForDisplay(3);
         /** @private */ this.inputW = inputWidth - this.padding * 2;    // subtract out padding
         /** @private */ this.font = font;
-        /** @private */ this.h = calcTextHeight(font);
+        /** @private */ this.h = this.calcTextHeight('Ag', font);
         /** @private */ this.value = value;
         /** @private */ this.lineThickness = scaleForDisplay(1);
         /** @constant @private */ this.cursorRefreshInterval = 350; // ms
@@ -286,7 +318,7 @@ class TextBoxControl extends BaseControl {
     }
 
     mouseInThis(x, y) {
-        return x >= this.inputX && x <= this.inputX + this.inputW && y >= this.y - this.padding && y <= this.y + this.h + this.padding;
+        return !this.disabled && x >= this.inputX && x <= this.inputX + this.inputW && y >= this.y - this.padding && y <= this.y + this.h + this.padding;
     }
 
     /**
@@ -425,6 +457,9 @@ class TextBoxControl extends BaseControl {
         let end = this.hasSelection ?  Math.max(this.cursorPos, this.selAnchor) : this.cursorPos;
 
         switch (code) {
+            case VK_ENTER:
+                this.clearFocus();
+                break;
             case VK_BACKSPACE:
                 if (this.hasSelection) {
                     this.value = this.value.substring(0, start) + this.value.substring(end);
@@ -487,17 +522,17 @@ class TextBoxControl extends BaseControl {
 class ToggleControl extends BaseControl {
     constructor(labelText, value, x, y, labelWidth, labelFont) {
         super(x, y, labelText);
+        /** @constant */ this.controlType = ControlType.Toggle;
         /** @private */ this.font = labelFont;
         /** @private */ this.labelW = labelWidth;
         /** @private */ this.toggleX = this.x + this.labelW;
         /** @private */ this.value = !!value;
-        /** @private */ this.h = Math.floor(calcTextHeight(labelFont));
+        /** @private */ this.h = Math.floor(this.calcTextHeight(labelText, labelFont));
 
         /** @private @const */ this.toggleW = 100;
         /** @private @const */ this.knobH = this.h * 1.5;
-        /** @private @const */ this.hoveredExtPad = 6;  // extra padding when hovered
+        /** @private @const */ this.hoveredExtPad = 7;  // extra padding when hovered
         /** @private {GdiBitmap} */ this.knobShadowImg = null;
-        console.log(this.knobH);
 
         this.createKnobShadow();
     }
@@ -506,22 +541,20 @@ class ToggleControl extends BaseControl {
      * @param {GdiGraphics} gr
      */
     draw(gr) {
+        gr.SetSmoothingMode(SmoothingMode.HighQuality);
         gr.GdiDrawText(this.label, ft.label, rgb(0,0,0), this.x, this.y, this.labelW, this.h, DrawTextFlags.noPrefix);
         let fillColor = this.value ? rgb(156, 97, 239) : rgb(172, 172, 172);
-        const halfHeight = Math.round(this.h / 2);
-        // gr.FillRoundRect(this.toggleX, this.y, this.toggleW, this.h, halfHeight, halfHeight, rgb(128,128,128));
         gr.FillEllipse(this.toggleX + this.h * .25, this.y, this.h, this.h, fillColor);
         gr.FillEllipse(this.toggleX + this.toggleW - this.h * .75, this.y, this.h, this.h, fillColor);
-        gr.FillSolidRect(this.toggleX + this.h * .75, this.y + 1, this.toggleW - this.h, this.h - 1, fillColor);
+        gr.FillSolidRect(this.toggleX + this.h * .75, this.y, this.toggleW - this.h, this.h, fillColor);
         let knobX = this.value ? this.toggleX + this.toggleW - this.h : this.toggleX;
         let knobCol = this.value ? rgb(96, 2, 238) : rgb(255,255,255);
         gr.DrawImage(this.knobShadowImg, knobX - 1, this.y - this.h * .25 + 1, this.knobShadowImg.Width, this.knobShadowImg.Height, 0, 0, this.knobShadowImg.Width, this.knobShadowImg.Height);
         if (this.hovered) {
-            gr.FillEllipse(knobX - this.hoveredExtPad, this.y - this.h * .25 - this.hoveredExtPad, this.knobH + this.hoveredExtPad * 2, this.knobH + this.hoveredExtPad * 2, 0x2fffffff & knobCol);
+            const hoverCol = this.value ? 0x20ffffff & knobCol : rgba(0,0,0,10);
+            gr.FillEllipse(knobX - this.hoveredExtPad, this.y - this.h * .25 - this.hoveredExtPad, this.knobH + this.hoveredExtPad * 2, this.knobH + this.hoveredExtPad * 2, hoverCol);
         }
         gr.FillEllipse(knobX, this.y - this.h * .25, this.knobH, this.knobH, knobCol);
-        // gr.DrawRect(this.x, this.y - this.h * .25 - 1, this.toggleX - this.x + this.toggleW + this.knobH - this.h, this.knobShadowImg.Height, 1, rgb(255,0,0))
-
     }
 
     set hovered(value) {
@@ -539,7 +572,8 @@ class ToggleControl extends BaseControl {
     }
 
     mouseInThis(x, y) {
-        return (x >= this.toggleX && x <= this.toggleX + this.toggleW - this.h + this.knobH && y >= this.y - this.h * .25 && y <= this.y + this.knobH);
+        return !this.disabled &&
+                x >= this.toggleX && x <= this.toggleX + this.toggleW - this.h + this.knobH && y >= this.y - this.h * .25 && y <= this.y + this.knobH;
     }
 
     clicked(x, y) {
@@ -556,10 +590,6 @@ class ToggleControl extends BaseControl {
         }
     }
 
-    clearFocus() {
-        this.focus = false;
-    }
-
     /** @private */
     createKnobShadow() {
         const padding = scaleForDisplay(3);
@@ -573,6 +603,162 @@ class ToggleControl extends BaseControl {
     destructor() {
         this.knobShadowImg = null;
         super.destructor();
+    }
+}
+
+class CheckboxControl extends BaseControl {
+    constructor(labelText, value, x, y, labelWidth, labelFont) {
+        super(x, y, labelText);
+        /** @constant */ this.controlType = ControlType.Checkbox;
+        /** @private */ this.font = labelFont;
+        /** @private */ this.labelW = labelWidth;
+        /** @private */ this.value = !!value;
+        /** @private */ this.h = Math.ceil(this.calcTextHeight(labelText, labelFont));
+        /** @private @const */ this.lineThickness = scaleForDisplay(2);
+        /** @private @const */ this.checkboxSpacing = scaleForDisplay(5);
+        /** @private @const */ this.hoveredExtPad = 12;  // extra padding when hovered
+        /** @private */ this.labelDrawnWidth = Math.ceil(this.calcTextWidth(labelText, labelFont));
+    }
+
+    /**
+     * @param {GdiGraphics} gr
+     */
+    draw(gr) {
+        if (this.hovered) {
+            gr.FillEllipse(this.x - this.hoveredExtPad - 1, this.y - this.hoveredExtPad - 1, this.h + this.hoveredExtPad * 2, this.h + this.hoveredExtPad * 2, rgba(0,0,0,10));
+        }
+        gr.SetSmoothingMode(SmoothingMode.None);
+        gr.DrawRect(this.x, this.y, this.h, this.h, this.lineThickness, rgb(0,0,0));
+        if (this.value) {
+            gr.FillSolidRect(this.x, this.y, this.h, this.h, rgb(65,81,181));
+            gr.SetSmoothingMode(SmoothingMode.HighQuality);
+            const height = this.h - scaleForDisplay(4);
+            const startX = this.x + scaleForDisplay(2);
+            const startY = this.y + scaleForDisplay(2) + height * .5;
+            let lineLength = height * .3;
+            const endX = startX + lineLength;
+            const endY = startY + lineLength;
+            const checkThickness = scaleForDisplay(2);
+            gr.DrawLine(startX, startY, endX, endY, checkThickness, rgb(255,255,255));
+            lineLength = height * .66;
+            gr.DrawLine(endX, endY, endX + lineLength, endY - lineLength, checkThickness, rgb(255,255,255));
+        }
+        gr.GdiDrawText(this.label, this.font, rgb(0,0,0), this.x + this.h + this.checkboxSpacing, this.y, this.labelW, this.h, DrawTextFlags.noPrefix);
+        gr.SetSmoothingMode(SmoothingMode.HighQuality);
+    }
+
+    set hovered(value) {
+        this._hovered = value;
+        this.repaint();
+    }
+
+    get hovered() {
+        return this._hovered;
+    }
+
+    repaint() {
+        const padding = this.hoveredExtPad;
+        window.RepaintRect(this.x - padding, this.y - padding, this.h + this.checkboxSpacing + this.labelDrawnWidth + padding * 2, this.h + padding * 2);
+    }
+
+    clicked(x, y) {
+        this.value = !this.value;
+        this.repaint();
+    }
+
+    mouseInThis(x, y) {
+        return !this.disabled &&
+                x >= this.x && x <= this.x + this.h + this.checkboxSpacing + Math.min(this.labelDrawnWidth, this.labelW) &&
+                y >= this.y && y <= this.y + this.h;
+    }
+
+    onChar(code) {
+        switch (code) {
+            case VK_ENTER:
+            case VK_SPACE:
+                this.clicked(0, 0);
+                break;
+        }
+    }
+}
+
+class TabGroup extends BaseControl {
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @param {string[]} labelArray array of labels. Determines number of tabs
+     * @param {GdiFont} labelFont
+     */
+    constructor(x, y, width, labelArray, labelFont) {
+        super(x, y, '');
+        /** @const */ this.controlType = ControlType.TabGroup;
+        this.w = width;
+        /** @private */ this.font = labelFont;
+        /** @private */ this.activeFont = font(labelFont.Name, labelFont.Size, labelFont.Style | g_font_style.bold);
+        /** @private */ this.labelArray = labelArray;
+        const textHeight = Math.ceil(calcTextHeight(labelFont));
+        /** @private @const */ this.padding = textHeight;
+        /** @private @const */ this.lineThickness = scaleForDisplay(1);
+        /** @private @const */ this.tabLabelPadding = scaleForDisplay(40);  // padding on left and right of label text
+        /** @private */ this.tabWidth = 0;
+        this.h = textHeight + Math.round(this.padding * 1.5);
+        this.activeTab = 0;
+
+        this.calcTabWidth();
+    }
+
+    /** @private */
+    calcTabWidth() {
+        let maxWidth = 0;
+        this.labelArray.forEach(label => {
+            const textWidth = this.calcTextWidth(label, this.font);
+            if (textWidth + this.tabLabelPadding > maxWidth) {
+                maxWidth = textWidth + this.tabLabelPadding;
+            }
+        });
+        console.log(maxWidth, maxWidth * 3, this.w);
+        if (this.w >= (maxWidth * this.labelArray.length)) {
+            this.tabWidth = maxWidth;
+        } else {
+            this.tabWidth = this.w / this.labelArray.length;
+        }
+    }
+
+    /**
+     * @param {GdiGraphics} gr
+     */
+    draw(gr) {
+        gr.SetSmoothingMode(SmoothingMode.None);
+        gr.DrawLine(this.x, this.y + this.h, this.x + this.w, this.y + this.h, this.lineThickness, colors.lightGrey);
+        this.labelArray.forEach((label, index) => {
+            const tabX = this.x + this.tabWidth * index;
+            const isActive = this.activeTab === index;
+            gr.GdiDrawText(label, isActive ? this.activeFont : this.font, colors.black, tabX, this.y + this.padding, this.tabWidth, this.padding, DrawTextFlags.noPrefix | DrawTextFlags.center);
+            if (isActive) {
+                const thickness = scaleForDisplay(3);
+                const lineY = Math.round(this.y + this.h - thickness / 2);
+                gr.DrawLine(tabX, lineY, tabX + this.tabWidth, lineY, thickness, colors.blue);
+            }
+        });
+        gr.SetSmoothingMode(SmoothingMode.HighQuality);
+    }
+
+    repaint() {
+        window.RepaintRect(this.x, this.y, this.w, this.h + 1);
+    }
+
+    clicked(x, y) {
+        for (let i = 0; i < this.labelArray.length; i++) {
+            if (x >= this.x + this.tabWidth * i && x < this.x + this.tabWidth * (i + 1)) {
+                this.activeTab = i;
+                break;
+            }
+        }
+        this.repaint();
+    }
+
+    mouseInThis(x, y) {
+        return x >= this.x && x <= this.x + this.w && y >= this.y && y <= this.y + this.h;
     }
 }
 
