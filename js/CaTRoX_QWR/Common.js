@@ -312,6 +312,8 @@ const DrawTextFlags = {
 	right: 0x00000002,
 
 	noPrefix: 0x00000800,
+
+	// calcRect: 0x00000400, // doesn't work
 }
 
 /** @enum{number} */
