@@ -40,14 +40,19 @@ function on_mouse_move(x, y) {
     if (x != state.mouse_x || y != state.mouse_y) {
 		state.mouse_x = x;
 		state.mouse_y = y;
-
+        let found = false;
         for (let i in controlList) {
             if (controlList[i].mouseInThis(x, y)) {
-                if (hoveredControl) hoveredControl.hovered = false; // clear last hovered control
+                if (hoveredControl && hoveredControl !== controlList[i]) hoveredControl.hovered = false; // clear last hovered control
                 hoveredControl = controlList[i];
                 hoveredControl.hovered = true;
+                found = true;
                 break;
             }
+        }
+        if (!found && hoveredControl) {
+            hoveredControl.hovered = false;
+            hoveredControl = null;
         }
     }
 }
@@ -60,7 +65,7 @@ function on_mouse_lbtn_up(x, y, m) {
         let found = false;
         for (let i in controlList) {
             if (controlList[i].mouseInThis(x, y)) {
-                if (activeControl) activeControl.clearFocus();
+                if (activeControl && activeControl !== controlList[i]) activeControl.clearFocus();
                 activeControl = controlList[i];
                 activeControl.clicked(x, y);
                 found = true;
@@ -125,7 +130,7 @@ function initSettingsView() {
 
     const toggle = new ToggleControl('Toggle Control:', false, 20, 120, 200, ft.label);
     controlList.push(toggle);
-    controlList.push(new ToggleControl('Toggle Control:', true, 20, 180, 200, ft.label));
+    // controlList.push(new ToggleControl('Toggle Control:', true, 20, 180, 200, ft.label));
 }
 
 function calcTextHeight(font) {
@@ -143,7 +148,7 @@ class BaseControl {
         /** @protected */ this.y = y;
         /** @protected */ this.label = label;
         this.focus = false;
-        this.hovered = false;
+        this._hovered = false;
         this.controlType = undefined;
         /** @protected @private */ this.i = gdi.CreateImage(1, 1);
         /** @protected */ this.g = this.i.GetGraphics();   // GdiBitmap used for MeasureString and other functions
@@ -155,6 +160,19 @@ class BaseControl {
 
     /** @virtual */
     onKey(vkey) {}
+
+    /**
+     * @param {boolean} value
+     */
+    set hovered(value) {
+        this._hovered = value;
+        console.log(value);
+        // if you need to repaint on hovered value changing do override this method in child class
+    }
+
+    get hovered() {
+        return this._hovered;
+    }
 }
 
 class TextBoxControl extends BaseControl {
@@ -477,6 +495,7 @@ class ToggleControl extends BaseControl {
 
         /** @private @const */ this.toggleW = 100;
         /** @private @const */ this.knobH = this.h * 1.5;
+        /** @private @const */ this.hoveredExtPad = 6;  // extra padding when hovered
         /** @private {GdiBitmap} */ this.knobShadowImg = null;
         console.log(this.knobH);
 
@@ -497,14 +516,26 @@ class ToggleControl extends BaseControl {
         let knobX = this.value ? this.toggleX + this.toggleW - this.h : this.toggleX;
         let knobCol = this.value ? rgb(96, 2, 238) : rgb(255,255,255);
         gr.DrawImage(this.knobShadowImg, knobX - 1, this.y - this.h * .25 + 1, this.knobShadowImg.Width, this.knobShadowImg.Height, 0, 0, this.knobShadowImg.Width, this.knobShadowImg.Height);
+        if (this.hovered) {
+            gr.FillEllipse(knobX - this.hoveredExtPad, this.y - this.h * .25 - this.hoveredExtPad, this.knobH + this.hoveredExtPad * 2, this.knobH + this.hoveredExtPad * 2, 0x2fffffff & knobCol);
+        }
         gr.FillEllipse(knobX, this.y - this.h * .25, this.knobH, this.knobH, knobCol);
-
         // gr.DrawRect(this.x, this.y - this.h * .25 - 1, this.toggleX - this.x + this.toggleW + this.knobH - this.h, this.knobShadowImg.Height, 1, rgb(255,0,0))
 
     }
 
+    set hovered(value) {
+        this._hovered = value;
+        this.repaint();
+    }
+
+    get hovered() {
+        return this._hovered;
+    }
+
     repaint() {
-        window.RepaintRect(this.x, this.y - this.h * .25 - 1, this.toggleX - this.x + this.toggleW + this.knobShadowImg.Height - this.h + 1, this.knobShadowImg.Height + 1)
+        const padding = this.hoveredExtPad;
+        window.RepaintRect(this.x - padding, this.y - this.h * .25 - 1 - padding, this.toggleX - this.x + this.toggleW + this.knobShadowImg.Height - this.h + 1 + padding * 2, this.knobShadowImg.Height + 1 + padding * 2);
     }
 
     mouseInThis(x, y) {
