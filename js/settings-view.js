@@ -136,8 +136,8 @@ const ControlType = {
     Toggle: 2,
     Checkbox: 3,
     ColorPicker: 4,
-    DropDown: 5,
-    RadioGroup: 6,
+    RadioGroup: 5,
+    Select: 6,
     TabGroup: 7,
 };
 
@@ -146,7 +146,8 @@ const colors = {
     black: rgb(0,0,0),
     darkGrey: rgb(96,96,96),
     grey: rgb(128,128,128),
-    lightGrey: rgb(200,200,200),
+    lightGrey: rgb(210,210,210),
+    extraLightGrey: rgb(240,240,240),
     pink: rgb(255, 64, 129),
     red: rgb(255,0,0),
     white: rgb(255,255,255),
@@ -167,8 +168,9 @@ function initSettingsView() {
     controlList.push(new ToggleControl('Toggle Control:', true, 20, top += controlList[controlList.length - 1].h + controlPadding, 200, ft.label));
     controlList.push(new ToggleControl('Blue Toggle', true, 20, top += controlList[controlList.length - 1].h + controlPadding, 200, ft.label, colors.blue));
 
-    controlList.push(new DropDown(420, 150, 'Choose an option', 200, ['Option 1', 'Option 2', 'Long Option'], ft.label))
-    controlList.push(new DropDown(420, 150 + controlList[controlList.length - 1].h + controlPadding, 'Select an option', 200, ['Option 1', 'Option 2', 'Long Option'], ft.label, 1))
+    const select = new Select(420, 150, 'Choose an option', 200, ['Option 1', 'Option 2', 'Long Option'], ft.label);
+    controlList.push(new Select(420, 250 + select.h + controlPadding, 'Select an option', 200, ['Option 1', 'Option 2', 'Long Option'], ft.label, 1));
+    controlList.push(select);   // adding after other select so we don't have z-index issues when select is up
 
     controlList.push(new CheckboxControl('Click my checkbox!', false, 20, top += toggle.h + controlPadding, 300, ft.label));
     controlList.push(new CheckboxControl('Click my checkbox too!', true, 20, top += controlList[controlList.length - 1].h + controlPadding, 300, ft.label));
@@ -206,6 +208,9 @@ class BaseControl {
 
     /** @virtual */
     onKey(vkey) {}
+
+    /** @virtual */
+    onChar(code) {}
 
     /**
      * @param {boolean} value
@@ -744,7 +749,7 @@ class CheckboxControl extends BaseControl {
     }
 }
 
-class DropDown extends BaseControl {
+class Select extends BaseControl {
     /**
      *
      * @param {number} x
@@ -753,11 +758,11 @@ class DropDown extends BaseControl {
      * @param {number} minWidth Minimum width of the control. Will be superceded by label widths
      * @param {string[]} labelArray
      * @param {GdiFont} optionFont Font for the Options text in the dropdow (labelFont will be calculated)
-     * @param {number=} [activeIndex=-1] Active DropDown value
+     * @param {number=} [activeIndex=-1] Active Select value
      */
     constructor(x, y, label, minWidth, labelArray, optionFont, activeIndex) {
         super(x, y, label);
-        /** @const */ this.controlType = ControlType.DropDown;
+        /** @const */ this.controlType = ControlType.Select;
         /** @private */ this.font = optionFont;
         /** @private */ this.labelArray = labelArray;
         this.activeIndex = activeIndex ? activeIndex : -1;
@@ -767,6 +772,12 @@ class DropDown extends BaseControl {
         /** @private @const */ this.optionHeight = Math.ceil(this.calcTextHeight('Ag', optionFont));
         /** @private @const */ this.padding = scaleForDisplay(10);   // the padding between top and label and option and bottom line
         this.h = this.labelHeight + this.padding + this.optionHeight + this.padding;
+        /** @private {GdiBitmap} */ this.selectUpShadow = null;
+        /** @private @const */ this.shadowPadding = scaleForDisplay(5);
+        /** @private */ this.selectUp = false;
+        /** @private */ this.selectUpHeight = (this.optionHeight + this.padding * 2) * this.labelArray.length;  // height of select up option
+        /** @private */ this.selectUpHoveredOption = -1;    // when selectUp is visible, which item is hovered
+        /** @private {number} */ this.selectUpActiveIndex = -1;    // this is the index that is active when the selectUp is toggled
         this.labelArray.forEach(label => {
             const optionW = this.calcTextWidth(label, optionFont) + this.padding * 5; // padding 2x on left and 4x right
             if (optionW > this.w) {
@@ -774,6 +785,7 @@ class DropDown extends BaseControl {
             }
         });
         this.selectedColor = colors.blue;
+        this.createSelectUpShadow();
     }
 
     set hovered(value) {
@@ -804,22 +816,124 @@ class DropDown extends BaseControl {
             gr.GdiDrawText(this.labelArray[this.activeIndex], this.font, colors.black,
                 textLeft, this.y + this.padding + this.labelHeight, this.w - this.padding * 4, this.optionHeight, DrawTextFlags.noPrefix);
         }
-        const lineThickness = (this.hovered || this.focus ? 2 : 1) * scaleForDisplay(1);
-        const lineCol = this.focus ? colors.blue : this.hovered ? colors.darkGrey : colors.grey;
-        gr.DrawRect(this.x + 1, this.y + this.h - lineThickness, this.w - 2, lineThickness, lineThickness, lineCol);
+        if (this.selectUp) {
+            let optionY = this.getFirstOptionY();
+            const optionH = this.optionHeight + this.padding * 2;
+            gr.DrawImage(this.selectUpShadow, this.x - this.shadowPadding, optionY - this.padding - this.shadowPadding + 1, this.w + this.shadowPadding * 2, this.selectUpHeight + this.shadowPadding * 2,
+                0, 0, this.selectUpShadow.Width, this.selectUpShadow.Height);
+            gr.FillSolidRect(this.x, optionY - this.padding, this.w, this.selectUpHeight, colors.white);
+            this.labelArray.forEach((option, i) => {
+                const isActive = this.activeIndex === i;
+
+                if (isActive || this.selectUpHoveredOption === i) {
+                    const color = isActive ? colors.lightGrey : colors.extraLightGrey;
+                    gr.FillSolidRect(this.x, optionY - this.padding, this.w, optionH, color);
+                }
+                gr.GdiDrawText(option, this.font, isActive ? colors.blue : colors.black, textLeft, optionY, this.w - this.padding * 4, optionH, DrawTextFlags.noPrefix);
+                optionY += optionH;
+            })
+        } else {
+            // line is not visible if select is up
+            const lineThickness = (this.hovered || this.focus ? 2 : 1) * scaleForDisplay(1);
+            const lineCol = this.focus ? colors.blue : this.hovered ? colors.darkGrey : colors.grey;
+            gr.DrawRect(this.x + 1, this.y + this.h - lineThickness, this.w - 2, lineThickness, lineThickness, lineCol);
+        }
+    }
+
+    getFirstOptionY() {
+        let y = this.y + this.labelHeight + this.padding;   // default y if nothing or first item is selected
+        const optionH = this.optionHeight + this.padding * 2;
+        if (this.selectUpActiveIndex > 0) {
+            y -= optionH * this.selectUpActiveIndex;
+        }
+        return y;
     }
 
     repaint() {
-        window.RepaintRect(this.x, this.y, this.w, this.h);
+        const repaintY = Math.min(this.getFirstOptionY(), this.y);
+        // console.log(repaintY, repaintY  this.shadowPadding);
+        window.RepaintRect(this.x - this.shadowPadding, repaintY - this.shadowPadding - this.padding, this.w + this.shadowPadding * 2, this.labelHeight + this.selectUpHeight + this.shadowPadding * 3 + this.padding);
     }
 
     clicked(x, y) {
-        // this.activeRadio = this.mouseInIndex(x, y);
+        if (this.selectUp) {
+            // made a selection
+            const optionH = this.optionHeight + this.padding * 2;
+            let yIndex = y - this.getFirstOptionY();
+            this.activeIndex = Math.floor(yIndex / optionH);
+        }
+        this.selectUp = !this.selectUp;
+        if (this.selectUp) {
+            this.selectUpActiveIndex = this.activeIndex;
+        }
+        this.repaint();
+    }
+
+    clearFocus() {
+        this.focus = false;
+        this.selectUp = false;
         this.repaint();
     }
 
     mouseInThis(x, y) {
-        return !this.disabled && x >= this.x && x <= this.x + this.w && y >= this.y && y <= this.y + this.h;
+        let firstOptionY = 0;
+        if (this.selectUp) {
+            firstOptionY = this.getFirstOptionY();
+            if (y < firstOptionY || y > firstOptionY + this.selectUpHeight) {
+                this.selectUpHoveredOption = -1;
+            } else {
+                this.selectUpHoveredOption = Math.floor((y - firstOptionY) / (this.optionHeight + this.padding * 2));
+            }
+        }
+        return !this.disabled &&
+                ((!this.selectUp && x >= this.x && x <= this.x + this.w && y >= this.y && y <= this.y + this.h) ||
+                (this.selectUp && x >= this.x && x <= this.x + this.w && y >= firstOptionY && y <= firstOptionY + this.selectUpHeight));
+    }
+
+    onKey(vkey) {
+        switch (vkey) {
+            case VK_ENTER:
+            case VK_SPACE:
+                if (!this.selectUp) {
+                    this.clicked();
+                } else {
+                    this.selectUp = false;
+                    this.repaint();
+                }
+                break;
+            case VK_UP:
+                if (this.activeIndex !== -1) {
+                    this.activeIndex = Math.max(this.activeIndex - 1, 0);
+                    this.repaint();
+                }
+                break;
+            case VK_DOWN:
+                this.activeIndex = Math.min(this.activeIndex + 1, this.labelArray.length - 1);
+                this.repaint();
+                break;
+            case VK_ESCAPE:
+                this.clearFocus();
+                break;
+        }
+    }
+
+    onChar(code) {
+        this.onKey(code);
+    }
+
+    /** @private */
+    createSelectUpShadow() {
+        const padding = this.shadowPadding;
+        this.selectUpShadow = gdi.CreateImage(this.selectUpHeight + padding * 2, this.w + padding * 2);
+        const shimg = this.selectUpShadow.GetGraphics();
+        shimg.FillSolidRect(padding, padding, this.selectUpHeight, this.w, rgba(128, 128, 128, 128));
+        this.selectUpShadow.ReleaseGraphics(shimg);
+        this.selectUpShadow.StackBlur(5);
+    }
+
+    destructor() {
+        this.selectUpShadow = null;
+        super.destructor();
     }
 }
 
@@ -898,11 +1012,11 @@ class RadioGroup extends BaseControl {
             }
             gr.DrawEllipse(x, y + radioYOffset, this.radioSize, this.radioSize, this.lineThickness, isActive ? this.color : this.inactiveColor);
             if (isActive) {
-                const fillSize = this.radioSize * .66;
+                const fillSize = this.radioSize * .60;
                 const fillOffset = this.radioSize / 2 - fillSize / 2;
                 gr.FillEllipse(x + fillOffset, y + radioYOffset + fillOffset, fillSize, fillSize, this.color);
             }
-            gr.GdiDrawText(label, this.font, colors.black, x + this.radioSize + this.labelPadding, y, this.w, this.labelHeight, colors.lightGrey);
+            gr.GdiDrawText(label, this.font, colors.black, x + this.radioSize + this.labelPadding, y, this.w, this.labelHeight);
             if (this.horizontal) {
                 x += this.radioWidths[index] + this.labelPadding * 2;
             } else {
@@ -951,6 +1065,25 @@ class RadioGroup extends BaseControl {
         }
         return false;
     }
+
+    onKey(vkey) {
+        switch (vkey) {
+            case VK_UP:
+            case VK_LEFT:
+                if ((this.horizontal && vkey === VK_LEFT) || (!this.horizontal && vkey === VK_UP)) {
+                    this.activeRadio = Math.max(this.activeRadio - 1, 0);
+                    this.repaint();
+                }
+                break;
+            case VK_DOWN:
+            case VK_RIGHT:
+                if ((this.horizontal && vkey === VK_RIGHT) || (!this.horizontal && vkey === VK_DOWN)) {
+                    this.activeRadio = Math.min(this.activeRadio + 1, this.labelArray.length - 1);
+                    this.repaint();
+                }
+                break;
+        }
+    }
 }
 
 class TabGroup extends BaseControl {
@@ -966,7 +1099,6 @@ class TabGroup extends BaseControl {
         /** @const */ this.controlType = ControlType.TabGroup;
         this.w = width;
         /** @private */ this.font = labelFont;
-        /** @private */ this.activeFont = font(labelFont.Name, labelFont.Size, labelFont.Style | g_font_style.bold, false);
         /** @private */ this.labelArray = labelArray;
         const textHeight = Math.ceil(calcTextHeight(labelFont));
         /** @private @const */ this.padding = textHeight;
@@ -1004,7 +1136,7 @@ class TabGroup extends BaseControl {
         this.labelArray.forEach((label, index) => {
             const tabX = this.x + this.tabWidth * index;
             const isActive = this.activeTab === index;
-            gr.GdiDrawText(label, isActive ? this.activeFont : this.font, colors.black, tabX, this.y + this.padding, this.tabWidth, this.padding, DrawTextFlags.noPrefix | DrawTextFlags.center);
+            gr.GdiDrawText(label, this.font, isActive ? colors.black : colors.darkGrey, tabX, this.y + this.padding, this.tabWidth, this.padding, DrawTextFlags.noPrefix | DrawTextFlags.center);
             if (isActive) {
                 const thickness = scaleForDisplay(3);
                 const lineY = Math.round(this.y + this.h - thickness / 2);
