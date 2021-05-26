@@ -8,10 +8,18 @@ let hoveredControl = undefined; // should i do something with this?
 // crap that can be stripped out once integrated into main theme
 ft = {};
 
-function font(name, size, style) {
+/**
+ * Create a Font given name, size and style
+ * @param {string} name
+ * @param {number} size
+ * @param {number} style
+ * @param {boolean=} [dontScale=false] If set font size will not be scaled for 4k resolutions
+ * @returns {GdiFont}
+ */
+function font(name, size, style, dontScale) {
     var font;
     try {
-        font = gdi.Font(name, Math.round(scaleForDisplay(size)), style);
+        font = gdi.Font(name, dontScale ? Math.round(scaleForDisplay(size)) : size, style);
     } catch (e) {
         console.log('Failed to load font >>>', name, size, style);
     }
@@ -22,9 +30,13 @@ function on_init() {
     const labelFont = 'HelveticaNeueLT Pro 55 Roman';
     const textFont = 'HelveticaNeueLT Pro 65 Md';
 
-    ft.label = font(labelFont, 22, 0);
-    ft.value = font(textFont, 22, 0);
-    ft.fixed = font('Consolas', 22, 0);
+    // ft.label = font(labelFont, 16, 0);
+    ft.label = font('Roboto', 16, 0);
+    ft.value = font(textFont, 16, 0);
+    ft.roboto = font('Roboto', 18, 0);
+    ft.fixed = font('Open Sans', 16, 0);
+    ft.segoe = font('Segoe Ui Semibold', 16, 0);
+    ft.Marlett = font('Marlett', 20, 0);    // don't resize this
     initSettingsView();
     window.Repaint();
 }
@@ -125,14 +137,15 @@ const ControlType = {
     Checkbox: 3,
     ColorPicker: 4,
     DropDown: 5,
-    TabGroup: 6,
-    RadioGroup: 7,
+    RadioGroup: 6,
+    TabGroup: 7,
 };
 
 const colors = {
     blue: rgb(65,81,181),
     black: rgb(0,0,0),
     darkGrey: rgb(96,96,96),
+    grey: rgb(128,128,128),
     lightGrey: rgb(200,200,200),
     pink: rgb(255, 64, 129),
     red: rgb(255,0,0),
@@ -147,13 +160,17 @@ function initSettingsView() {
     top += tabGroup.h + controlPadding * 2;
     const test = new TextBoxControl('Text Input:', 'abcdefghijklmnopqrstuvwxyz', 20, top, 200, 400, ft.value);
     controlList.push(test);
+    controlList.push(new TextBoxControl('Text Input:', 'You can double click this text if you want to', 20, top += controlList[controlList.length - 1].h + controlPadding, 200, 400, ft.roboto));
 
-    controlList.push(new TextBoxControl('Text Input:', 'You can double click this text if you want too', 20, top += controlList[controlList.length - 1].h + controlPadding, 200, 400, ft.fixed));
     const toggle = new ToggleControl('Toggle Control:', false, 20, top += controlList[controlList.length - 1].h + controlPadding, 200, ft.label);
     controlList.push(toggle);
     controlList.push(new ToggleControl('Toggle Control:', true, 20, top += controlList[controlList.length - 1].h + controlPadding, 200, ft.label));
     controlList.push(new ToggleControl('Blue Toggle', true, 20, top += controlList[controlList.length - 1].h + controlPadding, 200, ft.label, colors.blue));
-    controlList.push(new CheckboxControl('Click my checkbox!', false, 20, top += controlList[controlList.length - 1].h + controlPadding, 300, ft.label));
+
+    controlList.push(new DropDown(420, 150, 'Choose an option', 200, ['Option 1', 'Option 2', 'Long Option'], ft.label))
+    controlList.push(new DropDown(420, 150 + controlList[controlList.length - 1].h + controlPadding, 'Select an option', 200, ['Option 1', 'Option 2', 'Long Option'], ft.label, 1))
+
+    controlList.push(new CheckboxControl('Click my checkbox!', false, 20, top += toggle.h + controlPadding, 300, ft.label));
     controlList.push(new CheckboxControl('Click my checkbox too!', true, 20, top += controlList[controlList.length - 1].h + controlPadding, 300, ft.label));
     controlList.push(new CheckboxControl('Super pink', true, 20, top += controlList[controlList.length - 1].h + controlPadding, 300, ft.label, colors.pink));
     controlList.push(new RadioGroup(20, top += controlList[controlList.length - 1].h + controlPadding, ['Option 1', 'Option 2', 'Option 3'], ft.label, false, 1, colors.blue));
@@ -556,10 +573,10 @@ class ToggleControl extends BaseControl {
         /** @private */ this.labelW = labelWidth;
         /** @private */ this.toggleX = this.x + this.labelW;
         /** @private */ this.value = !!value;
-        /** @private */ this.h = Math.ceil(this.calcTextHeight(labelText, labelFont));
+        this.h = Math.ceil(this.calcTextHeight(labelText, labelFont));
 
-        /** @private @const */ this.toggleW = 80;
         /** @private @const */ this.slideH = this.h / 2;
+        /** @private @const */ this.toggleW = Math.round(this.slideH * 5);
         /** @private @const */ this.hoveredExtPad = scaleForDisplay(7);  // extra padding when hovered
         /** @private {GdiBitmap} */ this.knobShadowImg = null;
         this.color = color ? color : rgb(96, 2, 238);
@@ -574,8 +591,8 @@ class ToggleControl extends BaseControl {
         gr.SetSmoothingMode(SmoothingMode.HighQuality);
         gr.GdiDrawText(this.label, ft.label, rgb(0,0,0), this.x, this.y, this.labelW, this.h, DrawTextFlags.noPrefix);
         let fillColor = this.value ? tintColor(this.color, 35) : rgb(172, 172, 172);
-        const fillWidth = this.toggleW - this.h;
         const fillY = this.y + this.slideH / 2;
+        const fillWidth = this.toggleW - this.h;
         gr.FillEllipse(this.toggleX + this.slideH * .5, fillY, this.slideH, this.slideH, fillColor);
         gr.FillEllipse(this.toggleX + fillWidth + this.slideH * .5, fillY, this.slideH, this.slideH, fillColor);
         gr.FillSolidRect(this.toggleX + this.h * .5, fillY, fillWidth, this.slideH, fillColor);
@@ -727,6 +744,85 @@ class CheckboxControl extends BaseControl {
     }
 }
 
+class DropDown extends BaseControl {
+    /**
+     *
+     * @param {number} x
+     * @param {number} y
+     * @param {string} label Label which will appear above the text
+     * @param {number} minWidth Minimum width of the control. Will be superceded by label widths
+     * @param {string[]} labelArray
+     * @param {GdiFont} optionFont Font for the Options text in the dropdow (labelFont will be calculated)
+     * @param {number=} [activeIndex=-1] Active DropDown value
+     */
+    constructor(x, y, label, minWidth, labelArray, optionFont, activeIndex) {
+        super(x, y, label);
+        /** @const */ this.controlType = ControlType.DropDown;
+        /** @private */ this.font = optionFont;
+        /** @private */ this.labelArray = labelArray;
+        this.activeIndex = activeIndex ? activeIndex : -1;
+        this.w = minWidth;
+        /** @private @const */ this.labelFont = font(this.font.Name, Math.ceil(this.font.Size * .7), this.font.Style, false);
+        /** @private @const */ this.labelHeight = Math.ceil(this.calcTextHeight('Ag', this.labelFont));
+        /** @private @const */ this.optionHeight = Math.ceil(this.calcTextHeight('Ag', optionFont));
+        /** @private @const */ this.padding = scaleForDisplay(10);   // the padding between top and label and option and bottom line
+        this.h = this.labelHeight + this.padding + this.optionHeight + this.padding;
+        this.labelArray.forEach(label => {
+            const optionW = this.calcTextWidth(label, optionFont) + this.padding * 5; // padding 2x on left and 4x right
+            if (optionW > this.w) {
+                this.w = Math.ceil(optionW);
+            }
+        });
+        this.selectedColor = colors.blue;
+    }
+
+    set hovered(value) {
+        this._hovered = value;
+        this.repaint();
+    }
+
+    get hovered() {
+        return this._hovered;
+    }
+
+    /**
+     * @param {GdiGraphics} gr
+     */
+    draw(gr) {
+        gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
+        gr.SetSmoothingMode(SmoothingMode.None);
+        gr.FillSolidRect(this.x, this.y, this.w, this.h, colors.lightGrey);
+        const textLeft = this.x + this.padding;
+        const triRight = this.y + this.w - this.padding;
+        gr.GdiDrawText('u', ft.Marlett, colors.darkGrey, this.x + this.w - this.padding * 3, this.y, 100, this.h, DrawTextFlags.vCenter | DrawTextFlags.calcRect);
+        if (this.activeIndex === -1) {
+            gr.GdiDrawText(this.label, this.font, colors.black,
+                textLeft, this.y, this.w - this.padding * 2, this.h, DrawTextFlags.vCenter | DrawTextFlags.calcRect | DrawTextFlags.noPrefix);
+        } else {
+            gr.GdiDrawText(this.label, this.labelFont, this.selectedColor,
+                textLeft, this.y + Math.ceil(this.padding / 2), this.w - this.padding * 4, this.labelHeight, DrawTextFlags.noPrefix);
+            gr.GdiDrawText(this.labelArray[this.activeIndex], this.font, colors.black,
+                textLeft, this.y + this.padding + this.labelHeight, this.w - this.padding * 4, this.optionHeight, DrawTextFlags.noPrefix);
+        }
+        const lineThickness = (this.hovered || this.focus ? 2 : 1) * scaleForDisplay(1);
+        const lineCol = this.focus ? colors.blue : this.hovered ? colors.darkGrey : colors.grey;
+        gr.DrawRect(this.x + 1, this.y + this.h - lineThickness, this.w - 2, lineThickness, lineThickness, lineCol);
+    }
+
+    repaint() {
+        window.RepaintRect(this.x, this.y, this.w, this.h);
+    }
+
+    clicked(x, y) {
+        // this.activeRadio = this.mouseInIndex(x, y);
+        this.repaint();
+    }
+
+    mouseInThis(x, y) {
+        return !this.disabled && x >= this.x && x <= this.x + this.w && y >= this.y && y <= this.y + this.h;
+    }
+}
+
 class RadioGroup extends BaseControl {
     /**
      * Create a checkbox control similar to material design's: https://material.angular.io/components/checkbox/overview
@@ -870,7 +966,7 @@ class TabGroup extends BaseControl {
         /** @const */ this.controlType = ControlType.TabGroup;
         this.w = width;
         /** @private */ this.font = labelFont;
-        /** @private */ this.activeFont = font(labelFont.Name, labelFont.Size, labelFont.Style | g_font_style.bold);
+        /** @private */ this.activeFont = font(labelFont.Name, labelFont.Size, labelFont.Style | g_font_style.bold, false);
         /** @private */ this.labelArray = labelArray;
         const textHeight = Math.ceil(calcTextHeight(labelFont));
         /** @private @const */ this.padding = textHeight;

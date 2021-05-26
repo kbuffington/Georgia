@@ -306,14 +306,17 @@ const g_string_format = {
 };
 
 const DrawTextFlags = {
-	top: 0x00000000,
 	left: 0x00000000,
 	center: 0x00000001,
 	right: 0x00000002,
 
+	top: 0x00000000,
+	vCenter: 0x00000004,
+	bottom: 0x00000008,
+
 	noPrefix: 0x00000800,
 
-	// calcRect: 0x00000400, // doesn't work
+	calcRect: 0x00000400, // doesn't work
 }
 
 /** @enum{number} */
