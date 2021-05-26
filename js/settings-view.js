@@ -132,6 +132,7 @@ const ControlType = {
 const colors = {
     blue: rgb(65,81,181),
     black: rgb(0,0,0),
+    darkGrey: rgb(96,96,96),
     lightGrey: rgb(200,200,200),
     pink: rgb(255, 64, 129),
     red: rgb(255,0,0),
@@ -155,6 +156,8 @@ function initSettingsView() {
     controlList.push(new CheckboxControl('Click my checkbox!', false, 20, top += controlList[controlList.length - 1].h + controlPadding, 300, ft.label));
     controlList.push(new CheckboxControl('Click my checkbox too!', true, 20, top += controlList[controlList.length - 1].h + controlPadding, 300, ft.label));
     controlList.push(new CheckboxControl('Super pink', true, 20, top += controlList[controlList.length - 1].h + controlPadding, 300, ft.label, colors.pink));
+    controlList.push(new RadioGroup(20, top += controlList[controlList.length - 1].h + controlPadding, ['Option 1', 'Option 2', 'Option 3'], ft.label, false, 1, colors.blue));
+    controlList.push(new RadioGroup(20, top += controlList[controlList.length - 1].h + controlPadding, ['Horizontal', 'Option 2', 'Option 3'], ft.label, true));
 }
 
 function calcTextHeight(font) {
@@ -203,11 +206,21 @@ class BaseControl {
         this.focus = false;
     }
 
+    /**
+     * @param {string} text
+     * @param {GdiFont} font
+     * @returns {number}
+     */
     calcTextWidth(text, font) {
         return this.g.CalcTextWidth(text, font);
     }
 
-    calcTextHeight(text, font) {
+    /**
+     * @param {string} text
+     * @param {GdiFont} font
+     * @returns {number}
+     */
+     calcTextHeight(text, font) {
         return this.g.CalcTextHeight(text, font);
     }
 }
@@ -547,7 +560,7 @@ class ToggleControl extends BaseControl {
 
         /** @private @const */ this.toggleW = 80;
         /** @private @const */ this.slideH = this.h / 2;
-        /** @private @const */ this.hoveredExtPad = 7;  // extra padding when hovered
+        /** @private @const */ this.hoveredExtPad = scaleForDisplay(7);  // extra padding when hovered
         /** @private {GdiBitmap} */ this.knobShadowImg = null;
         this.color = color ? color : rgb(96, 2, 238);
 
@@ -572,7 +585,7 @@ class ToggleControl extends BaseControl {
 
         gr.DrawImage(this.knobShadowImg, knobX - 1, this.y + 1, this.knobShadowImg.Width, this.knobShadowImg.Height, 0, 0, this.knobShadowImg.Width, this.knobShadowImg.Height);
         if (this.hovered) {
-            const hoverCol = this.value ? 0x20ffffff & knobCol : rgba(0,0,0,10);
+            const hoverCol = this.value ? 0x20ffffff & knobCol : rgba(0,0,0,15);
             gr.FillEllipse(knobX - this.hoveredExtPad, this.y - this.hoveredExtPad, this.h + this.hoveredExtPad * 2, this.h + this.hoveredExtPad * 2, hoverCol);
         }
         gr.FillEllipse(knobX, this.y, this.h, this.h, knobCol);
@@ -714,10 +727,141 @@ class CheckboxControl extends BaseControl {
     }
 }
 
+class RadioGroup extends BaseControl {
+    /**
+     * Create a checkbox control similar to material design's: https://material.angular.io/components/checkbox/overview
+     * @param {number} x
+     * @param {number} y
+     * @param {string[]} labelArray array of labels. Determines number of radio buttons in group
+     * @param {GdiFont} font
+     * @param {boolean=} [horizontal=false] Are radio options horizontal, or stacked (default)
+     * @param {number=} [activeIndex=-1] Index of selected radio button from 0 to labelArray.length - 1
+     * @param {number=} color optional color for selected radio button
+     */
+    constructor(x, y, labelArray, font, horizontal, activeIndex, color) {
+        super(x, y);
+        /** @const */ this.controlType = ControlType.RadioGroup;
+        /** @private */ this.font = font;
+        /** @private */ this.labelArray = labelArray;
+        /** @private */ this.horizontal = horizontal;
+        this.activeRadio = activeIndex === undefined ? -1 : activeIndex;
+        /** @private @const */ this.verticalPadding = horizontal ? 0 : scaleForDisplay(3);
+        /** @private @const */ this.labelHeight = Math.ceil(this.calcTextHeight('Ag', font));
+        /** @private @const */ this.radioSize = Math.ceil(this.labelHeight * .75);
+        /** @private @const */ this.optionHeight = this.labelHeight + this.verticalPadding;
+        /** @private @const */ this.lineThickness = scaleForDisplay(2);
+        /** @private @const */ this.hoveredExtPad = scaleForDisplay(7);
+        /** @private @const */ this.labelPadding = scaleForDisplay(10); // space between radio button and its label, also 2x this size between horizontal radio items
+        this.color = color ? color : colors.black;
+        this.inactiveColor = colors.darkGrey;
+        this.h = horizontal ? this.optionHeight : this.optionHeight * labelArray.length - this.verticalPadding; // we don't need vertical padding after the last radio button
+        /** @private {number[]} */ this.radioWidths = []; // array of labelWidths
+        /** @private {number} */ this.lastMouseOver = undefined;
+        this.w = this.getRadioGroupWidth();
+    }
+
+    set hovered(value) {
+        this._hovered = value;
+        this.repaint();
+    }
+
+    get hovered() {
+        return this._hovered;
+    }
+
+    getRadioGroupWidth() {
+        let width = 0;
+        this.radioWidths = this.labelArray.map(text => this.radioSize + this.labelPadding + this.calcTextWidth(text, this.font));  // array of widths
+        if (this.horizontal) {
+            this.radioWidths.forEach((w, idx) => {
+                width += w + (idx > 0 ? this.labelPadding * 2 : 0); // skip last padding essentially
+            });
+        } else if (this.radioWidths.length) {
+            this.radioWidths.forEach(w => {
+                if (w > width) {
+                    width = w;
+                }
+            });
+        }
+        return width;
+    }
+
+    /**
+     * @param {GdiGraphics} gr
+     */
+    draw(gr) {
+        gr.SetSmoothingMode(SmoothingMode.HighQuality);
+        let x = this.x;
+        let y = this.y;
+        this.labelArray.forEach((label, index) => {
+            const isActive = this.activeRadio === index;
+            const radioYOffset = this.labelHeight / 2 - this.radioSize / 2 - 1;
+            if (this.hovered && this.lastMouseOver === index) {
+                // gr.DrawEllipse(x, y + radioYOffset, this.radioSize, this.radioSize, this.lineThickness, isActive ? this.color : this.inactiveColor);
+                gr.FillEllipse(x - this.hoveredExtPad, y + radioYOffset - this.hoveredExtPad, this.radioSize + this.hoveredExtPad * 2, this.radioSize + this.hoveredExtPad * 2, rgba(0,0,0,15));
+            }
+            gr.DrawEllipse(x, y + radioYOffset, this.radioSize, this.radioSize, this.lineThickness, isActive ? this.color : this.inactiveColor);
+            if (isActive) {
+                const fillSize = this.radioSize * .66;
+                const fillOffset = this.radioSize / 2 - fillSize / 2;
+                gr.FillEllipse(x + fillOffset, y + radioYOffset + fillOffset, fillSize, fillSize, this.color);
+            }
+            gr.GdiDrawText(label, this.font, colors.black, x + this.radioSize + this.labelPadding, y, this.w, this.labelHeight, colors.lightGrey);
+            if (this.horizontal) {
+                x += this.radioWidths[index] + this.labelPadding * 2;
+            } else {
+                // gr.DrawRect(this.x, this.y, this.w, this.optionHeight, 1, colors.red);
+                y += this.optionHeight;
+            }
+        });
+    }
+
+    repaint() {
+        window.RepaintRect(this.x - this.hoveredExtPad, this.y - this.hoveredExtPad, this.w, this.h + this.hoveredExtPad * 2 + 1);
+    }
+
+    mouseInIndex(x, y) {
+        let index = undefined;
+        if (this.horizontal) {
+            let relativeX = x - this.x;
+            for (let i = 0; i < this.radioWidths.length; i++) {
+                if (relativeX < this.radioWidths[i]) {
+                    index = i;
+                    break;
+                } else {
+                    relativeX -= (this.radioWidths[i] + this.labelPadding * 2);
+                }
+            }
+        } else {
+            const relativeY = y - this.y;
+            index = Math.floor(relativeY / this.optionHeight);
+        }
+        if (index >= this.labelArray.length) {
+            index = undefined;
+        }
+        this.lastMouseOver = index;
+        return index;
+    }
+
+    clicked(x, y) {
+        this.activeRadio = this.mouseInIndex(x, y);
+        this.repaint();
+    }
+
+    mouseInThis(x, y) {
+        if (!this.disabled && x >= this.x && x <= this.x + this.w && y >= this.y && y <= this.y + this.h) {
+            this.mouseInIndex(x, y);
+            return true;
+        }
+        return false;
+    }
+}
+
 class TabGroup extends BaseControl {
     /**
      * @param {number} x
      * @param {number} y
+     * @param {number} width The width of the entire TabGroup.
      * @param {string[]} labelArray array of labels. Determines number of tabs
      * @param {GdiFont} labelFont
      */
