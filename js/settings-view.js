@@ -1,8 +1,8 @@
 // Globals needed by this view
 let controlList = [];
-/** @type {TextBoxControl} */
+/** @type {StringInput} */
 let activeControl = undefined;
-/** @type {TextBoxControl} */
+/** @type {StringInput} */
 let hoveredControl = undefined; // should i do something with this?
 
 // crap that can be stripped out once integrated into main theme
@@ -132,7 +132,7 @@ function drawSettingsView(gr) {
 }
 
 const ControlType = {
-    TextBox: 1,
+    StringInput: 1,
     Toggle: 2,
     Checkbox: 3,
     ColorPicker: 4,
@@ -159,9 +159,9 @@ function initSettingsView() {
     const tabGroup = new TabGroup(0, top, window.Width, ['Settings', '2nd tab', 'Playlist'], ft.label);
     controlList.push(tabGroup);
     top += tabGroup.h + controlPadding * 2;
-    const test = new TextBoxControl('Text Input:', 'abcdefghijklmnopqrstuvwxyz', 20, top, 200, 400, ft.value);
+    const test = new StringInput('Text Input:', 'abcdefghijklmnopqrstuvwxyz', 20, top, 200, 400, ft.value);
     controlList.push(test);
-    controlList.push(new TextBoxControl('Text Input:', 'You can double click this text if you want to', 20, top += controlList[controlList.length - 1].h + controlPadding, 200, 400, ft.roboto));
+    controlList.push(new StringInput('Text Input:', 'You can double click this text if you want to', 20, top += controlList[controlList.length - 1].h + controlPadding, 200, 400, ft.roboto));
 
     const toggle = new ToggleControl('Toggle Control:', false, 20, top += controlList[controlList.length - 1].h + controlPadding, 200, ft.label);
     controlList.push(toggle);
@@ -247,7 +247,7 @@ class BaseControl {
     }
 }
 
-class TextBoxControl extends BaseControl {
+class StringInput extends BaseControl {
     constructor(label, value, x, y, labelWidth, inputWidth, font) {
         super(x, y, label);
         /** @private */ this.labelW = labelWidth;
@@ -266,7 +266,7 @@ class TextBoxControl extends BaseControl {
         /** @private */ this.cursorPos = 0;
         /** @private */ this.offsetChars = 0; // number of chars that are not visible in the textbox (scrolled to the left)
 
-        /** @constant */ this.controlType = ControlType.TextBox;
+        /** @constant */ this.controlType = ControlType.StringInput;
     }
 
     /**
@@ -395,7 +395,7 @@ class TextBoxControl extends BaseControl {
         const oldCursor = this.cursorPos;
         this.cursorPos = this.getCursorIndex(x);
         if (utils.IsKeyPressed(VK_SHIFT)) {
-            if (this.hasSelection) {
+            if (!this.hasSelection) {
                 this.selAnchor = oldCursor;
             }
             this.selEnd = this.cursorPos;
@@ -492,7 +492,6 @@ class TextBoxControl extends BaseControl {
     }
 
     onChar(code) {
-        // console.log(code);
         let clearSelection = true;
         let text = String.fromCharCode(code);
         let start = this.hasSelection ? Math.min(this.cursorPos, this.selAnchor) : this.cursorPos;
