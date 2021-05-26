@@ -296,7 +296,7 @@ class StringInput extends BaseControl {
             selStartIndex = Math.max(this.offsetChars, selStartIndex);
             let start = textX + this.getCursorX(selStartIndex);
             let end = textX + this.getCursorX(selEndIndex);
-            const maxWidth = Math.min(this.inputW, end - start)
+            const maxWidth = Math.min(this.inputW - (start - textX), end - start)
             gr.FillSolidRect(start, this.y, maxWidth, this.h, rgb(128,128,255));
             gr.GdiDrawText(this.value.substr(selStartIndex, selEndIndex - selStartIndex), this.font, rgb(255,255,255), start, this.y, maxWidth, this.h, DrawTextFlags.noPrefix);
         }
