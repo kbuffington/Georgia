@@ -1,8 +1,8 @@
 // Globals needed by this view
 let controlList = [];
-/** @type {StringInput} */
+/** @type {*} */
 let activeControl = undefined;
-/** @type {StringInput} */
+/** @type {*} */
 let hoveredControl = undefined; // should i do something with this?
 
 // crap that can be stripped out once integrated into main theme
@@ -56,13 +56,21 @@ function on_mouse_move(x, y) {
 		state.mouse_x = x;
 		state.mouse_y = y;
         let found = false;
-        for (let i in controlList) {
+        const setHovered = (control) => {
+            if (hoveredControl && hoveredControl !== control) hoveredControl.hovered = false; // clear last hovered control
+            hoveredControl = control;
+            hoveredControl.hovered = true;
+            found = true;
+        };
+
+        if (activeControl && activeControl instanceof Select && activeControl.isSelectUp) { // handles z-index stuff in a janky way
+            if (activeControl.mouseInThis(x, y)) {
+                setHovered(activeControl);
+            }
+        }
+        for (let i = controlList.length - 1; i >= 0 && !found; i--) {   // traverse list in reverse order to better handle z-index issues
             if (controlList[i].mouseInThis(x, y)) {
-                if (hoveredControl && hoveredControl !== controlList[i]) hoveredControl.hovered = false; // clear last hovered control
-                hoveredControl = controlList[i];
-                hoveredControl.hovered = true;
-                found = true;
-                break;
+                setHovered(controlList[i]);
             }
         }
         if (!found && hoveredControl) {
@@ -78,13 +86,18 @@ function on_mouse_lbtn_up(x, y, m) {
     if (Date.now() - lastClickTime > doubleClickTime) {
         lastClickTime = Date.now();
         let found = false;
-        for (let i in controlList) {
+        if (activeControl && activeControl instanceof Select && activeControl.isSelectUp) {
+            if (activeControl.mouseInThis(x, y)) {
+                activeControl.clicked(x, y);
+                found = true;
+            }
+        }
+        for (let i = controlList.length - 1; i >= 0 && !found; i--) {   // reverse order for better z-index handling
             if (controlList[i].mouseInThis(x, y)) {
                 if (activeControl && activeControl !== controlList[i]) activeControl.clearFocus();
                 activeControl = controlList[i];
                 activeControl.clicked(x, y);
                 found = true;
-                break;
             }
         }
         if (!found && activeControl) {
@@ -129,6 +142,9 @@ function on_key_down(vkey) {
 function drawSettingsView(gr) {
     gr.FillSolidRect(0, 0, window.Width, window.Height, rgb(220,222,224));
     controlList.forEach(c => c.draw(gr));
+    if (activeControl && activeControl instanceof Select && activeControl.isSelectUp) {
+        activeControl.draw(gr);
+    }
 }
 
 const ControlType = {
@@ -168,7 +184,7 @@ function initSettingsView() {
     controlList.push(new ToggleControl('Toggle Control:', true, 20, top += controlList[controlList.length - 1].h + controlPadding, 200, ft.label));
     controlList.push(new ToggleControl('Blue Toggle', true, 20, top += controlList[controlList.length - 1].h + controlPadding, 200, ft.label, colors.blue));
 
-    const select = new Select(420, 150, 'Choose an option', 200, ['Option 1', 'Option 2', 'Long Option'], ft.label);
+    const select = new Select(420, 20, 'Choose an option', 200, ['Option 1', 'Option 2', 'Long Option'], ft.label);
     controlList.push(new Select(420, 250 + select.h + controlPadding, 'Select an option', 200, ['Option 1', 'Option 2', 'Long Option'], ft.label, 1));
     controlList.push(select);   // adding after other select so we don't have z-index issues when select is up
 
@@ -285,7 +301,8 @@ class StringInput extends BaseControl {
         gr.SetTextRenderingHint(TextRenderingHint.AntiAlias);
         gr.GdiDrawText(this.label, ft.label, rgb(0,0,0), this.x, this.y, this.labelW, this.h, DrawTextFlags.noPrefix);
         gr.FillSolidRect(this.inputX, this.y - this.padding, this.inputW + 2 * this.padding, this.h + this.padding * 2, rgb(255,255,255));
-        gr.DrawRect(this.inputX, this.y - this.padding, this.inputW + 2 * this.padding, this.h + this.padding * 2, this.lineThickness, rgb(0,0,0));
+        const outlineColor = this.hovered ? colors.darkGrey : colors.grey;
+        gr.DrawRect(this.inputX, this.y - this.padding, this.inputW + 2 * this.padding, this.h + this.padding * 2, this.lineThickness, outlineColor);
         gr.GdiDrawText(this.value.substr(this.offsetChars), this.font, rgb(0,0,0), textX, this.y, this.inputW, this.h, DrawTextFlags.left | DrawTextFlags.noPrefix);
         if (this.hasSelection) {
             let selStartIndex = this.selAnchor;
@@ -304,6 +321,16 @@ class StringInput extends BaseControl {
             const cursorPos = textX + this.getCursorX(this.cursorPos);
             gr.DrawLine(cursorPos, this.y, cursorPos, this.y + this.h, this.lineThickness, rgb(32,32,132));
         }
+    }
+
+
+    set hovered(value) {
+        this._hovered = value;
+        this.repaint();
+    }
+
+    get hovered() {
+        return this._hovered;
     }
 
     /**
@@ -748,6 +775,17 @@ class CheckboxControl extends BaseControl {
     }
 }
 
+class ColorSlider extends BaseControl {
+    constructor(x, y, w, label, labelFont) {
+        super(x, y, label);
+        /** @private @const */ this.padding = scaleForDisplay(10);
+        /** @private @const */ this.sliderWidth = w;
+        /** @private @const */ this.labelW = this.calcTextWidth(label, labelFont);
+        this.w = w;
+        this.font = labelFont;
+    }
+}
+
 class Select extends BaseControl {
     /**
      *
@@ -787,6 +825,10 @@ class Select extends BaseControl {
         this.createSelectUpShadow();
     }
 
+    get isSelectUp() {
+        return this.selectUp;
+    }
+
     set hovered(value) {
         this._hovered = value;
         this.repaint();
@@ -818,17 +860,17 @@ class Select extends BaseControl {
         if (this.selectUp) {
             let optionY = this.getFirstOptionY();
             const optionH = this.optionHeight + this.padding * 2;
-            gr.DrawImage(this.selectUpShadow, this.x - this.shadowPadding, optionY - this.padding - this.shadowPadding + 1, this.w + this.shadowPadding * 2, this.selectUpHeight + this.shadowPadding * 2,
+            gr.DrawImage(this.selectUpShadow, this.x - this.shadowPadding, optionY - this.shadowPadding + 1, this.w + this.shadowPadding * 2, this.selectUpHeight + this.shadowPadding * 2,
                 0, 0, this.selectUpShadow.Width, this.selectUpShadow.Height);
-            gr.FillSolidRect(this.x, optionY - this.padding, this.w, this.selectUpHeight, colors.white);
+            gr.FillSolidRect(this.x, optionY, this.w, this.selectUpHeight, colors.white);
             this.labelArray.forEach((option, i) => {
                 const isActive = this.activeIndex === i;
 
                 if (isActive || this.selectUpHoveredOption === i) {
                     const color = isActive ? colors.lightGrey : colors.extraLightGrey;
-                    gr.FillSolidRect(this.x, optionY - this.padding, this.w, optionH, color);
+                    gr.FillSolidRect(this.x, optionY, this.w, optionH, color);
                 }
-                gr.GdiDrawText(option, this.font, isActive ? colors.blue : colors.black, textLeft, optionY, this.w - this.padding * 4, optionH, DrawTextFlags.noPrefix);
+                gr.GdiDrawText(option, this.font, isActive ? colors.blue : colors.black, textLeft, optionY + this.padding, this.w - this.padding * 4, optionH, DrawTextFlags.noPrefix);
                 optionY += optionH;
             })
         } else {
@@ -840,12 +882,12 @@ class Select extends BaseControl {
     }
 
     getFirstOptionY() {
-        let y = this.y + this.labelHeight + this.padding;   // default y if nothing or first item is selected
+        let y = this.y + this.labelHeight;   // default y if nothing or first item is selected
         const optionH = this.optionHeight + this.padding * 2;
         if (this.selectUpActiveIndex > 0) {
             y -= optionH * this.selectUpActiveIndex;
         }
-        return y;
+        return Math.max(y, this.shadowPadding);
     }
 
     repaint() {
@@ -882,6 +924,7 @@ class Select extends BaseControl {
                 this.selectUpHoveredOption = -1;
             } else {
                 this.selectUpHoveredOption = Math.floor((y - firstOptionY) / (this.optionHeight + this.padding * 2));
+                // console.log(y, 'first:', firstOptionY, 'rel:', y - firstOptionY, this.optionHeight + this.padding * 2, (y - firstOptionY) / (this.optionHeight + this.padding * 2))
             }
         }
         return !this.disabled &&
@@ -914,10 +957,6 @@ class Select extends BaseControl {
                 this.clearFocus();
                 break;
         }
-    }
-
-    onChar(code) {
-        this.onKey(code);
     }
 
     /** @private */
