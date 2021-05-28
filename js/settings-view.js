@@ -4,6 +4,7 @@ let controlList = [];
 let activeControl = undefined;
 /** @type {*} */
 let hoveredControl = undefined; // should i do something with this?
+/** @boolean */ let mouseDown = false;
 
 // crap that can be stripped out once integrated into main theme
 ft = {};
@@ -71,6 +72,9 @@ function on_mouse_move(x, y) {
         for (let i = controlList.length - 1; i >= 0 && !found; i--) {   // traverse list in reverse order to better handle z-index issues
             if (controlList[i].mouseInThis(x, y)) {
                 setHovered(controlList[i]);
+                if (mouseDown) {
+                    controlList[i].mouseDown(x, y);
+                }
             }
         }
         if (!found && hoveredControl) {
@@ -85,6 +89,7 @@ let lastClickTime = null;
 function on_mouse_lbtn_up(x, y, m) {
     if (Date.now() - lastClickTime > doubleClickTime) {
         lastClickTime = Date.now();
+        mouseDown = false;
         let found = false;
         if (activeControl && activeControl instanceof Select && activeControl.isSelectUp) {
             if (activeControl.mouseInThis(x, y)) {
@@ -108,6 +113,10 @@ function on_mouse_lbtn_up(x, y, m) {
         lastClickTime = Date.now();
         activeControl.doubleClicked(x, y);
     }
+}
+
+function on_mouse_lbtn_down(x, y) {
+    mouseDown = true;
 }
 
 // function on_mouse_lbtn_dblclk(x, y, m) {
@@ -158,14 +167,17 @@ const ControlType = {
 };
 
 const colors = {
-    blue: rgb(65,81,181),
+    blue: rgb(0,0,255),
+    darkBlue: rgb(65,81,181),
     black: rgb(0,0,0),
     darkGrey: rgb(96,96,96),
     grey: rgb(128,128,128),
+    green: rgb(0,255,0),
     lightGrey: rgb(210,210,210),
     extraLightGrey: rgb(240,240,240),
     pink: rgb(255, 64, 129),
     red: rgb(255,0,0),
+    shadow: rgba(0,0,0,10),
     white: rgb(255,255,255),
 }
 
@@ -182,17 +194,19 @@ function initSettingsView() {
     const toggle = new ToggleControl('Toggle Control:', false, 20, top += controlList[controlList.length - 1].h + controlPadding, 200, ft.label);
     controlList.push(toggle);
     controlList.push(new ToggleControl('Toggle Control:', true, 20, top += controlList[controlList.length - 1].h + controlPadding, 200, ft.label));
-    controlList.push(new ToggleControl('Blue Toggle', true, 20, top += controlList[controlList.length - 1].h + controlPadding, 200, ft.label, colors.blue));
+    controlList.push(new ToggleControl('Blue Toggle', true, 20, top += controlList[controlList.length - 1].h + controlPadding, 200, ft.label, colors.darkBlue));
 
-    const select = new Select(420, 20, 'Choose an option', 200, ['Option 1', 'Option 2', 'Long Option'], ft.label);
-    controlList.push(new Select(420, 250 + select.h + controlPadding, 'Select an option', 200, ['Option 1', 'Option 2', 'Long Option'], ft.label, 1));
+    const select = new Select(420, 150, 'Choose an option', 200, ['Option 1', 'Option 2', 'Long Option'], ft.label);
     controlList.push(select);   // adding after other select so we don't have z-index issues when select is up
+    controlList.push(new Select(420, 250 + select.h + controlPadding, 'Select an option', 200, ['Option 1', 'Option 2', 'Long Option'], ft.label, 1));
 
     controlList.push(new CheckboxControl('Click my checkbox!', false, 20, top += toggle.h + controlPadding, 300, ft.label));
     controlList.push(new CheckboxControl('Click my checkbox too!', true, 20, top += controlList[controlList.length - 1].h + controlPadding, 300, ft.label));
     controlList.push(new CheckboxControl('Super pink', true, 20, top += controlList[controlList.length - 1].h + controlPadding, 300, ft.label, colors.pink));
-    controlList.push(new RadioGroup(20, top += controlList[controlList.length - 1].h + controlPadding, ['Option 1', 'Option 2', 'Option 3'], ft.label, false, 1, colors.blue));
+    controlList.push(new RadioGroup(20, top += controlList[controlList.length - 1].h + controlPadding, ['Option 1', 'Option 2', 'Option 3'], ft.label, false, 1, colors.darkBlue));
     controlList.push(new RadioGroup(20, top += controlList[controlList.length - 1].h + controlPadding, ['Horizontal', 'Option 2', 'Option 3'], ft.label, true));
+
+    controlList.push(new ColorSlider(300, 450, 150, 255, ColorType.B, ft.roboto, () => {}));
 }
 
 function calcTextHeight(font) {
@@ -222,11 +236,15 @@ class BaseControl {
         this.i.ReleaseGraphics(this.g);
     }
 
+    // these aren't really virtually, just stubbed so that not every child needs to create one if it wants to ignore these events
     /** @virtual */
     onKey(vkey) {}
 
     /** @virtual */
     onChar(code) {}
+
+    /** @virtual */
+    mouseDown(x, y) {}
 
     /**
      * @param {boolean} value
@@ -247,19 +265,23 @@ class BaseControl {
     /**
      * @param {string} text
      * @param {GdiFont} font
+     * @param {boolean=} [round=false] should the value be rounded up?
      * @returns {number}
      */
-    calcTextWidth(text, font) {
-        return this.g.CalcTextWidth(text, font);
+    calcTextWidth(text, font, round) {
+        const w = this.g.CalcTextWidth(text, font);
+        return round ? Math.ceil(w) : w;
     }
 
     /**
      * @param {string} text
      * @param {GdiFont} font
+     * @param {boolean=} [round=false] should the value be rounded up?
      * @returns {number}
      */
-     calcTextHeight(text, font) {
-        return this.g.CalcTextHeight(text, font);
+     calcTextHeight(text, font, round) {
+        const h = this.g.CalcTextHeight(text, font);
+        return round ? Math.ceil(h) : h;
     }
 }
 
@@ -709,8 +731,8 @@ class CheckboxControl extends BaseControl {
         /** @private @const */ this.lineThickness = scaleForDisplay(2);
         /** @private @const */ this.checkboxSpacing = scaleForDisplay(10);
         /** @private @const */ this.hoveredExtPad = scaleForDisplay(12);  // extra padding when hovered
-        /** @private */ this.labelDrawnWidth = Math.ceil(this.calcTextWidth(labelText, labelFont));
-        this.color = color ? color : colors.blue;
+        /** @private */ this.labelDrawnWidth = this.calcTextWidth(labelText, labelFont, true);
+        this.color = color ? color : colors.darkBlue;
     }
 
     /**
@@ -775,14 +797,77 @@ class CheckboxControl extends BaseControl {
     }
 }
 
+const ColorType = {
+    R: 'R',
+    G: 'G',
+    B: 'B',
+}
+
+class ColorPicker extends BaseControl {
+
+}
+
 class ColorSlider extends BaseControl {
-    constructor(x, y, w, label, labelFont) {
-        super(x, y, label);
-        /** @private @const */ this.padding = scaleForDisplay(10);
-        /** @private @const */ this.sliderWidth = w;
-        /** @private @const */ this.labelW = this.calcTextWidth(label, labelFont);
-        this.w = w;
-        this.font = labelFont;
+    /**
+     * Create a ColorSlider for color picker
+     * @param {number} x
+     * @param {number} y
+     * @param {number} w
+     * @param {number} value color value 0-255
+     * @param {string} type
+     * @param {GdiFont} font
+     * @param {Function} cb
+     */
+    constructor(x, y, w, value, type, font, cb) {
+        super(x, y, type);
+        /** @private @const */ this.padding = scaleForDisplay(3);
+        /** @private @const */ this.labelW = this.calcTextWidth(type, font, true);
+        /** @private @const */ this.valueW = this.calcTextWidth('255', font, true);
+        /** @private @const */ this.sliderWidth = Math.max(100, w - (this.labelW + this.padding * 2 + this.valueW));
+        /** @private */ this.value = clamp(value, 0, 255);
+        /** @private */ this.updateCB = cb;
+        this.w = this.labelW + this.padding*2 + this.sliderWidth + this.valueW;
+        this.h = this.calcTextHeight(type, font, true);
+        this.font = font;
+        switch(type) {
+            case ColorType.R: this.color = colors.red; break;
+            case ColorType.G: this.color = colors.green; break;
+            case ColorType.B: this.color = colors.blue; break;
+        }
+    }
+
+    /**
+     * @param {GdiGraphics} gr
+     */
+    draw(gr) {
+        const thumbW = scaleForDisplay(3);
+        const topPad = scaleForDisplay(2);
+        gr.GdiDrawText(this.label, this.font, colors.darkGrey, this.x, this.y, this.labelW, this.h);
+        const sliderX = this.x + this.labelW + this.padding;
+        gr.FillGradRect(sliderX, this.y + topPad, this.sliderWidth, this.h - topPad * 2, 0, colors.black, this.color);
+        const xValOffset = this.value / 255 * this.sliderWidth;
+        gr.DrawRect(sliderX + xValOffset - thumbW / 2, this.y, thumbW, this.h, scaleForDisplay(1), colors.grey);
+        gr.GdiDrawText(this.value.toString(), this.font, colors.darkGrey, sliderX + this.sliderWidth + this.padding, this.y, this.valueW, this.h, DrawTextFlags.right);
+    }
+
+    repaint() {
+        window.RepaintRect(this.x, this.y, this.x + this.w, this.y + this.h);
+    }
+
+    clicked(x, y) {
+        const relX = x - this.x - this.labelW - this.padding;
+        if (relX >= 0 && relX <= this.sliderWidth) {
+            this.value = Math.round(relX / this.sliderWidth * 255);
+            this.repaint();
+        }
+    }
+
+    mouseDown(x, y) {
+        this.clicked(x, y);
+    }
+
+    mouseInThis(x, y) {
+        return x >= this.x && x <= this.x + this.w && y >= this.y && y <= this.y + this.h;
     }
 }
 
@@ -821,7 +906,7 @@ class Select extends BaseControl {
                 this.w = Math.ceil(optionW);
             }
         });
-        this.selectedColor = colors.blue;
+        this.selectedColor = colors.darkBlue;
         this.createSelectUpShadow();
     }
 
@@ -844,9 +929,8 @@ class Select extends BaseControl {
     draw(gr) {
         gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
         gr.SetSmoothingMode(SmoothingMode.None);
-        gr.FillSolidRect(this.x, this.y, this.w, this.h, colors.lightGrey);
+        gr.FillSolidRect(this.x, this.y, this.w, this.h, colors.extraLightGrey);
         const textLeft = this.x + this.padding;
-        const triRight = this.y + this.w - this.padding;
         gr.GdiDrawText('u', ft.Marlett, colors.darkGrey, this.x + this.w - this.padding * 3, this.y, 100, this.h, DrawTextFlags.vCenter | DrawTextFlags.calcRect);
         if (this.activeIndex === -1) {
             gr.GdiDrawText(this.label, this.font, colors.black,
@@ -870,13 +954,13 @@ class Select extends BaseControl {
                     const color = isActive ? colors.lightGrey : colors.extraLightGrey;
                     gr.FillSolidRect(this.x, optionY, this.w, optionH, color);
                 }
-                gr.GdiDrawText(option, this.font, isActive ? colors.blue : colors.black, textLeft, optionY + this.padding, this.w - this.padding * 4, optionH, DrawTextFlags.noPrefix);
+                gr.GdiDrawText(option, this.font, isActive ? colors.darkBlue : colors.black, textLeft, optionY + this.padding, this.w - this.padding * 4, optionH, DrawTextFlags.noPrefix);
                 optionY += optionH;
             })
         } else {
             // line is not visible if select is up
             const lineThickness = (this.hovered || this.focus ? 2 : 1) * scaleForDisplay(1);
-            const lineCol = this.focus ? colors.blue : this.hovered ? colors.darkGrey : colors.grey;
+            const lineCol = this.focus ? colors.darkBlue : this.hovered ? colors.darkGrey : colors.grey;
             gr.DrawRect(this.x + 1, this.y + this.h - lineThickness, this.w - 2, lineThickness, lineThickness, lineCol);
         }
     }
@@ -892,7 +976,6 @@ class Select extends BaseControl {
 
     repaint() {
         const repaintY = Math.min(this.getFirstOptionY(), this.y);
-        // console.log(repaintY, repaintY  this.shadowPadding);
         window.RepaintRect(this.x - this.shadowPadding, repaintY - this.shadowPadding - this.padding, this.w + this.shadowPadding * 2, this.labelHeight + this.selectUpHeight + this.shadowPadding * 3 + this.padding);
     }
 
@@ -924,7 +1007,6 @@ class Select extends BaseControl {
                 this.selectUpHoveredOption = -1;
             } else {
                 this.selectUpHoveredOption = Math.floor((y - firstOptionY) / (this.optionHeight + this.padding * 2));
-                // console.log(y, 'first:', firstOptionY, 'rel:', y - firstOptionY, this.optionHeight + this.padding * 2, (y - firstOptionY) / (this.optionHeight + this.padding * 2))
             }
         }
         return !this.disabled &&
@@ -1153,7 +1235,7 @@ class TabGroup extends BaseControl {
     calcTabWidth() {
         let maxWidth = 0;
         this.labelArray.forEach(label => {
-            const textWidth = this.calcTextWidth(label, this.font);
+            const textWidth = this.calcTextWidth(label, this.font, true);
             if (textWidth + this.tabLabelPadding * 2 > maxWidth) {
                 maxWidth = textWidth + this.tabLabelPadding * 2;
             }
@@ -1178,7 +1260,7 @@ class TabGroup extends BaseControl {
             if (isActive) {
                 const thickness = scaleForDisplay(3);
                 const lineY = Math.round(this.y + this.h - thickness / 2);
-                gr.DrawLine(tabX, lineY, tabX + this.tabWidth, lineY, thickness, colors.blue);
+                gr.DrawLine(tabX, lineY, tabX + this.tabWidth, lineY, thickness, colors.darkBlue);
             }
         });
         gr.SetSmoothingMode(SmoothingMode.HighQuality);
