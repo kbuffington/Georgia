@@ -75,6 +75,9 @@ function on_mouse_move(x, y) {
                 if (mouseDown) {
                     controlList[i].mouseDown(x, y);
                 }
+                if (controlList[i] instanceof ColorPicker) {
+                    controlList[i].mouseMove(x,y);
+                }
             }
         }
         if (!found && hoveredControl) {
@@ -206,7 +209,8 @@ function initSettingsView() {
     controlList.push(new RadioGroup(20, top += controlList[controlList.length - 1].h + controlPadding, ['Option 1', 'Option 2', 'Option 3'], ft.label, false, 1, colors.darkBlue));
     controlList.push(new RadioGroup(20, top += controlList[controlList.length - 1].h + controlPadding, ['Horizontal', 'Option 2', 'Option 3'], ft.label, true));
 
-    controlList.push(new ColorSlider(300, 450, 150, 255, ColorType.B, ft.roboto, () => {}));
+    controlList.push(new ColorPicker(20, 450, colors.darkBlue, ft.roboto, () => {}));
+    controlList.push(new ColorPicker(20 + controlList[controlList.length - 1].w + controlPadding * 2, 450, colors.pink, ft.roboto, () => {}));
 }
 
 function calcTextHeight(font) {
@@ -804,7 +808,97 @@ const ColorType = {
 }
 
 class ColorPicker extends BaseControl {
+    constructor(x, y, color, font, cb) {
+        super(x,y,'');
+        this.font = font;
+        this.value = color;
+        const sliderPadding = scaleForDisplay(2);
+        this.rVal = 0xff & (color >> 16);
+        this.gVal = 0xff & (color >> 8);
+        this.bVal = 0xff & color;
+        const r = new ColorSlider(x, y, 200, this.rVal, ColorType.R, font, (val) =>{ this.rVal = val; this.updateCol(); });
+        const g = new ColorSlider(x, y + r.h + sliderPadding, 200, this.gVal, ColorType.G, font, (val) =>{ this.gVal = val; this.updateCol(); });
+        const b = new ColorSlider(x, y + r.h * 2 + sliderPadding * 2, 200, this.bVal, ColorType.B, font, (val) =>{ this.bVal = val; this.updateCol(); });
+        this.sliders = { r,g,b };
+        this.h = r.h * 3 + sliderPadding * 2;
+        this.w = r.w + scaleForDisplay(3) + this.h;
+        this.draggedSlider = undefined; // slider being actively dragged
+        this.hoveredSlider = undefined; // slider mouse is over
+    }
 
+    set hovered(value) {
+        this._hovered = value;
+        if (!value) {
+            this.hoveredSlider = undefined;
+            Object.values(this.sliders).forEach(slider => slider.hovered = false);
+            this.repaint();
+        }
+    }
+
+    get hovered() {
+        return this._hovered;
+    }
+
+    updateCol() {
+        this.value = rgb(this.rVal, this.gVal, this.bVal);
+        this.repaint();
+    }
+
+    /**
+     * @param {GdiGraphics} gr
+     */
+    draw(gr) {
+        this.sliders.r.draw(gr);
+        this.sliders.g.draw(gr);
+        this.sliders.b.draw(gr);
+        gr.FillSolidRect(this.x + this.sliders.r.w + scaleForDisplay(3), this.y, this.h - scaleForDisplay(2), this.h - scaleForDisplay(2), this.value);
+        gr.DrawRect(this.x + this.sliders.r.w + scaleForDisplay(3), this.y, this.h - scaleForDisplay(2), this.h - scaleForDisplay(2), 1, colors.black);
+    }
+
+    repaint() {
+        window.RepaintRect(this.x, this.y, this.w, this.h + 1);
+    }
+
+    mouseInThis(x,y) {
+        return !this.disabled && x >= this.x && x <= this.x + this.w && y >= this.y && y <= this.y + this.h;
+    }
+
+    clicked(x, y) {
+        // need to rely on global variable `mouseDown` here which is terrible, but saves a lot of coding and cycles
+        if (mouseDown && this.draggedSlider) {
+            if (this.draggedSlider.mouseInThis(x, y)) {
+                this.draggedSlider.clicked(x, y);
+            }
+        } else {
+            Object.keys(this.sliders).forEach(key => {
+                if (this.sliders[key].mouseInThis(x, y)) {
+                    this.sliders[key].clicked(x, y);
+                    this.draggedSlider = this.sliders[key];
+                }
+            });
+        }
+    }
+
+    mouseDown(x, y) {
+        this.clicked(x, y);
+    }
+
+    mouseMove(x, y) {
+        let currHover = undefined;
+        Object.keys(this.sliders).forEach(key => {
+            if (this.sliders[key].mouseInThis(x, y)) {
+                currHover = this.sliders[key];
+                if (currHover !== this.hoveredSlider) {
+                    if (this.hoveredSlider) { this.hoveredSlider.hovered = false; }
+                    currHover.hovered = true;
+                    this.hoveredSlider = currHover;
+                }
+            }
+        });
+        if (!currHover) {
+            Object.values(this.sliders).forEach(slider => slider.hovered = false);
+        }
+    }
 }
 
 class ColorSlider extends BaseControl {
@@ -821,7 +915,7 @@ class ColorSlider extends BaseControl {
     constructor(x, y, w, value, type, font, cb) {
         super(x, y, type);
         /** @private @const */ this.padding = scaleForDisplay(3);
-        /** @private @const */ this.labelW = this.calcTextWidth(type, font, true);
+        /** @private @const */ this.labelW = this.calcTextWidth('G', font, true);
         /** @private @const */ this.valueW = this.calcTextWidth('255', font, true);
         /** @private @const */ this.sliderWidth = Math.max(100, w - (this.labelW + this.padding * 2 + this.valueW));
         /** @private */ this.value = clamp(value, 0, 255);
@@ -836,28 +930,40 @@ class ColorSlider extends BaseControl {
         }
     }
 
+    set hovered(value) {
+        this._hovered = value;
+        this.repaint();
+    }
+
+    get hovered() {
+        return this._hovered;
+    }
+
     /**
      * @param {GdiGraphics} gr
      */
     draw(gr) {
-        const thumbW = scaleForDisplay(3);
+        gr.SetSmoothingMode(SmoothingMode.None);
+        const thumbW = scaleForDisplay(this.hovered ? 5 : 3);
         const topPad = scaleForDisplay(2);
         gr.GdiDrawText(this.label, this.font, colors.darkGrey, this.x, this.y, this.labelW, this.h);
         const sliderX = this.x + this.labelW + this.padding;
-        gr.FillGradRect(sliderX, this.y + topPad, this.sliderWidth, this.h - topPad * 2, 0, colors.black, this.color);
+        gr.FillGradRect(sliderX, this.y + topPad, this.sliderWidth, this.h - topPad * 2, 0.1, colors.black, this.color);
         const xValOffset = this.value / 255 * this.sliderWidth;
-        gr.DrawRect(sliderX + xValOffset - thumbW / 2, this.y, thumbW, this.h, scaleForDisplay(1), colors.grey);
+        const thumbThickness = scaleForDisplay(this.hovered ? 2 : 1);
+        gr.DrawRect(sliderX + xValOffset - thumbW / 2, this.y, thumbW, this.h, thumbThickness, colors.grey);
         gr.GdiDrawText(this.value.toString(), this.font, colors.darkGrey, sliderX + this.sliderWidth + this.padding, this.y, this.valueW, this.h, DrawTextFlags.right);
     }
 
     repaint() {
-        window.RepaintRect(this.x, this.y, this.x + this.w, this.y + this.h);
+        window.RepaintRect(this.x, this.y, this.w, this.h);
     }
 
     clicked(x, y) {
         const relX = x - this.x - this.labelW - this.padding;
-        if (relX >= 0 && relX <= this.sliderWidth) {
-            this.value = Math.round(relX / this.sliderWidth * 255);
+        if (relX >= -this.padding && relX <= this.sliderWidth + this.padding) {
+            this.value = clamp(Math.round(relX / this.sliderWidth * 255), 0, 255);
+            this.updateCB(this.value);
             this.repaint();
         }
     }
