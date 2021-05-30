@@ -3,7 +3,7 @@ let controlList = [];
 /** @type {*} */
 let activeControl = undefined;
 /** @type {*} */
-let hoveredControl = undefined; // should i do something with this?
+let hoveredControl = undefined;
 /** @boolean */ let mouseDown = false;
 
 // crap that can be stripped out once integrated into main theme
@@ -865,18 +865,19 @@ class ColorPicker extends BaseControl {
 
     clicked(x, y) {
         // need to rely on global variable `mouseDown` here which is terrible, but saves a lot of coding and cycles
-        if (mouseDown && this.draggedSlider) {
-            if (this.draggedSlider.mouseInThis(x, y)) {
-                this.draggedSlider.clicked(x, y);
-            }
-        } else {
-            Object.keys(this.sliders).forEach(key => {
-                if (this.sliders[key].mouseInThis(x, y)) {
-                    this.sliders[key].clicked(x, y);
-                    this.draggedSlider = this.sliders[key];
-                }
-            });
+        if (!mouseDown) {
+            this.draggedSlider = null;
         }
+        Object.values(this.sliders).forEach(slider => {
+            if (slider.mouseInThis(x, y)) {
+                if (mouseDown && (!this.draggedSlider || slider === this.draggedSlider)) {
+                    this.draggedSlider = slider;
+                    slider.clicked(x, y);
+                } else if (!mouseDown) {
+                    slider.clicked(x, y);
+                }
+            }
+        });
     }
 
     mouseDown(x, y) {
@@ -885,9 +886,9 @@ class ColorPicker extends BaseControl {
 
     mouseMove(x, y) {
         let currHover = undefined;
-        Object.keys(this.sliders).forEach(key => {
-            if (this.sliders[key].mouseInThis(x, y)) {
-                currHover = this.sliders[key];
+        Object.values(this.sliders).forEach(slider => {
+            if (slider.mouseInThis(x, y)) {
+                currHover = slider;
                 if (currHover !== this.hoveredSlider) {
                     if (this.hoveredSlider) { this.hoveredSlider.hovered = false; }
                     currHover.hovered = true;
@@ -896,6 +897,7 @@ class ColorPicker extends BaseControl {
             }
         });
         if (!currHover) {
+            this.hoveredSlider = null;
             Object.values(this.sliders).forEach(slider => slider.hovered = false);
         }
     }
