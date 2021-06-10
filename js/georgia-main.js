@@ -335,7 +335,7 @@ let menu_down = false;
 
 ///////// OBJECTS
 
-var art_cache = new ArtCache(15);
+const artCache = new ArtCache(15);
 
 var pauseBtn = new PauseButton();
 
@@ -1433,6 +1433,7 @@ function on_size() {
 		rescalePlaylist(true);
 		initPlaylist();
 		volume_btn = new VolumeBtn();
+		artCache.clear();
         sizeInitialized = true;
         if (str.timeline) {
             str.timeline.setHeight(geo.timeline_h);
@@ -1584,17 +1585,17 @@ function on_playback_new_track(metadb) {
 		return path = testArtistLogo(artistString);
 	});
 	if (path) {
-		bandLogo = art_cache.getImage(path);
+		bandLogo = artCache.getImage(path);
 		if (!bandLogo) {
 			const logo = gdi.Image(path);
 			if (logo) {
-				bandLogo = art_cache.encache(logo, path);
-				invertedBandLogo = art_cache.encache(logo.InvertColours(), `${path}-inv`);
+				bandLogo = artCache.encache(logo, path);
+				invertedBandLogo = artCache.encache(logo.InvertColours(), `${path}-inv`);
 			}
 		}
-		invertedBandLogo = art_cache.getImage(`${path}-inv`);
+		invertedBandLogo = artCache.getImage(`${path}-inv`);
 		if (!invertedBandLogo) {
-			invertedBandLogo = art_cache.encache(bandLogo.InvertColours(), `${path}-inv`);
+			invertedBandLogo = artCache.encache(bandLogo.InvertColours(), `${path}-inv`);
 		}
 	}
 
@@ -1849,7 +1850,7 @@ function on_mouse_lbtn_dblclk(x, y, m) {
 		just_dblclicked = true;
 		if (!buttonEventHandler(x, y, m) && fb.IsPlaying) {
 			albumart = null;
-			art_cache.clear();
+			artCache.clear();
 			cdartArray = [];
 			cdart = null;
 			on_playback_new_track(fb.GetNowPlaying());
@@ -2445,7 +2446,7 @@ function calcDateRatios(dontUpdateLastPlayed, currentLastPlayed) {
 function loadImageFromAlbumArtList(index, loadFromCache) {
 	let tempAlbumArt;
 	if (loadFromCache) {
-		tempAlbumArt = art_cache.getImage(aa_list[index]);
+		tempAlbumArt = artCache.getImage(aa_list[index]);
 	}
 	if (tempAlbumArt) {
 		albumart = tempAlbumArt;
@@ -2455,7 +2456,7 @@ function loadImageFromAlbumArtList(index, loadFromCache) {
 		}
 	} else {
 		gdi.LoadImageAsyncV2(window.ID, aa_list[index]).then(coverImage => {
-			albumart = art_cache.encache(coverImage, aa_list[index]);
+			albumart = artCache.encache(coverImage, aa_list[index]);
 			if (newTrackFetchingArtwork) {
 				getThemeColors(albumart);
 				newTrackFetchingArtwork = false;
@@ -2731,7 +2732,7 @@ function fetchNewArtwork(metadb) {
 		if (disc_art_exists) {
 			let temp_cdart;
 			if (loadFromCache) {
-				temp_cdart = art_cache.getImage(cdartPath);
+				temp_cdart = artCache.getImage(cdartPath);
 			}
 			if (temp_cdart) {
 				disposeCDImg(cdart);
@@ -2745,7 +2746,7 @@ function fetchNewArtwork(metadb) {
 			} else {
 				gdi.LoadImageAsyncV2(window.ID, cdartPath).then(cdImage => {
 					disposeCDImg(cdart); // delay disposal so we don't get flashing
-					cdart = art_cache.encache(cdImage, cdartPath);
+					cdart = artCache.encache(cdImage, cdartPath);
 					ResizeArtwork(true);
 					CreateRotatedCDImage();
 					if (pref.spinCdart) {
