@@ -368,7 +368,7 @@ class StringInput extends BaseControl {
     getCursorX(index) {
         let x = 0;
         if (index >= this.offsetChars) {
-            x = this.g.CalcTextWidth(this.value.substr(this.offsetChars, index - this.offsetChars), this.font);
+            x = this.g.CalcTextWidth(this.value.substr(this.offsetChars, index - this.offsetChars), this.font, true);
         }
         return x;
     }
@@ -383,7 +383,7 @@ class StringInput extends BaseControl {
         const inputX = x - this.inputX; // x-position inside control
         let pos = this.padding;
         for (let i = this.offsetChars; i < this.value.length; i++) {
-            const charWidth = this.g.CalcTextWidth(this.value.substr(i, 1), this.font);
+            const charWidth = this.g.CalcTextWidth(this.value.substr(i, 1), this.font, true);
             if (Math.round(pos + (charWidth / 2)) >= inputX) {
                 return i;
             }
@@ -396,17 +396,17 @@ class StringInput extends BaseControl {
      * Calculte how many chars (offsetChars) to *not* draw on the left hand side of the text box
      */
     calcOffsetIndex() {
-        let width = this.g.CalcTextWidth(this.value.substr(this.offsetChars, this.cursorPos - this.offsetChars), this.font);
+        let width = this.g.CalcTextWidth(this.value.substr(this.offsetChars, this.cursorPos - this.offsetChars), this.font, true);
         let j = 0;
         while (width > this.inputW && j < 999) {
             j++;
             this.offsetChars++;
-            width = this.g.CalcTextWidth(this.value.substr(this.offsetChars, this.cursorPos - this.offsetChars), this.font);
+            width = this.g.CalcTextWidth(this.value.substr(this.offsetChars, this.cursorPos - this.offsetChars), this.font, true);
         }
         if (j === 0) {
             while (width < this.inputW && this.offsetChars >= 0) {
                 this.offsetChars--;
-                width = this.g.CalcTextWidth(this.value.substr(this.offsetChars, this.cursorPos - this.offsetChars), this.font);
+                width = this.g.CalcTextWidth(this.value.substr(this.offsetChars, this.cursorPos - this.offsetChars), this.font, true);
             }
             this.offsetChars++;
         }
