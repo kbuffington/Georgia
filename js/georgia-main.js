@@ -1533,7 +1533,9 @@ function on_playback_new_track(metadb) {
 		setupRotationTimer();
 	}
 	loadFromCache = true;
-	// CreateRotatedCDImage(); // we need to always setup the rotated image because it rotates on every track
+	if (pref.rotate_cdart && !pref.spinCdart) {
+		CreateRotatedCDImage(); // we need to always setup the rotated image because it rotates on every track
+	}
 
 	/* code to retrieve record label logos */
 	let labelStrings = [];
