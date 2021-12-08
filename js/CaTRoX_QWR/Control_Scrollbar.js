@@ -368,6 +368,12 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
     }
 
     let smoothScrollTimer = null;
+
+    this.stopScrolling = () => {
+        clearInterval(smoothScrollTimer);
+        smoothScrollTimer = null;
+    }
+
     /**
      * Scrolls to desired row over 400ms. Can be called repeatedly (during wheel or holding down arrows)
      * to update desired position.
@@ -402,7 +408,7 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
             this.scroll_to(newVal, false);
             if (animationProgress >= 100) {
                 this.desiredScrollPosition = undefined;
-                clearInterval(smoothScrollTimer);
+                this.stopScrolling();
             }
         }
         smoothScrollTimer = setInterval(() => {

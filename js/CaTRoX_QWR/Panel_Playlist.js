@@ -1685,6 +1685,7 @@ class Playlist extends List {
 				this.collapse_handler.on_content_change();
 			}
 
+			this.scrollbar.stopScrolling();
 			this.on_list_items_change();
 		}
 
