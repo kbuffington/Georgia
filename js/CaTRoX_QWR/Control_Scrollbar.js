@@ -406,7 +406,7 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
             newVal = Math.round(newVal * 100)/100;
             // console.log(`${start} + easeOut(${animationProgress}/100) * (${end} - ${start}) = `, newVal)
             this.scroll_to(newVal, false);
-            if (animationProgress >= 100) {
+            if (animationProgress >= 100 && newPosition > 0) {
                 this.desiredScrollPosition = undefined;
                 this.stopScrolling();
             }
