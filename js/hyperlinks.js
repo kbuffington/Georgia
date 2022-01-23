@@ -157,7 +157,7 @@ class Hyperlink {
 				}
 				break;
 			case 'artist':
-				query = `Artist HAS "${this.text}" OR ARTISTFILTER HAS "${this.text}"`;
+				query = `Artist HAS "${this.text.replace(/"/g,'')}" OR ARTISTFILTER HAS "${this.text.replace(/"/g,'')}"`;
 				break;
 			default:
 				query = `${this.type} IS "${this.text}"`;
