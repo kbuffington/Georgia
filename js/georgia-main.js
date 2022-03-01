@@ -1598,7 +1598,7 @@ function on_playback_new_track(metadb) {
 			}
 		}
 		invertedBandLogo = artCache.getImage(`${path}-inv`);
-		if (!invertedBandLogo) {
+		if (!invertedBandLogo && bandLogo) {
 			invertedBandLogo = artCache.encache(bandLogo.InvertColours(), `${path}-inv`);
 		}
 	}
