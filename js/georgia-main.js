@@ -2675,18 +2675,20 @@ function LoadLabelImage(publisherString) {
 			IsFolder(dir + (labelStr = labelStr.replace(/ Records$/, '')
                     .replace(/ Recordings$/, '')
                     .replace(/ Music$/, '')
-                    .replace(/\.$/, '')))) {
+                    .replace(/\.$/, '')
+					.replace(/[\u2010\u2013\u2014]/g, '-')))) { // hyphen, endash, emdash
 			let year = parseInt($('$year(%date%)'));
 			for (; year <= lastSrchYear; year++) {
 				const yearFolder = dir + labelStr + '\\' + year;
 				if (IsFolder(yearFolder)) {
-					console.log('Found folder for ' + labelStr + ' for year ' + year + '.');
+					console.log(`Found folder for ${labelStr} for year ${year}.`);
 					dir += labelStr + '\\' + year + '\\';
 					break;
 				}
 			}
 			if (year > lastSrchYear) {
 				dir += labelStr + '\\'; /* we didn't find a year folder so use the "default" logo in the root */
+				console.log(`Found folder for ${labelStr} and using latest logo.`);
 			}
 		}
 		/* actually load the label from either the directory we found above, or the base record label folder */
@@ -2696,7 +2698,10 @@ function LoadLabelImage(publisherString) {
 			recordLabel = gdi.Image(label);
 			console.log('Found Record label:', label, !recordLabel ? '<COULD NOT LOAD>' : '');
 		} else {
-			labelStr = labelStr.replace(/ Records$/, '').replace(/ Recordings$/, '').replace(/ Music$/, '');
+			labelStr = labelStr.replace(/ Records$/, '')
+				.replace(/ Recordings$/, '')
+				.replace(/ Music$/, '')
+				.replace(/[\u2010\u2013\u2014]/g, '-'); // hyphen, endash, emdash
 			label = dir + labelStr + '.png';
 			if (IsFile(label)) {
 				recordLabel = gdi.Image(label);
