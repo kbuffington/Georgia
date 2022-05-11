@@ -53,7 +53,7 @@ const InterpolationMode ={
 	Bicubic:             4,
 	NearestNeighbor:     5,
 	HighQualityBilinear: 6,
-	HighQualityBicubic:  7
+	HighQualityBicubic:  7 // highest quality
 };
 
 /** @enum{number} */

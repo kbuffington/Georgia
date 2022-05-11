@@ -239,6 +239,7 @@ let cdart = null; // cdart image
 /** @type {GdiBitmap[]} */
 let cdartArray = [];
 let cdart_size = new ImageSize(0, 0, 0, 0); // cdart position (offset from albumart_size)
+/** @type {GdiBitmap} */
 var albumart_scaled = null; // pre-scaled album art to speed up drawing considerably
 var recordLabels = []; // array of record label images
 var recordLabelsInverted = []; // array of inverted record label images
@@ -2558,7 +2559,7 @@ function ResizeArtwork(resetCDPosition) {
 		if (albumart_scaled) {
 			albumart_scaled = null;
 		}
-		albumart_scaled = albumart.Resize(albumart_size.w, albumart_size.h);
+		albumart_scaled = albumart.Resize(albumart_size.w, albumart_size.h, InterpolationMode.HighQualityBicubic);
 		pauseBtn.setCoords(albumart_size.x + albumart_size.w / 2, albumart_size.y + albumart_size.h / 2);
 		hasArtwork = true;
 	} else {
