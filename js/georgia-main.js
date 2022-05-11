@@ -336,7 +336,7 @@ let menu_down = false;
 
 ///////// OBJECTS
 
-const artCache = new ArtCache(15);
+let artCache = undefined;
 
 var pauseBtn = new PauseButton();
 
@@ -1378,6 +1378,7 @@ function on_init() {
 
 	ww = window.Width;
 	wh = window.Height;
+	artCache = new ArtCache(15);
 
 	lastFolder = '';
 
@@ -1437,6 +1438,7 @@ function on_size() {
 		initPlaylist();
 		volume_btn = new VolumeBtn();
 		artCache.clear();
+		artCache = new ArtCache(15);
         sizeInitialized = true;
         if (str.timeline) {
             str.timeline.setHeight(geo.timeline_h);
