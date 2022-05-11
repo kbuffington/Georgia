@@ -231,8 +231,10 @@ function lightenColorVal(color, percent) {
 }
 
 /**
- * Calculates the color "distance" between two colors. Currently uses the more naive color weighted
+ * Calculates the color "distance" between two colors. Currently uses the redmean
  * calculation from https://en.wikipedia.org/wiki/Color_difference.
+ * The purpose of this method is mostly to determine whether a color drawn next to another color will
+ * provide enough visual separation. As such, adding some additional weighting based on individual colors differences.
  * @param {number} a The first color in numeric form (i.e. rgb(150,250,255))
  * @param {number} b The second color in numeric form (i.e. rgb(150,250,255))
  * @param {boolean=} log Whether to print the distance in the console. Also requires that settings.showThemeLog is true
@@ -242,14 +244,24 @@ function colorDistance(a, b, log) {
 	const bCol = new Color(b);
 
 	const rho = (aCol.r + bCol.r) / 2;
-	const deltaR = Math.pow(aCol.r - bCol.r, 2);
-	const deltaG = Math.pow(aCol.g - bCol.g, 2);
-	const deltaB = Math.pow(aCol.b - bCol.b, 2);
+	const rDiff = aCol.r - bCol.r;
+	const gDiff = aCol.g - bCol.g;
+	const bDiff = aCol.b - bCol.b;
+	const deltaR = Math.pow(rDiff, 2);
+	const deltaG = Math.pow(gDiff, 2);
+	const deltaB = Math.pow(bDiff, 2);
 
-	//TODO: Convert this to use "redmean" approximation from above link and then retest colorDistance checks
-	const distance = Math.sqrt(2 * deltaR + 4 * deltaG + 3 * deltaB + (rho * (deltaR - deltaB))/256);
+	// const distance = Math.sqrt(2 * deltaR + 4 * deltaG + 3 * deltaB + (rho * (deltaR - deltaB))/256); // old version
+	let distance = Math.sqrt((2 + rho/256) * deltaR + 4 * deltaG + (2 + (255 - rho)/256) * deltaB);	// redmean calculation
+	if (rDiff >= 50 || gDiff >= 50 || bDiff >= 50) {
+		// because the colors we are diffing against are usually shades of grey, if one of the colors has a diff of 50
+		// or more, then it's very likely there will be enough visual separation between the two, so bump up the diff percentage
+		distance *= 1.1;
+	}
 	if (log) {
-		if (settings.showThemeLog) console.log('distance from:', aCol.getRGB(), 'to:', bCol.getRGB(), '=', distance);
+		if (settings.showThemeLog) {
+			console.log('distance from:', aCol.getRGB(), 'to:', bCol.getRGB(), '=', distance);
+		}
 	}
 	return distance;
 }
