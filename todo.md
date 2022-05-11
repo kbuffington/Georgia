@@ -12,6 +12,7 @@
 * Playlist View settings should be moved to config file, creating an object with name, filter, and optional custom sort parameter See [here](https://github.com/kbuffington/Georgia/issues/85).
 * Playlist check cached artwork from other art cache?
 * Add ability to manually cycle through artwork using mouse wheel. Would disable art cycling.
+* Add option to prefer folder art over embedded
 
 ### Items completed
 * Convert to using foo_spider_monkey_panel instead of foo_jscript (implemented in 2.0.0)
