@@ -153,7 +153,7 @@ class Timeline {
     constructor(height) {
         this.x = 0;
         this.y = 0;
-        this.w = albumart_size.x;
+        this.w = albumart_size.x - 1;
         this.h = height;
 
         this.playCol = rgba(255, 255, 255, 75); // TODO: remove from theme.js

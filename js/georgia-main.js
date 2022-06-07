@@ -584,7 +584,7 @@ function draw_ui(gr) {
 			}
 			//Timeline playcount bars
 			if (fb.IsPlaying && str.timeline) {
-				str.timeline.setSize(0, top, albumart_size.x);
+				str.timeline.setSize(0, top, albumart_size.x - 1);
 				str.timeline.draw(gr);
 			}
 			top += geo.timeline_h + scaleForDisplay(12);
