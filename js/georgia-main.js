@@ -258,7 +258,7 @@ var labelShadowImg = null; // shadow behind labels
 var playlist_shadow = null; // shadow behind the playlist
 var flagImgs = []; // array of flag images
 let releaseFlagImg = null;
-var rotatedCD = null; // drawing cdArt rotated is slow, so first draw it rotated into the rotatedCD image, and then draw rotatedCD image unrotated
+let rotatedCD = null; // drawing cdArt rotated is slow, so first draw it rotated into the rotatedCD image, and then draw rotatedCD image unrotated
 let disc_art_loading; // for on_load_image_done()
 let album_art_loading; // for on_load_image_done()
 var isStreaming = false; // is the song from a streaming source?
@@ -977,7 +977,7 @@ function setupRotationTimer() {
 				// debugLog(`creating cdImg: ${rotatedCdIndex} (${cdart_size.w}x${cdart_size.h}) with rotation: ${360/pref.spinCdArtImageCount * rotatedCdIndex} degrees`);
 				cdartArray[rotatedCdIndex] = rotateImg(cdart, cdart_size.w, cdart_size.h, 360/pref.spinCdArtImageCount * rotatedCdIndex)
 			}
-			const cdLeftEdge = pref.cdart_ontop ? cdart_size.x : albumart_size.x + albumart_size.w; // the first line of cdImage that will be drawn
+			const cdLeftEdge = pref.cdart_ontop ? cdart_size.x : albumart_size.x + albumart_size.w - 1; // the first line of cdImage that will be drawn
 			window.RepaintRect(cdLeftEdge, cdart_size.y, cdart_size.w - (cdLeftEdge - cdart_size.x), cdart_size.h, !pref.cdart_ontop && !pref.displayLyrics);
 		}, pref.spinCdArtRedrawInterval);
 	}
