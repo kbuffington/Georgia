@@ -1580,8 +1580,10 @@ function on_playback_new_track(metadb) {
 	/* code to retrieve band logo */
 	let tryArtistList = [
 		... getMetaValues('%album artist%').map(artist => replaceFileChars(artist)),
+		... getMetaValues('%album artist%').map(artist => replaceFileChars(artist).replace(/^[Tt]he /, '')),
 		replaceFileChars($('[%track artist%]')),
-		... getMetaValues('%artist%').map(artist => replaceFileChars(artist))
+		... getMetaValues('%artist%').map(artist => replaceFileChars(artist)),
+		... getMetaValues('%artist%').map(artist => replaceFileChars(artist).replace(/^[Tt]he /, '')),
 	];
 	tryArtistList = [... new Set(tryArtistList)];
 
