@@ -118,6 +118,7 @@ class Hyperlink {
 				const handle_list = fb.GetQueryItems(fb.GetLibraryItems(), query);
 				debugLog(query);
 				if (handle_list.Count) {
+					playlistHistory.ignorePlaylistMutations = true;
 					const pl = plman.FindOrCreatePlaylist('Search', true);
 					handle_list.Sort();
 					const index = fb.IsPlaying ? handle_list.BSearch(fb.GetNowPlaying()) : -1;
@@ -136,10 +137,12 @@ class Hyperlink {
 					plman.InsertPlaylistItems(pl, 0, handle_list);
 					plman.SortByFormat(pl, settings.defaultSortString);
 					plman.ActivePlaylist = pl;
+					playlistHistory.ignorePlaylistMutations = false;
 					return true;
 				}
 				return false;
 			} catch (e) {
+				playlistHistory.ignorePlaylistMutations = false;
 				console.log(`Could not succesfully execute: ${query}`);
 			}
 		}

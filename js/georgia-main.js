@@ -128,6 +128,7 @@ function createFonts() {
 	ft.guifx = font(fontGuiFx, Math.floor(pref.transport_buttons_size / 2), 0);
 	ft.Marlett = font('Marlett', 13, 0);
 	ft.SegoeUi = font('Segoe Ui Semibold', pref.menu_font_size, 0);
+	ft.fontAwesome = font('FontAwesome', 12, 0);
 	ft.library_tree = font('Segoe UI', libraryProps.baseFontSize, 0);
 	ft.lyrics = font(fontRegular, pref.lyricsFontSize || 20, 1);
 }
@@ -223,7 +224,7 @@ var timings = {
 }
 
 // PLAYLIST JUNK
-var btns = {};
+let btns = {};
 let btnImg = undefined;
 // =================================================== //
 
@@ -338,7 +339,8 @@ let menu_down = false;
 
 let artCache = undefined;
 
-var pauseBtn = new PauseButton();
+let pauseBtn = new PauseButton();
+let playlistHistory = undefined;
 
 var volume_btn;
 
@@ -860,18 +862,26 @@ function draw_ui(gr) {
 	// MENUBAR
 	let drawMenuBar = null;
 	timings.showExtraDrawTiming && (drawMenuBar = fb.CreateProfiler('on_paint -> menu bar'));
-	for (var i in btns) {
-		var x = btns[i].x,
-			y = btns[i].y,
-			w = btns[i].w,
-			h = btns[i].h,
-			img = btns[i].img;
+	for (var i in btns) { // can't replace for..in until non-numeric indexes are removed
+		const btn = btns[i];
+		const x = btn.x,
+			y = btn.y,
+			w = btn.w,
+			h = btn.h,
+			img = btn.img;
 
-		if (img) { // TODO: fix
-			gr.DrawImage(img[0], x, y, w, h, 0, 0, w, h, 0, 255); // normal
-			btns[i].hoverAlpha && gr.DrawImage(img[1], x, y, w, h, 0, 0, w, h, 0, btns[i].hoverAlpha);
-			btns[i].downAlpha && gr.DrawImage(img[2], x, y, w, h, 0, 0, w, h, 0, btns[i].downAlpha);
-			btns[i].enabled && img[3] && gr.DrawImage(img[3], x, y, w, h, 0, 0, w, h, 0, 255);
+		if ((i === 'back' || i === 'forward') && !displayPlaylist) {
+			continue;
+		}
+		const disabled = btn.isEnabled ? !btn.isEnabled() : false;
+		if (img) {
+			const alpha = disabled ? 140 : 255;
+			gr.DrawImage(img[0], x, y, w, h, 0, 0, w, h, 0, alpha); // normal
+			if (!disabled) {
+				btn.hoverAlpha && gr.DrawImage(img[1], x, y, w, h, 0, 0, w, h, 0, btn.hoverAlpha);
+				btn.downAlpha && gr.DrawImage(img[2], x, y, w, h, 0, 0, w, h, 0, btn.downAlpha);
+				btn.enabled && img[3] && gr.DrawImage(img[3], x, y, w, h, 0, 0, w, h, 0, 255);
+			}
 		}
 	}
 
@@ -1379,6 +1389,7 @@ function on_init() {
 	ww = window.Width;
 	wh = window.Height;
 	artCache = new ArtCache(15);
+	playlistHistory = new PlaylistHistory(10);
 
 	lastFolder = '';
 
@@ -1963,6 +1974,7 @@ function on_mouse_leave() {
 }
 
 function on_playlists_changed() {
+	playlistHistory.reset(); // when playlists are changed, indexes no longer apply, and so we have to wipe history
 	if (displayPlaylist) {
 		trace_call && console.log(qwr_utils.function_name());
 		playlist.on_playlists_changed();
@@ -1970,6 +1982,7 @@ function on_playlists_changed() {
 }
 
 function on_playlist_switch() {
+	playlistHistory.playlistAltered(PlaylistMutation.Switch);
 	if (displayPlaylist) {
 		trace_call && console.log(qwr_utils.function_name());
 		playlist.on_playlist_switch();
@@ -1984,6 +1997,7 @@ function on_playlist_item_ensure_visible(playlistIndex, playlistItemIndex) {
 }
 
 function on_playlist_items_added(playlistIndex) {
+	playlistHistory.playlistAltered(PlaylistMutation.Added);
 	if (displayPlaylist) {
 		trace_call && console.log(qwr_utils.function_name());
 		playlist.on_playlist_items_added(playlistIndex);
@@ -1991,6 +2005,7 @@ function on_playlist_items_added(playlistIndex) {
 }
 
 function on_playlist_items_reordered(playlistIndex) {
+	playlistHistory.playlistAltered(PlaylistMutation.Reordered);
 	if (displayPlaylist) {
 		trace_call && console.log(qwr_utils.function_name());
 		playlist.on_playlist_items_reordered(playlistIndex);
@@ -1998,6 +2013,7 @@ function on_playlist_items_reordered(playlistIndex) {
 }
 
 function on_playlist_items_removed(playlistIndex) {
+	playlistHistory.playlistAltered(PlaylistMutation.Removed);
 	if (displayPlaylist) {
 		trace_call && console.log(qwr_utils.function_name());
 		playlist.on_playlist_items_removed(playlistIndex);
@@ -2899,6 +2915,15 @@ function createButtonObjects(ww, wh) {
 		}
 	}
 
+	if (true) {
+		const pad = scaleForDisplay(8);
+		const x = ww / 2 + pad;
+		const y = scaleForDisplay(64);
+		const size = 26;
+		btns.back = new Button(x, y, size, size, 'Back', btnImg.Back, null, playlistHistory.canBack.bind(playlistHistory));
+		btns.forward = new Button(x + size, y, size, size, 'Forward', btnImg.Forward, null, playlistHistory.canForward.bind(playlistHistory));
+	}
+
 	/** @type {GdiBitmap[]} */
 	let img = btnImg.File;
 	let x = scaleForDisplay(8);
@@ -3128,6 +3153,21 @@ function createButtonImages() {
 				w: settingsImg.Width,
 				h: settingsImg.Height
 			},
+			// fontawesome cheat sheet: https://fontawesome.com/v5/cheatsheet
+			Back: {
+				ico: '\uf060',
+				type: 'backforward',
+				font: ft.fontAwesome,
+				w: 24,
+				h: 24,
+			},
+			Forward: {
+				ico: '\uf061',
+				type: 'backforward',
+				font: ft.fontAwesome,
+				w: 24,
+				h: 24,
+			}
 		};
 	} catch (e) {
 		console.log('**********************************');
@@ -3153,7 +3193,7 @@ function createButtonImages() {
 
 		let w = btns[i].w;
 		let	h = btns[i].h;
-		let	lw = scaleForDisplay(2);
+		let	lineW = scaleForDisplay(2);
 
 		if (is_4k && btns[i].type === 'transport') {
 			w *= 2;
@@ -3167,14 +3207,15 @@ function createButtonImages() {
 		}
 
 		var stateImages = []; // 0=ButtonState.Default, 1=hover, 2=down, 3=Enabled;
-		for (let s = 0; s <= 3; s++) {
-			if (s === 3 && btns[i].type !== 'image') {
+		for (let state = 0; state < Object.keys(ButtonState).length; state++) {
+			const btn = btns[i];
+			if (state === 3 && btn.type !== 'image') {
 				break;
 			}
 			var img = gdi.CreateImage(w, h);
 			const g = img.GetGraphics();
 			g.SetSmoothingMode(SmoothingMode.AntiAlias);
-			if (btns[i].type !== 'transport') {
+			if (btn.type !== 'transport') {
 				g.SetTextRenderingHint(TextRenderingHint.AntiAliasGridFit); // positions playback icons weirdly
 			} else {
                 g.SetTextRenderingHint(TextRenderingHint.AntiAlias)
@@ -3191,7 +3232,7 @@ function createButtonImages() {
 			var transportEllipseColor = transportOutlineColor;
 			var iconAlpha = 140;
 
-			switch (s) {
+			switch (state) {
 				case ButtonState.Hovered:
 					menuTextColor = RGB(180, 182, 184);
 					menuRectColor = RGB(160, 162, 164);
@@ -3213,20 +3254,29 @@ function createButtonImages() {
 					break;
 			}
 
-			if (btns[i].type == 'menu') {
-				s && g.DrawRoundRect(Math.floor(lw / 2), Math.floor(lw / 2), w - lw, h - lw, 3, 3, 1, menuRectColor);
-				g.DrawString(btns[i].ico, btns[i].font, menuTextColor, 0, 0, w, h - 1, StringFormat(1, 1));
-			} else if (btns[i].type == 'window') {	// min/max/close controls for UIHacks
-				g.DrawString(btns[i].ico, btns[i].font, minMaxIcoColor, 0, 0, w, h, StringFormat(1, 1));
-			} else if (btns[i].type == 'transport') {
-				g.DrawEllipse(Math.floor(lw / 2) + 1, Math.floor(lw / 2) + 1, w - lw - 2, h - lw - 2, lw, transportEllipseColor);
-				g.DrawString(btns[i].ico, btns[i].font, transportIconColor, 1, (i == 'Stop' || i == 'Reload') ? 0 : 1, w, h, StringFormat(1, 1));
-			} else if (btns[i].type == 'image') {
-				g.DrawImage(btns[i].ico, Math.round((w - btns[i].ico.Width) / 2), Math.round((h - btns[i].ico.Height) / 2), btns[i].ico.Width, btns[i].ico.Height, 0, 0, btns[i].ico.Width, btns[i].ico.Height, 0, iconAlpha);
+			switch (btn.type) {
+				case 'menu':
+					state && g.DrawRoundRect(Math.floor(lineW / 2), Math.floor(lineW / 2), w - lineW, h - lineW, 3, 3, 1, menuRectColor);
+					g.DrawString(btn.ico, btn.font, menuTextColor, 0, 0, w, h - 1, StringFormat(1, 1));
+					break;
+				case 'window':	// min/max/close controls for UIHacks
+					g.DrawString(btn.ico, btn.font, minMaxIcoColor, 0, 0, w, h, StringFormat(1, 1));
+					break;
+				case 'transport':
+					g.DrawEllipse(Math.floor(lineW / 2) + 1, Math.floor(lineW / 2) + 1, w - lineW - 2, h - lineW - 2, lineW, transportEllipseColor);
+					g.DrawString(btn.ico, btn.font, transportIconColor, 1, (i == 'Stop' || i == 'Reload') ? 0 : 1, w, h, StringFormat(1, 1));
+					break;
+				case 'backforward':
+					g.DrawEllipse(Math.floor(lineW / 2), Math.floor(lineW / 2) + 1, w - lineW - 2, h - lineW - 2, lineW, transportEllipseColor);
+					g.DrawString(btn.ico, btn.font, transportIconColor, i === 'Back' ? -1: 0, 0, w, h, StringFormat(1, 1));
+					break;
+				case 'image':
+					g.DrawImage(btn.ico, Math.round((w - btn.ico.Width) / 2), Math.round((h - btn.ico.Height) / 2), btn.ico.Width, btn.ico.Height, 0, 0, btn.ico.Width, btn.ico.Height, 0, iconAlpha);
+					break;
 			}
 
 			img.ReleaseGraphics(g);
-			stateImages[s] = img;
+			stateImages[state] = img;
 		}
 
 		btnImg[i] = stateImages;

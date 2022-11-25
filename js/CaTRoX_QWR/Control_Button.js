@@ -3,8 +3,8 @@
 let oldButton;
 /** @type {Button} */
 let downButton;
-var buttonTimer = null;
-var mainMenuOpen = false;
+let buttonTimer = null;
+let mainMenuOpen = false;
 
 /** @type {Button} */
 let lastOverButton = null;
@@ -16,7 +16,7 @@ const ButtonState = {
 	Default: 0,
 	Hovered: 1,
 	Down: 2,	// happens on click
-	Enabled: 3
+	Enabled: 3,
 }
 
 function buttonEventHandler(x, y, m) {
@@ -119,7 +119,7 @@ const WindowState = {
 }
 
 class Button {
-	constructor(x, y, w, h, id, img, tip = undefined) {
+	constructor(x, y, w, h, id, img, tip = undefined, isEnabled = undefined) {
 		this.x = x;
 		this.y = y;
 		this.w = w;
@@ -130,6 +130,7 @@ class Button {
 		this.state = 0;
 		this.hoverAlpha = 0;
 		this.downAlpha = 0;
+		this.isEnabled = isEnabled; // callback
 		this.enabled = false;
 	}
 
@@ -157,7 +158,7 @@ class Button {
 	}
 
 	onClick() {
-		btnActionHandler(this);	// really just need id and x, y, w
+		btnActionHandler(this);
 	}
 
 	onDblClick() {
@@ -321,6 +322,16 @@ function btnActionHandler(btn) {
 			btn.enable = displayPlaylist;
 			btns.library.enable = false;
 			window.Repaint();
+			break;
+		case 'Back':
+		case 'Forward':
+			if (btn.isEnabled && btn.isEnabled()) {
+				if (btn.id === 'Back') {
+					playlistHistory.back();
+				} else {
+					playlistHistory.forward();
+				}
+			}
 			break;
 	}
 }

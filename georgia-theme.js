@@ -60,6 +60,7 @@ const fileList = [
     'js\\image-caching.js',
     'js\\ui-components.js',
     'js\\lyrics.js',
+    'js\\playlist-history.js',
     'js\\georgia-main.js'
 ];
 includeFiles(fileList).then(() => {

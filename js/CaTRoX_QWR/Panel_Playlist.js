@@ -5720,6 +5720,9 @@ function PlaylistManager(x, y, w, h) {
 	};
 
 	this.on_mouse_lbtn_down = function (x, y, m) {
+		if (btns.back.mouseInThis(x, y) || btns.forward.mouseInThis(x, y)) {
+			return; // handled in back forward buttons
+		}
 		if (!this.trace(x, y)) {
 			return;
 		}
@@ -5730,6 +5733,9 @@ function PlaylistManager(x, y, w, h) {
 	this.on_mouse_lbtn_up = function (x, y, m) {
 		var was_pressed = this.panel_state === state.pressed;
 
+		if (btns.back.mouseInThis(x, y) || btns.forward.mouseInThis(x, y)) {
+			return; // handled in back forward buttons
+		}
 		if (!this.trace(x, y)) {
 			change_state(state.normal);
 			return;
@@ -5742,6 +5748,7 @@ function PlaylistManager(x, y, w, h) {
 		}
 
 		var cpm = window.CreatePopupMenu();
+		menu_down = true;
 
 		var playlist_count = plman.PlaylistCount;
 
@@ -5880,9 +5887,9 @@ function PlaylistManager(x, y, w, h) {
 	 * @param {state} panel_state
 	 */
 	function draw_on_image(gr, x, y, w, h, panel_state) {
-
-		var text_color;
-		var bg_color;
+		let text_color;
+		let bg_color;
+		const leftPad = 10;
 
 		switch (panel_state) {
 			case state.normal: {
@@ -5905,14 +5912,13 @@ function PlaylistManager(x, y, w, h) {
 		gr.FillSolidRect(x, y, w, h, bg_color);
 		gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
 
-		var p = 10;
-		var right_pad = p;
+		let right_pad = leftPad;
 
 		if (plman.ActivePlaylist !== -1 && plman.IsPlaylistLocked(plman.ActivePlaylist)) {
 			// Position above scrollbar for eye candy
-			var sbar_x = x + w - playlist_geo.scrollbar_w - playlist_geo.scrollbar_right_pad;
-			var lock_text = '\uf023';
-			var lock_w = Math.ceil(
+			const sbar_x = x + w - playlist_geo.scrollbar_w - playlist_geo.scrollbar_right_pad;
+			const lock_text = '\uf023';
+			const lock_w = Math.ceil(
 				/** @type {!number} */
 				gr.MeasureString(lock_text, g_pl_fonts.font_awesome, 0, 0, 0, 0).Width
 			);
@@ -5921,7 +5927,7 @@ function PlaylistManager(x, y, w, h) {
 			right_pad += lock_w;
 		}
 
-		var info_x = x + p;
+		var info_x = x + leftPad;
 		var info_y = y;
 		var info_w = w - (info_x - x) - right_pad;
 		var info_h = h - 2;
