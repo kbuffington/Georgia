@@ -5784,6 +5784,7 @@ function PlaylistManager(x, y, w, h) {
 			plman.ActivePlaylist = playlist_idx;
 		}
 
+		menu_down = false;
 		this.repaint();
 	};
 
