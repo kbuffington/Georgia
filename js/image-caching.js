@@ -1,3 +1,9 @@
+/**
+ * @typedef {Object} ArtCacheObj
+ * @property {GdiBitmap} image
+ * @property {number} filesize
+ */
+
 class ArtCache {
     /**
      * Create ArtCache. ArtCache is a Least-Recently Used cache meaning that each cache hit
@@ -5,7 +11,7 @@ class ArtCache {
      * @param {number} maxCacheSize maximum number of images to keep in the cache.
      */
     constructor(maxCacheSize) {
-        /** @private @type {Object.<string, GdiBitmap>} */
+        /** @private @type {Object.<string, ArtCacheObj>} */
         this.cache = {};
         /** @private @type {string[]} */
         this.cacheIndexes = [];
@@ -32,7 +38,8 @@ class ArtCache {
                 h = Math.min(h / scaleFactor);
                 w = Math.min(w / scaleFactor);
             }
-            this.cache[location] = img.Resize(w, h);
+            const f = fso.GetFile(location);
+            this.cache[location] = { image: img.Resize(w, h), filesize: f.Size };
             img = null;
             const pathIndex = this.cacheIndexes.indexOf(location);
             if (pathIndex !== -1) {
@@ -48,7 +55,10 @@ class ArtCache {
         } catch (e) {
             console.log('<Error: Image could not be properly parsed: ' + location + '>');
         }
-        return this.cache[location] || img;
+        if (this.cache[location]) {
+            return this.cache[location].image;
+        }
+        return img;
     }
 
     /**
@@ -58,11 +68,18 @@ class ArtCache {
      */
     getImage(location) {
         if (this.cache[location]) {
-            debugLog('cache hit:', location);
+            const f = fso.GetFile(location);
             const pathIndex = this.cacheIndexes.indexOf(location);
             this.cacheIndexes.splice(pathIndex, 1);
-            this.cacheIndexes.push(location);
-            return this.cache[location];
+            if (!f || f.Size === this.cache[location].filesize) {
+                this.cacheIndexes.push(location);
+                debugLog('cache hit:', location);
+                return this.cache[location].image;
+            } else {
+                // size of file on disk has changed
+                debugLog(`cache entry was stale: ${location} [old size: ${this.cache[location].filesize}, new size: ${f.Size}]`);
+                delete this.cache[location]; // was removed from cacheIndexes already
+            }
         }
         return null;
     }

@@ -337,9 +337,11 @@ let menu_down = false;
 
 ///////// OBJECTS
 
+/** @type {ArtCache} */
 let artCache = undefined;
 
 let pauseBtn = new PauseButton();
+/** @type {PlaylistHistory} */
 let playlistHistory = undefined;
 
 var volume_btn;
@@ -1054,7 +1056,6 @@ function onOptionsMenu(x, y) {
 		initColors();
 		if (fb.IsPlaying) {
 			albumart = null;
-			loadFromCache = false;
 			on_playback_new_track(fb.GetNowPlaying());
 		} else {
 			RepaintWindow();
@@ -1546,7 +1547,6 @@ function on_playback_new_track(metadb) {
 	if (cdart) {
 		setupRotationTimer();
 	}
-	loadFromCache = true;
 	if (pref.rotate_cdart && !pref.spinCdart) {
 		CreateRotatedCDImage(); // we need to always setup the rotated image because it rotates on every track
 	}
@@ -2154,7 +2154,6 @@ function on_playback_stop(reason) {
 		recordLabels = [];
 		recordLabelsInverted = [];
 		refreshPlayButton();
-		loadFromCache = false;
 	}
 	clearInterval(cdartRotationTimer);
 	clearInterval(progressBarTimer);
@@ -2288,7 +2287,7 @@ function refresh_seekbar() {
 function displayNextImage() {
 	debugLog("Repainting in displayNextImage: " + albumArtIndex);
 	albumArtIndex = (albumArtIndex + 1) % aa_list.length;
-	loadImageFromAlbumArtList(albumArtIndex, true);
+	loadImageFromAlbumArtList(albumArtIndex);
 	lastLeftEdge = 0;
 	RepaintWindow();
 	albumArtTimeout = setTimeout(() => {
@@ -2466,13 +2465,9 @@ function calcDateRatios(dontUpdateLastPlayed, currentLastPlayed) {
 /**
  * Loads an image from the aa_list array.
  * @param {number} index Index of aa_list signifying which image to load
- * @param {boolean} loadFromCache Retrieve image from cache instead of reading from disc.
  */
-function loadImageFromAlbumArtList(index, loadFromCache) {
-	let tempAlbumArt;
-	if (loadFromCache) {
-		tempAlbumArt = artCache.getImage(aa_list[index]);
-	}
+function loadImageFromAlbumArtList(index) {
+	const tempAlbumArt = artCache.getImage(aa_list[index]);
 	if (tempAlbumArt) {
 		albumart = tempAlbumArt;
 		if (index === 0 && newTrackFetchingArtwork) {
@@ -2830,7 +2825,7 @@ function fetchNewArtwork(metadb) {
 				}, settings.artworkDisplayTime * 1000);
 			}
 			albumArtIndex = 0;
-			loadImageFromAlbumArtList(albumArtIndex, loadFromCache); // display first image
+			loadImageFromAlbumArtList(albumArtIndex); // display first image
 		} else if (metadb && (albumart = utils.GetAlbumArtV2(metadb))) {
 			getThemeColors(albumart);
 			ResizeArtwork(true);
