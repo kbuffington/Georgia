@@ -5555,10 +5555,11 @@ class QueueHandler {
 				return;
 			}
 
-			var cur_queued_row = this.rows[queued_item.PlaylistItemIndex];
+			const cur_queued_row = this.rows[queued_item.PlaylistItemIndex];
+			let has_row;
 			if (cur_queued_row) {
 				// It is possible that cur_queued_row can be undefined for some reason, even though the row is in the playlist. Possibly this.rows.length < queued_item.PlaylistItemIndex?
-				var has_row = this.queued_rows.find(queued_row => {
+				has_row = this.queued_rows.find(queued_row => {
 					return queued_row.idx === cur_queued_row.idx;
 				});
 			} else {

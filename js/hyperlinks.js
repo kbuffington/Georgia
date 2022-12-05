@@ -120,6 +120,7 @@ class Hyperlink {
 				if (handle_list.Count) {
 					playlistHistory.ignorePlaylistMutations = true;
 					const pl = plman.FindOrCreatePlaylist('Search', true);
+					plman.UndoBackup(pl);
 					handle_list.Sort();
 					const index = fb.IsPlaying ? handle_list.BSearch(fb.GetNowPlaying()) : -1;
 					if (pl === plman.PlayingPlaylist && plman.GetPlayingItemLocation().PlaylistIndex === pl && index !== -1) {

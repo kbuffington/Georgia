@@ -1,5 +1,6 @@
 const PlaylistMutation = {
     Added: 'added',
+    Init: 'initializing playlist history',
     Removed: 'removed',
     Reordered: 'reordered',
     Switch: 'switch',
@@ -8,11 +9,11 @@ const PlaylistMutation = {
 class PlaylistHistory {
     constructor(maxStates = 10) {
         this.maxStates = maxStates;
-        /** @private */ this.history = [];
+        /** @private PlaylistState[] */ this.history = [];
         /** @private */ this.stateIndex = 0;
         /** @private */ this.updatingPlaylist = false;
 
-        this.playlistAltered();
+        this.playlistAltered(PlaylistMutation.Init);
     }
 
     get length() {
@@ -70,25 +71,89 @@ class PlaylistHistory {
      */
     reset() {
         this.history = [];
-        this.playlistAltered();
+        this.playlistAltered(PlaylistMutation.Init);
     }
 
+    /** @private */
     setPlaylistState() {
         this.updatingPlaylist = true;
-        const activeState = this.history[this.stateIndex];
-        plman.ActivePlaylist = activeState.playlistId;
+        /** @type PlaylistState */ const activeState = this.history[this.stateIndex];
+        const pbQueue = plman.GetPlaybackQueueContents();
+        const plIndex = activeState.playlistId
+        plman.UndoBackup(plIndex);
+        plman.ActivePlaylist = plIndex;
         if (!activeState.locked) {
-            plman.ClearPlaylist(plman.ActivePlaylist);
-            plman.InsertPlaylistItems(plman.ActivePlaylist, 0, activeState.playlistEntries);
+            const playingItem = plman.GetPlayingItemLocation();
+            if (!playingItem.IsValid || playingItem.PlaylistIndex !== plIndex) {
+                plman.ClearPlaylist(plIndex);
+                plman.InsertPlaylistItems(plIndex, 0, activeState.playlistEntries);
+            } else {
+                const handles = plman.GetPlaylistItems(plIndex);
+                const index = handles.Find(fb.GetNowPlaying());
+                console.log('>>> now playing index:', index);
+                // remove everything in playlist except currently playing song
+                plman.ClearPlaylistSelection(plIndex);
+                plman.SetPlaylistSelection(plIndex, [playingItem.PlaylistItemIndex], true);
+                plman.RemovePlaylistSelection(plIndex, true);
+                plman.ClearPlaylistSelection(plIndex);
+                const stateHandles = activeState.playlistEntries.Clone();
+                const stateIndex = stateHandles.Find(fb.GetNowPlaying());
+                stateHandles.RemoveById(stateIndex);
+                const stateHandlesClone = stateHandles.Clone();
+                if (stateIndex > 0) {
+                    stateHandles.RemoveRange(stateIndex, stateHandles.Count);
+                    plman.InsertPlaylistItems(plIndex, 0, stateHandles);
+                }
+                if (stateIndex < stateHandlesClone.Count) {
+                    stateHandlesClone.RemoveRange(0, stateIndex);
+                    plman.InsertPlaylistItems(plIndex, plman.PlaylistItemCount(plIndex), stateHandlesClone);
+                }
+            }
         }
+        this.restorePlaybackQueue(pbQueue);
         setTimeout(() => {
             this.updatingPlaylist = false;
         }, 1); // wait for callbacks to be called
     }
 
+    /**
+     * @private Attempts to re-mark playbackQueue items after setting playlist state
+     * @param {FbPlaybackQueueItem[]} pbQueue
+     */
+    restorePlaybackQueue(pbQueue) {
+        plman.FlushPlaybackQueue();
+        pbQueue.forEach((queueItem) => {
+            const itemPlaylist = queueItem.PlaylistIndex;
+            const itemIndex = queueItem.PlaylistItemIndex;
+            if (itemPlaylist !== -1 && itemIndex !== -1) {
+                const plContents = {};
+                if (!plContents[itemPlaylist]) {
+                    plContents[itemPlaylist] = plman.GetPlaylistItems(itemPlaylist);
+                }
+                /** FbMetadbHandleList */ const playlistHandles = plContents[itemPlaylist];
+                if (playlistHandles && playlistHandles[itemIndex] && playlistHandles[itemIndex].Path === queueItem.Handle.Path) {
+                    plman.AddPlaylistItemToPlaybackQueue(itemPlaylist, itemIndex);
+                } else {
+                    const index = plContents[itemPlaylist].Find(queueItem.Handle);
+                    if (index >= 0) {
+                        plman.AddPlaylistItemToPlaybackQueue(itemPlaylist, index);
+                    } else {
+                        plman.AddItemToPlaybackQueue(queueItem.Handle);
+                    }
+                }
+            } else {
+                plman.AddItemToPlaybackQueue(queueItem.Handle);
+            }
+        });
+    }
+
+    /**
+     * Notify the PlaylistHistory that a playlist was altered.
+     * @param {string} mutationType
+     */
     playlistAltered(mutationType) {
         // ignore playlist alterations when changing states
-        // console.log(mutationType);
+        console.log(mutationType);
         if (!this.updatingPlaylist && plman.ActivePlaylist >= 0) {
             const plItems = plman.GetPlaylistItems(plman.ActivePlaylist);
             if (this.shouldAddState(plman.ActivePlaylist, plItems, mutationType)) {
@@ -106,6 +171,7 @@ class PlaylistHistory {
     }
 
     /**
+     * @private Determine if a new state should be added to the playlistHistory
      * @param {number} playlistId
      * @param {FbMetadbHandleList} newItems List of handles of playlist items
      * @param {string} mutationType currently unused
@@ -139,13 +205,30 @@ class PlaylistHistory {
     }
 }
 
+/**
+ * @class
+ * @constructor
+ * @public
+ */
 class PlaylistState {
+    /**
+     * @param {number} playlistId
+     * @param {FbMetadbHandleList} plItems
+     */
     constructor(playlistId, plItems) {
+        /**
+         * @type {number}
+         * @public
+         */
         this.playlistId = playlistId;
+        /**
+         * @type {boolean}
+         * @public
+         */
         this.locked = plman.IsPlaylistLocked(playlistId);
         if (!this.locked) {
             // don't need to save items if playlist is locked, we'll just switch to it
-            this.playlistEntries = plItems;
+            /** @type {FbMetadbHandleList} */ this.playlistEntries = plItems;
         }
     }
 }
