@@ -1176,11 +1176,11 @@ class Playlist extends List {
 	}
 
 	on_playback_dynamic_info_track() {
-		this.cnt.rows.forEach(function (item) {
+		this.cnt.rows.forEach((item) => {
 			item.reset_queried_data();
 		});
 
-		this.cnt.sub_items.forEach(function(header) {
+		this.cnt.sub_items.forEach((header) => {
 			header.reset_hyperlinks();
 		});
 
@@ -1264,7 +1264,7 @@ class Playlist extends List {
 		}
 
 		// is there a more efficient way to do this?
-		this.cnt.rows.forEach(function (item) {
+		this.cnt.rows.forEach((item) => {
 			item.reset_queried_data();
 		});
 	}
@@ -1276,7 +1276,7 @@ class Playlist extends List {
 
 		/** @type {Array<Row|BaseHeader>} */
 		var items = this.items_to_draw;
-		items.forEach(function (item) {
+		items.forEach((item) => {
 			if (item instanceof Header) {
 				var header = item;
 				if (!header.is_art_loaded() && header.get_first_row().metadb.Compare(metadb)) {
@@ -1568,13 +1568,13 @@ class Playlist extends List {
 					var rows = this.cnt.rows;
 					if (modifiers.ctrl) {
 						const indexes = this.selection_handler.get_selected_items();
-						indexes.forEach(function (idx) {
+						indexes.forEach((idx) => {
 							this.queue_handler.add_row(rows[idx]);
 						});
 					}
 					else if (modifiers.shift) {
 						const indexes = this.selection_handler.get_selected_items();
-						indexes.forEach(function (idx) {
+						indexes.forEach((idx) => {
 							this.queue_handler.remove_row(rows[idx]);
 						});
 					}
@@ -5619,7 +5619,7 @@ class QueueHandler {
 			return;
 		}
 
-		this.queued_rows.forEach(function (item) {
+		this.queued_rows.forEach((item) => {
 			item.queue_indexes = undefined;
 			item.queue_idx_count = 0;
 		});
@@ -6025,7 +6025,7 @@ function GroupingHandler() {
 			// removed
 
 			var playlists_to_remove = _.difference(playlists, new_playlists);
-			playlists_to_remove.forEach(function (playlist_name) {
+			playlists_to_remove.forEach((playlist_name) => {
 				delete settings.playlist_group_data[playlist_name];
 				delete settings.playlist_custom_group_data[playlist_name];
 			});
@@ -6183,7 +6183,7 @@ function GroupingHandler() {
 			{is_radio_checked: cur_group.name === 'user_defined'}
 		);
 
-		settings.group_presets.forEach(function (group_item) {
+		settings.group_presets.forEach((group_item) => {
 			var group_by_text = group_item.description;
 			if (group_item.name === settings.default_group_name) {
 				group_by_text += ' [default]';
