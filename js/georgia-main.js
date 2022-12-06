@@ -240,6 +240,7 @@ let cdart = null; // cdart image
 /** @type {GdiBitmap[]} */
 let cdartArray = [];
 let cdart_size = new ImageSize(0, 0, 0, 0); // cdart position (offset from albumart_size)
+let lastCalcedTimeAreaWidth = -1; // width of the time/total time section
 /** @type {GdiBitmap} */
 var albumart_scaled = null; // pre-scaled album art to speed up drawing considerably
 var recordLabels = []; // array of record label images
@@ -931,13 +932,17 @@ function draw_ui(gr) {
 	// Progress bar/Seekbar
 	progressBar.setY(Math.round(lowerBarTop + titleMeasurements.Height) + scaleForDisplay(8));
 	if (ww > 600) {
-        gr.SetSmoothingMode(SmoothingMode.AntiAliasGridFit);
+		gr.SetSmoothingMode(SmoothingMode.AntiAliasGridFit);
 		if (fb.PlaybackLength > 0) {
 			gr.DrawString(str.length, ft_lower, col.now_playing, 0.725 * ww, lowerBarTop, 0.25 * ww, titleMeasurements.Height, StringFormat(2, 0));
 			let width = gr.CalcTextWidth('  ' + str.length, ft_lower);
 			gr.DrawString(str.time, ft_lower_bold, col.now_playing, 0.725 * ww, lowerBarTop + heightAdjustment, 0.25 * ww - width, titleMeasurements.Height, StringFormat(2, 0));
 			width += gr.CalcTextWidth('  ' + str.time, ft_lower_bold);
 			gr.DrawString(str.disc, ft_lower, col.now_playing, 0.725 * ww, lowerBarTop, 0.25 * ww - width, titleMeasurements.Height, StringFormat(2, 0));
+			if (timeAreaWidth !== lastCalcedTimeAreaWidth) { // * Switch to playback time remaining
+				lastCalcedTimeAreaWidth = timeAreaWidth;
+				btns.playbackTime = new Button(ww - timeAreaWidth - .025 * ww, lowerBarTop, timeAreaWidth, titleMeasurements.Height, 'PlaybackTime');
+			}
 		} else if (fb.IsPlaying) { // streaming, but still want to show time
 			gr.DrawString(str.time, ft.lower_bar, col.now_playing, Math.floor(0.725 * ww), lowerBarTop, 0.25 * ww, 0.5 * geo.lower_bar_h, StringFormat(2, 0));
 		} else {
@@ -2276,7 +2281,7 @@ function on_script_unload() {
 
 function on_playback_time() {
 	// Refresh playback time
-	str.time = $('%playback_time%');
+	str.time = pref.showTimeRemaining ? $('-%playback_time_remaining%') : $('%playback_time%');
 }
 
 function refresh_seekbar() {

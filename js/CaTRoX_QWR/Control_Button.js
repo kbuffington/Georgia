@@ -323,6 +323,10 @@ function btnActionHandler(btn) {
 			btns.library.enable = false;
 			window.Repaint();
 			break;
+		case 'PlaybackTime':
+			pref.showTimeRemaining = !pref.showTimeRemaining;
+			on_playback_time();
+			break;
 		case 'Back':
 		case 'Forward':
 			if (btn.isEnabled && btn.isEnabled()) {

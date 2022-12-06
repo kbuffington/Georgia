@@ -52,6 +52,7 @@ pref.add_properties({
 	show_progress_bar: ['Show Progress Bar', true], // true: show progress bar, otherwise hide it (useful is using another panel for this)
 	transport_buttons_size: ['Transport: Button size', 32], // size in pixels of the buttons
 	transport_buttons_spacing: ['Transport: Button spacing', 5], // size in pixels of the spacing between buttons
+	showTimeRemaining: ['Switch to playback time remaining', false], // true: show playback time remaining (i.e. "-2:43")
 	showTitleInGrid: ['Display song title in info grid', true], // false: don't show title at top of info grid, and move album title above timeline
 
 	show_timeline_tooltips: ['Show timeline tooltips', true], // true: show tooltips when hovering over the timeline that show information on plays
@@ -247,6 +248,8 @@ function migrateCheck(version, storedVersion) {
 				window.SetProperty('SYSTEM: Filter By', undefined);
 				window.SetProperty('SYSTEM: View By', undefined);
 
+			case '2.0.3':
+
 				// this block should appear after all previous versions have fallen through
 				console.log('> Upgrading Georgia Theme settings from', storedVersion);
 				const fileName = `georgia\\georgia-config-${storedVersion}.jsonc`;
@@ -255,7 +258,7 @@ function migrateCheck(version, storedVersion) {
 				config.writeConfiguration();
 				window.Reload();
 
-			case '2.0.3':
+			case '2.0.4':
 
 			default:
 				break;
