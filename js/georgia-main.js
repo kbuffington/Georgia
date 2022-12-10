@@ -2915,15 +2915,6 @@ function createButtonObjects(ww, wh) {
 		}
 	}
 
-	if (true) {
-		const pad = scaleForDisplay(8);
-		const x = ww / 2 + pad;
-		const y = scaleForDisplay(64);
-		const size = 26;
-		btns.back = new Button(x, y, size, size, 'Back', btnImg.Back, null, playlistHistory.canBack.bind(playlistHistory));
-		btns.forward = new Button(x + size, y, size, size, 'Forward', btnImg.Forward, null, playlistHistory.canForward.bind(playlistHistory));
-	}
-
 	/** @type {GdiBitmap[]} */
 	let img = btnImg.File;
 	let x = scaleForDisplay(8);
@@ -2987,6 +2978,15 @@ function createButtonObjects(ww, wh) {
 	x -= (img[0].Width + 10);
 	btns.playlist = new Button(x, y, img[0].Width, h, 'Playlist', img, 'Show Playlist');
 	/* if a new image button is added to the left of playlist we need to update the ResizeArtwork code */
+
+	if (true) {
+		const y = btns[30].y + btns[30].h + scaleForDisplay(18) - (is_4k ? 0 : 1);
+		const pad = scaleForDisplay(8);
+		const x = ww / 2 + pad;
+		const size = scaleForDisplay(26);
+		btns.back = new Button(x, y, size, size, 'Back', btnImg.Back, null, playlistHistory.canBack.bind(playlistHistory));
+		btns.forward = new Button(x + size, y, size, size, 'Forward', btnImg.Forward, null, playlistHistory.canForward.bind(playlistHistory));
+	}
 }
 
 // =================================================== //

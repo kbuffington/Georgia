@@ -165,6 +165,10 @@ class PlaylistHistory {
                 }
                 this.history.push(new PlaylistState(plman.ActivePlaylist, plItems));
                 this.stateIndex = this.length - 1;
+                if (btns.back) {
+                    btns.back.repaint();
+                    btns.forward.repaint();
+                }
                 debugLog('stateIndex:', this.stateIndex, ' new items count:', plItems.Count, this.stateIndex);
             }
         }
