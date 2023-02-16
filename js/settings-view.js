@@ -222,6 +222,9 @@ function calcTextHeight(font) {
     return height;
 }
 
+/** @type GdiBitmap */   let __i_ = undefined;
+/** @type GdiGraphics */ let __g_ = undefined;
+
 // Classes
 class BaseControl {
     constructor(x, y, label) {
@@ -232,13 +235,15 @@ class BaseControl {
         this.disabled = false;
         this._hovered = false;
         this.controlType = undefined;
-        /** @protected @private */ this.i = gdi.CreateImage(1, 1);
-        /** @protected */ this.g = this.i.GetGraphics();   // GdiBitmap used for MeasureString and other functions
+        /** @protected @type GdiGraphics */ this.g; // GdiBitmap used for MeasureString and other functions
+		if (!__i_) {
+			__i_ = gdi.CreateImage(1, 1);
+			__g_ = __i_.GetGraphics();
+		}
+		this.g = __g_;
     }
 
-    destructor() {
-        this.i.ReleaseGraphics(this.g);
-    }
+    destructor() {}
 
     // these aren't really virtually, just stubbed so that not every child needs to create one if it wants to ignore these events
     /** @virtual */
