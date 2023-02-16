@@ -90,16 +90,20 @@ class PlaylistHistory {
             } else {
                 const handles = plman.GetPlaylistItems(plIndex);
                 const index = handles.Find(fb.GetNowPlaying());
+                const stateHandles = activeState.playlistEntries.Clone();
+                const stateIndex = stateHandles.Find(fb.GetNowPlaying());
+                const stateHandlesClone = stateHandles.Clone();
                 console.log('>>> now playing index:', index);
                 // remove everything in playlist except currently playing song
                 plman.ClearPlaylistSelection(plIndex);
                 plman.SetPlaylistSelection(plIndex, [playingItem.PlaylistItemIndex], true);
                 plman.RemovePlaylistSelection(plIndex, true);
                 plman.ClearPlaylistSelection(plIndex);
-                const stateHandles = activeState.playlistEntries.Clone();
-                const stateIndex = stateHandles.Find(fb.GetNowPlaying());
-                stateHandles.RemoveById(stateIndex);
-                const stateHandlesClone = stateHandles.Clone();
+                try {
+                    stateHandles.RemoveById(stateIndex);
+                } catch (e) {
+                    plman.InsertPlaylistItems(plIndex, plman.PlaylistItemCount(plIndex), stateHandlesClone);
+                }
                 if (stateIndex > 0) {
                     stateHandles.RemoveRange(stateIndex, stateHandles.Count);
                     plman.InsertPlaylistItems(plIndex, 0, stateHandles);
