@@ -314,7 +314,7 @@ var last_pb; // saves last playback order
 var just_dblclicked = false;
 var aa_list = [];
 var albumArtIndex = 0; // index of currently displayed album art if more than 1
-var t_interval; // milliseconds between screen updates
+let t_interval; // milliseconds between progress bar updates
 let lastLeftEdge = 0; // the left edge of the record labels. Saved so we don't have to recalculate every on every on_paint unless size has changed
 let lastLabelHeight = 0;
 let displayPlaylist = false;
@@ -2134,7 +2134,7 @@ function on_playback_pause(pausing) {
 		debugLog("on_playback_pause: creating refresh_seekbar() interval with delay = " + t_interval);
 		progressBarTimer = setInterval(() => {
 			refresh_seekbar();
-		}, t_interval);
+		}, t_interval || 1000);
 		cdart && pref.spinCdart && setupRotationTimer();
 	}
 
@@ -2365,7 +2365,7 @@ function SetProgressBarRefresh() {
 	if (!fb.IsPaused) { // only create progressTimer if actually playing
 		progressBarTimer = setInterval(() => {
 			refresh_seekbar();
-		}, t_interval);
+		}, t_interval || 1000);
 	}
 }
 
