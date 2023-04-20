@@ -59,7 +59,6 @@ libraryProps.add_properties({
     nodeHighlight: ['Library: Highlight Node on Hover', false],
     nodeShowTracks: [prefix + 'Node: Show Tracks', true],
     autoFill: ['Library: Playlist: AutoFill', true],
-    playlistCustomSort: [prefix + 'Playlist: Custom Sort', ''],
     sendToCurrent: ['Library: Send to Current Playlist', false],
     libPlaylistName: [prefix + 'Playlist Name', 'Library Playlist'],
     rowVertPadding: [prefix + 'Row Vertical Item Padding', 3],
