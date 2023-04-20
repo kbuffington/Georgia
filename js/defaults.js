@@ -54,7 +54,7 @@ const titleFormatSchema = new ConfigurationObjectSchema('title_format_strings', 
 /** @type {MetadataGridEntry[]} */
 const defaultMetadataGrid = [
 	{ label: 'Disc',           val: `$if(${tf.disc_subtitle},[Disc %discnumber% \u2013 ]${tf.disc_subtitle})` },
-	{ label: 'Release Type',   val: '$if($strstr(%releasetype%,Album),,[%releasetype%])' },
+	{ label: 'Release Type',   val: '$if($stricmp(%releasetype%,Album),,[%releasetype%])' },
 	{ label: 'Year',           val: '$puts(d,'+tf.date+')$if($strcmp($year($get(d)),$get(d)),$get(d),)', comment: '\'Year\' is shown if the date format is YYYY' },
 	{ label: 'Release Date',   val: '$puts(d,'+tf.date+')$if($strcmp($year($get(d)),$get(d)),,$get(d))', age: true, comment: '\'Release Date\' is shown if the date format is YYYY-MM-DD' },
 	{ label: 'Edition',        val: tf.edition },
