@@ -873,7 +873,7 @@ function draw_ui(gr) {
 			h = btn.h,
 			img = btn.img;
 
-		if ((i === 'back' || i === 'forward') && !displayPlaylist) {
+		if ((i === 'back' || i === 'forward') && (!displayPlaylist || !g_properties.show_playlist_info)) {
 			continue;
 		}
 		const disabled = btn.isEnabled ? !btn.isEnabled() : false;
@@ -1249,6 +1249,7 @@ function onOptionsMenu(x, y) {
 		window.Repaint();
 	};
 	playlistMenu.addToggleItem('Display playlist on startup', pref, 'startPlaylist');
+	playlistMenu.addToggleItem('Display playlist info header', g_properties, 'show_playlist_info', playlistCallback);
 	playlistMenu.addToggleItem('Show group header', g_properties, 'show_header', playlistCallback);
 	playlistMenu.addToggleItem('Use compact group header', g_properties, 'use_compact_header', playlistCallback, !g_properties.show_header);
 	playlistMenu.createRadioSubMenu('Header font size', ['-1', '14px', '15px (default)', '16px', '18px', '20px', '22px', '+1'], pref.font_size_playlist_header,
@@ -2979,14 +2980,12 @@ function createButtonObjects(ww, wh) {
 	btns.playlist = new Button(x, y, img[0].Width, h, 'Playlist', img, 'Show Playlist');
 	/* if a new image button is added to the left of playlist we need to update the ResizeArtwork code */
 
-	if (true) {
-		const y = btns[30].y + btns[30].h + scaleForDisplay(18) - (is_4k ? 0 : 1);
-		const pad = scaleForDisplay(8);
-		const x = ww / 2 + pad;
-		const size = scaleForDisplay(26);
-		btns.back = new Button(x, y, size, size, 'Back', btnImg.Back, null, playlistHistory.canBack.bind(playlistHistory));
-		btns.forward = new Button(x + size, y, size, size, 'Forward', btnImg.Forward, null, playlistHistory.canForward.bind(playlistHistory));
-	}
+	y = btns[30].y + btns[30].h + scaleForDisplay(18) - (is_4k ? 0 : 1);
+	const pad = scaleForDisplay(8);
+	x = ww / 2 + pad;
+	const size = scaleForDisplay(26);
+	btns.back = new Button(x, y, size, size, 'Back', btnImg.Back, null, playlistHistory.canBack.bind(playlistHistory));
+	btns.forward = new Button(x + size, y, size, size, 'Forward', btnImg.Forward, null, playlistHistory.canForward.bind(playlistHistory));
 }
 
 // =================================================== //

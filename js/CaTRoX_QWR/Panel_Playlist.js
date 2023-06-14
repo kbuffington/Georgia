@@ -906,11 +906,11 @@ class Playlist extends List {
 				cmm.append_separator();
 			}
 
-			var appear = new ContextMenu('Appearance');
+			var appear = new ContextMenu('Playlist Appearance');
 			cmm.append(appear);
 
 			appear.append_item(
-				'Show playlist info',
+				'Show playlist info header',
 				() => {
 					g_properties.show_playlist_info = !g_properties.show_playlist_info;
 				},
@@ -1909,7 +1909,7 @@ class Playlist extends List {
 	 * @param {ContextMenu} parent_menu
 	 */
 	append_appearance_menu_to(parent_menu) {
-		var appear = new ContextMenu('Appearance');
+		var appear = new ContextMenu('Playlist Appearance');
 		parent_menu.append(appear);
 
 		PlaylistManager.append_playlist_info_visibility_context_menu_to(appear);
@@ -6001,7 +6001,7 @@ function PlaylistManager(x, y, w, h) {
  */
 PlaylistManager.append_playlist_info_visibility_context_menu_to = function (parent_menu) {
 	parent_menu.append_item(
-		'Show playlist manager',
+		'Show Playlist Info',
 		() => {
 			g_properties.show_playlist_info = !g_properties.show_playlist_info;
 		},
