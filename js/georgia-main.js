@@ -1691,22 +1691,23 @@ function on_metadb_changed(handle_list, fromhook) {
 			}
             str.album = $("[%album%][ '['" + tf.album_translation + "']']");
 			str.album_subtitle = $("[ '['" + tf.album_subtitle + "']']");
-			var codec = $("$lower($if2(%codec%,$ext(%path%)))");
-			if (codec == "dca (dts coherent acoustics)") {
+			let codec = $("$lower($if2(%codec%,$ext(%path%)))");
+			if (codec === "dca (dts coherent acoustics)") {
 				codec = "dts";
 			}
-			if (codec == "cue") {
+			if (codec === "cue") {
 				codec = $("$ext($info(referenced_file))");
-			} else if (codec == "mpc") {
+			} else if (codec === "mpc") {
 				codec = codec + "-" + $("$info(codec_profile)").replace("quality ", "q");
-			} else if (codec == "dts" || codec == "ac3" || codec == "atsc a/52") {
-				codec += $("[ $replace($replace($replace($info(channel_mode), + LFE,),' front, ','/'),' rear surround channels',$if($strstr($info(channel_mode),' + LFE'),.1,.0))] %bitrate%") + " kbps";
-				codec = codec.replace("atsc a/52", "Dolby Digital");
-			} else if ($("$info(encoding)") == "lossy") {
-				if ($("$info(codec_profile)") == "CBR") codec = codec + "-" + $("%bitrate%") + " kbps";
+			} else if (codec === "dts" || codec === "ac3" || codec.startsWith("atsc a/52")) {
+				codec += $("[ $replace($replace($replace($info(channel_mode), + LFE,),' front, ','/'),' rear surround channels',$if($strstr($info(channel_mode),' + LFE'),.1,.0)) ]")
+				codec += $("[ %bitrate% kbps]");
+				codec = codec.replace(/atsc a\/52[a]?( \(ac-3\))?/, "Dolby Digital");
+			} else if ($("$info(encoding)") === "lossy") {
+				if ($("$info(codec_profile)") === "CBR") codec = codec + "-" + $("%bitrate%") + " kbps";
 				else codec = codec + "-" + $("$info(codec_profile)");
 			}
-			str.trackInfo = $(codec + settings.extraTrackInfo);
+			str.trackInfo = codec + $(settings.extraTrackInfo);
 			// TODO: Add LUFS option?
 			// str.trackInfo += $('$if(%replaygain_track_gain%, | LUFS $puts(l,$sub(-1800,$replace(%replaygain_track_gain%,.,)))$div($get(l),100).$right($get(l),2) dB,)');
 
@@ -2517,6 +2518,7 @@ function rotateImg(img, w, h, degrees) {
 	if (degrees === 0) {
 		rotatedImg = img.Clone(0, 0, img.Width, img.Height).Resize(w, h);
 	} else {
+		// console.log('>>> rotateImg', w, h);
 		rotatedImg = gdi.CreateImage(w, h);
 		const gotGraphics = rotatedImg.GetGraphics();
 		gotGraphics.DrawImage(img, 0, 0, w, h, 0, 0, img.Width, img.Height, degrees);

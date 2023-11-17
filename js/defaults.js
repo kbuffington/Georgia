@@ -65,7 +65,7 @@ const defaultMetadataGrid = [
 	{ label: 'Genre',          val: '[$meta_sep(genre, \u2022 )]' },
 	{ label: 'Style',          val: '[$meta_sep(style, \u2022 )]' },
 	{ label: 'Release',        val: '[%release%]' },
-	{ label: 'Codec',   	   val: "[$if($not($strstr(%codec%,'MP3')),$replace($if2(%codec_profile%,%codec%),ATSC A/52,Dolby Digital)[ $replace($replace($replace($info(channel_mode), + LFE,),' front, ','/'),' rear surround channels',$if($strstr($info(channel_mode),' + LFE'),.1,.0))])]" },
+	{ label: 'Codec',   	   val: "[$if($not($strstr(%codec%,'MP3')),$puts(c,$replace($if2(%codec_profile%,%codec%),ATSC A/52A,Dolby Digital))$replace($get(c),ATSC A/52,Dolby Digital)[ $replace($replace($replace($info(channel_mode), + LFE,),' front, ','/'),' rear surround channels',$if($strstr($info(channel_mode),' + LFE'),.1,.0))])]" },
 	{ label: 'Added',          val: '[$if2(%added_enhanced%,%added%)]', age: true },
 	{ label: 'Last Played',    val: '[' + tf.last_played + ']', age: true },
 	{ label: 'Hotness',	       val: "$puts(X,5)$puts(Y,$div(%_dynamic_rating%,400))$repeat($repeat(I,$get(X))   ,$div($get(Y),$get(X)))$repeat(I,$mod($get(Y),$get(X)))$ifgreater(%_dynamic_rating%,0,   $replace($div(%_dynamic_rating%,1000)'.'$mod($div(%_dynamic_rating%,100),10),0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9),)" },
