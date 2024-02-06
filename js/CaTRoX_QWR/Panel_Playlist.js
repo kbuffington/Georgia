@@ -3845,6 +3845,7 @@ class Header extends BaseHeader {
 					if (is_radio || !this.hyperlinks.artist)  {
 						grClip.DrawString(artist_text, artist_font, artist_color, artist_x, 0, artist_w, artist_h, artist_text_format);
 					} else {
+						this.hyperlinks.artist.setContainerWidth(artist_w);
 						this.hyperlinks.artist.draw(grClip, artist_color);
 					}
 					//part1_cur_x += artist_w;
@@ -3875,6 +3876,7 @@ class Header extends BaseHeader {
 					if (!this.hyperlinks.album) {
 						grClip.DrawString(album_text, g_pl_fonts.album, album_color, album_x, album_y, album_w, album_h, album_text_format);
 					} else {
+						this.hyperlinks.album.setContainerWidth(album_w);
 						this.hyperlinks.album.draw(grClip, album_color);
 					}
 
