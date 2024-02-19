@@ -4,24 +4,28 @@
 // ==/PREPROCESSOR==
 
 /**
- * @constructor
  * @template T
  */
-function LinkedList() {
+class Node {
     /**
      * @param {T} value
      * @param {?Node} prev
      * @param {?Node} next
      * @constructor
      * @struct
-     * @template T
      */
-    function Node(value, prev, next) {
+    constructor(value, prev, next) {
         this.value = value;
         this.prev = prev;
         this.next = next;
     }
+}
 
+/**
+ * @constructor
+ * @template T
+ */
+function LinkedList() {
     this.clear = function () {
         back = null;
         front = null;
@@ -179,6 +183,7 @@ LinkedList.Iterator = function (parent, node) {
             throw new LogicError('Iterator is out of bounds');
         }
 
+        // @ts-ignore
         this.cur_node = this.cur_node.next;
         if (!this.cur_node) {
             this.cur_node = parent.end_node;
@@ -186,14 +191,16 @@ LinkedList.Iterator = function (parent, node) {
     };
 
     this.decrement = function () {
+        // @ts-ignore
         if (this.cur_node === front) {
             throw new LogicError('Iterator is out of bounds');
         }
 
         if (this.cur_node === parent.end_node) {
+            // @ts-ignore
             this.cur_node = back;
-        }
-        else {
+        } else {
+            // @ts-ignore
             this.cur_node = this.cur_node.prev;
         }
     };
