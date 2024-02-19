@@ -695,7 +695,7 @@ function ScrollBar(x, y, w, h, row_h, fn_redraw) {
 /** @constructor */
 function ScrollBarPart(x, y, w, h, img_src) {
     this.repaint = function () {
-		window.RepaintRect(this.x, this.y, this.w, this.h);
+        window.RepaintRect(this.x, this.y, this.w, this.h);
     };
 
     this.trace = function (x, y) {
