@@ -3,6 +3,7 @@
 *.code-workspace
 /.vscode/*
 
+.prettierignore
 *.fcl
 georgia-main.backup.js
 *Scratch Pad.txt

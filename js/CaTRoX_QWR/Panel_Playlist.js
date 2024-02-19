@@ -3264,10 +3264,10 @@ class BaseHeader extends ListItem {
 	}
 
 	is_completely_selected() {
-		const isHeader = this.sub_items[0] instanceof BaseHeader;
-		// @ts-ignore
+		// const isHeader = this.sub_items[0] instanceof BaseHeader;
 		return this.sub_items.every(item => {
-			return isHeader ? item.is_completely_selected() : item.is_selected();
+			// was return isHeader ? ....
+			return item instanceof BaseHeader ? item.is_completely_selected() : item.is_selected();
 		});
 	}
 
