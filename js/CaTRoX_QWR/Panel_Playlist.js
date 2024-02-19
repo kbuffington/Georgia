@@ -3404,6 +3404,7 @@ class DiscHeader extends BaseHeader {
 
     is_selected() {
         return this.sub_items.every(row => {
+            // @ts-ignore
             return row.is_selected();
         });
     };

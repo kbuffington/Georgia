@@ -88,6 +88,7 @@ const imgPathDefaults = [ // simply add, change or re-order entries as needed
     '$replace(%path%,%directoryname%\\%filename_ext%,)folder*', // all folder images in parent directory
     '$replace(%path%,%directoryname%\\%filename_ext%,)front*', // all folder images in parent directory
     '$replace(%path%,%directoryname%\\%filename_ext%,)cover*', // all folder images in parent directory
+    '$replace(%path%,%filename_ext%,)\\trackart\\%title%.jpg', // trackart comes before secondary album art
     '$replace(%path%,%filename_ext%,)*.jpg',
     '$replace(%path%,%filename_ext%,)*.png',
 ];
