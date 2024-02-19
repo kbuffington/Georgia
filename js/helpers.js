@@ -7,6 +7,17 @@ function IsFolder(folder) {
 }
 
 /**
+ * Does not work for array's containing functions
+ * @param {any[]} a1 
+ * @param {any[]} a2 
+ */
+function ArrayIsEqual(a1, a2) {
+	return JSON.stringify(a1) === JSON.stringify(a2);
+	// return a1.length === a2.length &&
+	// 	a1.every((val, index) => a2[index] === val);
+}
+
+/**
  *
  * @param {string} titleFormatString Title format string to evaluate
  * @param {FbMetadbHandle=} metadb Handle to evaluate string with

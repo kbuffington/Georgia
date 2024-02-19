@@ -2,6 +2,7 @@
  * @typedef {Object} ArtCacheObj
  * @property {GdiBitmap} image
  * @property {number} filesize
+ * @property {boolean} virtual
  */
 
 class ArtCache {
@@ -24,9 +25,10 @@ class ArtCache {
      * Adds a rescaled image to the cache under string `location` and returns the cached image.
      * @param {GdiBitmap} img
      * @param {string} location String value to cache image under. Does not need to be a path.
+     * @param {boolean=} virtual Is the image virtual or physically on disc. Defaults to false
      * @return {GdiBitmap}
      */
-    encache(img, location) {
+    encache(img, location, virtual = false) {
         try {
             let h = img.Height;
             let w = img.Width;
@@ -38,8 +40,12 @@ class ArtCache {
                 h = Math.min(h / scaleFactor);
                 w = Math.min(w / scaleFactor);
             }
-            const f = fso.GetFile(location);
-            this.cache[location] = { image: img.Resize(w, h), filesize: f.Size };
+            if (virtual) {
+                this.cache[location] = { image: img.Resize(w, h), filesize: 0, virtual };
+            } else {
+                const f = fso.GetFile(location);
+                this.cache[location] = { image: img.Resize(w, h), filesize: f.Size, virtual };
+            }
             img = null;
             const pathIndex = this.cacheIndexes.indexOf(location);
             if (pathIndex !== -1) {
@@ -67,17 +73,21 @@ class ArtCache {
      * @return {GdiBitmap}
      */
     getImage(location) {
-        if (this.cache[location]) {
-            const f = fso.GetFile(location);
+        const cacheObj = this.cache[location];
+        let f;
+        if (cacheObj) {
+            if (!cacheObj.virtual) {
+                f = fso.GetFile(location);
+            }
             const pathIndex = this.cacheIndexes.indexOf(location);
             this.cacheIndexes.splice(pathIndex, 1);
-            if (!f || f.Size === this.cache[location].filesize) {
+            if (!f || f.Size === cacheObj.filesize) {
                 this.cacheIndexes.push(location);
                 debugLog('cache hit:', location);
-                return this.cache[location].image;
+                return cacheObj.image;
             } else {
                 // size of file on disk has changed
-                debugLog(`cache entry was stale: ${location} [old size: ${this.cache[location].filesize}, new size: ${f.Size}]`);
+                debugLog(`cache entry was stale: ${location} [old size: ${cacheObj.filesize}, new size: ${f.Size}]`);
                 delete this.cache[location]; // was removed from cacheIndexes already
             }
         }

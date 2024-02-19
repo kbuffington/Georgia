@@ -234,8 +234,10 @@ let btnImg = undefined;
 
 // VARIABLES
 // Artwork
-var albumart = null; // albumart image
+/** @type {GdiBitmap} */
+let albumart = null; // albumart image
 let albumart_size = new ImageSize(0, 0, 0, 0); // position (big image)
+/** @type {GdiBitmap} */
 let cdart = null; // cdart image
 /** @type {GdiBitmap[]} */
 let cdartArray = [];
@@ -312,7 +314,10 @@ let wh = 0; // size of panel
 let progressBar = null;
 var last_pb; // saves last playback order
 var just_dblclicked = false;
-var aa_list = [];
+/** @type {string[]} */
+let aa_list = [];
+/** @type {string} */
+let cdArtPath = null;
 var albumArtIndex = 0; // index of currently displayed album art if more than 1
 let t_interval; // milliseconds between progress bar updates
 let lastLeftEdge = 0; // the left edge of the record labels. Saved so we don't have to recalculate every on every on_paint unless size has changed
@@ -1096,7 +1101,10 @@ function onOptionsMenu(x, y) {
 
 	const cdArtMenu = new Menu('cdArt settings');
 	cdArtMenu.addToggleItem(`Display cdArt if found (${settings.cdArtBasename}.png, ${settings.cdArtBasename}2.png, vinylA.png, etc.)`, pref, 'display_cdart', () => {
-		if (fb.IsPlaying) fetchNewArtwork(fb.GetNowPlaying());
+		if (fb.IsPlaying) {
+			const artList = getTrackArtwork(fb.GetNowPlaying())
+			fetchNewArtwork(artList, fb.GetNowPlaying());
+		}
 		lastLeftEdge = 0; // resize labels
 		ResizeArtwork(true);
 		RepaintWindow();
@@ -1540,10 +1548,12 @@ function on_playback_new_track(metadb) {
 
 	str.timeline = new Timeline(geo.timeline_h);
 
-	// Fetch new albumart
-	if ((pref.cycleArt && albumArtIndex !== 0) || isStreaming || embeddedArt || currentFolder !== lastFolder || albumart == null ||
-			$('$if2(%discnumber%,0)') != lastDiscNumber || $('$if2(' + tf.vinyl_side + ',ZZ)') != lastVinylSide) {
-		fetchNewArtwork(metadb);
+	const artPaths = getTrackArtwork(metadb);
+	if (!ArrayIsEqual(artPaths.albumArtList, aa_list) || cdArtPath !== artPaths.cdArtPath || isStreaming || embeddedArt || !albumart) {
+		aa_list = artPaths.albumArtList;
+		cdArtPath = artPaths.cdArtPath;
+		// Fetch new albumart
+		fetchNewArtwork(artPaths, metadb);
 	} else if (pref.cycleArt && aa_list.length > 1) {
 		// need to do this here since we're no longer always fetching when aa_list.length > 1
 		albumArtTimeout = setTimeout(() => {
@@ -1616,12 +1626,11 @@ function on_playback_new_track(metadb) {
 			const logo = gdi.Image(path);
 			if (logo) {
 				bandLogo = artCache.encache(logo, path);
-				invertedBandLogo = artCache.encache(logo.InvertColours(), `${path}-inv`);
 			}
 		}
 		invertedBandLogo = artCache.getImage(`${path}-inv`);
 		if (!invertedBandLogo && bandLogo) {
-			invertedBandLogo = artCache.encache(bandLogo.InvertColours(), `${path}-inv`);
+			invertedBandLogo = artCache.encache(bandLogo.InvertColours(), `${path}-inv`, true);
 		}
 	}
 
@@ -2750,59 +2759,94 @@ function LoadLabelImage(publisherString) {
 	return recordLabel;
 }
 
-function fetchNewArtwork(metadb) {
-	let fetchArtworkProfiler = null;
-	let cdartPath;
-	if (timings.showDebugTiming) fetchArtworkProfiler = fb.CreateProfiler('fetchNewArtwork');
-	console.log('Fetching new art'); // can remove this soon
-	aa_list = [];
-	var disc_art_exists = true;
+
+/**
+ * @typedef {Object} Artlist
+ * @property {string} cdArtPath
+ * @property {string[]} albumArtList
+ */
+
+/**
+ * Returns an ArtList object that contains the path to cdArt if it exists, and an array
+ * of strings for the album art.
+ * @param {FbMetadbHandle} metadb
+ * @returns {Artlist}
+ */
+function getTrackArtwork(metadb) {
+	let cdArtPath;
+	// let discArtExists = true;
+	let artList = [];
 
 	if (pref.display_cdart && !isStreaming) { // we must attempt to load CD/vinyl art first so that the shadow is drawn correctly
-		cdartPath = $(pref.vinylside_path); // try vinyl%vinyl disc%.png first
-		if (!IsFile(cdartPath)) {
-			cdartPath = $(pref.vinyl_path); // try vinyl.png
-			if (!IsFile(cdartPath)) {
-				cdartPath = $(pref.cdartdisc_path); // try cd%discnumber%.png
-				if (!IsFile(cdartPath)) {
-					cdartPath = $(pref.cdart_path); // cd%discnumber%.png didn't exist so try cd.png.
-					if (!IsFile(cdartPath)) {
-						disc_art_exists = false; // didn't find anything
+		cdArtPath = $(pref.vinylside_path); // try vinyl%vinyl disc%.png first
+		if (!IsFile(cdArtPath)) {
+			cdArtPath = $(pref.vinyl_path); // try vinyl.png
+			if (!IsFile(cdArtPath)) {
+				cdArtPath = $(pref.cdartdisc_path); // try cd%discnumber%.png
+				if (!IsFile(cdArtPath)) {
+					cdArtPath = $(pref.cdart_path); // cd%discnumber%.png didn't exist so try cd.png.
+					if (!IsFile(cdArtPath)) {
+						cdArtPath = undefined;
+						// discArtExists = false; // didn't find anything
 					}
 				}
 			}
 		}
-		if (disc_art_exists) {
-			let temp_cdart;
-			if (loadFromCache) {
-				temp_cdart = artCache.getImage(cdartPath);
+	}
+	if (!isStreaming) {
+		artList = globals.imgPaths.map(path => utils.Glob($(path, metadb), FileAttributes.Directory | FileAttributes.Hidden)).flat();
+		const filteredFileTypes = pref.filterCdJpgsFromAlbumArt ? '(png|jpg)' : 'png';
+		const pattern = new RegExp('(cd|vinyl|' + settings.cdArtBasename + ')([0-9]*|[a-h])\.' + filteredFileTypes, 'i');
+		const imageType = /jpg|png$/i;	// TODO: Add gifs?
+		// remove duplicates and cd/vinyl art and make sure all files are jpg or pngs
+		artList = [... new Set(artList)].filter(path => !pattern.test(path) && imageType.test(path));
+	}
+	return {
+		cdArtPath,
+		albumArtList: artList
+	}
+}
+
+/**
+ * Initially Loads the art from caches or retrieves from disk/embedded.
+ * Also resizes artwork and stores in cache.
+ * @param {Artlist} artPaths 
+ * @param {FbMetadbHandle} metadb 
+ */
+function fetchNewArtwork(artPaths, metadb) {
+	let fetchArtworkProfiler = null;
+	if (timings.showDebugTiming) fetchArtworkProfiler = fb.CreateProfiler('fetchNewArtwork');
+
+	if (artPaths.cdArtPath) {
+		let temp_cdart;
+		if (loadFromCache) {
+			temp_cdart = artCache.getImage(artPaths.cdArtPath);
+		}
+		if (temp_cdart) {
+			disposeCDImg(cdart);
+			cdart = temp_cdart;
+			ResizeArtwork(true);
+			CreateRotatedCDImage();
+			if (pref.spinCdart) {
+				cdartArray = [];	// clear last image
+				setupRotationTimer();
 			}
-			if (temp_cdart) {
-				disposeCDImg(cdart);
-				cdart = temp_cdart;
+		} else {
+			gdi.LoadImageAsyncV2(window.ID, artPaths.cdArtPath).then(cdImage => {
+				disposeCDImg(cdart); // delay disposal so we don't get flashing
+				cdart = artCache.encache(cdImage, artPaths.cdArtPath);
 				ResizeArtwork(true);
 				CreateRotatedCDImage();
 				if (pref.spinCdart) {
 					cdartArray = [];	// clear last image
 					setupRotationTimer();
 				}
-			} else {
-				gdi.LoadImageAsyncV2(window.ID, cdartPath).then(cdImage => {
-					disposeCDImg(cdart); // delay disposal so we don't get flashing
-					cdart = artCache.encache(cdImage, cdartPath);
-					ResizeArtwork(true);
-					CreateRotatedCDImage();
-					if (pref.spinCdart) {
-						cdartArray = [];	// clear last image
-						setupRotationTimer();
-					}
-					lastLeftEdge = 0; // recalc label location
-					RepaintWindow();
-				});
-			}
-		} else {
-			cdart = disposeCDImg(cdart);
+				lastLeftEdge = 0; // recalc label location
+				RepaintWindow();
+			});
 		}
+	} else {
+		cdart = disposeCDImg(cdart);
 	}
 	if (timings.showDebugTiming) fetchArtworkProfiler.Print();
 
@@ -2817,17 +2861,10 @@ function fetchNewArtwork(metadb) {
 			shadow_image = null;
 		}
 	} else {
-		aa_list = globals.imgPaths.map(path => utils.Glob($(path), FileAttributes.Directory | FileAttributes.Hidden)).flat();
-		const filteredFileTypes = pref.filterCdJpgsFromAlbumArt ? '(png|jpg)' : 'png';
-		const pattern = new RegExp('(cd|vinyl|' + settings.cdArtBasename + ')([0-9]*|[a-h])\.' + filteredFileTypes, 'i');
-		const imageType = /jpg|png$/i;	// TODO: Add gifs?
-		// remove duplicates and cd/vinyl art and make sure all files are jpg or pngs
-		aa_list = [... new Set(aa_list)].filter(path => !pattern.test(path) && imageType.test(path));
-
-		if (aa_list.length) {
+		if (artPaths.albumArtList.length) {
 			noArtwork = false;
 			embeddedArt = false;
-			if (aa_list.length > 1 && pref.cycleArt) {
+			if (artPaths.albumArtList.length > 1 && pref.cycleArt) {
 				albumArtTimeout = setTimeout(() => {
 					displayNextImage();
 				}, settings.artworkDisplayTime * 1000);
